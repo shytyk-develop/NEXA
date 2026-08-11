@@ -255,10 +255,12 @@
     position: absolute;
     z-index: 1;
     background:
-        radial-gradient(ellipse 70% 45% at 50% -5%, rgba(255, 255, 255, 0.16) 0%, transparent 55%),
-        radial-gradient(ellipse 45% 35% at 18% 12%, rgba(255, 255, 255, 0.07) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 30% at 82% 10%, rgba(255, 255, 255, 0.06) 0%, transparent 55%),
-        radial-gradient(ellipse 55% 28% at 50% 18%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+        /* Cool silver wash — same family as .start-h2__dim / metallic CTAs */
+        radial-gradient(ellipse 72% 48% at 50% -6%, rgba(243, 244, 246, 0.2) 0%, transparent 55%),
+        radial-gradient(ellipse 44% 34% at 14% 14%, rgba(156, 163, 175, 0.16) 0%, transparent 62%),
+        radial-gradient(ellipse 40% 30% at 86% 12%, rgba(209, 213, 219, 0.12) 0%, transparent 58%),
+        radial-gradient(ellipse 52% 28% at 50% 22%, rgba(161, 161, 170, 0.09) 0%, transparent 70%),
+        radial-gradient(ellipse 36% 42% at 50% 58%, rgba(113, 113, 122, 0.07) 0%, transparent 65%);
 }
 
 .start-hero__content {
@@ -321,7 +323,15 @@
 }
 
 .start-hero__tagline {
-    color: rgba(228, 228, 231, 0.72);
+    background: linear-gradient(
+        180deg,
+        #f4f4f5 0%,
+        #d4d4d8 42%,
+        #9ca3af 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     font-size: clamp(15px, 1.1vw, 22px);
     font-weight: 500;
     letter-spacing: 0.72em;
@@ -331,7 +341,36 @@
     text-transform: uppercase;
 }
 
+/* Letter spans from the intro timeline need their own clip — the parent’s
+   background-clip doesn’t paint through the wrappers. */
+.start-hero__tagline .start-char {
+    background: linear-gradient(
+        180deg,
+        #f4f4f5 0%,
+        #d4d4d8 42%,
+        #9ca3af 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
 .start-char {
+    display: inline-block;
+}
+
+/* Word-mask reveal. The padding gives descenders room to live inside the clip,
+   the matching negative margin keeps the line box exactly as it was, and
+   aligning to the bottom edge keeps the baseline identical to plain text. */
+.start-word {
+    display: inline-block;
+    margin: -0.08em -0.04em -0.2em;
+    overflow: hidden;
+    padding: 0.08em 0.04em 0.2em;
+    vertical-align: bottom;
+}
+
+.start-word__i {
     display: inline-block;
 }
 
@@ -357,9 +396,13 @@
 
 .start-hero__feature-icon {
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.22);
+    background:
+        linear-gradient(#000, #000) padding-box,
+        linear-gradient(145deg, rgba(243, 244, 246, 0.55), rgba(156, 163, 175, 0.18)) border-box;
+    border: 1px solid transparent;
     border-radius: 50%;
-    color: #fff;
+    box-shadow: 0 0 18px rgba(156, 163, 175, 0.12);
+    color: #d4d4d8;
     display: inline-flex;
     flex-shrink: 0;
     height: 40px;
@@ -373,7 +416,10 @@
 }
 
 .start-hero__feature strong {
-    color: #fff;
+    background: linear-gradient(180deg, #f4f4f5 0%, #d1d5db 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     display: block;
     font-size: 13px;
     font-weight: 600;
@@ -383,7 +429,7 @@
 }
 
 .start-hero__feature p {
-    color: rgba(161, 161, 170, 0.9);
+    color: #9ca3af;
     font-size: 13px;
     line-height: 1.45;
     margin: 0;
@@ -404,7 +450,15 @@
 }
 
 .start-hero__cta-text {
-    color: rgba(228, 228, 231, 0.78);
+    background: linear-gradient(
+        165deg,
+        rgba(244, 244, 245, 0.92) 0%,
+        rgba(212, 212, 216, 0.78) 55%,
+        rgba(156, 163, 175, 0.88) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     font-size: 14px;
     font-weight: 400;
     line-height: 1.55;
@@ -430,31 +484,35 @@
 
 .start-hero__docs {
     align-items: center;
-    color: rgba(161, 161, 170, 0.95);
+    background: linear-gradient(90deg, #d4d4d8, #9ca3af);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     display: inline-flex;
     font-size: 13px;
     font-weight: 500;
     gap: 8px;
     pointer-events: auto;
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: filter 0.2s ease;
 }
 
 .start-hero__docs::before {
-    background: currentColor;
+    background: linear-gradient(145deg, #f3f4f6, #9ca3af);
     border-radius: 50%;
     content: "";
+    flex-shrink: 0;
     height: 5px;
-    opacity: 0.7;
+    opacity: 0.85;
     width: 5px;
 }
 
 .start-hero__docs:hover {
-    color: #fff;
+    filter: brightness(1.25);
 }
 
 .start-motion-btn__circle {
-    background: #fff;
+    background: linear-gradient(to bottom right, #f3f4f6, #d1d5db);
     border-radius: 999px;
     display: block;
     height: 48px;
@@ -576,7 +634,17 @@
 }
 
 .start-h2__dim {
-    color: var(--txt-3);
+    background: linear-gradient(180deg, #d4d4d8 0%, #9ca3af 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.start-h2__dim .start-word__i {
+    background: linear-gradient(180deg, #d4d4d8 0%, #9ca3af 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .start-h3 {
@@ -1154,14 +1222,27 @@
     font-size: 11px;
 }
 
-/* ─── Orbit (security) ─── */
-.start-orbit__stage {
-    --orbit-r: 185px;
+/* ─── Orbit (security) — radial interactive timeline ─── */
+.start-orbit__intro {
+    color: var(--txt-2);
+    font-size: 15px;
+    line-height: 1.65;
+    margin: clamp(28px, 4vw, 40px) auto 0;
+    max-width: 52ch;
+    text-align: center;
+}
 
-    height: 460px;
-    margin: clamp(40px, 6vw, 72px) auto 0;
-    max-width: 560px;
+.start-orbit__stage {
+    --orbit-r: 200px;
+
+    height: 560px;
+    margin: clamp(28px, 4vw, 48px) auto 0;
+    max-width: 720px;
+    overflow: visible;
+    perspective: 1000px;
     position: relative;
+    user-select: none;
+    width: 100%;
 }
 
 .start-orbit__glow {
@@ -1169,6 +1250,7 @@
     border-radius: 50%;
     height: 480px;
     left: 50%;
+    pointer-events: none;
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
@@ -1176,9 +1258,10 @@
 }
 
 .start-orbit__ring {
-    border: 1px solid var(--line);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     left: 50%;
+    pointer-events: none;
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
@@ -1190,140 +1273,329 @@
 }
 
 .start-orbit__ring--dash {
-    border-style: dashed;
-    height: calc(var(--orbit-r) * 1.34);
-    opacity: 0.55;
-    width: calc(var(--orbit-r) * 1.34);
+    display: none;
 }
 
+/* Centre core — circular pulse, same structure as the React demo */
 .start-orbit__center {
     align-items: center;
-    background: linear-gradient(180deg, #1a1a1c, #0c0c0d);
-    border: 1px solid var(--line-strong);
-    border-radius: 26px;
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.08) inset,
-        0 0 60px rgba(255, 255, 255, 0.08),
-        0 24px 60px rgba(0, 0, 0, 0.6);
-    color: var(--txt);
+    background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 48%, #71717a 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 40px rgba(243, 244, 246, 0.18);
     display: flex;
-    height: 96px;
+    height: 64px;
     justify-content: center;
     left: 50%;
+    pointer-events: none;
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 96px;
+    width: 64px;
+    z-index: 10;
+}
+
+.start-orbit__center::after {
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    content: "";
+    height: 32px;
+    width: 32px;
 }
 
 .start-orbit__center svg {
-    height: 42px;
-    width: 42px;
+    display: none;
 }
 
-.start-orbit__spinner {
-    animation: start-orbit-spin 48s linear infinite;
-    inset: 0;
-    position: absolute;
-}
-
-.start-orbit__sat {
-    height: 0;
+.start-orbit__center-ping {
+    animation: start-orbit-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    height: 80px;
     left: 50%;
+    opacity: 0.7;
     position: absolute;
     top: 50%;
-    transform: rotate(var(--a)) translateX(var(--orbit-r));
-    width: 0;
+    transform: translate(-50%, -50%);
+    width: 80px;
+}
+
+.start-orbit__center-ping--late {
+    animation-delay: 0.5s;
+    height: 96px;
+    opacity: 0.5;
+    width: 96px;
+}
+
+.start-orbit__field {
+    align-items: center;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: absolute;
+}
+
+/*
+ * Node origin sits at the stage centre. JS writes
+ * translate(calc(-50% + x), calc(-50% + y)) so the tile centre sits on the ring.
+ * Transition is applied inline only when snapping to a clicked node — during
+ * auto-rotate it stays off so nodes don’t lag off the orbit.
+ */
+.start-orbit__node {
+    color: inherit;
+    cursor: pointer;
+    height: 40px;
+    left: 50%;
+    outline: none;
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    will-change: transform, opacity;
+    z-index: 10;
+}
+
+.start-orbit__node:focus-visible .start-orbit__tile {
+    box-shadow: 0 0 0 2px #000, 0 0 0 4px rgba(243, 244, 246, 0.7);
+}
+
+.start-orbit__pulse {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    height: calc(var(--orbit-energy, 60) * 0.5px + 40px);
+    left: 50%;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+    width: calc(var(--orbit-energy, 60) * 0.5px + 40px);
+}
+
+.start-orbit__node.is-pulsing .start-orbit__pulse {
+    animation: start-orbit-glow 1s ease-in-out infinite;
+    opacity: 1;
 }
 
 .start-orbit__tile {
     align-items: center;
-    animation: start-orbit-counter 48s linear infinite;
-    background: linear-gradient(180deg, #151517, #0b0b0c);
-    border: 1px solid var(--line-strong);
-    border-radius: 16px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
-    color: var(--txt-2);
+    background: #000;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    color: #fff;
     display: flex;
-    height: 54px;
+    height: 40px;
     justify-content: center;
-    margin: -27px 0 0 -27px;
-    width: 54px;
+    position: relative;
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+    width: 40px;
+    z-index: 1;
+}
+
+.start-orbit__node.is-related .start-orbit__tile {
+    animation: start-orbit-pulse 1s ease-in-out infinite;
+    background: rgba(255, 255, 255, 0.5);
+    border-color: #fff;
+    color: #000;
+}
+
+.start-orbit__node.is-expanded .start-orbit__tile {
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 10px 28px rgba(255, 255, 255, 0.3);
+    color: #000;
+    transform: scale(1.5);
 }
 
 .start-orbit__tile svg {
-    height: 23px;
-    width: 23px;
+    height: 16px;
+    width: 16px;
 }
 
-@keyframes start-orbit-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Keeps the tiles upright while their parent orbits. */
-@keyframes start-orbit-counter {
-    from {
-        transform: rotate(calc(-1 * var(--a)));
-    }
-    to {
-        transform: rotate(calc(-1 * var(--a) - 360deg));
-    }
-}
-
-/* ── Tech details (human first, jargon last) ── */
-.start-tech {
-    margin: clamp(48px, 6vw, 72px) auto 0;
-    max-width: 920px;
-}
-
-.start-tech__intro {
-    color: var(--txt-2);
-    font-size: 15px;
-    line-height: 1.65;
-    margin: 0 auto 28px;
-    max-width: 52ch;
-    text-align: center;
-}
-
-.start-tech__grid {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(3, 1fr);
-}
-
-.start-tech__item {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 24px;
-    transition: border-color 0.25s ease;
-}
-
-.start-tech__item:hover {
-    border-color: var(--line-strong);
-}
-
-.start-tech__item h4 {
-    font-size: 16px;
+.start-orbit__label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: -0.01em;
-    margin: 0 0 10px;
+    left: 50%;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    position: absolute;
+    top: 3rem;
+    transform: translateX(-50%);
+    transition: color 0.3s ease, transform 0.3s ease;
+    white-space: nowrap;
 }
 
-.start-tech__item p {
-    color: var(--txt-2);
-    font-size: 14px;
-    line-height: 1.55;
-    margin: 0 0 16px;
+.start-orbit__node.is-expanded .start-orbit__label {
+    color: #fff;
+    transform: translateX(-50%) scale(1.25);
 }
 
-.start-tech__detail {
-    color: var(--txt-3);
+.start-orbit__card {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 30px rgba(255, 255, 255, 0.08);
+    display: none;
+    left: 50%;
+    padding: 16px;
+    position: absolute;
+    text-align: left;
+    top: 5rem;
+    transform: translateX(-50%);
+    width: min(256px, 72vw);
+    z-index: 2;
+}
+
+.start-orbit__node.is-expanded .start-orbit__card {
+    display: block;
+}
+
+.start-orbit__card-stem {
+    background: rgba(255, 255, 255, 0.5);
+    height: 12px;
+    left: 50%;
+    position: absolute;
+    top: -12px;
+    transform: translateX(-50%);
+    width: 1px;
+}
+
+.start-orbit__card-head {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.start-orbit__badge {
+    background: #000;
+    border: 1px solid #fff;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    text-transform: uppercase;
+}
+
+.start-orbit__badge--soft {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.start-orbit__badge--invert {
+    background: #fff;
+    border-color: #000;
+    color: #000;
+}
+
+.start-orbit__meta {
+    color: rgba(255, 255, 255, 0.5);
     font-family: var(--f-mono);
     font-size: 11px;
+}
+
+.start-orbit__card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 8px 0;
+}
+
+.start-orbit__card p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    line-height: 1.55;
+    margin: 0 0 12px;
+}
+
+.start-orbit__detail {
+    color: rgba(255, 255, 255, 0.45);
+    display: block;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
     letter-spacing: 0.02em;
+}
+
+.start-orbit__links {
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+}
+
+.start-orbit__links-label {
+    color: rgba(255, 255, 255, 0.7);
+    flex: 1 0 100%;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.start-orbit__chip {
+    align-items: center;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    font-size: 11px;
+    gap: 4px;
+    height: 24px;
+    padding: 0 8px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.start-orbit__chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+@keyframes start-orbit-ping {
+    0% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(0.92);
+    }
+    75%,
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.18);
+    }
+}
+
+@keyframes start-orbit-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+    }
+}
+
+@keyframes start-orbit-glow {
+    0%,
+    100% {
+        opacity: 0.45;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 /* ─── Testimonials ─── */
@@ -1687,18 +1959,14 @@
     }
 
     .start-orbit__stage {
-        --orbit-r: 135px;
+        --orbit-r: 150px;
 
-        height: 360px;
+        height: 480px;
     }
 
     .start-orbit__glow {
         height: 340px;
         width: 340px;
-    }
-
-    .start-tech__grid {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -1712,27 +1980,33 @@
     }
 
     .start-orbit__stage {
-        --orbit-r: 110px;
+        --orbit-r: 118px;
 
-        height: 300px;
+        height: 440px;
     }
 
     .start-orbit__center {
-        border-radius: 20px;
-        height: 76px;
-        width: 76px;
+        height: 52px;
+        width: 52px;
     }
 
-    .start-orbit__center svg {
-        height: 32px;
-        width: 32px;
+    .start-orbit__center::after {
+        height: 24px;
+        width: 24px;
     }
 
-    .start-orbit__tile {
-        border-radius: 13px;
-        height: 44px;
-        margin: -22px 0 0 -22px;
-        width: 44px;
+    .start-orbit__center-ping {
+        height: 64px;
+        width: 64px;
+    }
+
+    .start-orbit__center-ping--late {
+        height: 78px;
+        width: 78px;
+    }
+
+    .start-orbit__card {
+        width: min(240px, 78vw);
     }
 }
 
@@ -1749,10 +2023,18 @@
     }
 
     .start-marquee__track,
-    .start-orbit__spinner,
-    .start-orbit__tile,
+    .start-orbit__center-ping,
     .start-chatmock__bubble--typing span {
         animation: none;
+    }
+
+    .start-orbit__node.is-related .start-orbit__tile,
+    .start-orbit__node.is-pulsing .start-orbit__pulse {
+        animation: none;
+    }
+
+    .start-orbit__node {
+        transition: none;
     }
 
     .start-showcase__panel.is-active {

@@ -11,6 +11,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 let bound = false;
 let motionCtx = null;
 let quotesTimer = 0;
+let orbitCtl = null;
 
 export function initStartSite(pageStart) {
     if (!pageStart) return;
@@ -19,6 +20,7 @@ export function initStartSite(pageStart) {
     pageStart.querySelector('.start-nav')?.classList.remove('is-visible');
     pageStart.querySelector('.start-nav')?.setAttribute('aria-hidden', 'true');
     mountVortex(pageStart.querySelector('#startHeroVortex'));
+    startOrbit(pageStart);
     startMotion(pageStart);
     startQuotesRotation(pageStart);
 }
@@ -27,6 +29,7 @@ export function teardownStartSite() {
     motionCtx?.revert();
     motionCtx = null;
     stopQuotesRotation();
+    stopOrbit();
     destroyVortex();
     // Re-arm the intro so the next visit plays it from the top.
     document.querySelector('.start-hero')?.classList.remove('is-ready');
@@ -43,6 +46,7 @@ function bindOnce(pageStart) {
     bindFaq(pageStart);
     bindQuotes(pageStart);
     bindCardSpotlight(pageStart);
+    bindOrbit(pageStart);
 }
 
 function bindNav(pageStart) {
@@ -202,6 +206,181 @@ function bindCardSpotlight(pageStart) {
     }, { passive: true });
 }
 
+/* ============================================================ security orbit */
+
+/**
+ * Vanilla port of RadialOrbitalTimeline.
+ * Nodes sit on a circle, auto-rotate every 50ms by 0.3°, and CSS
+ * `transition: transform/opacity 700ms` eases both the idle spin and the
+ * snap-to-active re-centre so they feel like the React original.
+ */
+function bindOrbit(pageStart) {
+    const stage = pageStart.querySelector('[data-orbit]');
+    if (!stage || stage.dataset.orbitBound === 'true') return;
+    stage.dataset.orbitBound = 'true';
+
+    const nodes = [...stage.querySelectorAll('.start-orbit__node')];
+
+    const applyState = (activeId) => {
+        nodes.forEach((node) => {
+            const open = activeId !== null && node.dataset.orbitId === String(activeId);
+            node.classList.toggle('is-expanded', open);
+            node.classList.remove('is-related', 'is-pulsing');
+            node.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+    };
+
+    const centerOnNode = (id) => {
+        if (!orbitCtl) return;
+        const index = nodes.findIndex((n) => n.dataset.orbitId === String(id));
+        if (index < 0) return;
+        // Same formula as the React demo: park the node at 270° (top), so the
+        // card opens downward into the stage instead of off-screen.
+        const targetAngle = (index / nodes.length) * 360;
+        orbitCtl.angle = 270 - targetAngle;
+        paintOrbit({ animate: true });
+    };
+
+    const toggleItem = (id) => {
+        if (!orbitCtl) return;
+
+        const alreadyOpen = String(orbitCtl.activeId) === String(id);
+
+        if (alreadyOpen) {
+            orbitCtl.activeId = null;
+            orbitCtl.autoRotate = !reducedMotion();
+            applyState(null);
+            syncOrbitTimer();
+            return;
+        }
+
+        orbitCtl.activeId = String(id);
+        orbitCtl.autoRotate = false;
+        applyState(id);
+        centerOnNode(id);
+        syncOrbitTimer();
+    };
+
+    stage.addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-orbit-goto]');
+        if (chip) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleItem(chip.dataset.orbitGoto);
+            return;
+        }
+
+        const node = e.target.closest('.start-orbit__node');
+        if (node) {
+            e.stopPropagation();
+            toggleItem(node.dataset.orbitId);
+            return;
+        }
+
+        // Empty stage / ring / glow click — collapse like handleContainerClick.
+        if (orbitCtl?.activeId != null) {
+            orbitCtl.activeId = null;
+            orbitCtl.autoRotate = !reducedMotion();
+            applyState(null);
+            syncOrbitTimer();
+        }
+    });
+
+    stage.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const node = e.target.closest('.start-orbit__node');
+        if (!node || e.target.closest('[data-orbit-goto]')) return;
+        e.preventDefault();
+        toggleItem(node.dataset.orbitId);
+    });
+
+    window.addEventListener('resize', () => {
+        if (orbitCtl?.stage === stage) paintOrbit();
+    });
+}
+
+function paintOrbit({ animate = false } = {}) {
+    if (!orbitCtl) return;
+    const { stage, nodes, angle } = orbitCtl;
+    const total = nodes.length;
+    if (!total) return;
+
+    const radius = parseFloat(getComputedStyle(stage).getPropertyValue('--orbit-r')) || 200;
+
+    nodes.forEach((node, index) => {
+        const a = ((index / total) * 360 + angle) % 360;
+        const rad = (a * Math.PI) / 180;
+        const x = radius * Math.cos(rad);
+        const y = radius * Math.sin(rad);
+        const depth = Math.round(100 + 50 * Math.cos(rad));
+        const open = node.classList.contains('is-expanded');
+        // Exact opacity curve from the React calculateNodePosition().
+        const opacity = open
+            ? 1
+            : Math.max(0.4, Math.min(1, 0.4 + 0.6 * ((1 + Math.sin(rad)) / 2)));
+
+        // Centre the tile on the orbit point (not its top-left), otherwise
+        // nodes drift inside/outside the ring depending on angle.
+        node.style.transition = animate
+            ? 'transform 0.7s ease, opacity 0.7s ease'
+            : 'opacity 0.35s ease';
+        node.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+        node.style.zIndex = String(open ? 200 : depth);
+        node.style.opacity = String(opacity);
+    });
+}
+
+function syncOrbitTimer() {
+    if (!orbitCtl) return;
+
+    if (orbitCtl.timer) {
+        clearInterval(orbitCtl.timer);
+        orbitCtl.timer = 0;
+    }
+
+    if (!orbitCtl.autoRotate || reducedMotion()) return;
+
+    orbitCtl.timer = window.setInterval(() => {
+        if (!orbitCtl?.autoRotate) return;
+        orbitCtl.angle = Number(((orbitCtl.angle + 0.3) % 360).toFixed(3));
+        paintOrbit();
+    }, 50);
+}
+
+function startOrbit(pageStart) {
+    stopOrbit();
+
+    const stage = pageStart.querySelector('[data-orbit]');
+    if (!stage) return;
+
+    const nodes = [...stage.querySelectorAll('.start-orbit__node')];
+    orbitCtl = {
+        stage,
+        nodes,
+        angle: 0,
+        autoRotate: !reducedMotion(),
+        activeId: null,
+        timer: 0,
+    };
+
+    paintOrbit();
+    syncOrbitTimer();
+}
+
+function stopOrbit() {
+    if (orbitCtl?.timer) clearInterval(orbitCtl.timer);
+    if (orbitCtl?.nodes) {
+        orbitCtl.nodes.forEach((node) => {
+            node.classList.remove('is-expanded', 'is-related', 'is-pulsing');
+            node.setAttribute('aria-expanded', 'false');
+            node.style.transform = '';
+            node.style.zIndex = '';
+            node.style.opacity = '';
+        });
+    }
+    orbitCtl = null;
+}
+
 /* ============================================================ hero intro */
 
 /** Wrap every character in its own inline-block so the tagline can be
@@ -355,6 +534,153 @@ function playHeroIntro(pageStart) {
 
 /* ============================================================ scroll motion */
 
+// Headings are revealed word by word behind a mask; everything else drifts up
+// out of a soft blur. Keeping the vocabulary this small is what makes the whole
+// page feel like one piece rather than a pile of effects.
+const HEADING_SEL = '.start-h2, .start-h3, .start-cta-band__title, .start-marquee__note';
+const TEXT_GROUP_SEL = '.start-head, .start-split__copy, .start-cta-band';
+const PART_SEL = [
+    '.start-eyebrow',
+    '.start-h2',
+    '.start-h3',
+    '.start-lead',
+    '.start-checks li',
+    '.start-btn',
+    '.start-cta-band__title',
+    '.start-cta-band__text',
+].join(', ');
+
+/** Wrap each word in a clipping box so it can slide up from behind its own
+ *  line. Inline markup (<br>, the dimmed span) is preserved. */
+function splitWords(el) {
+    if (el.dataset.words === 'true') {
+        return [...el.querySelectorAll('.start-word__i')];
+    }
+
+    const wrap = (node) => {
+        [...node.childNodes].forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+                const frag = document.createDocumentFragment();
+
+                child.textContent.split(/(\s+)/).forEach((part) => {
+                    if (!part) return;
+                    if (/^\s+$/.test(part)) {
+                        frag.appendChild(document.createTextNode(' '));
+                        return;
+                    }
+                    const outer = document.createElement('span');
+                    outer.className = 'start-word';
+                    const inner = document.createElement('span');
+                    inner.className = 'start-word__i';
+                    inner.textContent = part;
+                    outer.appendChild(inner);
+                    frag.appendChild(outer);
+                });
+
+                child.replaceWith(frag);
+            } else if (child.nodeType === Node.ELEMENT_NODE && child.tagName !== 'BR') {
+                wrap(child);
+            }
+        });
+    };
+
+    wrap(el);
+    el.dataset.words = 'true';
+    return [...el.querySelectorAll('.start-word__i')];
+}
+
+function revealWords(tl, el, at) {
+    tl.fromTo(splitWords(el),
+        { yPercent: 118, opacity: 0 },
+        {
+            yPercent: 0,
+            opacity: 1,
+            duration: 1.05,
+            ease: 'power4.out',
+            stagger: 0.045,
+        }, at);
+}
+
+function fadeUp(tl, targets, at, extra = {}) {
+    tl.fromTo(targets,
+        { opacity: 0, y: 22, filter: 'blur(6px)' },
+        {
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+            duration: 0.9,
+            ease: 'power3.out',
+            ...extra,
+        }, at);
+}
+
+/** A copy block: eyebrow, heading, lead, list, button — in reading order. */
+function revealTextGroup(tl, el) {
+    let at = 0;
+
+    el.querySelectorAll(PART_SEL).forEach((part) => {
+        if (part.matches(HEADING_SEL)) {
+            revealWords(tl, part, at);
+            at += 0.3;
+        } else {
+            fadeUp(tl, part, at);
+            at += part.matches('.start-checks li') ? 0.08 : 0.12;
+        }
+    });
+}
+
+/** A visual block (card, frame, orbit): rises as one piece out of a blur. */
+function revealBlock(tl, el) {
+    const from = { opacity: 0, scale: 0.965, filter: 'blur(10px)' };
+    const to = { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power3.out' };
+
+    // The showcase frame already has a scrubbed parallax on `y`; a second tween
+    // writing the same property would make the two fight each frame.
+    if (!el.matches('.start-showcase__frame')) {
+        from.y = 52;
+        to.y = 0;
+    }
+
+    tl.fromTo(el, from, to, 0);
+}
+
+/** The strip under the hero: the line reads in, then the ticker slides open. */
+function revealMarquee(pageStart, trigger) {
+    const marquee = pageStart.querySelector('.start-marquee');
+    if (!marquee) return;
+
+    const note = marquee.querySelector('.start-marquee__note');
+    const viewport = marquee.querySelector('.start-marquee__viewport');
+    const tl = gsap.timeline({ scrollTrigger: trigger(marquee, { start: 'top 92%' }) });
+
+    if (note) revealWords(tl, note, 0);
+    if (viewport) {
+        tl.fromTo(viewport,
+            { opacity: 0, scaleX: 0.9 },
+            { opacity: 1, scaleX: 1, duration: 1.2, ease: 'power3.out' }, 0.25);
+    }
+}
+
+function revealFooter(pageStart, trigger) {
+    const footer = pageStart.querySelector('.start-footer');
+    if (!footer) return;
+
+    const brand = footer.querySelector('.start-footer__brand');
+    const cols = [...footer.querySelectorAll('.start-footer__col')];
+    const wordmark = footer.querySelector('.start-footer__wordmark');
+    const bottom = [...footer.querySelectorAll('.start-footer__bottom > *')];
+    const tl = gsap.timeline({ scrollTrigger: trigger(footer, { start: 'top 90%' }) });
+
+    if (brand) fadeUp(tl, brand, 0);
+    if (cols.length) fadeUp(tl, cols, 0.1, { stagger: 0.08 });
+    if (wordmark) {
+        tl.fromTo(wordmark,
+            { opacity: 0, y: 40 },
+            { opacity: 1, y: 0, duration: 1.4, ease: 'power3.out' }, 0.3);
+    }
+    if (bottom.length) fadeUp(tl, bottom, 0.5, { stagger: 0.1, duration: 0.7 });
+}
+
 function startMotion(pageStart) {
     motionCtx?.revert();
     motionCtx = null;
@@ -377,25 +703,31 @@ function startMotion(pageStart) {
         });
 
         pageStart.querySelectorAll('[data-reveal]').forEach((el) => {
-            gsap.from(el, {
-                opacity: 0,
-                y: 36,
-                duration: 1,
-                ease: 'power3.out',
-                scrollTrigger: trigger(el),
-            });
+            const tl = gsap.timeline({ scrollTrigger: trigger(el, { start: 'top 88%' }) });
+            if (el.matches(TEXT_GROUP_SEL)) {
+                revealTextGroup(tl, el);
+            } else {
+                revealBlock(tl, el);
+            }
         });
 
         pageStart.querySelectorAll('[data-reveal-stagger]').forEach((group) => {
-            gsap.from(group.children, {
-                opacity: 0,
-                y: 28,
-                duration: 0.9,
-                ease: 'power3.out',
-                stagger: 0.12,
-                scrollTrigger: trigger(group),
-            });
+            gsap.fromTo(group.children,
+                { opacity: 0, y: 34, scale: 0.97, filter: 'blur(7px)' },
+                {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    filter: 'blur(0px)',
+                    duration: 1,
+                    ease: 'power3.out',
+                    stagger: 0.1,
+                    scrollTrigger: trigger(group),
+                });
         });
+
+        revealMarquee(pageStart, trigger);
+        revealFooter(pageStart, trigger);
 
         pageStart.querySelectorAll('[data-count]').forEach((el) => {
             const target = parseFloat(el.dataset.count);
@@ -427,6 +759,22 @@ function startMotion(pageStart) {
                 },
             });
         }
+
+        // Parallax lives on the inner card so it never fights the reveal tween
+        // that owns the wrapper's transform.
+        pageStart.querySelectorAll('.start-split__visual > .start-card').forEach((card) => {
+            gsap.fromTo(card, { y: 34 }, {
+                y: -34,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: card,
+                    scroller: pageStart,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: 0.8,
+                },
+            });
+        });
     }, pageStart);
 
     // Measure after the page is visible and laid out.

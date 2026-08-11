@@ -836,7 +836,7 @@
                     <p class="start-lead">You shouldn’t need a manual to feel safe. Here’s a peek at the interface — screenshots go here when they’re ready.</p>
                 </header>
 
-                <div class="start-showcase__tabs" role="tablist" aria-label="Interface views" data-reveal>
+                <div class="start-showcase__tabs" role="tablist" aria-label="Interface views" data-reveal-stagger>
                     <button type="button" class="start-showcase__tab is-active" data-showcase-tab="chats" role="tab" aria-selected="true">Chats</button>
                     <button type="button" class="start-showcase__tab" data-showcase-tab="privacy" role="tab" aria-selected="false">Privacy</button>
                     <button type="button" class="start-showcase__tab" data-showcase-tab="themes" role="tab" aria-selected="false">Themes</button>
@@ -891,39 +891,111 @@
                     <p class="start-lead">You don’t need to understand the math to feel protected. Everything hard runs quietly in the background — so you can just talk.</p>
                 </header>
 
-                <div class="start-orbit__stage" data-reveal aria-hidden="true">
-                    <div class="start-orbit__glow"></div>
-                    <div class="start-orbit__ring start-orbit__ring--outer"></div>
-                    <div class="start-orbit__ring start-orbit__ring--dash"></div>
-                    <div class="start-orbit__spinner">
-                        <div class="start-orbit__sat" style="--a: 0deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></div>
-                        <div class="start-orbit__sat" style="--a: 90deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M16 5l3 3M13 8l3 3"/></svg></span></div>
-                        <div class="start-orbit__sat" style="--a: 180deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3l18 18M10.6 5.1A10.9 10.9 0 0 1 12 5c7 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.7 8.5 2 12 2 12s3 7 10 7c1.5 0 2.8-.3 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></span></div>
-                        <div class="start-orbit__sat" style="--a: 270deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></span></div>
-                    </div>
-                    <div class="start-orbit__center">
+                <p class="start-orbit__intro" data-reveal>Curious how it works? Tap a node — no jargon required to use NEXA, but you’re welcome to look closer.</p>
+
+                <div class="start-orbit__stage" data-orbit data-reveal>
+                    <div class="start-orbit__glow" aria-hidden="true"></div>
+                    <div class="start-orbit__ring start-orbit__ring--outer" aria-hidden="true"></div>
+                    <div class="start-orbit__ring start-orbit__ring--dash" aria-hidden="true"></div>
+
+                    <div class="start-orbit__center" aria-hidden="true">
+                        <span class="start-orbit__center-ping"></span>
+                        <span class="start-orbit__center-ping start-orbit__center-ping--late"></span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
                     </div>
-                </div>
 
-                <div class="start-tech" data-reveal>
-                    <p class="start-tech__intro">Curious how it works? Here’s the short version — no jargon required to use NEXA, but you’re welcome to look closer.</p>
-                    <div class="start-tech__grid">
-                        <article class="start-tech__item">
-                            <h4>Locked on your device</h4>
-                            <p>Each message is sealed before it leaves your browser. What travels the network is scrambled — useless without your key.</p>
-                            <span class="start-tech__detail">AES-GCM · RSA-OAEP</span>
-                        </article>
-                        <article class="start-tech__item">
-                            <h4>Keys stay with you</h4>
-                            <p>Your private key is born on your device and protected by your password. We never see it in a form we can use.</p>
-                            <span class="start-tech__detail">Generated locally · password-wrapped backup</span>
-                        </article>
-                        <article class="start-tech__item">
-                            <h4>We deliver, we don’t read</h4>
-                            <p>Our servers move messages and store only the locked version. Routing is our job. Reading is not.</p>
-                            <span class="start-tech__detail">Ciphertext only · open source</span>
-                        </article>
+                    <div class="start-orbit__field">
+                        <div class="start-orbit__node" role="button" tabindex="0" data-orbit-id="1" data-related="2,4" style="--orbit-energy: 90" aria-expanded="false">
+                            <span class="start-orbit__pulse" aria-hidden="true"></span>
+                            <span class="start-orbit__tile" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </span>
+                            <span class="start-orbit__label">Locked</span>
+                            <article class="start-orbit__card">
+                                <div class="start-orbit__card-stem" aria-hidden="true"></div>
+                                <header class="start-orbit__card-head">
+                                    <span class="start-orbit__badge">Always on</span>
+                                    <span class="start-orbit__meta">On device</span>
+                                </header>
+                                <h4>Locked on your device</h4>
+                                <p>Each message is sealed before it leaves your browser. What travels the network is scrambled — useless without your key.</p>
+                                <span class="start-orbit__detail">AES-GCM · RSA-OAEP</span>
+                                <div class="start-orbit__links">
+                                    <span class="start-orbit__links-label">Connected</span>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="2">Keys <span aria-hidden="true">→</span></button>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="4">Delivery <span aria-hidden="true">→</span></button>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div class="start-orbit__node" role="button" tabindex="0" data-orbit-id="2" data-related="1,3" style="--orbit-energy: 80" aria-expanded="false">
+                            <span class="start-orbit__pulse" aria-hidden="true"></span>
+                            <span class="start-orbit__tile" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M16 5l3 3M13 8l3 3"/></svg>
+                            </span>
+                            <span class="start-orbit__label">Keys</span>
+                            <article class="start-orbit__card">
+                                <div class="start-orbit__card-stem" aria-hidden="true"></div>
+                                <header class="start-orbit__card-head">
+                                    <span class="start-orbit__badge">Local only</span>
+                                    <span class="start-orbit__meta">Your password</span>
+                                </header>
+                                <h4>Keys stay with you</h4>
+                                <p>Your private key is born on your device and protected by your password. We never see it in a form we can use.</p>
+                                <span class="start-orbit__detail">Generated locally · password-wrapped backup</span>
+                                <div class="start-orbit__links">
+                                    <span class="start-orbit__links-label">Connected</span>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="1">Locked <span aria-hidden="true">→</span></button>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="3">Private <span aria-hidden="true">→</span></button>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div class="start-orbit__node" role="button" tabindex="0" data-orbit-id="3" data-related="2,4" style="--orbit-energy: 70" aria-expanded="false">
+                            <span class="start-orbit__pulse" aria-hidden="true"></span>
+                            <span class="start-orbit__tile" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3l18 18M10.6 5.1A10.9 10.9 0 0 1 12 5c7 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.7 8.5 2 12 2 12s3 7 10 7c1.5 0 2.8-.3 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                            </span>
+                            <span class="start-orbit__label">Private</span>
+                            <article class="start-orbit__card">
+                                <div class="start-orbit__card-stem" aria-hidden="true"></div>
+                                <header class="start-orbit__card-head">
+                                    <span class="start-orbit__badge">Unreadable</span>
+                                    <span class="start-orbit__meta">In transit</span>
+                                </header>
+                                <h4>Talk like nobody’s listening</h4>
+                                <p>Even if someone intercepts a message on the way, all they get is noise. Without your key, there’s nothing to open.</p>
+                                <span class="start-orbit__detail">Ciphertext only · no plaintext path</span>
+                                <div class="start-orbit__links">
+                                    <span class="start-orbit__links-label">Connected</span>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="2">Keys <span aria-hidden="true">→</span></button>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="4">Delivery <span aria-hidden="true">→</span></button>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div class="start-orbit__node" role="button" tabindex="0" data-orbit-id="4" data-related="1,3" style="--orbit-energy: 85" aria-expanded="false">
+                            <span class="start-orbit__pulse" aria-hidden="true"></span>
+                            <span class="start-orbit__tile" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+                            </span>
+                            <span class="start-orbit__label">Delivery</span>
+                            <article class="start-orbit__card">
+                                <div class="start-orbit__card-stem" aria-hidden="true"></div>
+                                <header class="start-orbit__card-head">
+                                    <span class="start-orbit__badge">Our job</span>
+                                    <span class="start-orbit__meta">Servers</span>
+                                </header>
+                                <h4>We deliver, we don’t read</h4>
+                                <p>Our servers move messages and store only the locked version. Routing is our job. Reading is not.</p>
+                                <span class="start-orbit__detail">Ciphertext only · open source</span>
+                                <div class="start-orbit__links">
+                                    <span class="start-orbit__links-label">Connected</span>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="1">Locked <span aria-hidden="true">→</span></button>
+                                    <button type="button" class="start-orbit__chip" data-orbit-goto="3">Private <span aria-hidden="true">→</span></button>
+                                </div>
+                            </article>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -968,7 +1040,7 @@
                     </figure>
                 </div>
 
-                <div class="start-quotes__dots">
+                <div class="start-quotes__dots" data-reveal-stagger>
                     <button type="button" class="is-active" data-quote-dot aria-label="Testimonial 1"></button>
                     <button type="button" data-quote-dot aria-label="Testimonial 2"></button>
                     <button type="button" data-quote-dot aria-label="Testimonial 3"></button>
