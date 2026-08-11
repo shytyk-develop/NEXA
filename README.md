@@ -1,8 +1,6 @@
 <div align="center">
 
-  <img src="frontend/public/brand/nexa-logo.svg" alt="OriginHub" width="72" height="72">
-
-  # NEXA
+  <img src="frontend/public/brand/nexa-logo.svg" alt="OriginHub" width="300" height="150">
 
   End-to-end encrypted web messenger with real-time delivery, client-side cryptography, and a single-page web client.
 
