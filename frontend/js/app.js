@@ -113,6 +113,7 @@ import { initRouter, navigateTo } from './router.js';
 import { loadPreferences, applyPreferences, updatePreference } from './preferences.js';
 import { initProfileSettings } from './profileSettings.js';
 import { initLoginPage, teardownLoginPage } from './loginPage.js';
+import { initStartSite, teardownStartSite } from './startSite.js';
 import { playLoginSuccessReveal, resetLoginBackground } from './loginCanvas.js';
 import { getPrivacyFlags, isChatMuted, toggleChatMuted } from './privacy.js';
 import { registerShortcuts } from './shortcuts.js';
@@ -708,6 +709,7 @@ initMessageContextMenu((row) => {
 initMessageActions();
 
 let loginUiMounted = false;
+let startUiMounted = false;
 
 function setAuthPending(isPending) {
     DOM.pageLogin?.classList.toggle('is-loading', isPending);
@@ -720,7 +722,20 @@ async function handleNavigation(view, param) {
     closeOverlaysForRouteChange();
     document.querySelectorAll('.route-page').forEach(page => page.classList.add('hidden'));
 
-    if (view === 'login') {
+    if (view === 'start') {
+        if (state.myUsername) {
+            navigateTo('/chat', handleNavigation);
+            return;
+        }
+        DOM.pageStart?.classList.remove('hidden');
+        initStartSite(DOM.pageStart);
+        startUiMounted = true;
+    }
+    else if (view === 'login') {
+        if (state.myUsername) {
+            navigateTo('/chat', handleNavigation);
+            return;
+        }
         DOM.pageLogin.classList.remove('hidden');
         setAuthPending(false);
         if (!loginUiMounted) {
@@ -731,6 +746,11 @@ async function handleNavigation(view, param) {
         }
     } 
     else {
+        if (startUiMounted) {
+            teardownStartSite();
+            startUiMounted = false;
+        }
+
         if (loginUiMounted) {
             teardownLoginPage();
             loginUiMounted = false;
@@ -1662,7 +1682,7 @@ function handleLogout() {
     clearUsersList();
     resetChatPanel();
     updateStatus("Disconnected", "text-red-500");
-    navigateTo('/login', handleNavigation);
+    navigateTo('/', handleNavigation);
     showToast("Logged out.", "success");
 }
 
@@ -1698,7 +1718,7 @@ async function initializeApp() {
 
     // Default flow: Boot the client-side router normally if no session exists
     ensureRouter();
-    if (initialPath === '/' || initialPath === '/chat') {
+    if (initialPath.startsWith('/chat')) {
         navigateTo('/login', handleNavigation);
     }
 }

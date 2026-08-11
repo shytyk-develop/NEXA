@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/css/brand.css">
     <link rel="stylesheet" href="/css/app-layout.css">
     <link rel="stylesheet" href="/css/login-page.css">
+    <link rel="stylesheet" href="/css/start-site.css">
     <script>
         (function () {
             try {
@@ -604,7 +605,185 @@
     </style>
 </head>
 <body>
-    <div id="page-login" class="route-page login-page">
+    <div id="page-start" class="route-page start-site">
+        <div class="start-site__shell">
+            <header class="start-nav">
+                <div class="start-nav__row">
+                    <div class="start-nav__brand">
+                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="start-nav__mark" width="1021" height="141" decoding="async">
+                    </div>
+
+                    <nav class="start-nav__links" aria-label="Sections">
+                        <a href="#features" class="start-nav__link">Features</a>
+                        <a href="#how-it-works" class="start-nav__link">How it works</a>
+                        <a href="#security" class="start-nav__link">Security</a>
+                    </nav>
+
+                    <div class="start-nav__actions">
+                        <a href="/login" data-link class="start-nav__btn">Log in</a>
+                        <a href="/login" data-link class="start-nav__btn start-nav__btn--primary">Get started</a>
+                    </div>
+
+                    <button id="startNavToggle" type="button" class="start-nav__toggle" aria-expanded="false" aria-controls="startNavMenu" aria-label="Open menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+                    </button>
+                </div>
+
+                <div id="startNavMenu" class="start-nav__menu" hidden>
+                    <div class="start-nav__menu-links">
+                        <a href="#features" class="start-nav__link">Features</a>
+                        <a href="#how-it-works" class="start-nav__link">How it works</a>
+                        <a href="#security" class="start-nav__link">Security</a>
+                    </div>
+                    <div class="start-nav__menu-actions">
+                        <a href="/login" data-link class="start-nav__btn">Log in</a>
+                        <a href="/login" data-link class="start-nav__btn start-nav__btn--primary">Get started</a>
+                    </div>
+                </div>
+            </header>
+
+            <section class="start-hero">
+                <div id="startHeroVortex" class="start-hero__vortex" aria-hidden="true">
+                    <canvas class="start-hero__vortex-canvas"></canvas>
+                </div>
+            </section>
+
+            <section id="features" class="start-section">
+                <p class="start-section__eyebrow">Features</p>
+                <h2 class="start-section__title">Everything you need for private messaging</h2>
+                <p class="start-section__desc">A full-featured messenger with security at the core — reactions, replies, read receipts, and more, without compromising on privacy.</p>
+
+                <div class="start-features">
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5.25 3.4 10.15 8 11 4.6-.85 8-5.75 8-11V5l-8-3z"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">End-to-end encrypted</h3>
+                        <p class="start-feature__text">Messages are encrypted with AES-GCM and RSA-OAEP entirely in your browser. The server stores only ciphertext — never plaintext.</p>
+                    </article>
+
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Real-time chat</h3>
+                        <p class="start-feature__text">Instant message delivery over WebSockets with typing indicators, presence, read receipts, and offline queue for disconnected users.</p>
+                    </article>
+
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Your keys, your device</h3>
+                        <p class="start-feature__text">RSA key pairs are generated locally. Private keys are encrypted with your password before backup — decrypted only after login.</p>
+                    </article>
+
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Rich messaging</h3>
+                        <p class="start-feature__text">Reply to messages, react with emoji, detect links safely, and manage conversations — all with incremental UI updates.</p>
+                    </article>
+
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Profiles &amp; privacy</h3>
+                        <p class="start-feature__text">Customize your profile, control presence and typing visibility, and manage your data with granular privacy settings.</p>
+                    </article>
+
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.75-.15 2.55-.4"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Light &amp; dark themes</h3>
+                        <p class="start-feature__text">Switch between light, dark, and system themes. Adjust glass intensity for a look that fits your style.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="how-it-works" class="start-section">
+                <p class="start-section__eyebrow">How it works</p>
+                <h2 class="start-section__title">Three steps to private messaging</h2>
+                <p class="start-section__desc">No app install required. Open the browser, create an account, and start chatting securely.</p>
+
+                <div class="start-steps">
+                    <article class="start-step">
+                        <div class="start-step__num">01</div>
+                        <h3 class="start-step__title">Create your account</h3>
+                        <p class="start-step__text">Register with a username and password. Your browser generates an RSA key pair locally — keys never leave unencrypted.</p>
+                    </article>
+                    <article class="start-step">
+                        <div class="start-step__num">02</div>
+                        <h3 class="start-step__title">Find your contacts</h3>
+                        <p class="start-step__text">Search for other users and open a conversation. Public keys are exchanged automatically for secure messaging.</p>
+                    </article>
+                    <article class="start-step">
+                        <div class="start-step__num">03</div>
+                        <h3 class="start-step__title">Chat in real time</h3>
+                        <p class="start-step__text">Send encrypted messages that deliver instantly. Only you and your recipient can read the content.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="security" class="start-section">
+                <p class="start-section__eyebrow">Security</p>
+                <h2 class="start-section__title">Encrypted in the browser</h2>
+                <p class="start-section__desc">OriginHub uses the Web Crypto API for all cryptographic operations. Each message gets a fresh AES key. The server routes ciphertext and metadata — it cannot decrypt your conversations.</p>
+
+                <div class="start-features">
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Hybrid encryption</h3>
+                        <p class="start-feature__text">AES-GCM-256 for content, RSA-OAEP-2048 for key wrapping. Double ciphertext storage for sender and recipient copies.</p>
+                    </article>
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Server sees ciphertext only</h3>
+                        <p class="start-feature__text">PostgreSQL stores encrypted blobs and routing metadata. Message plaintext never touches the server.</p>
+                    </article>
+                    <article class="start-feature">
+                        <div class="start-feature__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </div>
+                        <h3 class="start-feature__title">Transparent by design</h3>
+                        <p class="start-feature__text">Open-source reference implementation. Inspect the crypto layer, audit the code, and self-host if you prefer.</p>
+                    </article>
+                </div>
+            </section>
+
+            <div class="start-cta-band">
+                <div class="start-cta-band__inner">
+                    <div>
+                        <h2 class="start-cta-band__title">Ready to chat securely?</h2>
+                        <p class="start-cta-band__text">Create a free account and start messaging with end-to-end encryption in minutes.</p>
+                    </div>
+                    <a href="/login" data-link class="start-hero__cta">
+                        Open messenger
+                        <span class="start-hero__cta-icon" aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </div>
+
+            <footer class="start-footer">
+                <div class="start-footer__row">
+                    <span>© OriginHub — Encrypted in the browser</span>
+                    <div class="start-footer__links">
+                        <a href="https://github.com/shytyk-develop" target="_blank" rel="noopener noreferrer">GitHub</a>
+                        <a href="https://www.linkedin.com/in/jan-shytyk/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <div id="page-login" class="route-page login-page hidden">
         <div class="login-bg" aria-hidden="true">
             <div id="loginCanvasIntro" class="login-canvas-host"></div>
             <div id="loginCanvasReverse" class="login-canvas-host"></div>

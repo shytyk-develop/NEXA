@@ -2,6 +2,7 @@
 
 // Array of registered routes
 const routes = [
+    { path: '/', view: 'start' },
     { path: '/login', view: 'login' },
     { path: '/chat', view: 'chat' },
     { path: /^\/chat\/@([a-zA-Z0-9_]+)$/, view: 'chat-user' } // Regular expression for /chat/@username
@@ -15,9 +16,10 @@ export function initRouter(onRouteChanged) {
 
     // Intercept link clicks to prevent page reloads
     document.body.addEventListener('click', e => {
-        if (e.target.matches('[data-link]')) {
+        const link = e.target.closest('[data-link]');
+        if (link) {
             e.preventDefault();
-            navigateTo(e.target.getAttribute('href'), onRouteChanged);
+            navigateTo(link.getAttribute('href'), onRouteChanged);
         }
     });
 
@@ -31,13 +33,7 @@ export function navigateTo(url, onRouteChanged) {
 }
 
 function handleRouting(onRouteChanged) {
-    const path = window.location.pathname;
-    
-    // By default, if the path is empty or root, redirect to /login
-    if (path === '/' || path === '') {
-        navigateTo('/login', onRouteChanged);
-        return;
-    }
+    const path = window.location.pathname || '/';
 
     // Look for a matching route
     for (let route of routes) {
@@ -55,6 +51,6 @@ function handleRouting(onRouteChanged) {
         }
     }
 
-    // If no route matches, redirect to /login (or a 404 page)
-    navigateTo('/login', onRouteChanged);
+    // If no route matches, redirect to the start site
+    navigateTo('/', onRouteChanged);
 }
