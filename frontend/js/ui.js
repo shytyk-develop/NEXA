@@ -24,6 +24,7 @@ import { resolveContactProfile } from './profileDirectory.js';
 import { attachMiniProfileHover } from './miniProfile.js';
 
 export const DOM = {
+    pageStart: document.getElementById('page-start'),
     pageLogin: document.getElementById('page-login'),
     pageChat: document.getElementById('page-chat'),
 
