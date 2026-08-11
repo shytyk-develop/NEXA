@@ -1,0 +1,65 @@
+/* Borna — Free for Personal Use (fontlot.com/borna-font-family) */
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-RegularItalic.otf") format("opentype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-Medium.otf") format("opentype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-MediumItalic.otf") format("opentype");
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-SemiBold.otf") format("opentype");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-SemiBoldItalic.otf") format("opentype");
+    font-weight: 600;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-Bold.otf") format("opentype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Borna";
+    src: url("/fonts/borna/Borna-BoldItalic.otf") format("opentype");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}

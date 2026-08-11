@@ -72,7 +72,7 @@ export const HERO_VORTEX_PRESET = {
         glow: 10,
         tail: 20,
         delay: 8,
-        collide: 0,
+        collide: 1,
     },
     repel: false,
 };

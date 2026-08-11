@@ -33,33 +33,44 @@
     z-index: 1;
 }
 
-/* ─── Nav ─── */
+/* ─── Nav — slides in after the hero wordmark leaves view ─── */
 .start-nav {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    background: rgba(31, 31, 31, 0.34);
-    border: 1px solid #333;
+    background: rgba(12, 12, 12, 0.78);
+    border: 1px solid #3a3a3a;
     border-radius: 999px;
     display: flex;
     flex-direction: column;
     left: 50%;
     margin: 24px auto 0;
     max-width: calc(100% - 2rem);
+    opacity: 0;
     padding: 12px 24px;
+    pointer-events: none;
     position: fixed;
     top: 0;
-    transform: translateX(-50%);
+    transform: translate(-50%, calc(-100% - 32px));
     transition:
-        border-radius 0.25s ease,
-        background 0.3s ease,
-        border-color 0.3s ease;
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0.45s,
+        border-radius 0.25s ease;
+    visibility: hidden;
     width: min(100% - 2rem, 960px);
     z-index: 20;
 }
 
-.start-nav.is-scrolled {
-    background: rgba(12, 12, 12, 0.78);
-    border-color: #3a3a3a;
+.start-nav.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+    transition:
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0s,
+        border-radius 0.25s ease;
+    visibility: visible;
 }
 
 .start-nav.is-open {
@@ -206,7 +217,7 @@
     width: 100%;
 }
 
-/* ─── Hero — the vortex fills the viewport, the nav floats over it ─── */
+/* ─── Hero — vortex + oversized NEXA + side chrome ─── */
 .start-hero {
     height: 100vh;
     height: 100dvh;
@@ -215,16 +226,335 @@
     width: 100%;
 }
 
+/* The intro timeline in startSite.js adds .is-ready and then drives these
+   elements itself, so nothing can flash in before the animation starts. */
+.start-hero:not(.is-ready) .start-hero__glow,
+.start-hero:not(.is-ready) .start-hero__wordmark,
+.start-hero:not(.is-ready) .start-hero__tagline,
+.start-hero:not(.is-ready) .start-hero__feature,
+.start-hero:not(.is-ready) .start-hero__cta > * {
+    opacity: 0;
+}
+
 .start-hero__vortex {
     inset: 0;
     pointer-events: none;
     position: absolute;
+    z-index: 0;
 }
 
 .start-hero__vortex-canvas {
     display: block;
     height: 100%;
     width: 100%;
+}
+
+.start-hero__glow {
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 1;
+    background:
+        radial-gradient(ellipse 70% 45% at 50% -5%, rgba(255, 255, 255, 0.16) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 35% at 18% 12%, rgba(255, 255, 255, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 82% 10%, rgba(255, 255, 255, 0.06) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 28% at 50% 18%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+}
+
+.start-hero__content {
+    display: grid;
+    grid-template-columns: minmax(200px, 260px) 1fr minmax(180px, 200px);
+    grid-template-rows: auto 1fr;
+    height: 100%;
+    margin-inline: auto;
+    max-width: min(96vw, 1240px);
+    padding: clamp(72px, 9vh, 100px) 0 clamp(40px, 6vh, 72px);
+    pointer-events: none;
+    position: relative;
+    width: 100%;
+    z-index: 2;
+}
+
+.start-hero__brand-block {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    pointer-events: none;
+    width: 100%;
+}
+
+/* Split wordmark so the vortex axis sits in the gap between NE and XA */
+.start-hero__wordmark {
+    --hero-gap: 14px;
+
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    max-width: 100%;
+    width: min(86vw, 1000px);
+}
+
+.start-hero__wordmark-half {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.start-hero__wordmark-half img {
+    display: block;
+    height: auto;
+    max-width: none;
+    width: calc(min(86vw, 1000px) - var(--hero-gap));
+}
+
+.start-hero__wordmark-half--xa img {
+    margin-left: calc(-0.5 * (min(86vw, 1000px) - var(--hero-gap)));
+}
+
+.start-hero__wordmark-gap {
+    flex: 0 0 var(--hero-gap);
+    height: 1px;
+    width: var(--hero-gap);
+}
+
+.start-hero__tagline {
+    color: rgba(228, 228, 231, 0.72);
+    font-size: clamp(15px, 1.1vw, 22px);
+    font-weight: 500;
+    letter-spacing: 0.72em;
+    margin: clamp(16px, 2.2vh, 26px) 0 0;
+    text-align: center;
+    text-indent: 0.72em;
+    text-transform: uppercase;
+}
+
+.start-char {
+    display: inline-block;
+}
+
+.start-hero__features {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    grid-column: 1;
+    grid-row: 2;
+    list-style: none;
+    margin: 0;
+    max-width: 260px;
+    padding: 0;
+    pointer-events: none;
+}
+
+.start-hero__feature {
+    align-items: flex-start;
+    display: flex;
+    gap: 14px;
+}
+
+.start-hero__feature-icon {
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    flex-shrink: 0;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+}
+
+.start-hero__feature-icon svg {
+    height: 18px;
+    width: 18px;
+}
+
+.start-hero__feature strong {
+    color: #fff;
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.start-hero__feature p {
+    color: rgba(161, 161, 170, 0.9);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.start-hero__cta {
+    align-items: flex-start;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+    max-width: 340px;
+    text-align: left;
+    width: 100%;
+}
+
+.start-hero__cta-text {
+    color: rgba(228, 228, 231, 0.78);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.55;
+    margin: 0 0 28px;
+    text-align: left;
+}
+
+.start-motion-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: block;
+    flex-shrink: 0;
+    height: 56px;
+    margin-bottom: 22px;
+    outline: none;
+    padding: 4px;
+    pointer-events: auto;
+    position: relative;
+    text-decoration: none;
+    width: 200px;
+}
+
+.start-hero__docs {
+    align-items: center;
+    color: rgba(161, 161, 170, 0.95);
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 500;
+    gap: 8px;
+    pointer-events: auto;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.start-hero__docs::before {
+    background: currentColor;
+    border-radius: 50%;
+    content: "";
+    height: 5px;
+    opacity: 0.7;
+    width: 5px;
+}
+
+.start-hero__docs:hover {
+    color: #fff;
+}
+
+.start-motion-btn__circle {
+    background: #fff;
+    border-radius: 999px;
+    display: block;
+    height: 48px;
+    margin: 0;
+    overflow: hidden;
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 48px;
+}
+
+.start-motion-btn:hover .start-motion-btn__circle,
+.start-motion-btn:focus-visible .start-motion-btn__circle {
+    width: 100%;
+}
+
+.start-motion-btn__icon {
+    color: #000;
+    display: flex;
+    left: 16px;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1;
+}
+
+.start-motion-btn:hover .start-motion-btn__icon,
+.start-motion-btn:focus-visible .start-motion-btn__icon {
+    transform: translate(0.4rem, -50%);
+}
+
+.start-motion-btn__icon svg {
+    height: 24px;
+    width: 24px;
+}
+
+.start-motion-btn__label {
+    color: #fff;
+    font-family: var(--f-ui);
+    font-size: 18px;
+    font-weight: 500;
+    left: 50%;
+    letter-spacing: -0.02em;
+    margin-left: 16px;
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: color 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    white-space: nowrap;
+    z-index: 1;
+}
+
+.start-motion-btn:hover .start-motion-btn__label,
+.start-motion-btn:focus-visible .start-motion-btn__label {
+    color: #000;
+}
+
+@media (max-width: 980px) {
+    .start-hero__content {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        justify-content: flex-start;
+        padding-bottom: 32px;
+        padding-inline: 24px;
+    }
+
+    .start-hero__features {
+        display: none;
+    }
+
+    .start-hero__cta {
+        align-self: center;
+        margin-top: auto;
+        max-width: 360px;
+    }
+
+    .start-motion-btn {
+        margin-inline: 0;
+    }
+
+    .start-hero__wordmark-gap {
+        flex-basis: 10px;
+        width: 10px;
+    }
+}
+
+@media (max-width: 560px) {
+    .start-hero__tagline {
+        letter-spacing: 0.6em;
+        text-indent: 0.6em;
+    }
+
+    .start-motion-btn {
+        width: 180px;
+    }
+
+    .start-motion-btn__label {
+        font-size: 16px;
+    }
 }
 
 /* ─── Type system ─── */
@@ -942,6 +1272,60 @@
     }
 }
 
+/* ── Tech details (human first, jargon last) ── */
+.start-tech {
+    margin: clamp(48px, 6vw, 72px) auto 0;
+    max-width: 920px;
+}
+
+.start-tech__intro {
+    color: var(--txt-2);
+    font-size: 15px;
+    line-height: 1.65;
+    margin: 0 auto 28px;
+    max-width: 52ch;
+    text-align: center;
+}
+
+.start-tech__grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.start-tech__item {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 24px;
+    transition: border-color 0.25s ease;
+}
+
+.start-tech__item:hover {
+    border-color: var(--line-strong);
+}
+
+.start-tech__item h4 {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+}
+
+.start-tech__item p {
+    color: var(--txt-2);
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0 0 16px;
+}
+
+.start-tech__detail {
+    color: var(--txt-3);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+}
+
 /* ─── Testimonials ─── */
 .start-quotes__stage {
     display: grid;
@@ -1312,6 +1696,10 @@
         height: 340px;
         width: 340px;
     }
+
+    .start-tech__grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 767px) {
@@ -1369,5 +1757,9 @@
 
     .start-showcase__panel.is-active {
         animation: none;
+    }
+
+    .start-nav {
+        transition: none;
     }
 }

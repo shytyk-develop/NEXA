@@ -16,6 +16,8 @@ export function initStartSite(pageStart) {
     if (!pageStart) return;
 
     bindOnce(pageStart);
+    pageStart.querySelector('.start-nav')?.classList.remove('is-visible');
+    pageStart.querySelector('.start-nav')?.setAttribute('aria-hidden', 'true');
     mountVortex(pageStart.querySelector('#startHeroVortex'));
     startMotion(pageStart);
     startQuotesRotation(pageStart);
@@ -26,6 +28,8 @@ export function teardownStartSite() {
     motionCtx = null;
     stopQuotesRotation();
     destroyVortex();
+    // Re-arm the intro so the next visit plays it from the top.
+    document.querySelector('.start-hero')?.classList.remove('is-ready');
 }
 
 /* ============================================================ bindings */
@@ -45,29 +49,62 @@ function bindNav(pageStart) {
     const toggle = pageStart.querySelector('#startNavToggle');
     const menu = pageStart.querySelector('#startNavMenu');
     const header = pageStart.querySelector('.start-nav');
+    const wordmark = pageStart.querySelector('.start-hero__wordmark');
 
-    if (!toggle || !menu || !header) return;
+    if (!header) return;
 
     const closeMenu = () => {
+        if (!toggle || !menu) return;
         header.classList.remove('is-open');
         toggle.setAttribute('aria-expanded', 'false');
         menu.hidden = true;
     };
 
-    toggle.addEventListener('click', () => {
-        const open = header.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        menu.hidden = !open;
-    });
+    if (toggle && menu) {
+        toggle.addEventListener('click', () => {
+            const open = header.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            menu.hidden = !open;
+        });
 
-    // Tapping an anchor in the mobile menu should close it before scrolling.
-    menu.addEventListener('click', (e) => {
-        if (e.target.closest('a')) closeMenu();
-    });
+        // Tapping an anchor in the mobile menu should close it before scrolling.
+        menu.addEventListener('click', (e) => {
+            if (e.target.closest('a')) closeMenu();
+        });
+    }
 
-    // The page itself is the scroll container, not the window.
+    // Hidden on load. Appears only after NEXA leaves the viewport while
+    // scrolling down; scrolling up tucks it back under the top edge.
+    let lastScroll = pageStart.scrollTop;
+    let ticking = false;
+
+    const syncNav = () => {
+        ticking = false;
+        const scrollTop = pageStart.scrollTop;
+        const goingDown = scrollTop > lastScroll + 2;
+        const goingUp = scrollTop < lastScroll - 2;
+        lastScroll = scrollTop;
+
+        const wordmarkGone = wordmark
+            ? wordmark.getBoundingClientRect().bottom < 140
+            : scrollTop > window.innerHeight * 0.4;
+
+        if (goingDown && wordmarkGone) {
+            header.classList.add('is-visible');
+            header.setAttribute('aria-hidden', 'false');
+        } else if (goingUp || !wordmarkGone) {
+            header.classList.remove('is-visible');
+            header.setAttribute('aria-hidden', 'true');
+            closeMenu();
+        }
+    };
+
+    header.setAttribute('aria-hidden', 'true');
+
     pageStart.addEventListener('scroll', () => {
-        header.classList.toggle('is-scrolled', pageStart.scrollTop > 32);
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(syncNav);
     }, { passive: true });
 }
 
@@ -165,14 +202,172 @@ function bindCardSpotlight(pageStart) {
     }, { passive: true });
 }
 
+/* ============================================================ hero intro */
+
+/** Wrap every character in its own inline-block so the tagline can be
+ *  animated letter by letter. Runs once — the spans are reused on revisits. */
+function splitLetters(el) {
+    if (el.dataset.split === 'true') {
+        return [...el.querySelectorAll('.start-char')];
+    }
+
+    const chars = [];
+    const frag = document.createDocumentFragment();
+
+    for (const ch of el.textContent) {
+        const span = document.createElement('span');
+        span.className = 'start-char';
+        if (ch === ' ') {
+            span.innerHTML = '&nbsp;';
+        } else {
+            span.textContent = ch;
+        }
+        frag.appendChild(span);
+        chars.push(span);
+    }
+
+    el.textContent = '';
+    el.appendChild(frag);
+    el.dataset.split = 'true';
+    return chars;
+}
+
+/**
+ * The load sequence. The wordmark arrives blurred and slightly overlapping the
+ * centre, then the two halves part around the vortex axis — the line appears to
+ * push them open. Everything else follows outwards from there.
+ */
+function playHeroIntro(pageStart) {
+    const hero = pageStart.querySelector('.start-hero');
+    if (!hero) return;
+
+    // Until this class lands, CSS keeps the hero pieces at opacity 0 so nothing
+    // flashes before the timeline takes over.
+    hero.classList.add('is-ready');
+
+    const glow = hero.querySelector('.start-hero__glow');
+    const wordmark = hero.querySelector('.start-hero__wordmark');
+    const halfNe = hero.querySelector('.start-hero__wordmark-half--ne');
+    const halfXa = hero.querySelector('.start-hero__wordmark-half--xa');
+    const tagline = hero.querySelector('.start-hero__tagline');
+    const features = [...hero.querySelectorAll('.start-hero__feature')];
+    const icons = [...hero.querySelectorAll('.start-hero__feature-icon')];
+    const ctaItems = [...hero.querySelectorAll('.start-hero__cta > *')];
+    const btnCircle = hero.querySelector('.start-motion-btn__circle');
+    const btnLabel = hero.querySelector('.start-motion-btn__label');
+    const btnIcon = hero.querySelector('.start-motion-btn__icon');
+
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    if (glow) {
+        tl.from(glow, { opacity: 0, duration: 1.8, ease: 'power2.out' }, 0);
+    }
+
+    if (wordmark) {
+        tl.fromTo(wordmark, {
+            opacity: 0,
+            scale: 1.07,
+            filter: 'blur(14px)',
+        }, {
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 1.5,
+        }, 0.1);
+    }
+
+    if (halfNe && halfXa) {
+        tl.from(halfNe, { x: 54, duration: 1.6, ease: 'expo.out' }, 0.1)
+          .from(halfXa, { x: -54, duration: 1.6, ease: 'expo.out' }, 0.1);
+    }
+
+    if (tagline) {
+        tl.fromTo(splitLetters(tagline), {
+            opacity: 0,
+            y: 18,
+            filter: 'blur(6px)',
+        }, {
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+            duration: 0.9,
+            stagger: 0.028,
+        }, 0.7);
+    }
+
+    if (features.length) {
+        tl.fromTo(features, {
+            opacity: 0,
+            x: -26,
+            filter: 'blur(5px)',
+        }, {
+            opacity: 1,
+            x: 0,
+            filter: 'blur(0px)',
+            duration: 0.9,
+            stagger: 0.13,
+        }, 0.85);
+
+        tl.from(icons, {
+            scale: 0.5,
+            duration: 0.7,
+            ease: 'back.out(2.2)',
+            stagger: 0.13,
+        }, 0.9);
+    }
+
+    if (ctaItems.length) {
+        tl.from(ctaItems, {
+            opacity: 0,
+            y: 22,
+            duration: 0.9,
+            stagger: 0.12,
+        }, 1);
+    }
+
+    // The button assembles itself: pill first, then its contents.
+    if (btnCircle) {
+        tl.from(btnCircle, { scale: 0.4, duration: 0.7, ease: 'back.out(2.4)' }, 1.12);
+    }
+    if (btnIcon && btnLabel) {
+        tl.from([btnIcon, btnLabel], { opacity: 0, duration: 0.5 }, 1.32);
+    }
+
+    // Hold the sequence until the wordmark art is decoded, otherwise the first
+    // beat plays against an empty box. Capped so a stalled request can't block.
+    const logos = [...hero.querySelectorAll('.start-hero__wordmark-half img')];
+    const pending = logos.filter((img) => !img.complete);
+
+    if (pending.length) {
+        tl.pause();
+        const start = () => tl.play();
+        pending.forEach((img) => {
+            img.addEventListener('load', () => {
+                if (logos.every((i) => i.complete)) start();
+            }, { once: true });
+            img.addEventListener('error', start, { once: true });
+        });
+        gsap.delayedCall(0.8, start);
+    }
+
+    return tl;
+}
+
 /* ============================================================ scroll motion */
 
 function startMotion(pageStart) {
     motionCtx?.revert();
     motionCtx = null;
-    if (reducedMotion()) return;
+
+    if (reducedMotion()) {
+        // No animation, but the hero must still be visible.
+        pageStart.querySelector('.start-hero')?.classList.add('is-ready');
+        return;
+    }
 
     motionCtx = gsap.context(() => {
+        playHeroIntro(pageStart);
+
         const trigger = (el, extra = {}) => ({
             trigger: el,
             scroller: pageStart,
