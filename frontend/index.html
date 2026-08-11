@@ -6,9 +6,7 @@
     <title>OriginHub</title>
     <link rel="icon" type="image/svg+xml" href="/brand/originhub-icon.svg">
     <link rel="apple-touch-icon" href="/brand/originhub-icon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/fonts.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/design-system.css">
     <link rel="stylesheet" href="/css/features.css">
@@ -47,8 +45,8 @@
 
         :root {
             /* Color tokens live in ventura-theme.css (data-theme light/dark) */
-            --f-ui: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
-            --f-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+            --f-ui: "Borna", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+            --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
             --r1: 8px;
             --r2: 12px;
             --r3: 16px;
@@ -610,13 +608,13 @@
             <header class="start-nav">
                 <div class="start-nav__row">
                     <div class="start-nav__brand">
-                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="start-nav__mark" width="1021" height="141" decoding="async">
+                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="start-nav__mark" width="1007" height="176" decoding="async">
                     </div>
 
                     <nav class="start-nav__links" aria-label="Sections">
                         <a href="#features" class="start-nav__link">Features</a>
                         <a href="#product" class="start-nav__link">Product</a>
-                        <a href="#security" class="start-nav__link">Security</a>
+                        <a href="#security" class="start-nav__link">Safety</a>
                         <a href="#faq" class="start-nav__link">FAQ</a>
                     </nav>
 
@@ -634,7 +632,7 @@
                     <div class="start-nav__menu-links">
                         <a href="#features" class="start-nav__link">Features</a>
                         <a href="#product" class="start-nav__link">Product</a>
-                        <a href="#security" class="start-nav__link">Security</a>
+                        <a href="#security" class="start-nav__link">Safety</a>
                         <a href="#faq" class="start-nav__link">FAQ</a>
                     </div>
                     <div class="start-nav__menu-actions">
@@ -648,27 +646,85 @@
                 <div id="startHeroVortex" class="start-hero__vortex" aria-hidden="true">
                     <canvas class="start-hero__vortex-canvas"></canvas>
                 </div>
+                <div class="start-hero__glow" aria-hidden="true"></div>
+
+                <div class="start-hero__content">
+                    <div class="start-hero__brand-block">
+                        <h1 class="start-hero__wordmark" aria-label="NEXA">
+                            <span class="start-hero__wordmark-half start-hero__wordmark-half--ne" aria-hidden="true">
+                                <img src="/brand/nexa-logo.svg" alt="" width="1007" height="176" decoding="async">
+                            </span>
+                            <span class="start-hero__wordmark-gap" aria-hidden="true"></span>
+                            <span class="start-hero__wordmark-half start-hero__wordmark-half--xa" aria-hidden="true">
+                                <img src="/brand/nexa-logo.svg" alt="" width="1007" height="176" decoding="async">
+                            </span>
+                        </h1>
+                        <p class="start-hero__tagline">Build beyond limits</p>
+                    </div>
+
+                    <ul class="start-hero__features">
+                        <li class="start-hero__feature">
+                            <span class="start-hero__feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+                            </span>
+                            <div>
+                                <strong>Powerful</strong>
+                                <p>Messages land instantly — no lag, no waiting on an app store.</p>
+                            </div>
+                        </li>
+                        <li class="start-hero__feature">
+                            <span class="start-hero__feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2 4 5v6c0 5.25 3.4 10.15 8 11 4.6-.85 8-5.75 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
+                            </span>
+                            <div>
+                                <strong>Secure</strong>
+                                <p>Locked on your device. Only you and the person you chose can open it.</p>
+                            </div>
+                        </li>
+                        <li class="start-hero__feature">
+                            <span class="start-hero__feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg>
+                            </span>
+                            <div>
+                                <strong>Ready</strong>
+                                <p>Open a tab. Talk freely. No phone number, no install.</p>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="start-hero__cta">
+                        <p class="start-hero__cta-text">Nexa is a private messenger to speak freely, connect safely, and keep your thoughts your own.</p>
+                        <a href="/login" data-link class="start-motion-btn" aria-label="Get started">
+                            <span class="start-motion-btn__circle" aria-hidden="true"></span>
+                            <span class="start-motion-btn__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                            </span>
+                            <span class="start-motion-btn__label">Get Started</span>
+                        </a>
+                        <a href="#" class="start-hero__docs">Explore Docs</a>
+                    </div>
+                </div>
             </section>
 
             <div class="start-marquee">
-                <p class="start-marquee__note">Placeholder — trusted by privacy-minded people and teams everywhere</p>
+                <p class="start-marquee__note">Built for people who want to speak freely — without looking over their shoulder</p>
                 <div class="start-marquee__viewport" aria-hidden="true">
                     <div class="start-marquee__track">
                         <div class="start-marquee__group">
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>End-to-end encrypted</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Zero plaintext stored</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Local-first keys</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Real-time delivery</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Open source</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No trackers</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Your words stay yours</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No ads watching you</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No phone number needed</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Works in your browser</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Open and honest</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Private by default</span>
                         </div>
                         <div class="start-marquee__group">
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>End-to-end encrypted</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Zero plaintext stored</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Local-first keys</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Real-time delivery</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Open source</span>
-                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No trackers</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Your words stay yours</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No ads watching you</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No phone number needed</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Works in your browser</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Open and honest</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Private by default</span>
                         </div>
                     </div>
                 </div>
@@ -677,30 +733,30 @@
             <section id="stats" class="start-section start-stats">
                 <header class="start-head start-head--center" data-reveal>
                     <p class="start-eyebrow">Why NEXA</p>
-                    <h2 class="start-h2">Private at every step.<br><span class="start-h2__dim">Fast at every message.</span></h2>
-                    <p class="start-lead">Placeholder copy — a short paragraph on why a messenger should answer to you, not to an ad network. Swap in the real pitch later.</p>
+                    <h2 class="start-h2">Say what you mean.<br><span class="start-h2__dim">Without fear.</span></h2>
+                    <p class="start-lead">Most chats leave a trail you never asked for. NEXA is a place where your thoughts can stay between the people you chose — calm, simple, and yours.</p>
                 </header>
 
                 <div class="start-stats__grid" data-reveal-stagger>
                     <div class="start-stat">
-                        <span class="start-stat__tag">Uptime</span>
-                        <div class="start-stat__value"><span data-count="99.9" data-count-decimals="1">99.9</span><span class="start-stat__unit">%</span></div>
-                        <p class="start-stat__note">Ensuring reliability</p>
+                        <span class="start-stat__tag">Phone number</span>
+                        <div class="start-stat__value">None</div>
+                        <p class="start-stat__note">Just a username. That’s enough.</p>
                     </div>
                     <div class="start-stat">
-                        <span class="start-stat__tag">Key strength</span>
-                        <div class="start-stat__value"><span data-count="2048">2048</span><span class="start-stat__unit">bit</span></div>
-                        <p class="start-stat__note">Generated in your browser</p>
+                        <span class="start-stat__tag">Who can read it</span>
+                        <div class="start-stat__value">You</div>
+                        <p class="start-stat__note">And the person you wrote to.</p>
                     </div>
                     <div class="start-stat">
-                        <span class="start-stat__tag">Delivery</span>
-                        <div class="start-stat__value"><span data-count="0.2" data-count-decimals="1">0.2</span><span class="start-stat__unit">s</span></div>
-                        <p class="start-stat__note">Lightning-fast, real-time</p>
-                    </div>
-                    <div class="start-stat">
-                        <span class="start-stat__tag">Plaintext stored</span>
+                        <span class="start-stat__tag">Ads &amp; trackers</span>
                         <div class="start-stat__value"><span data-count="0">0</span></div>
-                        <p class="start-stat__note">Redefining trust</p>
+                        <p class="start-stat__note">Nothing to sell. Nobody to sell you to.</p>
+                    </div>
+                    <div class="start-stat">
+                        <span class="start-stat__tag">To get started</span>
+                        <div class="start-stat__value">1 tab</div>
+                        <p class="start-stat__note">Open it. Chat. That’s the install.</p>
                     </div>
                 </div>
             </section>
@@ -710,10 +766,10 @@
                     <div class="start-split__visual" data-reveal>
                         <div class="start-card start-card--cipher">
                             <div class="start-cipher__chips">
-                                <span class="start-chip">AES-GCM-256</span>
-                                <span class="start-chip start-chip--ghost">RSA-OAEP-2048</span>
+                                <span class="start-chip">Locked on your device</span>
+                                <span class="start-chip start-chip--ghost">Only you hold the key</span>
                             </div>
-                            <p class="start-cipher__label">content_recipient · envelope v2</p>
+                            <p class="start-cipher__label">What leaves your screen · unreadable to anyone else</p>
                             <div class="start-cipher__lines">
                                 <div class="start-cipher__line"><span>gQ4tZk81</span><span>Jm0Qxk2v</span><span>ppL7d2Nc</span><span>xAe9WkQ=</span></div>
                                 <div class="start-cipher__line"><span>u7RfB2mE</span><span>Zz01vPqL</span><span>Hk83nT5d</span></div>
@@ -723,20 +779,20 @@
                             </div>
                             <div class="start-cipher__foot">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                Sealed before it leaves this tab
+                                Locked before it ever leaves this tab
                             </div>
                         </div>
                     </div>
                     <div class="start-split__copy" data-reveal>
-                        <p class="start-eyebrow">Encryption</p>
-                        <h3 class="start-h3">Your words, sealed in the browser</h3>
-                        <p class="start-lead">Placeholder — explain that every message is encrypted on the device before it travels, and the server only ever sees ciphertext.</p>
+                        <p class="start-eyebrow">Your privacy</p>
+                        <h3 class="start-h3">Your thoughts aren’t a product</h3>
+                        <p class="start-lead">If you’ve ever hesitated before typing something personal — this is for you. Messages are locked on your device first. What travels the internet looks like noise. Not even we can open it.</p>
                         <ul class="start-checks">
-                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Fresh AES key for every message</li>
-                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Private keys never leave your device</li>
-                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>The server can route, but never read</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Locked on your phone or laptop — before send</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Your keys stay with you, not on our servers</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>We can deliver a message — we can’t read it</li>
                         </ul>
-                        <a href="/login" data-link class="start-btn start-btn--ghost">Start encrypting<span class="start-btn__arrow" aria-hidden="true">→</span></a>
+                        <a href="/login" data-link class="start-btn start-btn--ghost">Start talking freely<span class="start-btn__arrow" aria-hidden="true">→</span></a>
                     </div>
                 </div>
 
@@ -746,10 +802,10 @@
                             <div class="start-chatmock">
                                 <div class="start-chatmock__row">
                                     <span class="start-chatmock__avatar" aria-hidden="true"></span>
-                                    <div class="start-chatmock__bubble">Is this actually private?</div>
+                                    <div class="start-chatmock__bubble">Can I say this here?</div>
                                 </div>
                                 <div class="start-chatmock__row start-chatmock__row--out">
-                                    <div class="start-chatmock__bubble start-chatmock__bubble--out">Every word. Encrypted before it leaves the tab.</div>
+                                    <div class="start-chatmock__bubble start-chatmock__bubble--out">Yes. Only we can open it.</div>
                                 </div>
                                 <div class="start-chatmock__row">
                                     <span class="start-chatmock__avatar" aria-hidden="true"></span>
@@ -760,15 +816,15 @@
                         </div>
                     </div>
                     <div class="start-split__copy" data-reveal>
-                        <p class="start-eyebrow">Real-time</p>
-                        <h3 class="start-h3">Delivered the moment you hit send</h3>
-                        <p class="start-lead">Placeholder — typing indicators, presence, read receipts and an offline queue, all over a single WebSocket connection.</p>
+                        <p class="start-eyebrow">The feeling</p>
+                        <h3 class="start-h3">Talk like nobody’s listening</h3>
+                        <p class="start-lead">Freedom of speech starts with feeling safe. NEXA is still a normal chat — replies, reactions, “typing…” — just without the quiet worry that someone else is in the room.</p>
                         <ul class="start-checks">
-                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Typing and presence, privacy-controlled</li>
-                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Read receipts and delivery acks</li>
-                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Offline queue for missed messages</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Instant messages, just like you’d expect</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>You choose what others can see about you</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Messages wait safely if someone’s offline</li>
                         </ul>
-                        <a href="/login" data-link class="start-btn start-btn--ghost">See it live<span class="start-btn__arrow" aria-hidden="true">→</span></a>
+                        <a href="/login" data-link class="start-btn start-btn--ghost">Try a real conversation<span class="start-btn__arrow" aria-hidden="true">→</span></a>
                     </div>
                 </div>
             </section>
@@ -776,8 +832,8 @@
             <section id="product" class="start-section start-showcase">
                 <header class="start-head start-head--center" data-reveal>
                     <p class="start-eyebrow">The product</p>
-                    <h2 class="start-h2">Take a look inside</h2>
-                    <p class="start-lead">Placeholder — a line inviting people to explore the interface. Real screenshots drop straight into the frame below.</p>
+                    <h2 class="start-h2">Familiar. Calm.<br><span class="start-h2__dim">Finally private.</span></h2>
+                    <p class="start-lead">You shouldn’t need a manual to feel safe. Here’s a peek at the interface — screenshots go here when they’re ready.</p>
                 </header>
 
                 <div class="start-showcase__tabs" role="tablist" aria-label="Interface views" data-reveal>
@@ -799,29 +855,29 @@
                         <div class="start-showcase__panel is-active" data-showcase-panel="chats">
                             <div class="start-shot">
                                 <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-                                <span class="start-shot__label">Screenshot placeholder — Chats</span>
-                                <span class="start-shot__hint">Conversation list · message thread · composer</span>
+                                <span class="start-shot__label">Chats — screenshot coming soon</span>
+                                <span class="start-shot__hint">Your conversations, clear and calm</span>
                             </div>
                         </div>
                         <div class="start-showcase__panel" data-showcase-panel="privacy">
                             <div class="start-shot">
                                 <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2 4 5v6c0 5.25 3.4 10.15 8 11 4.6-.85 8-5.75 8-11V5l-8-3z"/></svg></span>
-                                <span class="start-shot__label">Screenshot placeholder — Privacy controls</span>
-                                <span class="start-shot__hint">Presence · typing visibility · data control</span>
+                                <span class="start-shot__label">Privacy — screenshot coming soon</span>
+                                <span class="start-shot__hint">You’re in control of what’s shared</span>
                             </div>
                         </div>
                         <div class="start-showcase__panel" data-showcase-panel="themes">
                             <div class="start-shot">
                                 <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.75-.15 2.55-.4"/></svg></span>
-                                <span class="start-shot__label">Screenshot placeholder — Themes</span>
-                                <span class="start-shot__hint">Light · dark · glass intensity</span>
+                                <span class="start-shot__label">Themes — screenshot coming soon</span>
+                                <span class="start-shot__hint">Light, dark — make it yours</span>
                             </div>
                         </div>
                         <div class="start-showcase__panel" data-showcase-panel="profile">
                             <div class="start-shot">
                                 <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>
-                                <span class="start-shot__label">Screenshot placeholder — Profiles</span>
-                                <span class="start-shot__hint">Identity · mini-profiles · settings</span>
+                                <span class="start-shot__label">Profiles — screenshot coming soon</span>
+                                <span class="start-shot__hint">How you show up to others</span>
                             </div>
                         </div>
                     </div>
@@ -830,9 +886,9 @@
 
             <section id="security" class="start-section start-orbit">
                 <header class="start-head start-head--center" data-reveal>
-                    <p class="start-eyebrow">Security</p>
-                    <h2 class="start-h2">Effortless security<br><span class="start-h2__dim">across every layer</span></h2>
-                    <p class="start-lead">Placeholder — hybrid encryption, local keys and ciphertext-only storage working together underneath a simple chat window.</p>
+                    <p class="start-eyebrow">How it stays safe</p>
+                    <h2 class="start-h2">Strong under the hood.<br><span class="start-h2__dim">Simple on the surface.</span></h2>
+                    <p class="start-lead">You don’t need to understand the math to feel protected. Everything hard runs quietly in the background — so you can just talk.</p>
                 </header>
 
                 <div class="start-orbit__stage" data-reveal aria-hidden="true">
@@ -849,43 +905,64 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
                     </div>
                 </div>
+
+                <div class="start-tech" data-reveal>
+                    <p class="start-tech__intro">Curious how it works? Here’s the short version — no jargon required to use NEXA, but you’re welcome to look closer.</p>
+                    <div class="start-tech__grid">
+                        <article class="start-tech__item">
+                            <h4>Locked on your device</h4>
+                            <p>Each message is sealed before it leaves your browser. What travels the network is scrambled — useless without your key.</p>
+                            <span class="start-tech__detail">AES-GCM · RSA-OAEP</span>
+                        </article>
+                        <article class="start-tech__item">
+                            <h4>Keys stay with you</h4>
+                            <p>Your private key is born on your device and protected by your password. We never see it in a form we can use.</p>
+                            <span class="start-tech__detail">Generated locally · password-wrapped backup</span>
+                        </article>
+                        <article class="start-tech__item">
+                            <h4>We deliver, we don’t read</h4>
+                            <p>Our servers move messages and store only the locked version. Routing is our job. Reading is not.</p>
+                            <span class="start-tech__detail">Ciphertext only · open source</span>
+                        </article>
+                    </div>
+                </div>
             </section>
 
             <section class="start-section start-quotes">
                 <header class="start-head start-head--center" data-reveal>
-                    <p class="start-eyebrow">Community</p>
-                    <h2 class="start-h2">Trusted by people,<br><span class="start-h2__dim">loved by users</span></h2>
-                    <p class="start-lead">Placeholder — swap these quotes for real feedback once it lands.</p>
+                    <p class="start-eyebrow">People like you</p>
+                    <h2 class="start-h2">Finally, a chat that<br><span class="start-h2__dim">doesn’t feel watched</span></h2>
+                    <p class="start-lead">Stories from people who wanted a quieter, freer place to talk. (Names here are placeholders for now.)</p>
                 </header>
 
                 <div class="start-quotes__stage" data-reveal>
                     <figure class="start-quote is-active" data-quote>
-                        <blockquote>“Placeholder quote — this messenger has completely changed how our team talks. Knowing nothing readable ever touches a server makes it an easy default.”</blockquote>
+                        <blockquote>“I used to delete half of what I typed. Here I just… write. Knowing it stays between us changed everything.”</blockquote>
                         <figcaption>
                             <span class="start-quote__avatar" aria-hidden="true"></span>
                             <div>
-                                <strong>Sarah Placeholder</strong>
-                                <span>Operations manager</span>
+                                <strong>Maya</strong>
+                                <span>Journalist</span>
                             </div>
                         </figcaption>
                     </figure>
                     <figure class="start-quote" data-quote>
-                        <blockquote>“Placeholder quote — setup took two minutes in a browser tab. No installs, no phone number, and the interface feels faster than the apps we replaced.”</blockquote>
+                        <blockquote>“No app store, no phone number, no weird permissions. I opened a tab and felt lighter in five minutes.”</blockquote>
                         <figcaption>
                             <span class="start-quote__avatar" aria-hidden="true"></span>
                             <div>
-                                <strong>Alex Placeholder</strong>
-                                <span>Product designer</span>
+                                <strong>Leo</strong>
+                                <span>Student</span>
                             </div>
                         </figcaption>
                     </figure>
                     <figure class="start-quote" data-quote>
-                        <blockquote>“Placeholder quote — I audited the crypto layer myself before rolling it out. Open source, local keys, ciphertext-only storage. Exactly what it claims.”</blockquote>
+                        <blockquote>“I care about privacy, but I’m not an engineer. NEXA doesn’t make me feel dumb for wanting both safety and a normal chat.”</blockquote>
                         <figcaption>
                             <span class="start-quote__avatar" aria-hidden="true"></span>
                             <div>
-                                <strong>Jordan Placeholder</strong>
-                                <span>Security engineer</span>
+                                <strong>Nina</strong>
+                                <span>Teacher</span>
                             </div>
                         </figcaption>
                     </figure>
@@ -901,53 +978,53 @@
             <section id="faq" class="start-section start-faq">
                 <header class="start-head start-head--center" data-reveal>
                     <p class="start-eyebrow">FAQ</p>
-                    <h2 class="start-h2">Frequently asked<br><span class="start-h2__dim">questions</span></h2>
-                    <p class="start-lead">Placeholder — have another question? Reach out and we’ll answer.</p>
+                    <h2 class="start-h2">Questions you’re<br><span class="start-h2__dim">allowed to ask</span></h2>
+                    <p class="start-lead">Worried about something? You’re not alone. Straight answers below.</p>
                 </header>
 
                 <div class="start-faq__list" data-reveal-stagger>
                     <div class="start-faq__item is-open">
                         <button type="button" class="start-faq__q" aria-expanded="true">
-                            <span>What is NEXA?</span>
+                            <span>What is NEXA, in plain words?</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
-                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — a web messenger where every message is encrypted in your browser before it is sent. The server stores and routes ciphertext, and only the people in the conversation hold the keys.</p></div></div>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>A messenger that runs in your browser. You create a username, find people, and chat. Messages are locked on your device first — so only you and the person you’re talking to can open them.</p></div></div>
                     </div>
                     <div class="start-faq__item">
                         <button type="button" class="start-faq__q" aria-expanded="false">
-                            <span>How is it different from other messengers?</span>
+                            <span>Why should I care about privacy?</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
-                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — no installs, no phone number, no trackers. It runs entirely in the browser, keys are generated locally, and the code is open for anyone to audit.</p></div></div>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Because free speech needs a safe room. When you’re not sure who can see your words, you start editing yourself. NEXA exists so you don’t have to.</p></div></div>
                     </div>
                     <div class="start-faq__item">
                         <button type="button" class="start-faq__q" aria-expanded="false">
-                            <span>Can the server read my messages?</span>
+                            <span>Can NEXA (or anyone else) read my chats?</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
-                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — no. Messages are sealed with AES-GCM and RSA-OAEP before they leave the tab. The server only ever sees encrypted bytes and routing metadata.</p></div></div>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>No. We only see the locked version of your messages — enough to deliver them, not enough to read them. Your keys never leave your device in a usable form.</p></div></div>
                     </div>
                     <div class="start-faq__item">
                         <button type="button" class="start-faq__q" aria-expanded="false">
-                            <span>What happens if I lose my password?</span>
+                            <span>Do I need to download an app?</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
-                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — your private key is encrypted with your password, so the password is the only way back in. Nobody can reset it for you, which is the point.</p></div></div>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>No. Open the site, sign up, start chatting. No phone number, no store listing, no permission maze.</p></div></div>
                     </div>
                     <div class="start-faq__item">
                         <button type="button" class="start-faq__q" aria-expanded="false">
-                            <span>Is it open source?</span>
+                            <span>What if I lose my password?</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
-                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — yes. The full client and server are public. Inspect the crypto layer, run your own instance, or contribute.</p></div></div>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Your password protects your key — and we can’t reset that for you. That’s the trade-off of real privacy: nobody, including us, can “unlock” your account from the outside. Pick something you’ll remember, and keep it safe.</p></div></div>
                     </div>
                 </div>
             </section>
 
             <div class="start-cta-band" data-reveal>
                 <div class="start-cta-band__inner">
-                    <h2 class="start-cta-band__title">Switch to private<br>by default</h2>
-                    <p class="start-cta-band__text">Placeholder — one line that makes signing up feel obvious. No installs, no phone number, just a browser tab.</p>
+                    <h2 class="start-cta-band__title">Speak freely.<br>Start here.</h2>
+                    <p class="start-cta-band__text">No install. No phone number. Just a quiet place to say what you mean — and keep it between you and the people you trust.</p>
                     <a href="/login" data-link class="start-btn start-btn--primary">Open messenger<span class="start-btn__arrow" aria-hidden="true">→</span></a>
                 </div>
             </div>
@@ -955,38 +1032,38 @@
             <footer class="start-footer">
                 <div class="start-footer__top">
                     <div class="start-footer__brand">
-                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="start-footer__mark" width="1021" height="141" decoding="async">
-                        <p>Placeholder — a private, end-to-end encrypted messenger that lives in your browser.</p>
+                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="start-footer__mark" width="1007" height="176" decoding="async">
+                        <p>A private messenger for free speech and quiet minds — locked on your device, open in your browser.</p>
                         <div class="start-footer__social">
                             <a href="https://github.com/shytyk-develop" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.59.23 2.76.12 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.66.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .3.2.67.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg></a>
                             <a href="https://www.linkedin.com/in/jan-shytyk/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></a>
-                            <a href="#" aria-label="X (placeholder)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4l16 16M20 4 4 20"/></svg></a>
+                            <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4l16 16M20 4 4 20"/></svg></a>
                         </div>
                     </div>
                     <nav class="start-footer__cols" aria-label="Footer">
                         <div class="start-footer__col">
                             <h4>Product</h4>
                             <a href="#features">Features</a>
-                            <a href="#product">Screenshots</a>
-                            <a href="#security">Security</a>
+                            <a href="#product">Look inside</a>
+                            <a href="#security">How it stays safe</a>
                             <a href="#faq">FAQ</a>
                         </div>
                         <div class="start-footer__col">
                             <h4>Company</h4>
-                            <a href="#">About (placeholder)</a>
-                            <a href="#">Blog (placeholder)</a>
-                            <a href="#">Careers (placeholder)</a>
+                            <a href="#">About</a>
+                            <a href="#">Blog</a>
+                            <a href="#">Careers</a>
                         </div>
                         <div class="start-footer__col">
                             <h4>Resources</h4>
-                            <a href="#">Docs (placeholder)</a>
-                            <a href="#">Self-hosting (placeholder)</a>
-                            <a href="#">Status (placeholder)</a>
+                            <a href="#">Help center</a>
+                            <a href="#">Self-hosting</a>
+                            <a href="#">Status</a>
                         </div>
                         <div class="start-footer__col">
                             <h4>Legal</h4>
-                            <a href="#">Privacy (placeholder)</a>
-                            <a href="#">Terms (placeholder)</a>
+                            <a href="#">Privacy</a>
+                            <a href="#">Terms</a>
                         </div>
                     </nav>
                 </div>
@@ -996,8 +1073,8 @@
                 </div>
 
                 <div class="start-footer__bottom">
-                    <span>© 2026 NEXA — Encrypted in the browser</span>
-                    <span>Placeholder tagline</span>
+                    <span>© 2026 NEXA — Speak freely</span>
+                    <span>Locked on your device. Open in your browser.</span>
                 </div>
             </footer>
         </div>
@@ -1015,7 +1092,7 @@
             <header class="login-nav">
                 <div class="login-nav__row">
                     <div class="login-nav__brand">
-                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="login-nav__mark" width="1021" height="141" decoding="async">
+                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="login-nav__mark" width="1007" height="176" decoding="async">
                     </div>
 
                     <nav class="login-nav__links" aria-label="Product">
