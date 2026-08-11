@@ -615,8 +615,9 @@
 
                     <nav class="start-nav__links" aria-label="Sections">
                         <a href="#features" class="start-nav__link">Features</a>
-                        <a href="#how-it-works" class="start-nav__link">How it works</a>
+                        <a href="#product" class="start-nav__link">Product</a>
                         <a href="#security" class="start-nav__link">Security</a>
+                        <a href="#faq" class="start-nav__link">FAQ</a>
                     </nav>
 
                     <div class="start-nav__actions">
@@ -632,8 +633,9 @@
                 <div id="startNavMenu" class="start-nav__menu" hidden>
                     <div class="start-nav__menu-links">
                         <a href="#features" class="start-nav__link">Features</a>
-                        <a href="#how-it-works" class="start-nav__link">How it works</a>
+                        <a href="#product" class="start-nav__link">Product</a>
                         <a href="#security" class="start-nav__link">Security</a>
+                        <a href="#faq" class="start-nav__link">FAQ</a>
                     </div>
                     <div class="start-nav__menu-actions">
                         <a href="/login" data-link class="start-nav__btn">Log in</a>
@@ -648,136 +650,354 @@
                 </div>
             </section>
 
-            <section id="features" class="start-section">
-                <p class="start-section__eyebrow">Features</p>
-                <h2 class="start-section__title">Everything you need for private messaging</h2>
-                <p class="start-section__desc">A full-featured messenger with security at the core — reactions, replies, read receipts, and more, without compromising on privacy.</p>
-
-                <div class="start-features">
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5.25 3.4 10.15 8 11 4.6-.85 8-5.75 8-11V5l-8-3z"/></svg>
+            <div class="start-marquee">
+                <p class="start-marquee__note">Placeholder — trusted by privacy-minded people and teams everywhere</p>
+                <div class="start-marquee__viewport" aria-hidden="true">
+                    <div class="start-marquee__track">
+                        <div class="start-marquee__group">
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>End-to-end encrypted</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Zero plaintext stored</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Local-first keys</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Real-time delivery</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Open source</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No trackers</span>
                         </div>
-                        <h3 class="start-feature__title">End-to-end encrypted</h3>
-                        <p class="start-feature__text">Messages are encrypted with AES-GCM and RSA-OAEP entirely in your browser. The server stores only ciphertext — never plaintext.</p>
-                    </article>
-
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <div class="start-marquee__group">
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>End-to-end encrypted</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Zero plaintext stored</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Local-first keys</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Real-time delivery</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Open source</span>
+                            <span class="start-marquee__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>No trackers</span>
                         </div>
-                        <h3 class="start-feature__title">Real-time chat</h3>
-                        <p class="start-feature__text">Instant message delivery over WebSockets with typing indicators, presence, read receipts, and offline queue for disconnected users.</p>
-                    </article>
-
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        </div>
-                        <h3 class="start-feature__title">Your keys, your device</h3>
-                        <p class="start-feature__text">RSA key pairs are generated locally. Private keys are encrypted with your password before backup — decrypted only after login.</p>
-                    </article>
-
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                        </div>
-                        <h3 class="start-feature__title">Rich messaging</h3>
-                        <p class="start-feature__text">Reply to messages, react with emoji, detect links safely, and manage conversations — all with incremental UI updates.</p>
-                    </article>
-
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>
-                        </div>
-                        <h3 class="start-feature__title">Profiles &amp; privacy</h3>
-                        <p class="start-feature__text">Customize your profile, control presence and typing visibility, and manage your data with granular privacy settings.</p>
-                    </article>
-
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.75-.15 2.55-.4"/></svg>
-                        </div>
-                        <h3 class="start-feature__title">Light &amp; dark themes</h3>
-                        <p class="start-feature__text">Switch between light, dark, and system themes. Adjust glass intensity for a look that fits your style.</p>
-                    </article>
-                </div>
-            </section>
-
-            <section id="how-it-works" class="start-section">
-                <p class="start-section__eyebrow">How it works</p>
-                <h2 class="start-section__title">Three steps to private messaging</h2>
-                <p class="start-section__desc">No app install required. Open the browser, create an account, and start chatting securely.</p>
-
-                <div class="start-steps">
-                    <article class="start-step">
-                        <div class="start-step__num">01</div>
-                        <h3 class="start-step__title">Create your account</h3>
-                        <p class="start-step__text">Register with a username and password. Your browser generates an RSA key pair locally — keys never leave unencrypted.</p>
-                    </article>
-                    <article class="start-step">
-                        <div class="start-step__num">02</div>
-                        <h3 class="start-step__title">Find your contacts</h3>
-                        <p class="start-step__text">Search for other users and open a conversation. Public keys are exchanged automatically for secure messaging.</p>
-                    </article>
-                    <article class="start-step">
-                        <div class="start-step__num">03</div>
-                        <h3 class="start-step__title">Chat in real time</h3>
-                        <p class="start-step__text">Send encrypted messages that deliver instantly. Only you and your recipient can read the content.</p>
-                    </article>
-                </div>
-            </section>
-
-            <section id="security" class="start-section">
-                <p class="start-section__eyebrow">Security</p>
-                <h2 class="start-section__title">Encrypted in the browser</h2>
-                <p class="start-section__desc">OriginHub uses the Web Crypto API for all cryptographic operations. Each message gets a fresh AES key. The server routes ciphertext and metadata — it cannot decrypt your conversations.</p>
-
-                <div class="start-features">
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                        <h3 class="start-feature__title">Hybrid encryption</h3>
-                        <p class="start-feature__text">AES-GCM-256 for content, RSA-OAEP-2048 for key wrapping. Double ciphertext storage for sender and recipient copies.</p>
-                    </article>
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-                        </div>
-                        <h3 class="start-feature__title">Server sees ciphertext only</h3>
-                        <p class="start-feature__text">PostgreSQL stores encrypted blobs and routing metadata. Message plaintext never touches the server.</p>
-                    </article>
-                    <article class="start-feature">
-                        <div class="start-feature__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </div>
-                        <h3 class="start-feature__title">Transparent by design</h3>
-                        <p class="start-feature__text">Open-source reference implementation. Inspect the crypto layer, audit the code, and self-host if you prefer.</p>
-                    </article>
-                </div>
-            </section>
-
-            <div class="start-cta-band">
-                <div class="start-cta-band__inner">
-                    <div>
-                        <h2 class="start-cta-band__title">Ready to chat securely?</h2>
-                        <p class="start-cta-band__text">Create a free account and start messaging with end-to-end encryption in minutes.</p>
                     </div>
-                    <a href="/login" data-link class="start-hero__cta">
-                        Open messenger
-                        <span class="start-hero__cta-icon" aria-hidden="true">→</span>
-                    </a>
+                </div>
+            </div>
+
+            <section id="stats" class="start-section start-stats">
+                <header class="start-head start-head--center" data-reveal>
+                    <p class="start-eyebrow">Why NEXA</p>
+                    <h2 class="start-h2">Private at every step.<br><span class="start-h2__dim">Fast at every message.</span></h2>
+                    <p class="start-lead">Placeholder copy — a short paragraph on why a messenger should answer to you, not to an ad network. Swap in the real pitch later.</p>
+                </header>
+
+                <div class="start-stats__grid" data-reveal-stagger>
+                    <div class="start-stat">
+                        <span class="start-stat__tag">Uptime</span>
+                        <div class="start-stat__value"><span data-count="99.9" data-count-decimals="1">99.9</span><span class="start-stat__unit">%</span></div>
+                        <p class="start-stat__note">Ensuring reliability</p>
+                    </div>
+                    <div class="start-stat">
+                        <span class="start-stat__tag">Key strength</span>
+                        <div class="start-stat__value"><span data-count="2048">2048</span><span class="start-stat__unit">bit</span></div>
+                        <p class="start-stat__note">Generated in your browser</p>
+                    </div>
+                    <div class="start-stat">
+                        <span class="start-stat__tag">Delivery</span>
+                        <div class="start-stat__value"><span data-count="0.2" data-count-decimals="1">0.2</span><span class="start-stat__unit">s</span></div>
+                        <p class="start-stat__note">Lightning-fast, real-time</p>
+                    </div>
+                    <div class="start-stat">
+                        <span class="start-stat__tag">Plaintext stored</span>
+                        <div class="start-stat__value"><span data-count="0">0</span></div>
+                        <p class="start-stat__note">Redefining trust</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="features" class="start-section">
+                <div class="start-split">
+                    <div class="start-split__visual" data-reveal>
+                        <div class="start-card start-card--cipher">
+                            <div class="start-cipher__chips">
+                                <span class="start-chip">AES-GCM-256</span>
+                                <span class="start-chip start-chip--ghost">RSA-OAEP-2048</span>
+                            </div>
+                            <p class="start-cipher__label">content_recipient · envelope v2</p>
+                            <div class="start-cipher__lines">
+                                <div class="start-cipher__line"><span>gQ4tZk81</span><span>Jm0Qxk2v</span><span>ppL7d2Nc</span><span>xAe9WkQ=</span></div>
+                                <div class="start-cipher__line"><span>u7RfB2mE</span><span>Zz01vPqL</span><span>Hk83nT5d</span></div>
+                                <div class="start-cipher__line"><span>Qw9yLmC4</span><span>tG62xVbN</span><span>sK17jRe8</span><span>oPd3fUw2</span></div>
+                                <div class="start-cipher__line"><span>eN30zSqX</span><span>cV84wHtM</span><span>bF5a9dKe</span></div>
+                                <div class="start-cipher__line start-cipher__line--dim"><span>rB56kLp9</span><span>dJ21uYfG</span><span>iW7c…</span></div>
+                            </div>
+                            <div class="start-cipher__foot">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                Sealed before it leaves this tab
+                            </div>
+                        </div>
+                    </div>
+                    <div class="start-split__copy" data-reveal>
+                        <p class="start-eyebrow">Encryption</p>
+                        <h3 class="start-h3">Your words, sealed in the browser</h3>
+                        <p class="start-lead">Placeholder — explain that every message is encrypted on the device before it travels, and the server only ever sees ciphertext.</p>
+                        <ul class="start-checks">
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Fresh AES key for every message</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Private keys never leave your device</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>The server can route, but never read</li>
+                        </ul>
+                        <a href="/login" data-link class="start-btn start-btn--ghost">Start encrypting<span class="start-btn__arrow" aria-hidden="true">→</span></a>
+                    </div>
+                </div>
+
+                <div class="start-split start-split--flip">
+                    <div class="start-split__visual" data-reveal>
+                        <div class="start-card start-card--chat">
+                            <div class="start-chatmock">
+                                <div class="start-chatmock__row">
+                                    <span class="start-chatmock__avatar" aria-hidden="true"></span>
+                                    <div class="start-chatmock__bubble">Is this actually private?</div>
+                                </div>
+                                <div class="start-chatmock__row start-chatmock__row--out">
+                                    <div class="start-chatmock__bubble start-chatmock__bubble--out">Every word. Encrypted before it leaves the tab.</div>
+                                </div>
+                                <div class="start-chatmock__row">
+                                    <span class="start-chatmock__avatar" aria-hidden="true"></span>
+                                    <div class="start-chatmock__bubble start-chatmock__bubble--typing"><span></span><span></span><span></span></div>
+                                </div>
+                                <p class="start-chatmock__meta">Read · just now</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="start-split__copy" data-reveal>
+                        <p class="start-eyebrow">Real-time</p>
+                        <h3 class="start-h3">Delivered the moment you hit send</h3>
+                        <p class="start-lead">Placeholder — typing indicators, presence, read receipts and an offline queue, all over a single WebSocket connection.</p>
+                        <ul class="start-checks">
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Typing and presence, privacy-controlled</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Read receipts and delivery acks</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>Offline queue for missed messages</li>
+                        </ul>
+                        <a href="/login" data-link class="start-btn start-btn--ghost">See it live<span class="start-btn__arrow" aria-hidden="true">→</span></a>
+                    </div>
+                </div>
+            </section>
+
+            <section id="product" class="start-section start-showcase">
+                <header class="start-head start-head--center" data-reveal>
+                    <p class="start-eyebrow">The product</p>
+                    <h2 class="start-h2">Take a look inside</h2>
+                    <p class="start-lead">Placeholder — a line inviting people to explore the interface. Real screenshots drop straight into the frame below.</p>
+                </header>
+
+                <div class="start-showcase__tabs" role="tablist" aria-label="Interface views" data-reveal>
+                    <button type="button" class="start-showcase__tab is-active" data-showcase-tab="chats" role="tab" aria-selected="true">Chats</button>
+                    <button type="button" class="start-showcase__tab" data-showcase-tab="privacy" role="tab" aria-selected="false">Privacy</button>
+                    <button type="button" class="start-showcase__tab" data-showcase-tab="themes" role="tab" aria-selected="false">Themes</button>
+                    <button type="button" class="start-showcase__tab" data-showcase-tab="profile" role="tab" aria-selected="false">Profiles</button>
+                </div>
+
+                <div class="start-showcase__frame" data-reveal>
+                    <div class="start-showcase__chrome" aria-hidden="true">
+                        <span class="start-showcase__dot"></span>
+                        <span class="start-showcase__dot"></span>
+                        <span class="start-showcase__dot"></span>
+                        <span class="start-showcase__url">nexa.chat</span>
+                    </div>
+                    <div class="start-showcase__viewport">
+                        <!-- Replace each .start-shot with an <img> of the real screenshot when ready -->
+                        <div class="start-showcase__panel is-active" data-showcase-panel="chats">
+                            <div class="start-shot">
+                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                                <span class="start-shot__label">Screenshot placeholder — Chats</span>
+                                <span class="start-shot__hint">Conversation list · message thread · composer</span>
+                            </div>
+                        </div>
+                        <div class="start-showcase__panel" data-showcase-panel="privacy">
+                            <div class="start-shot">
+                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2 4 5v6c0 5.25 3.4 10.15 8 11 4.6-.85 8-5.75 8-11V5l-8-3z"/></svg></span>
+                                <span class="start-shot__label">Screenshot placeholder — Privacy controls</span>
+                                <span class="start-shot__hint">Presence · typing visibility · data control</span>
+                            </div>
+                        </div>
+                        <div class="start-showcase__panel" data-showcase-panel="themes">
+                            <div class="start-shot">
+                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.75-.15 2.55-.4"/></svg></span>
+                                <span class="start-shot__label">Screenshot placeholder — Themes</span>
+                                <span class="start-shot__hint">Light · dark · glass intensity</span>
+                            </div>
+                        </div>
+                        <div class="start-showcase__panel" data-showcase-panel="profile">
+                            <div class="start-shot">
+                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>
+                                <span class="start-shot__label">Screenshot placeholder — Profiles</span>
+                                <span class="start-shot__hint">Identity · mini-profiles · settings</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="security" class="start-section start-orbit">
+                <header class="start-head start-head--center" data-reveal>
+                    <p class="start-eyebrow">Security</p>
+                    <h2 class="start-h2">Effortless security<br><span class="start-h2__dim">across every layer</span></h2>
+                    <p class="start-lead">Placeholder — hybrid encryption, local keys and ciphertext-only storage working together underneath a simple chat window.</p>
+                </header>
+
+                <div class="start-orbit__stage" data-reveal aria-hidden="true">
+                    <div class="start-orbit__glow"></div>
+                    <div class="start-orbit__ring start-orbit__ring--outer"></div>
+                    <div class="start-orbit__ring start-orbit__ring--dash"></div>
+                    <div class="start-orbit__spinner">
+                        <div class="start-orbit__sat" style="--a: 0deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></div>
+                        <div class="start-orbit__sat" style="--a: 90deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M16 5l3 3M13 8l3 3"/></svg></span></div>
+                        <div class="start-orbit__sat" style="--a: 180deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3l18 18M10.6 5.1A10.9 10.9 0 0 1 12 5c7 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.7 8.5 2 12 2 12s3 7 10 7c1.5 0 2.8-.3 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></span></div>
+                        <div class="start-orbit__sat" style="--a: 270deg"><span class="start-orbit__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></span></div>
+                    </div>
+                    <div class="start-orbit__center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+                    </div>
+                </div>
+            </section>
+
+            <section class="start-section start-quotes">
+                <header class="start-head start-head--center" data-reveal>
+                    <p class="start-eyebrow">Community</p>
+                    <h2 class="start-h2">Trusted by people,<br><span class="start-h2__dim">loved by users</span></h2>
+                    <p class="start-lead">Placeholder — swap these quotes for real feedback once it lands.</p>
+                </header>
+
+                <div class="start-quotes__stage" data-reveal>
+                    <figure class="start-quote is-active" data-quote>
+                        <blockquote>“Placeholder quote — this messenger has completely changed how our team talks. Knowing nothing readable ever touches a server makes it an easy default.”</blockquote>
+                        <figcaption>
+                            <span class="start-quote__avatar" aria-hidden="true"></span>
+                            <div>
+                                <strong>Sarah Placeholder</strong>
+                                <span>Operations manager</span>
+                            </div>
+                        </figcaption>
+                    </figure>
+                    <figure class="start-quote" data-quote>
+                        <blockquote>“Placeholder quote — setup took two minutes in a browser tab. No installs, no phone number, and the interface feels faster than the apps we replaced.”</blockquote>
+                        <figcaption>
+                            <span class="start-quote__avatar" aria-hidden="true"></span>
+                            <div>
+                                <strong>Alex Placeholder</strong>
+                                <span>Product designer</span>
+                            </div>
+                        </figcaption>
+                    </figure>
+                    <figure class="start-quote" data-quote>
+                        <blockquote>“Placeholder quote — I audited the crypto layer myself before rolling it out. Open source, local keys, ciphertext-only storage. Exactly what it claims.”</blockquote>
+                        <figcaption>
+                            <span class="start-quote__avatar" aria-hidden="true"></span>
+                            <div>
+                                <strong>Jordan Placeholder</strong>
+                                <span>Security engineer</span>
+                            </div>
+                        </figcaption>
+                    </figure>
+                </div>
+
+                <div class="start-quotes__dots">
+                    <button type="button" class="is-active" data-quote-dot aria-label="Testimonial 1"></button>
+                    <button type="button" data-quote-dot aria-label="Testimonial 2"></button>
+                    <button type="button" data-quote-dot aria-label="Testimonial 3"></button>
+                </div>
+            </section>
+
+            <section id="faq" class="start-section start-faq">
+                <header class="start-head start-head--center" data-reveal>
+                    <p class="start-eyebrow">FAQ</p>
+                    <h2 class="start-h2">Frequently asked<br><span class="start-h2__dim">questions</span></h2>
+                    <p class="start-lead">Placeholder — have another question? Reach out and we’ll answer.</p>
+                </header>
+
+                <div class="start-faq__list" data-reveal-stagger>
+                    <div class="start-faq__item is-open">
+                        <button type="button" class="start-faq__q" aria-expanded="true">
+                            <span>What is NEXA?</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — a web messenger where every message is encrypted in your browser before it is sent. The server stores and routes ciphertext, and only the people in the conversation hold the keys.</p></div></div>
+                    </div>
+                    <div class="start-faq__item">
+                        <button type="button" class="start-faq__q" aria-expanded="false">
+                            <span>How is it different from other messengers?</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — no installs, no phone number, no trackers. It runs entirely in the browser, keys are generated locally, and the code is open for anyone to audit.</p></div></div>
+                    </div>
+                    <div class="start-faq__item">
+                        <button type="button" class="start-faq__q" aria-expanded="false">
+                            <span>Can the server read my messages?</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — no. Messages are sealed with AES-GCM and RSA-OAEP before they leave the tab. The server only ever sees encrypted bytes and routing metadata.</p></div></div>
+                    </div>
+                    <div class="start-faq__item">
+                        <button type="button" class="start-faq__q" aria-expanded="false">
+                            <span>What happens if I lose my password?</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — your private key is encrypted with your password, so the password is the only way back in. Nobody can reset it for you, which is the point.</p></div></div>
+                    </div>
+                    <div class="start-faq__item">
+                        <button type="button" class="start-faq__q" aria-expanded="false">
+                            <span>Is it open source?</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="start-faq__a"><div class="start-faq__a-inner"><p>Placeholder answer — yes. The full client and server are public. Inspect the crypto layer, run your own instance, or contribute.</p></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="start-cta-band" data-reveal>
+                <div class="start-cta-band__inner">
+                    <h2 class="start-cta-band__title">Switch to private<br>by default</h2>
+                    <p class="start-cta-band__text">Placeholder — one line that makes signing up feel obvious. No installs, no phone number, just a browser tab.</p>
+                    <a href="/login" data-link class="start-btn start-btn--primary">Open messenger<span class="start-btn__arrow" aria-hidden="true">→</span></a>
                 </div>
             </div>
 
             <footer class="start-footer">
-                <div class="start-footer__row">
-                    <span>© OriginHub — Encrypted in the browser</span>
-                    <div class="start-footer__links">
-                        <a href="https://github.com/shytyk-develop" target="_blank" rel="noopener noreferrer">GitHub</a>
-                        <a href="https://www.linkedin.com/in/jan-shytyk/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                <div class="start-footer__top">
+                    <div class="start-footer__brand">
+                        <img src="/brand/nexa-logo.svg" alt="NEXA" class="start-footer__mark" width="1021" height="141" decoding="async">
+                        <p>Placeholder — a private, end-to-end encrypted messenger that lives in your browser.</p>
+                        <div class="start-footer__social">
+                            <a href="https://github.com/shytyk-develop" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.18-1.49 3.14-1.18 3.14-1.18.63 1.59.23 2.76.12 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.66.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .3.2.67.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg></a>
+                            <a href="https://www.linkedin.com/in/jan-shytyk/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></a>
+                            <a href="#" aria-label="X (placeholder)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4l16 16M20 4 4 20"/></svg></a>
+                        </div>
                     </div>
+                    <nav class="start-footer__cols" aria-label="Footer">
+                        <div class="start-footer__col">
+                            <h4>Product</h4>
+                            <a href="#features">Features</a>
+                            <a href="#product">Screenshots</a>
+                            <a href="#security">Security</a>
+                            <a href="#faq">FAQ</a>
+                        </div>
+                        <div class="start-footer__col">
+                            <h4>Company</h4>
+                            <a href="#">About (placeholder)</a>
+                            <a href="#">Blog (placeholder)</a>
+                            <a href="#">Careers (placeholder)</a>
+                        </div>
+                        <div class="start-footer__col">
+                            <h4>Resources</h4>
+                            <a href="#">Docs (placeholder)</a>
+                            <a href="#">Self-hosting (placeholder)</a>
+                            <a href="#">Status (placeholder)</a>
+                        </div>
+                        <div class="start-footer__col">
+                            <h4>Legal</h4>
+                            <a href="#">Privacy (placeholder)</a>
+                            <a href="#">Terms (placeholder)</a>
+                        </div>
+                    </nav>
+                </div>
+
+                <div class="start-footer__wordmark" aria-hidden="true">
+                    <img src="/brand/nexa-logo.svg" alt="" decoding="async">
+                </div>
+
+                <div class="start-footer__bottom">
+                    <span>© 2026 NEXA — Encrypted in the browser</span>
+                    <span>Placeholder tagline</span>
                 </div>
             </footer>
         </div>
