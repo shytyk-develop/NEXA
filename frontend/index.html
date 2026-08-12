@@ -604,7 +604,7 @@
 </head>
 <body>
     <div id="page-start" class="route-page start-site">
-        <div class="start-site__shell">
+        <div class="start-site__shell start-site__main">
             <header class="start-nav">
                 <div class="start-nav__row">
                     <div class="start-nav__brand">
@@ -1305,7 +1305,7 @@
                 <header class="start-head start-head--center" data-reveal>
                     <p class="start-eyebrow">People like you</p>
                     <h2 class="start-h2">Finally, a chat that<br><span class="start-h2__dim">doesn’t feel watched</span></h2>
-                    <p class="start-lead">Stories from people who wanted a quieter, freer place to talk. (Names here are placeholders for now.)</p>
+                    <p class="start-lead">Stories from people who wanted a quieter, freer place to talk.</p>
                 </header>
 
                 <div class="start-quotes__stage" data-reveal>
@@ -1399,20 +1399,34 @@
                     <div class="start-cta-band__item" data-cta-item>
                         <div class="start-cta-band__inner">
                             <div class="start-cta-band__particles" data-cta-particles aria-hidden="true"></div>
+                            <img
+                                class="start-cta-band__watermark"
+                                src="/brand/nexa-logo.svg"
+                                alt=""
+                                width="1007"
+                                height="176"
+                                decoding="async"
+                                aria-hidden="true"
+                            >
+
                             <div class="start-cta-band__layout">
+                                <div class="start-cta-band__copy">
+                                    <p class="start-cta-band__eyebrow">Ready when you are</p>
+                                    <div class="start-cta-band__headline">
+                                        <h2 class="start-cta-band__title">Speak freely.<br>Start here.</h2>
+                                        <div class="start-cta-band__actions">
+                                            <a href="/login" data-link class="start-btn start-btn--primary">Open messenger<span class="start-btn__arrow" aria-hidden="true">→</span></a>
+                                        </div>
+                                    </div>
+                                    <p class="start-cta-band__text">No install. No phone number. Just a quiet place to say what you mean — and keep it between you and the people you trust.</p>
+                                </div>
+
                                 <div class="start-cta-band__stage" data-cta-stage>
-                                    <img
-                                        class="start-cta-band__mark"
-                                        src="/brand/nexa-logo.svg"
-                                        alt=""
-                                        width="1007"
-                                        height="176"
-                                        decoding="async"
-                                    >
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 72%; --y: 14%;">Encrypted</span>
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 8%; --y: 32%;">No phone number</span>
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 78%; --y: 68%;">Device keys</span>
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 18%; --y: 74%;">Browser-only</span>
+                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 12%; --y: 28%;">Encrypted</span>
+                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 38%; --y: 68%;">No phone number</span>
+                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 64%; --y: 24%;">Device keys</span>
+                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 88%; --y: 62%;">Browser-only</span>
+                                    <div class="start-cta-band__rail" aria-hidden="true"></div>
                                     <div class="start-cta-band__pointer" data-cta-pointer aria-hidden="true">
                                         <svg width="17" height="18" viewBox="0 0 12 13" fill="currentColor" stroke="#0a0a0a" stroke-width="1" xmlns="http://www.w3.org/2000/svg">
                                             <path fill-rule="evenodd" clip-rule="evenodd" d="M12 5.50676L0 0L2.83818 13L6.30623 7.86537L12 5.50676V5.50676Z"/>
@@ -1420,19 +1434,18 @@
                                         <span class="start-cta-band__pointer-label" data-cta-pointer-label>You</span>
                                     </div>
                                 </div>
-                                <div class="start-cta-band__copy">
-                                    <h2 class="start-cta-band__title">Speak freely.<br>Start here.</h2>
-                                    <p class="start-cta-band__text">No install. No phone number. Just a quiet place to say what you mean — and keep it between you and the people you trust.</p>
-                                    <div class="start-cta-band__actions">
-                                        <a href="/login" data-link class="start-btn start-btn--primary">Open messenger<span class="start-btn__arrow" aria-hidden="true">→</span></a>
-                                        <a href="#features" class="start-btn start-btn--ghost">See how it works</a>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            </div><!-- /.start-site__main -->
+
+            <div class="start-footer-curtain" data-footer-curtain>
+                <div class="start-footer-curtain__stage">
+                    <div class="start-footer-curtain__aurora" aria-hidden="true"></div>
+                    <div class="start-footer-curtain__grid" aria-hidden="true"></div>
 
             <footer class="start-footer">
                 <div class="start-footer__top">
@@ -1482,7 +1495,8 @@
                     <span>Locked on your device. Open in your browser.</span>
                 </div>
             </footer>
-        </div>
+                </div>
+            </div>
     </div>
 
     <div id="page-login" class="route-page login-page hidden">
