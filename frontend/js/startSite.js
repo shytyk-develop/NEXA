@@ -64,18 +64,40 @@ function bindNav(pageStart) {
 
     if (!header) return;
 
+    let menuCloseTimer = 0;
+    const MENU_CLOSE_MS = 520;
+
+    const openMenu = () => {
+        if (!toggle || !menu) return;
+        clearTimeout(menuCloseTimer);
+        menu.hidden = false;
+        // Allow the browser to apply the open grid before transitioning.
+        void menu.offsetHeight;
+        header.classList.add('is-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Close menu');
+        menu.setAttribute('aria-hidden', 'false');
+    };
+
     const closeMenu = () => {
         if (!toggle || !menu) return;
+        if (!header.classList.contains('is-open') && menu.hidden) return;
+
         header.classList.remove('is-open');
         toggle.setAttribute('aria-expanded', 'false');
-        menu.hidden = true;
+        toggle.setAttribute('aria-label', 'Open menu');
+        menu.setAttribute('aria-hidden', 'true');
+
+        clearTimeout(menuCloseTimer);
+        menuCloseTimer = window.setTimeout(() => {
+            menu.hidden = true;
+        }, MENU_CLOSE_MS);
     };
 
     if (toggle && menu) {
         toggle.addEventListener('click', () => {
-            const open = header.classList.toggle('is-open');
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            menu.hidden = !open;
+            if (header.classList.contains('is-open')) closeMenu();
+            else openMenu();
         });
 
         // Tapping an anchor in the mobile menu should close it before scrolling.
@@ -391,34 +413,6 @@ function stopOrbit() {
 
 /* ============================================================ hero intro */
 
-/** Wrap every character in its own inline-block so the tagline can be
- *  animated letter by letter. Runs once — the spans are reused on revisits. */
-function splitLetters(el) {
-    if (el.dataset.split === 'true') {
-        return [...el.querySelectorAll('.start-char')];
-    }
-
-    const chars = [];
-    const frag = document.createDocumentFragment();
-
-    for (const ch of el.textContent) {
-        const span = document.createElement('span');
-        span.className = 'start-char';
-        if (ch === ' ') {
-            span.innerHTML = '&nbsp;';
-        } else {
-            span.textContent = ch;
-        }
-        frag.appendChild(span);
-        chars.push(span);
-    }
-
-    el.textContent = '';
-    el.appendChild(frag);
-    el.dataset.split = 'true';
-    return chars;
-}
-
 /**
  * The load sequence. The wordmark arrives blurred and slightly overlapping the
  * centre, then the two halves part around the vortex axis — the line appears to
@@ -436,7 +430,6 @@ function playHeroIntro(pageStart) {
     const wordmark = hero.querySelector('.start-hero__wordmark');
     const halfNe = hero.querySelector('.start-hero__wordmark-half--ne');
     const halfXa = hero.querySelector('.start-hero__wordmark-half--xa');
-    const tagline = hero.querySelector('.start-hero__tagline');
     const features = [...hero.querySelectorAll('.start-hero__feature')];
     const icons = [...hero.querySelectorAll('.start-hero__feature-icon')];
     const ctaItems = [...hero.querySelectorAll('.start-hero__cta > *')];
@@ -466,20 +459,6 @@ function playHeroIntro(pageStart) {
     if (halfNe && halfXa) {
         tl.from(halfNe, { x: 54, duration: 1.6, ease: 'expo.out' }, 0.1)
           .from(halfXa, { x: -54, duration: 1.6, ease: 'expo.out' }, 0.1);
-    }
-
-    if (tagline) {
-        tl.fromTo(splitLetters(tagline), {
-            opacity: 0,
-            y: 18,
-            filter: 'blur(6px)',
-        }, {
-            opacity: 1,
-            y: 0,
-            filter: 'blur(0px)',
-            duration: 0.9,
-            stagger: 0.028,
-        }, 0.7);
     }
 
     if (features.length) {
@@ -545,7 +524,7 @@ function playHeroIntro(pageStart) {
 // Headings are revealed word by word behind a mask; everything else drifts up
 // out of a soft blur. Keeping the vocabulary this small is what makes the whole
 // page feel like one piece rather than a pile of effects.
-const HEADING_SEL = '.start-h2, .start-h3, .start-cta-band__title, .start-marquee__note';
+const HEADING_SEL = '.start-h2, .start-h3, .start-cta-band__title';
 const TEXT_GROUP_SEL = '.start-head, .start-split__copy, .start-cta-band';
 const PART_SEL = [
     '.start-eyebrow',
@@ -659,15 +638,13 @@ function revealMarquee(pageStart, trigger) {
     const marquee = pageStart.querySelector('.start-marquee');
     if (!marquee) return;
 
-    const note = marquee.querySelector('.start-marquee__note');
     const viewport = marquee.querySelector('.start-marquee__viewport');
     const tl = gsap.timeline({ scrollTrigger: trigger(marquee, { start: 'top 92%' }) });
 
-    if (note) revealWords(tl, note, 0);
     if (viewport) {
         tl.fromTo(viewport,
             { opacity: 0, scaleX: 0.9 },
-            { opacity: 1, scaleX: 1, duration: 1.2, ease: 'power3.out' }, 0.25);
+            { opacity: 1, scaleX: 1, duration: 1.2, ease: 'power3.out' }, 0);
     }
 }
 
