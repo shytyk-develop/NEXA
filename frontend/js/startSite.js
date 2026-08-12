@@ -52,6 +52,7 @@ function bindOnce(pageStart) {
     bindFaq(pageStart);
     bindQuotes(pageStart);
     bindCardSpotlight(pageStart);
+    bindFooterMagnetic(pageStart);
     bindOrbit(pageStart);
 }
 
@@ -554,6 +555,7 @@ const PART_SEL = [
     '.start-btn',
     '.start-cta-band__title',
     '.start-cta-band__text',
+    '.start-cta-band__eyebrow',
     '.start-cta-band__actions',
 ].join(', ');
 
@@ -668,24 +670,119 @@ function revealMarquee(pageStart, trigger) {
     }
 }
 
-function revealFooter(pageStart, trigger) {
+function revealFooter(pageStart) {
+    const curtain = pageStart.querySelector('[data-footer-curtain]');
     const footer = pageStart.querySelector('.start-footer');
     if (!footer) return;
 
+    const triggerEl = curtain || footer;
     const brand = footer.querySelector('.start-footer__brand');
-    const cols = [...footer.querySelectorAll('.start-footer__col')];
+    const cols = footer.querySelector('.start-footer__cols');
     const wordmark = footer.querySelector('.start-footer__wordmark');
-    const bottom = [...footer.querySelectorAll('.start-footer__bottom > *')];
-    const tl = gsap.timeline({ scrollTrigger: trigger(footer, { start: 'top 90%' }) });
+    const bottom = footer.querySelector('.start-footer__bottom');
+    const aurora = curtain?.querySelector('.start-footer-curtain__aurora');
 
-    if (brand) fadeUp(tl, brand, 0);
-    if (cols.length) fadeUp(tl, cols, 0.1, { stagger: 0.08 });
+    // Giant wordmark parallax — scrubbed like the cinematic footer.
     if (wordmark) {
-        tl.fromTo(wordmark,
-            { opacity: 0, y: 40 },
-            { opacity: 1, y: 0, duration: 1.4, ease: 'power3.out' }, 0.3);
+        gsap.fromTo(
+            wordmark,
+            { y: '8vh', scale: 0.84, opacity: 0 },
+            {
+                y: '0vh',
+                scale: 1,
+                opacity: 1,
+                ease: 'power1.out',
+                scrollTrigger: {
+                    trigger: triggerEl,
+                    scroller: pageStart,
+                    start: 'top 80%',
+                    end: 'bottom bottom',
+                    scrub: 1,
+                },
+            },
+        );
     }
-    if (bottom.length) fadeUp(tl, bottom, 0.5, { stagger: 0.1, duration: 0.7 });
+
+    // Staggered content reveal, tied to scroll progress.
+    const content = [brand, cols, bottom].filter(Boolean);
+    if (content.length) {
+        gsap.fromTo(
+            content,
+            { y: 50, opacity: 0 },
+            {
+                y: 0,
+                opacity: 1,
+                stagger: 0.15,
+                ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: triggerEl,
+                    scroller: pageStart,
+                    start: 'top 45%',
+                    end: 'bottom bottom',
+                    scrub: 1,
+                },
+            },
+        );
+    }
+
+    if (aurora) {
+        gsap.fromTo(
+            aurora,
+            { opacity: 0.2, scale: 0.9 },
+            {
+                opacity: 0.85,
+                scale: 1,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: triggerEl,
+                    scroller: pageStart,
+                    start: 'top 70%',
+                    end: 'bottom bottom',
+                    scrub: 1,
+                },
+            },
+        );
+    }
+}
+
+function bindFooterMagnetic(pageStart) {
+    if (reducedMotion()) return;
+
+    const links = [...pageStart.querySelectorAll('.start-footer__social a')];
+    if (!links.length) return;
+
+    links.forEach((el) => {
+        if (el.dataset.magneticBound === 'true') return;
+        el.dataset.magneticBound = 'true';
+
+        const onMove = (e) => {
+            const rect = el.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            gsap.to(el, {
+                x: x * 0.35,
+                y: y * 0.35,
+                scale: 1.08,
+                duration: 0.35,
+                ease: 'power2.out',
+                overwrite: 'auto',
+            });
+        };
+
+        const onLeave = () => {
+            gsap.to(el, {
+                x: 0,
+                y: 0,
+                scale: 1,
+                duration: 1.1,
+                ease: 'elastic.out(1, 0.35)',
+                overwrite: 'auto',
+            });
+        };
+
+        el.addEventListener('pointermove', onMove);
+        el.addEventListener('pointerleave', onLeave);
+    });
 }
 
 function startMotion(pageStart) {
@@ -734,7 +831,7 @@ function startMotion(pageStart) {
         });
 
         revealMarquee(pageStart, trigger);
-        revealFooter(pageStart, trigger);
+        revealFooter(pageStart);
 
         pageStart.querySelectorAll('[data-count]').forEach((el) => {
             const target = parseFloat(el.dataset.count);

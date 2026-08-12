@@ -24,11 +24,12 @@ export function mountCtaBand(root) {
 
     if (particlesHost && !reducedMotion()) {
         cleanups.push(mountParticles(particlesHost, {
-            quantity: 160,
-            color: '#8a8a8a',
-            vy: -0.18,
-            staticity: 50,
-            ease: 50,
+            quantity: 120,
+            color: '#9a9a9a',
+            vy: -0.12,
+            vx: 0.04,
+            staticity: 60,
+            ease: 45,
         }));
     }
 
