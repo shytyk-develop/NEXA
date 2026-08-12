@@ -1,6 +1,8 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { destroyVortex, mountVortex } from './vortex.js';
+import { destroyFeatureCarousel, mountFeatureCarousel } from './featureCarousel.js';
+import { destroyCtaBand, mountCtaBand } from './ctaBand.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,6 +22,8 @@ export function initStartSite(pageStart) {
     pageStart.querySelector('.start-nav')?.classList.remove('is-visible');
     pageStart.querySelector('.start-nav')?.setAttribute('aria-hidden', 'true');
     mountVortex(pageStart.querySelector('#startHeroVortex'));
+    mountFeatureCarousel(pageStart.querySelector('[data-feature-carousel]'));
+    mountCtaBand(pageStart.querySelector('[data-cta-band]'));
     startOrbit(pageStart);
     startMotion(pageStart);
     startQuotesRotation(pageStart);
@@ -30,6 +34,8 @@ export function teardownStartSite() {
     motionCtx = null;
     stopQuotesRotation();
     stopOrbit();
+    destroyFeatureCarousel();
+    destroyCtaBand();
     destroyVortex();
     // Re-arm the intro so the next visit plays it from the top.
     document.querySelector('.start-hero')?.classList.remove('is-ready');
@@ -548,6 +554,7 @@ const PART_SEL = [
     '.start-btn',
     '.start-cta-band__title',
     '.start-cta-band__text',
+    '.start-cta-band__actions',
 ].join(', ');
 
 /** Wrap each word in a clipping box so it can slide up from behind its own
