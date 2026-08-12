@@ -381,6 +381,7 @@ function stopOrbit() {
             node.classList.remove('is-expanded', 'is-related', 'is-pulsing');
             node.setAttribute('aria-expanded', 'false');
             node.style.transform = '';
+            node.style.transition = '';
             node.style.zIndex = '';
             node.style.opacity = '';
         });

@@ -2,12 +2,20 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OriginHub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NEXA — Private messenger in your browser</title>
+    <meta name="description" content="NEXA is a private, end-to-end encrypted messenger that runs in your browser. No install, no phone number — your keys never leave your device.">
+    <meta name="theme-color" content="#000000">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="NEXA — Private messenger in your browser">
+    <meta property="og:description" content="End-to-end encrypted messaging with no install and no phone number. Your keys never leave your device.">
+    <meta property="og:image" content="/brand/nexa-logo.svg">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="NEXA — Private messenger in your browser">
+    <meta name="twitter:description" content="End-to-end encrypted messaging with no install and no phone number.">
     <link rel="icon" type="image/svg+xml" href="/brand/originhub-icon.svg">
     <link rel="apple-touch-icon" href="/brand/originhub-icon.svg">
     <link rel="stylesheet" href="/css/fonts.css">
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/design-system.css">
     <link rel="stylesheet" href="/css/features.css">
     <link rel="stylesheet" href="/css/ventura-theme.css">
@@ -78,6 +86,20 @@
 
         .hidden {
             display: none !important;
+        }
+
+        /* Tiny utility shims — the Tailwind CDN was dropped for launch and only
+           these classes were in use. */
+        .h-full {
+            height: 100%;
+        }
+
+        .text-red-400 {
+            color: #f87171;
+        }
+
+        .text-green-400 {
+            color: #4ade80;
         }
 
         ::-webkit-scrollbar {
@@ -603,6 +625,11 @@
     </style>
 </head>
 <body>
+    <noscript>
+        <div style="align-items: center; background: #000; color: #f4f4f5; display: flex; font-family: sans-serif; height: 100vh; justify-content: center; padding: 24px; text-align: center;">
+            NEXA needs JavaScript — encryption keys are generated and used entirely in your browser.
+        </div>
+    </noscript>
     <div id="page-start" class="route-page start-site">
         <div class="start-site__shell start-site__main">
             <header class="start-nav">
@@ -1422,10 +1449,10 @@
                                 </div>
 
                                 <div class="start-cta-band__stage" data-cta-stage>
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 12%; --y: 28%;">Encrypted</span>
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 38%; --y: 68%;">No phone number</span>
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 64%; --y: 24%;">Device keys</span>
-                                    <span class="start-cta-band__chip" data-cta-chip style="--x: 88%; --y: 62%;">Browser-only</span>
+                                    <span class="start-cta-band__chip" data-cta-chip>Encrypted</span>
+                                    <span class="start-cta-band__chip" data-cta-chip>No phone number</span>
+                                    <span class="start-cta-band__chip" data-cta-chip>Device keys</span>
+                                    <span class="start-cta-band__chip" data-cta-chip>Browser-only</span>
                                     <div class="start-cta-band__rail" aria-hidden="true"></div>
                                     <div class="start-cta-band__pointer" data-cta-pointer aria-hidden="true">
                                         <svg width="17" height="18" viewBox="0 0 12 13" fill="currentColor" stroke="#0a0a0a" stroke-width="1" xmlns="http://www.w3.org/2000/svg">

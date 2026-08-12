@@ -730,14 +730,24 @@ async function handleNavigation(view, param) {
             navigateTo('/chat', handleNavigation);
             return;
         }
+        if (loginUiMounted) {
+            teardownLoginPage();
+            loginUiMounted = false;
+        }
         DOM.pageStart?.classList.remove('hidden');
-        initStartSite(DOM.pageStart);
-        startUiMounted = true;
+        if (!startUiMounted) {
+            initStartSite(DOM.pageStart);
+            startUiMounted = true;
+        }
     }
     else if (view === 'login') {
         if (state.myUsername) {
             navigateTo('/chat', handleNavigation);
             return;
+        }
+        if (startUiMounted) {
+            teardownStartSite();
+            startUiMounted = false;
         }
         DOM.pageLogin.classList.remove('hidden');
         setAuthPending(false);

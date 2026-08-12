@@ -1008,9 +1008,11 @@ function createVortex(canvas, container, cfgRef) {
             container.removeEventListener('pointerleave', onPointerLeave);
             container.removeEventListener('pointercancel', onPointerLeave);
             for (const d of disposables) d.dispose();
+            // Do not call forceContextLoss — it permanently kills this canvas
+            // element, so remounting WebGL on the same node renders blank.
             renderer.dispose();
-            renderer.forceContextLoss?.();
         },
+        resize,
     };
 }
 
@@ -1024,8 +1026,13 @@ export function mountVortex(container, props = HERO_VORTEX_PRESET) {
     destroyVortex();
     if (!container) return null;
 
-    const canvas = container.querySelector('canvas');
-    if (!canvas) return null;
+    // Always start from a fresh canvas. Reusing a node after dispose (or after
+    // an earlier forceContextLoss) can leave WebGL unable to initialize.
+    const prev = container.querySelector('canvas');
+    const canvas = document.createElement('canvas');
+    canvas.className = prev?.className || 'start-hero__vortex-canvas';
+    if (prev) prev.replaceWith(canvas);
+    else container.appendChild(canvas);
 
     const cfgRef = {
         current: buildEngineConfig(props, !prefersReducedMotion()),
@@ -1033,6 +1040,11 @@ export function mountVortex(container, props = HERO_VORTEX_PRESET) {
 
     try {
         activeVortex = createVortex(canvas, container, cfgRef);
+        // Layout may still settle after route show — force a resize next frame.
+        requestAnimationFrame(() => {
+            activeVortex?.resize?.();
+            requestAnimationFrame(() => activeVortex?.resize?.());
+        });
     } catch (err) {
         console.warn('[Vortex] init failed:', err);
         activeVortex = null;
