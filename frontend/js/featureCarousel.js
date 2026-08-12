@@ -101,17 +101,21 @@ function fadeInScale(tl, el, at) {
 }
 
 function animateShots(panel, stepIndex, tl, at) {
-    const shots = [...panel.querySelectorAll('[data-fc-shot]')];
+    const shots = [...panel.querySelectorAll('[data-fc-shot]')].filter(
+        (shot) => getComputedStyle(shot).display !== 'none',
+    );
     const delayed = at + 0.1;
+    const narrow = window.matchMedia('(max-width: 767px)').matches;
 
-    if (stepIndex === 0) {
-        if (shots[0]) slideIn(tl, shots[0], -20, at);
-        if (shots[1]) slideIn(tl, shots[1], 20, delayed);
+    // Mobile shows a single centered phone — always fade/scale, never slide.
+    if (narrow || stepIndex !== 0) {
+        if (shots[0]) fadeInScale(tl, shots[0], at);
+        if (shots[1]) fadeInScale(tl, shots[1], delayed);
         return;
     }
 
-    if (shots[0]) fadeInScale(tl, shots[0], at);
-    if (shots[1]) fadeInScale(tl, shots[1], delayed);
+    if (shots[0]) slideIn(tl, shots[0], -20, at);
+    if (shots[1]) slideIn(tl, shots[1], 20, delayed);
 }
 
 function clearShotMotion(panel) {

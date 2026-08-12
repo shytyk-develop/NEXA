@@ -651,20 +651,26 @@
                     </div>
 
                     <button id="startNavToggle" type="button" class="start-nav__toggle" aria-expanded="false" aria-controls="startNavMenu" aria-label="Open menu">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+                        <span class="start-nav__burger" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
                     </button>
                 </div>
 
-                <div id="startNavMenu" class="start-nav__menu" hidden>
-                    <div class="start-nav__menu-links">
-                        <a href="#features" class="start-nav__link">Features</a>
-                        <a href="#product" class="start-nav__link">Product</a>
-                        <a href="#security" class="start-nav__link">Safety</a>
-                        <a href="#faq" class="start-nav__link">FAQ</a>
-                    </div>
-                    <div class="start-nav__menu-actions">
-                        <a href="/login" data-link class="start-nav__btn">Log in</a>
-                        <a href="/login" data-link class="start-nav__btn start-nav__btn--primary">Get started</a>
+                <div id="startNavMenu" class="start-nav__menu" hidden aria-hidden="true">
+                    <div class="start-nav__menu-panel">
+                        <div class="start-nav__menu-links">
+                            <a href="#features" class="start-nav__link">Features</a>
+                            <a href="#product" class="start-nav__link">Product</a>
+                            <a href="#security" class="start-nav__link">Safety</a>
+                            <a href="#faq" class="start-nav__link">FAQ</a>
+                        </div>
+                        <div class="start-nav__menu-actions">
+                            <a href="/login" data-link class="start-nav__btn">Log in</a>
+                            <a href="/login" data-link class="start-nav__btn start-nav__btn--primary">Get started</a>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -686,7 +692,6 @@
                                 <img src="/brand/nexa-logo.svg" alt="" width="1007" height="176" decoding="async">
                             </span>
                         </h1>
-                        <p class="start-hero__tagline">Build beyond limits</p>
                     </div>
 
                     <ul class="start-hero__features">
@@ -734,7 +739,6 @@
             </section>
 
             <div class="start-marquee">
-                <p class="start-marquee__note">Built for people who want to speak freely — without looking over their shoulder</p>
                 <div class="start-marquee__viewport" aria-hidden="true">
                     <div class="start-marquee__track">
                         <div class="start-marquee__group">
