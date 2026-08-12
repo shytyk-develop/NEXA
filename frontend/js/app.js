@@ -715,6 +715,9 @@ function setAuthPending(isPending) {
     DOM.pageLogin?.classList.toggle('is-loading', isPending);
     DOM.btnLogin.disabled = isPending;
     DOM.btnRegister.disabled = isPending;
+    if (DOM.btnForgotPassword) DOM.btnForgotPassword.disabled = isPending;
+    if (DOM.btnAuthApple) DOM.btnAuthApple.disabled = isPending;
+    if (DOM.btnAuthGoogle) DOM.btnAuthGoogle.disabled = isPending;
 }
 
 // Main routing handler
@@ -1313,6 +1316,18 @@ window.handleSendMessage = handleSendMessage;
 // Event Listeners
 DOM.btnLogin.addEventListener('click', () => handleAuth(true));
 DOM.btnRegister.addEventListener('click', () => handleAuth(false));
+DOM.btnForgotPassword?.addEventListener('click', () => {
+    showAuthMessage(
+        'Password recovery is not available yet. Your encryption keys are stored only on this device.',
+        false
+    );
+});
+DOM.btnAuthApple?.addEventListener('click', () => {
+    showAuthMessage('Sign in with Apple is coming soon.', false);
+});
+DOM.btnAuthGoogle?.addEventListener('click', () => {
+    showAuthMessage('Sign in with Google is coming soon.', false);
+});
 document.getElementById('loginForm')?.addEventListener('submit', (event) => {
     event.preventDefault();
     handleAuth(true);

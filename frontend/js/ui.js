@@ -32,6 +32,9 @@ export const DOM = {
     passwordInput: document.getElementById('passwordInput'),
     btnLogin: document.getElementById('btnLogin'),
     btnRegister: document.getElementById('btnRegister'),
+    btnForgotPassword: document.getElementById('btnForgotPassword'),
+    btnAuthApple: document.getElementById('btnAuthApple'),
+    btnAuthGoogle: document.getElementById('btnAuthGoogle'),
     authError: document.getElementById('authError'),
 
     statusSpan: document.getElementById('status'),
