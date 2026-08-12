@@ -267,7 +267,11 @@ function mountPointerTour(stage) {
     });
     setActive(0);
 
-    const tl = gsap.timeline({ repeat: -1, defaults: { ease: 'power1.inOut' } });
+    const tl = gsap.timeline({
+        repeat: -1,
+        repeatRefresh: true,
+        defaults: { ease: 'power1.inOut' },
+    });
 
     chips.forEach((_, i) => {
         const nextIndex = (i + 1) % chips.length;
@@ -287,6 +291,9 @@ function mountPointerTour(stage) {
     });
 
     const onResize = () => {
+        // Chip layout changed — recompute both the current pin and the
+        // tween targets (function-based values re-run on invalidate).
+        tl.invalidate();
         const active = chips.findIndex((c) => c.classList.contains('is-active'));
         const idx = active >= 0 ? active : 0;
         const pos = centerOf(chips[idx]);

@@ -342,13 +342,18 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    font-size: clamp(15px, 1.1vw, 22px);
+    font-size: clamp(11px, 2.4vw, 22px);
     font-weight: 500;
-    letter-spacing: 0.72em;
-    margin: clamp(16px, 2.2vh, 26px) 0 0;
+    letter-spacing: clamp(0.18em, 1.6vw, 0.72em);
+    /* Trailing letter-spacing reads as a left shift — pad it out, then center
+       the line box itself instead of using text-indent (which fights center). */
+    margin: clamp(16px, 2.2vh, 26px) auto 0;
+    max-width: calc(100% - 16px);
+    padding-right: clamp(0.18em, 1.6vw, 0.72em);
     text-align: center;
-    text-indent: 0.72em;
     text-transform: uppercase;
+    white-space: nowrap;
+    width: fit-content;
 }
 
 /* Letter spans from the intro timeline need their own clip — the parent’s
@@ -406,12 +411,9 @@
 
 .start-hero__feature-icon {
     align-items: center;
-    background:
-        linear-gradient(#000, #000) padding-box,
-        linear-gradient(145deg, rgba(243, 244, 246, 0.55), rgba(156, 163, 175, 0.18)) border-box;
-    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 50%;
-    box-shadow: 0 0 18px rgba(156, 163, 175, 0.12);
     color: #d4d4d8;
     display: inline-flex;
     flex-shrink: 0;
@@ -611,11 +613,6 @@
 }
 
 @media (max-width: 560px) {
-    .start-hero__tagline {
-        letter-spacing: 0.6em;
-        text-indent: 0.6em;
-    }
-
     .start-motion-btn {
         width: 180px;
     }
@@ -918,17 +915,32 @@
 
 /* `m-10 min-h-[450px] w-full` — width intentionally overflows the card by the margin */
 .start-fc__inner {
-    margin: 40px;
-    min-height: 450px;
+    margin: 24px;
+    min-height: 430px;
     width: 100%;
+}
+
+@media (min-width: 768px) {
+    .start-fc__inner {
+        margin: 40px;
+        min-height: 450px;
+    }
 }
 
 .start-fc__copy {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    width: 66.6667%;
+    margin-top: 34px;
+    width: 82%;
     will-change: transform, opacity;
+}
+
+@media (min-width: 768px) {
+    .start-fc__copy {
+        margin-top: 0;
+        width: 66.6667%;
+    }
 }
 
 .start-fc__title {
@@ -1875,17 +1887,17 @@
 
 .start-fc__steps-layer {
     height: 100%;
-    left: 12rem;
+    left: 0;
     pointer-events: none;
     position: absolute;
     right: 0;
-    top: 20px;
+    top: 14px;
     z-index: 51;
 }
 
 @media (min-width: 768px) {
     .start-fc__steps-layer {
-        left: 0;
+        top: 20px;
     }
 }
 
@@ -1993,6 +2005,17 @@
     font-size: 14px;
     font-weight: 500;
     transition: color 0.3s ease;
+}
+
+/* Narrow phones: number-only pills, otherwise the row wraps over the copy. */
+@media (max-width: 480px) {
+    .start-fc__pill-label {
+        display: none;
+    }
+
+    .start-fc__pill {
+        padding: 4px 8px;
+    }
 }
 
 .start-fc__pill.is-active .start-fc__pill-label {
@@ -3147,6 +3170,13 @@
     white-space: nowrap;
 }
 
+/* Chip constellation — positions live here (not inline) so breakpoints can
+   re-arrange them. */
+.start-cta-band__chip:nth-of-type(1) { --x: 12%; --y: 28%; }
+.start-cta-band__chip:nth-of-type(2) { --x: 38%; --y: 68%; }
+.start-cta-band__chip:nth-of-type(3) { --x: 64%; --y: 24%; }
+.start-cta-band__chip:nth-of-type(4) { --x: 88%; --y: 62%; }
+
 .start-cta-band__chip.is-active {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.32);
@@ -3190,10 +3220,10 @@
         padding: 7px 10px;
     }
 
-    .start-cta-band__chip:nth-child(1) { --x: 18%; --y: 26%; }
-    .start-cta-band__chip:nth-child(2) { --x: 42%; --y: 72%; }
-    .start-cta-band__chip:nth-child(3) { --x: 68%; --y: 28%; }
-    .start-cta-band__chip:nth-child(4) { --x: 86%; --y: 70%; }
+    .start-cta-band__chip:nth-of-type(1) { --x: 18%; --y: 26%; }
+    .start-cta-band__chip:nth-of-type(2) { --x: 42%; --y: 72%; }
+    .start-cta-band__chip:nth-of-type(3) { --x: 68%; --y: 28%; }
+    .start-cta-band__chip:nth-of-type(4) { --x: 82%; --y: 70%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3211,25 +3241,34 @@
     }
 }
 
-/* ─── Footer curtain reveal ─── */
+/* ─── Footer curtain reveal ───
+   The wrapper reserves one viewport of scroll and clips its subtree; the stage
+   is fixed to the viewport bottom, so scrolling the wrapper into view "lifts
+   the curtain" off the footer. Falls back to a normal in-flow footer on small
+   screens and for reduced motion. */
 .start-footer-curtain {
     clip-path: polygon(0% 0, 100% 0%, 100% 100%, 0 100%);
-    isolation: isolate;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100svh;
     position: relative;
     z-index: 1;
 }
 
 .start-footer-curtain__stage {
     background: #000;
+    bottom: 0;
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    height: 100svh;
     justify-content: flex-end;
-    min-height: 100vh;
+    left: 0;
     overflow: hidden;
-    position: sticky;
-    top: 0;
-    width: 100%;
+    /* Let wheel/touch scroll pass through the empty viewport area to
+       .start-site — otherwise the fixed stage traps the scroll at the bottom. */
+    pointer-events: none;
+    position: fixed;
+    right: 0;
 }
 
 .start-footer-curtain__aurora {
@@ -3285,9 +3324,15 @@
     margin: 0 auto;
     max-width: 1120px;
     padding: clamp(56px, 7vw, 80px) 24px 36px;
+    /* Same as the stage: don't trap wheel/touch. Re-enable on anchors below. */
+    pointer-events: none;
     position: relative;
     width: 100%;
     z-index: 1;
+}
+
+.start-footer a {
+    pointer-events: auto;
 }
 
 .start-footer__top {
@@ -3395,14 +3440,33 @@
     padding-top: 24px;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (max-width: 860px), (max-height: 700px) {
     .start-footer-curtain {
         clip-path: none;
-        min-height: 0;
+        height: auto;
     }
 
     .start-footer-curtain__stage {
-        min-height: 0;
+        height: auto;
+        inset: auto;
+        position: relative;
+    }
+
+    .start-site__main {
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .start-footer-curtain {
+        clip-path: none;
+        height: auto;
+    }
+
+    .start-footer-curtain__stage {
+        height: auto;
+        inset: auto;
         position: relative;
     }
 
