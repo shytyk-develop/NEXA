@@ -4,7 +4,7 @@ export const DEFAULT_PREFERENCES = {
     enterToSend: true,
     compactMode: false,
     showTimestamps: true,
-    theme: 'light', // 'light' | 'dark' | 'system'
+    theme: 'dark', // locked — messenger matches start-site dark monochrome
     glassIntensity: 'medium', // 'low' | 'medium' | 'high'
     showOnlineStatus: true,
     readReceipts: true,
@@ -13,34 +13,17 @@ export const DEFAULT_PREFERENCES = {
     linkPreviews: true,
 };
 
-let systemThemeListener = null;
-
-function resolveThemePreference(theme) {
-    if (theme === 'light' || theme === 'dark') return theme;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-export function applyTheme(themePreference) {
-    const resolved = resolveThemePreference(themePreference);
-    document.documentElement.setAttribute('data-theme', resolved);
-}
-
-function bindSystemThemeListener(themePreference) {
-    if (systemThemeListener) {
-        window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', systemThemeListener);
-        systemThemeListener = null;
-    }
-
-    if (themePreference !== 'system') return;
-
-    systemThemeListener = () => applyTheme('system');
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', systemThemeListener);
+export function applyTheme() {
+    document.documentElement.setAttribute('data-theme', 'dark');
 }
 
 export function loadPreferences() {
     try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        return { ...DEFAULT_PREFERENCES, ...(saved || {}) };
+        const merged = { ...DEFAULT_PREFERENCES, ...(saved || {}) };
+        // Theme switching removed — always dark
+        merged.theme = 'dark';
+        return merged;
     } catch (err) {
         console.warn('Failed to load UI preferences:', err);
         return { ...DEFAULT_PREFERENCES };
@@ -48,23 +31,21 @@ export function loadPreferences() {
 }
 
 export function savePreferences(preferences) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...preferences, theme: 'dark' }));
 }
 
 export function applyPreferences(preferences) {
     document.body.classList.toggle('ui-compact', preferences.compactMode);
     document.body.classList.toggle('ui-hide-times', !preferences.showTimestamps);
-    applyTheme(preferences.theme);
-    bindSystemThemeListener(preferences.theme);
+    applyTheme();
 
     const glass = preferences.glassIntensity || 'medium';
     document.documentElement.dataset.glass = glass;
 }
 
 export function updatePreference(preferences, key, value) {
-    const next = { ...preferences, [key]: value };
+    const next = { ...preferences, [key]: value, theme: 'dark' };
     savePreferences(next);
     applyPreferences(next);
     return next;
 }
-
