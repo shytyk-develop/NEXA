@@ -249,6 +249,15 @@
     opacity: 0.35 !important;
 }
 
+#uiMessageSearchInput:focus,
+#uiMessageSearchInput:focus-visible,
+#uiContactSearch:focus,
+#uiContactSearch:focus-visible {
+    border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+    box-shadow: none;
+    outline: none;
+}
+
 /* ─── Smart paste attachments ─── */
 .paste-attachments {
     display: flex;
