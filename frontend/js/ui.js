@@ -22,6 +22,11 @@ import {
 } from './profile.js';
 import { resolveContactProfile } from './profileDirectory.js';
 import { attachMiniProfileHover } from './miniProfile.js';
+import {
+    clearPasteAttachments,
+    getPasteAttachmentsLength,
+    initSmartPasteUi,
+} from './smartPaste.js';
 
 export const DOM = {
     pageStart: document.getElementById('page-start'),
@@ -44,6 +49,7 @@ export const DOM = {
     usersListDiv: document.getElementById('usersList'),
     chatWithTitle: document.getElementById('chatWithTitle'),
     chatSubtitle: document.getElementById('chatSubtitle'),
+    chatHeaderAvatar: document.getElementById('chatHeaderAvatar'),
     chatWelcome: document.getElementById('chat-welcome'),
 
     focusContactsBtn: document.getElementById('uiFocusContactsBtn'),
@@ -53,7 +59,6 @@ export const DOM = {
     settingsBtn: document.getElementById('uiSettingsBtn'),
     refreshUsersBtn: document.getElementById('uiRefreshUsersBtn'),
     contactSearchInput: document.getElementById('uiContactSearch'),
-    clearContactSearchBtn: document.getElementById('uiClearContactSearchBtn'),
     copyUsernameBtn: document.getElementById('uiCopyUsernameBtn'),
     logoutBtn: document.getElementById('uiLogoutBtn'),
 
@@ -69,6 +74,16 @@ export const DOM = {
     attachBtn: document.getElementById('uiAttachBtn'),
     fileInput: document.getElementById('uiFileInput'),
     composerMenuBtn: document.getElementById('uiComposerMenuBtn'),
+    emojiBtn: document.getElementById('uiEmojiBtn'),
+    emojiPicker: document.getElementById('uiEmojiPicker'),
+    clearComposerBtn: document.getElementById('uiClearComposerBtn'),
+    pasteAttachments: document.getElementById('uiPasteAttachments'),
+    pasteEditor: document.getElementById('uiPasteEditor'),
+    pasteEditorTitle: document.getElementById('uiPasteEditorTitle'),
+    pasteEditorCount: document.getElementById('uiPasteEditorCount'),
+    pasteEditorText: document.getElementById('uiPasteEditorText'),
+    pasteEditorSave: document.getElementById('uiPasteEditorSave'),
+    pasteEditorRemove: document.getElementById('uiPasteEditorRemove'),
     replyBar: document.getElementById('uiReplyBar'),
     replyLabel: document.getElementById('uiReplyLabel'),
     replyPreview: document.getElementById('uiReplyPreview'),
@@ -81,7 +96,6 @@ export const DOM = {
     prefEnterSend: document.getElementById('uiPrefEnterSend'),
     prefCompactMode: document.getElementById('uiPrefCompactMode'),
     prefShowTimestamps: document.getElementById('uiPrefShowTimestamps'),
-    themePicker: document.getElementById('uiThemePicker'),
     glassPicker: document.getElementById('uiGlassPicker'),
 
     profilePanel: document.getElementById('uiProfilePanel'),
@@ -99,6 +113,17 @@ const missingDomKeys = Object.entries(DOM)
 if (missingDomKeys.length) {
     throw new Error(`Missing required UI elements: ${missingDomKeys.join(', ')}`);
 }
+
+initSmartPasteUi({
+    listEl: DOM.pasteAttachments,
+    dialogEl: DOM.pasteEditor,
+    textareaEl: DOM.pasteEditorText,
+    countEl: DOM.pasteEditorCount,
+    titleEl: DOM.pasteEditorTitle,
+    saveBtn: DOM.pasteEditorSave,
+    removeBtn: DOM.pasteEditorRemove,
+    isDisabled: () => Boolean(DOM.messageInput?.disabled),
+});
 
 const contactsState = {
     users: [],
@@ -160,7 +185,8 @@ export function setRealtimeContext(ctx = {}) {
 }
 
 export function updateStatus(status, colorClass) {
-    DOM.statusSpan.textContent = status;
+    if (!DOM.statusSpan) return;
+
     const statusIntent = `${status} ${colorClass}`.toLowerCase();
     const isOnline = statusIntent.includes('online') ||
         statusIntent.includes('green') ||
@@ -168,14 +194,19 @@ export function updateStatus(status, colorClass) {
     const isReconnecting = statusIntent.includes('reconnect') ||
         statusIntent.includes('yellow');
 
+    DOM.statusSpan.textContent = '';
+    DOM.statusSpan.title = status;
+    DOM.statusSpan.setAttribute('aria-label', status);
+    DOM.statusSpan.style.color = '';
+
     if (isReconnecting) {
-        DOM.statusSpan.className = 'status-offline';
-        DOM.statusSpan.style.color = 'var(--t2)';
+        DOM.statusSpan.className = 'rail-presence status-offline';
         return;
     }
 
-    DOM.statusSpan.className = isOnline ? 'status-online' : 'status-offline';
-    DOM.statusSpan.style.color = '';
+    DOM.statusSpan.className = isOnline
+        ? 'rail-presence status-online'
+        : 'rail-presence status-offline';
 }
 
 export function setSidebarChats(chats, myUsername, onUserSelect, activeUsername = contactsState.activeUsername) {
@@ -236,9 +267,12 @@ export function showContactsLoading(count = 6) {
 
 export function activateChatPanel(username) {
     closeOverlaysForChatChange();
-    const profile = resolveContactProfile(username, null, contactsState.myUsername);
-    const label = getDisplayLabel(username, profile);
-    DOM.chatWithTitle.textContent = label === username ? `@${username}` : label;
+    refreshChatHeaderIdentity(username);
+    const headerLeft = DOM.chatWithTitle?.closest('.header-left');
+    if (headerLeft) {
+        headerLeft.classList.remove('hidden');
+        headerLeft.setAttribute('aria-hidden', 'false');
+    }
     DOM.messageInput.disabled = false;
     DOM.sendBtn.disabled = false;
     setChatToolsEnabled(true);
@@ -250,15 +284,25 @@ export function activateChatPanel(username) {
 
 export function resetChatPanel() {
     closeOverlaysForChatChange();
-    DOM.chatWithTitle.textContent = 'Select a conversation';
+    DOM.chatWithTitle.textContent = '';
     if (DOM.chatSubtitle) {
-        DOM.chatSubtitle.textContent = 'End-to-end encrypted';
+        DOM.chatSubtitle.textContent = '';
         DOM.chatSubtitle.className = 'header-sub';
+    }
+    if (DOM.chatHeaderAvatar) {
+        DOM.chatHeaderAvatar.replaceChildren();
+        DOM.chatHeaderAvatar.classList.remove('has-photo');
+    }
+    const headerLeft = DOM.chatWithTitle?.closest('.header-left');
+    if (headerLeft) {
+        headerLeft.classList.add('hidden');
+        headerLeft.setAttribute('aria-hidden', 'true');
     }
     clearMessageView();
     DOM.messageInput.value = '';
     DOM.messageInput.disabled = true;
     DOM.sendBtn.disabled = true;
+    clearPasteAttachments();
     setChatToolsEnabled(false);
     updateComposerMeta('');
     setDraftStatus(COMPOSER_DEFAULT_META);
@@ -929,6 +973,7 @@ export function getComposerValue() {
 
 export function clearComposer() {
     setComposerValue('');
+    clearPasteAttachments();
     autoResizeComposer();
     focusComposer();
 }
@@ -945,8 +990,8 @@ export function focusContactSearch() {
 }
 
 export function autoResizeComposer() {
-    const minHeight = 42;
-    const maxHeight = 132;
+    const minHeight = 44;
+    const maxHeight = 200;
     const input = DOM.messageInput;
     input.style.height = 'auto';
     const scrollH = input.scrollHeight;
@@ -956,7 +1001,7 @@ export function autoResizeComposer() {
 }
 
 export function updateComposerMeta(text) {
-    const length = text.length;
+    const length = (text?.length ?? 0) + getPasteAttachmentsLength();
     const over = length > MAX_MESSAGE_LENGTH;
     DOM.charCounter.textContent = over
         ? `${length} / ${MAX_MESSAGE_LENGTH} — limit exceeded`
@@ -965,7 +1010,9 @@ export function updateComposerMeta(text) {
     if (DOM.draftStatus?.dataset.limitError === '1' && !over) {
         DOM.draftStatus.dataset.limitError = '0';
         setDraftStatus(
-            text.trim() ? 'Draft saved locally' : COMPOSER_DEFAULT_META
+            text.trim() || getPasteAttachmentsLength() > 0
+                ? 'Draft saved locally'
+                : COMPOSER_DEFAULT_META
         );
     }
 }
@@ -985,15 +1032,18 @@ export function clearComposerLimitError() {
     if (DOM.draftStatus?.dataset.limitError === '1') {
         DOM.draftStatus.dataset.limitError = '0';
         DOM.draftStatus.classList.remove('danger');
+        DOM.draftStatus.classList.add('hidden');
+        DOM.draftStatus.textContent = '';
     }
 }
 
 export function setDraftStatus(text = COMPOSER_DEFAULT_META) {
     if (!DOM.draftStatus) return;
+    const isError = DOM.draftStatus.classList.contains('danger') || DOM.draftStatus.dataset.limitError === '1';
     DOM.draftStatus.textContent = text;
-    const isDecorative =
-        text === COMPOSER_DEFAULT_META && !DOM.draftStatus.classList.contains('danger');
-    DOM.draftStatus.classList.toggle('hidden', isDecorative);
+    // Hide routine draft/status copy — only keep error states visible
+    const keepVisible = isError && text && text !== COMPOSER_DEFAULT_META;
+    DOM.draftStatus.classList.toggle('hidden', !keepVisible);
 }
 
 export function insertAtCursor(text) {
@@ -1037,6 +1087,7 @@ export function openSettingsMenu(event) {
 
 export function closeAllPopovers() {
     closeOverlay();
+    closeEmojiPicker();
 }
 
 export function openMessageSearch() {
@@ -1089,6 +1140,7 @@ export function closeModals() {
 
 export function closeTransientUi() {
     closeOverlay();
+    closeEmojiPicker();
 }
 
 export function openChatInfoPopover(partner, online, publicKeyJwk = null, extra = {}) {
@@ -1146,13 +1198,6 @@ export function setPreferenceControls(preferences) {
     DOM.prefCompactMode.checked = preferences.compactMode;
     DOM.prefShowTimestamps.checked = preferences.showTimestamps;
 
-    if (DOM.themePicker) {
-        DOM.themePicker.querySelectorAll('[data-theme-value]').forEach((btn) => {
-            btn.classList.toggle('is-active', btn.dataset.themeValue === preferences.theme);
-        });
-    }
-
-    syncPickerActive(DOM.themePicker, 'data-theme-value', preferences.theme);
     syncPickerActive(DOM.glassPicker, 'data-glass-value', preferences.glassIntensity || 'medium');
     setUiPreferences(preferences);
 }
@@ -1167,21 +1212,15 @@ function syncPickerActive(container, attr, value) {
 /** Single entry point for profile: nav rail profile button. */
 export function updateProfileRailButton(username) {
     if (!DOM.profileBtn) return;
-    const nameEl = DOM.profileBtn.querySelector('.account-name');
-    const subEl = DOM.profileBtn.querySelector('.account-sub');
     if (!username) {
         DOM.profileBtn.title = 'Profile settings';
         DOM.profileBtn.setAttribute('aria-label', 'Profile settings');
-        if (nameEl) nameEl.textContent = 'My profile';
-        if (subEl) subEl.textContent = 'Identity · Security · Data';
         return;
     }
     const profile = loadProfile(username);
     const label = getDisplayLabel(username, profile);
     DOM.profileBtn.title = `${label} (@${username})`;
     DOM.profileBtn.setAttribute('aria-label', `Profile: ${label}`);
-    if (nameEl) nameEl.textContent = label;
-    if (subEl) subEl.textContent = `@${username}`;
 }
 
 export function setChatToolsEnabled(isEnabled) {
@@ -1191,9 +1230,31 @@ export function setChatToolsEnabled(isEnabled) {
         DOM.chatMenuBtn,
         DOM.composerMenuBtn,
         DOM.attachBtn,
+        DOM.emojiBtn,
+        DOM.clearComposerBtn,
     ].forEach((control) => {
         if (control) control.disabled = !isEnabled;
     });
+    if (!isEnabled) closeEmojiPicker();
+    // Re-render paste cards so open/remove buttons match disabled state
+    if (DOM.pasteAttachments && !DOM.pasteAttachments.classList.contains('hidden')) {
+        DOM.pasteAttachments.querySelectorAll('button').forEach((btn) => {
+            btn.disabled = !isEnabled;
+        });
+    }
+}
+
+export function closeEmojiPicker() {
+    if (!DOM.emojiPicker) return;
+    DOM.emojiPicker.classList.add('hidden');
+    DOM.emojiBtn?.setAttribute('aria-expanded', 'false');
+}
+
+export function toggleEmojiPicker() {
+    if (!DOM.emojiPicker || !DOM.emojiBtn || DOM.emojiBtn.disabled) return;
+    const open = DOM.emojiPicker.classList.contains('hidden');
+    DOM.emojiPicker.classList.toggle('hidden', !open);
+    DOM.emojiBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 export function refreshContactList() {
@@ -1389,12 +1450,23 @@ function refreshContactIndicators() {
     });
 }
 
+function refreshChatHeaderIdentity(username) {
+    if (!username) return;
+    const sidebarUser = contactsState.sidebarChats.find((u) => u.username === username);
+    const profile = resolveContactProfile(username, sidebarUser, contactsState.myUsername);
+    const label = getDisplayLabel(username, profile);
+    DOM.chatWithTitle.textContent = label;
+    if (DOM.chatHeaderAvatar) {
+        applyContactAvatar(DOM.chatHeaderAvatar, username, profile);
+    }
+}
+
 function refreshChatHeaderSubtitle() {
     if (!DOM.chatSubtitle) return;
 
     const partner = contactsState.activeUsername;
     if (!partner) {
-        DOM.chatSubtitle.textContent = 'End-to-end encrypted';
+        DOM.chatSubtitle.textContent = '';
         DOM.chatSubtitle.className = 'header-sub';
         return;
     }
@@ -1415,8 +1487,8 @@ function refreshChatHeaderSubtitle() {
 
     const online = realtimeContext.onlineUsers.has(partner);
     DOM.chatSubtitle.innerHTML = online
-        ? '<span class="presence-badge presence-badge--online"><span class="presence-dot" aria-hidden="true"></span>Online</span>'
-        : '<span class="presence-badge presence-badge--offline"><span class="presence-dot" aria-hidden="true"></span>Offline</span>';
+        ? '<span class="presence-badge presence-badge--online">Online</span>'
+        : '<span class="presence-badge presence-badge--offline">Offline</span>';
     DOM.chatSubtitle.className = 'header-sub';
 }
 

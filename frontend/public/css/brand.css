@@ -79,16 +79,16 @@
     width: 48px;
 }
 
-/* Filled tile variant (optional) */
+/* Filled tile variant (optional) — start-site primary CTA */
 .brand-logo--filled {
-    background: linear-gradient(145deg, var(--accent-strong, #5e6650) 0%, var(--accent, #7c8466) 100%);
+    background: linear-gradient(to bottom right, #f3f4f6, #d1d5db);
     border: 1px solid var(--login-mark-border);
     border-radius: var(--r2, 12px);
     box-shadow: 0 4px 14px var(--accent-20);
 }
 
 .brand-logo--filled .brand-logo__svg {
-    color: #ffffff;
+    color: #000000;
 }
 
 .brand-logo--welcome {
@@ -128,8 +128,4 @@
 
 .profile-head-title .profile-head-sub {
     margin: 4px 0 0;
-}
-
-[data-theme="light"] .brand-logo--filled {
-    box-shadow: 0 4px 14px var(--accent-20);
 }

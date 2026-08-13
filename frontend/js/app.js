@@ -27,6 +27,8 @@ import {
     openComposerMenu,
     openSettingsMenu,
     closeAllPopovers,
+    closeEmojiPicker,
+    toggleEmojiPicker,
     openChatInfoPopover,
     initMessageContextMenu,
     initMessageActions,
@@ -115,6 +117,15 @@ import { initProfileSettings } from './profileSettings.js';
 import { initLoginPage, teardownLoginPage } from './loginPage.js';
 import { initStartSite, teardownStartSite } from './startSite.js';
 import { playLoginSuccessReveal, resetLoginBackground } from './loginCanvas.js';
+import {
+    addPasteAttachment,
+    clearPasteAttachments,
+    composeMessageText,
+    getPasteAttachments,
+    MAX_PASTE_ATTACHMENTS,
+    setPasteAttachmentsChangeHandler,
+    shouldCapturePaste,
+} from './smartPaste.js';
 import { getPrivacyFlags, isChatMuted, toggleChatMuted } from './privacy.js';
 import { registerShortcuts } from './shortcuts.js';
 import {
@@ -634,11 +645,6 @@ registerOverlayActions({
         clearDraft(state.myUsername, state.currentTargetUser);
         clearComposer();
         setDraftStatus('Draft cleared.');
-    },
-    'theme.set': ({ theme }) => {
-        state.preferences = updatePreference(state.preferences, 'theme', theme);
-        setPreferenceControls(state.preferences);
-        showToast('Theme updated.', 'success');
     },
     'message.copy': (payload) => {
         const text = payload?.text || '';
@@ -1222,6 +1228,7 @@ async function switchChat(username) {
     if (state.chatHistory[username]?.length) {
         renderMessagesList(state.chatHistory[username]);
     }
+    clearPasteAttachments();
     setComposerValue(loadDraft(state.myUsername, username));
     setDraftStatus(getComposerValue() ? "Draft restored locally" : "End-to-end encrypted");
     flushChatHistorySave();
@@ -1230,7 +1237,7 @@ async function switchChat(username) {
 }
 
 async function handleSendMessage() {
-    const text = getComposerValue().trim();
+    const text = composeMessageText(getComposerValue());
 
     if (!state.currentTargetUser) {
         showToast("Select a chat first.", "error");
@@ -1356,7 +1363,25 @@ DOM.messageInput.addEventListener('input', () => {
     persistCurrentDraft();
     if (
         state.currentTargetUser &&
-        getComposerValue().trim() &&
+        (getComposerValue().trim() || getPasteAttachments().length) &&
+        getPrivacyFlags(state.preferences).typingIndicators
+    ) {
+        ensureRealtime().notifyTyping(state.currentTargetUser);
+    }
+});
+
+DOM.messageInput.addEventListener('paste', (event) => {
+    if (DOM.messageInput.disabled) return;
+    const pasted = event.clipboardData?.getData('text/plain') ?? '';
+    if (!shouldCapturePaste(pasted)) return;
+    if (getPasteAttachments().length >= MAX_PASTE_ATTACHMENTS) return;
+
+    event.preventDefault();
+    addPasteAttachment(pasted);
+    clearComposerLimitError();
+    updateComposerMeta(getComposerValue());
+    if (
+        state.currentTargetUser &&
         getPrivacyFlags(state.preferences).typingIndicators
     ) {
         ensureRealtime().notifyTyping(state.currentTargetUser);
@@ -1371,15 +1396,13 @@ DOM.messageInput.addEventListener('keydown', (event) => {
     }
 });
 
-DOM.contactSearchInput.addEventListener('input', () => {
-    handleContactSearchInput();
+setPasteAttachmentsChangeHandler(() => {
+    clearComposerLimitError();
+    updateComposerMeta(getComposerValue());
 });
 
-DOM.clearContactSearchBtn.addEventListener('click', () => {
-    DOM.contactSearchInput.value = '';
-    filterUsers('');
-    clearUsersList();
-    focusContactSearch();
+DOM.contactSearchInput.addEventListener('input', () => {
+    handleContactSearchInput();
 });
 
 DOM.refreshUsersBtn.addEventListener('click', refreshUsersDirectory);
@@ -1401,7 +1424,29 @@ DOM.copyUsernameBtn.addEventListener('click', copyCurrentUsername);
 DOM.logoutBtn.addEventListener('click', handleLogout);
 
 DOM.chatMenuBtn.addEventListener('click', (event) => openChatMenu(event));
-DOM.composerMenuBtn.addEventListener('click', (event) => openComposerMenu(event));
+DOM.composerMenuBtn?.addEventListener('click', (event) => openComposerMenu(event));
+DOM.emojiBtn?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleEmojiPicker();
+});
+DOM.emojiPicker?.addEventListener('click', (event) => {
+    const item = event.target.closest('[data-emoji]');
+    if (!item) return;
+    insertAtCursor(item.dataset.emoji);
+    persistCurrentDraft();
+    closeEmojiPicker();
+});
+document.addEventListener('click', (event) => {
+    if (!DOM.emojiPicker || DOM.emojiPicker.classList.contains('hidden')) return;
+    if (event.target.closest('.composer-emoji-wrap')) return;
+    closeEmojiPicker();
+});
+DOM.clearComposerBtn?.addEventListener('click', () => {
+    clearComposer();
+    clearDraft(state.myUsername, state.currentTargetUser);
+    setDraftStatus('Draft cleared.');
+    closeEmojiPicker();
+});
 DOM.chatSearchBtn.addEventListener('click', openMessageSearch);
 DOM.closeMessageSearchBtn.addEventListener('click', closeMessageSearch);
 DOM.messageSearchInput.addEventListener('input', () => searchMessages(DOM.messageSearchInput.value));
@@ -1418,16 +1463,6 @@ DOM.fileInput.addEventListener('change', () => {
 bindPreferenceToggle(DOM.prefEnterSend, 'enterToSend');
 bindPreferenceToggle(DOM.prefCompactMode, 'compactMode');
 bindPreferenceToggle(DOM.prefShowTimestamps, 'showTimestamps');
-
-if (DOM.themePicker) {
-    DOM.themePicker.addEventListener('click', (event) => {
-        const btn = event.target.closest('[data-theme-value]');
-        if (!btn) return;
-        state.preferences = updatePreference(state.preferences, 'theme', btn.dataset.themeValue);
-        setPreferenceControls(state.preferences);
-        showToast('Theme updated.', 'success');
-    });
-}
 
 if (DOM.glassPicker) {
     DOM.glassPicker.addEventListener('click', (event) => {

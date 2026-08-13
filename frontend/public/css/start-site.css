@@ -1060,24 +1060,23 @@
 /* ─── Step mockups ───────────────────────────────────────────────
    Each shot fills the slot the reference gives to an image and acts as a size
    container, so the UI inside scales with the slot instead of the viewport.
-   Colours are the messenger theme tokens (warm charcoal + sage) so the
-   mockups read as the real product, not as generic feature art. */
+   Colours match the messenger / start-site dark monochrome tokens. */
 .start-fc__shot {
     --fc-scale: 1;
     --cycle: 5.2s;
-    --ui-bg: #1a1a16;
-    --ui-surface: #232320;
-    --ui-elevated: #2b2b26;
-    --ui-text: #ecebe2;
-    --ui-text-2: #a3a298;
-    --ui-text-3: #76756b;
-    --ui-accent: #9aa585;
-    --ui-accent-strong: #b3bd9c;
-    --ui-accent-soft: rgba(154, 165, 133, 0.16);
-    --ui-accent-line: rgba(154, 165, 133, 0.34);
-    --ui-own: #3a3f30;
-    --ui-own-text: #eef0e4;
-    --ui-other: #2a2a24;
+    --ui-bg: #000000;
+    --ui-surface: #0e0e0e;
+    --ui-elevated: #131313;
+    --ui-text: #f4f4f5;
+    --ui-text-2: rgba(212, 212, 216, 0.78);
+    --ui-text-3: #9ca3af;
+    --ui-accent: #f4f4f5;
+    --ui-accent-strong: #ffffff;
+    --ui-accent-soft: rgba(244, 244, 245, 0.1);
+    --ui-accent-line: rgba(244, 244, 245, 0.28);
+    --ui-own: #e4e4e7;
+    --ui-own-text: #0a0a0a;
+    --ui-other: #181818;
     --ui-border: rgba(255, 255, 255, 0.08);
     --ui-border-soft: rgba(255, 255, 255, 0.045);
 
@@ -1206,7 +1205,7 @@
 .fcui__cta {
     background: var(--ui-accent);
     border-radius: 999px;
-    color: #1a1a16;
+    color: #000000;
     font-size: 2.7cqw;
     font-weight: 700;
     padding: 2cqw 5.5cqw;
@@ -1291,7 +1290,7 @@
     align-items: center;
     background: var(--ui-accent);
     border-radius: 50%;
-    color: #1a1a16;
+    color: #000000;
     display: inline-flex;
     flex-shrink: 0;
     font-size: 2.1cqw;
@@ -1347,7 +1346,7 @@
     width: 8.4cqw;
 }
 
-.fcui__avatar--sage { background: linear-gradient(135deg, #b3bd9c, #7c8466); }
+.fcui__avatar--sage { background: linear-gradient(135deg, #e4e4e7, #a1a1aa); }
 .fcui__avatar--clay { background: linear-gradient(135deg, #c79a5b, #9c6f4a); }
 .fcui__avatar--slate { background: linear-gradient(135deg, #9aa3ad, #6b7480); }
 .fcui__avatar--rose { background: linear-gradient(135deg, #cf9d97, #a06f68); }
@@ -1395,7 +1394,7 @@
 .fcui__btn {
     background: var(--ui-accent);
     border-radius: 2cqw;
-    color: #1a1a16;
+    color: #000000;
     flex-shrink: 0;
     font-size: 2.2cqw;
     font-weight: 700;
@@ -1443,7 +1442,7 @@
     align-items: center;
     background: var(--ui-accent);
     border-radius: 999px;
-    color: #1a1a16;
+    color: #000000;
     display: inline-flex;
     font-size: 1.9cqw;
     font-weight: 700;
@@ -1593,7 +1592,7 @@
     align-items: center;
     background: var(--ui-accent);
     border-radius: 50%;
-    color: #1a1a16;
+    color: #000000;
     display: inline-flex;
     flex-shrink: 0;
     font-size: 2.2cqw;
@@ -1736,7 +1735,7 @@
 }
 
 .fcui__qr i {
-    background: #1a1a16;
+    background: #000000;
     border-radius: 0.4cqw;
 }
 
@@ -1896,7 +1895,7 @@
 
 @keyframes fcuiFlash {
     0%, 62% { background: rgba(255, 255, 255, 0.05); color: var(--ui-text-2); }
-    68%, 92% { background: var(--ui-accent); color: #1a1a16; }
+    68%, 92% { background: var(--ui-accent); color: #000000; }
     100% { background: rgba(255, 255, 255, 0.05); color: var(--ui-text-2); }
 }
 
@@ -2007,7 +2006,7 @@
 }
 
 .start-fc__pill-num {
-    color: #b3bd9c;
+    color: #f4f4f5;
     font-size: 12px;
     line-height: 1;
 }
@@ -2048,7 +2047,7 @@
 }
 
 .start-fc__pill.is-active .start-fc__pill-label {
-    color: #b3bd9c;
+    color: #f4f4f5;
 }
 
 .start-fc__pill.is-done .start-fc__pill-label {

@@ -90,15 +90,21 @@
     color: var(--text-secondary);
 }
 
-/* ─── Composer row inside the floating bubble ─── */
+/* ─── Composer row — AiChatInput-style ─── */
 .input-row {
     align-items: flex-end;
     background: transparent;
     border: none;
     border-radius: 0;
     box-shadow: none;
-    gap: var(--space-1);
+    display: flex;
+    gap: 8px;
     padding: 0;
+}
+
+.input-row .btn-attach,
+.input-row .composer-actions {
+    align-self: flex-end;
 }
 
 .input-row:focus-within {
@@ -107,21 +113,86 @@
     box-shadow: none;
 }
 
-/* Borderless textarea inside the capsule */
-.input-row #messageInput {
-    background: transparent !important;
+.composer-field {
+    flex: 1;
+    min-width: 0;
+}
+
+.composer-field #messageInput {
+    background: rgba(255, 255, 255, 0.04) !important;
     border: none !important;
-    border-radius: 0 !important;
+    border-radius: 14px !important;
     box-shadow: none !important;
-    padding: 9px 6px !important;
+    max-height: 200px;
+    min-height: 44px;
+    overflow-y: auto;
+    padding: 11px 14px !important;
+    width: 100%;
 }
 
-.input-row #messageInput:hover:not(:disabled) {
-    background: transparent !important;
+.composer-field #messageInput:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.055) !important;
     border: none !important;
 }
 
-/* Circular ghost icon buttons (attach / tools) */
+.composer-field #messageInput:focus {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.composer-actions {
+    align-items: center;
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+.composer-emoji-wrap {
+    position: relative;
+}
+
+.composer-emoji-picker {
+    background: var(--overlay-bg, #131313);
+    border: 1px solid var(--overlay-border, rgba(255, 255, 255, 0.1));
+    border-radius: 12px;
+    bottom: calc(100% + 8px);
+    box-shadow: var(--overlay-shadow);
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 8px;
+    position: absolute;
+    right: 0;
+    width: 160px;
+    z-index: 30;
+}
+
+.composer-emoji-picker.hidden {
+    display: none;
+}
+
+.composer-emoji-item {
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 18px;
+    height: 34px;
+    justify-content: center;
+    line-height: 1;
+    transition: background 0.15s ease, transform 0.15s ease;
+    width: 34px;
+}
+
+.composer-emoji-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.08);
+}
+
 .input-row .btn-attach {
     align-items: center;
     background: transparent;
@@ -130,9 +201,9 @@
     color: var(--text-secondary);
     display: inline-flex;
     flex-shrink: 0;
-    height: 38px;
+    height: 40px;
     justify-content: center;
-    width: 38px;
+    width: 40px;
 }
 
 .input-row .btn-attach:hover:not(:disabled) {
@@ -141,35 +212,321 @@
     color: var(--text);
 }
 
-/* Send — circular accent button with paper-plane icon */
+.input-row .btn-attach:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
 #sendBtn {
     align-items: center;
-    background: var(--accent) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
     border: none !important;
     border-radius: var(--radius-pill) !important;
-    color: #fff !important;
+    color: var(--text) !important;
     display: inline-flex !important;
     font-family: var(--f-ui) !important;
-    height: 38px;
+    height: 40px;
     justify-content: center;
-    min-width: 38px;
+    min-width: 40px;
     padding: 0 !important;
-    width: 38px;
+    width: 40px;
 }
 
 #sendBtn .ui-icon {
-    height: 18px;
-    width: 18px;
-    /* nudge the paper-plane to feel optically centered */
+    height: 16px;
+    width: 16px;
     transform: translateX(-1px);
 }
 
 #sendBtn:hover:not(:disabled) {
-    background: var(--accent-strong, color-mix(in srgb, var(--accent) 82%, #000)) !important;
-    box-shadow: 0 4px 16px var(--accent-20) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: none !important;
+    box-shadow: none !important;
     color: #fff !important;
 }
 
 #sendBtn:disabled {
     opacity: 0.35 !important;
+}
+
+/* ─── Smart paste attachments ─── */
+.paste-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 2px 0 4px;
+}
+
+.paste-attachments.hidden {
+    display: none;
+}
+
+.paste-card-wrap {
+    position: relative;
+}
+
+.paste-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: none;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 104px;
+    overflow: hidden;
+    padding: 12px 14px;
+    text-align: left;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    width: 240px;
+}
+
+.paste-card:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    transform: translateY(-1px);
+}
+
+.paste-card:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.28);
+    outline-offset: 2px;
+}
+
+.paste-card:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.paste-card-title {
+    color: var(--text);
+    font-family: var(--f-ui);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.paste-card-preview {
+    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+    color: var(--text-secondary);
+    flex: 1;
+    font-family: var(--f-ui);
+    font-size: 12px;
+    line-height: 1.5;
+    mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+    margin-top: 6px;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.paste-card-remove {
+    align-items: center;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    height: 22px;
+    justify-content: center;
+    padding: 0;
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    transition: color 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+    width: 22px;
+}
+
+.paste-card-remove .ui-icon {
+    height: 12px;
+    width: 12px;
+}
+
+.paste-card-remove:hover:not(:disabled) {
+    background: #1c1c1c;
+    color: var(--text);
+}
+
+.paste-card-remove:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .paste-card-remove {
+        opacity: 0;
+    }
+
+    .paste-card-wrap:hover .paste-card-remove,
+    .paste-card-remove:focus-visible {
+        opacity: 1;
+    }
+}
+
+.paste-editor-overlay {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.62);
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    left: 0;
+    padding: 24px;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 80;
+}
+
+.paste-editor-overlay.hidden {
+    display: none;
+}
+
+.paste-editor-panel {
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 22px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    max-height: min(720px, calc(100vh - 48px));
+    max-width: 600px;
+    padding: 22px 24px 18px;
+    width: min(600px, 100%);
+}
+
+.paste-editor-head {
+    align-items: baseline;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+}
+
+.paste-editor-title {
+    color: var(--text);
+    font-family: var(--f-ui);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+
+.paste-editor-count {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    font-family: var(--f-ui);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+}
+
+.paste-editor-body {
+    margin-top: 14px;
+    position: relative;
+}
+
+.paste-editor-textarea {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 14px;
+    height: 300px;
+    line-height: 1.85;
+    max-height: 45vh;
+    outline: none;
+    padding: 0;
+    resize: none;
+    scrollbar-width: thin;
+    width: 100%;
+}
+
+.paste-editor-textarea:focus,
+.paste-editor-textarea:focus-visible {
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+
+.paste-editor-fade {
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    transition: opacity 0.2s ease;
+    opacity: 0;
+}
+
+.paste-editor-fade--top {
+    background: linear-gradient(to bottom, #111, transparent);
+    height: 28px;
+    top: 0;
+}
+
+.paste-editor-fade--bottom {
+    background: linear-gradient(to top, #111 20%, transparent);
+    bottom: 0;
+    height: 72px;
+}
+
+.paste-editor-overlay.has-overflow-top .paste-editor-fade--top,
+.paste-editor-overlay.has-overflow-bottom .paste-editor-fade--bottom {
+    opacity: 1;
+}
+
+.paste-editor-foot {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+.paste-editor-remove {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: var(--f-ui);
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: -6px;
+    padding: 8px 10px;
+}
+
+.paste-editor-remove:hover {
+    color: var(--text);
+}
+
+.paste-editor-save {
+    background: rgba(255, 255, 255, 0.92);
+    border: none;
+    border-radius: 999px;
+    color: #0a0a0a;
+    cursor: pointer;
+    font-family: var(--f-ui);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 22px;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.paste-editor-save:hover {
+    background: #fff;
+    transform: scale(1.02);
+}
+
+.paste-editor-save:active {
+    transform: scale(0.98);
+}
+
+.paste-editor-save:disabled {
+    cursor: default;
+    opacity: 0.45;
+    transform: none;
 }

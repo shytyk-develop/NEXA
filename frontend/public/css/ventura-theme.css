@@ -1,205 +1,96 @@
-/* macOS Ventura / Apple Messages — semantic theme tokens + chat UI */
+/* Messenger theme tokens — aligned with start-site landing (dark monochrome) */
 
-/* ─── Dusk (dark companion) — warm charcoal + sage identity ─── */
 :root,
 [data-theme="dark"] {
     color-scheme: dark;
 
-    --bg: #1a1a16;
-    --bg-subtle: #1f1f1a;
-    --surface: #232320;
-    --surface-elevated: #2b2b26;
-    --surface-overlay: #33332d;
-    --text: #ecebe2;
-    --text-secondary: #a3a298;
-    --text-tertiary: #76756b;
-    --accent: #9aa585;
-    --accent-strong: #b3bd9c;
-    --accent-muted: rgba(154, 165, 133, 0.34);
-    --bubble-own: #3a3f30;
-    --bubble-own-text: #eef0e4;
-    --bubble-other: #2a2a24;
+    /* Surfaces — pure black + near-black panels (start-site) */
+    --bg: #000000;
+    --bg-subtle: #0a0a0a;
+    --surface: #0e0e0e;
+    --surface-elevated: #131313;
+    --surface-overlay: #1a1a1a;
+    /* Text — start-site --txt / --txt-2 / --txt-3 */
+    --text: #f4f4f5;
+    --text-secondary: rgba(212, 212, 216, 0.78);
+    --text-tertiary: #9ca3af;
+    /* Accent — start-site primary CTA (light gray → white) */
+    --accent: #f4f4f5;
+    --accent-strong: #ffffff;
+    --accent-muted: rgba(244, 244, 245, 0.28);
+    --bubble-own: #e4e4e7;
+    --bubble-own-text: #0a0a0a;
+    --bubble-other: #181818;
     --bubble-other-border: rgba(255, 255, 255, 0.06);
-    --bubble-other-text: #ecebe2;
+    --bubble-other-text: #f4f4f5;
     --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.13);
+    --border-strong: rgba(255, 255, 255, 0.16);
     --border-subtle: rgba(255, 255, 255, 0.045);
-    --glass: rgba(31, 31, 26, 0.94);
-    --glass-border: rgba(255, 255, 255, 0.07);
-    --shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.26), 0 12px 32px rgba(0, 0, 0, 0.2);
-    --shadow-bubble: 0 1px 1px rgba(0, 0, 0, 0.16);
-    --shadow-bubble-own: 0 1px 2px rgba(0, 0, 0, 0.18);
-    --shadow-bubble-other: 0 1px 2px rgba(0, 0, 0, 0.12);
-    --green: #8aa777;
-    --amber: #c79a5b;
-    --red: #cf7065;
-    --accent-10: rgba(154, 165, 133, 0.16);
-    --accent-20: rgba(154, 165, 133, 0.26);
-    --green-10: rgba(138, 167, 119, 0.14);
-    --green-20: rgba(138, 167, 119, 0.24);
-    --red-10: rgba(207, 112, 101, 0.14);
-    --red-20: rgba(207, 112, 101, 0.24);
-    --focus: rgba(154, 165, 133, 0.5);
+    --glass: rgba(14, 14, 14, 0.92);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+    --shadow-bubble: 0 1px 1px rgba(0, 0, 0, 0.28);
+    --shadow-bubble-own: 0 1px 2px rgba(0, 0, 0, 0.22);
+    --shadow-bubble-other: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --green: #86efac;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --accent-10: rgba(244, 244, 245, 0.1);
+    --accent-20: rgba(244, 244, 245, 0.18);
+    --green-10: rgba(134, 239, 172, 0.12);
+    --green-20: rgba(134, 239, 172, 0.22);
+    --red-10: rgba(248, 113, 113, 0.12);
+    --red-20: rgba(248, 113, 113, 0.22);
+    --focus: rgba(244, 244, 245, 0.45);
 
     /* Polish tokens */
-    --shell-bg: #1d1d18;
+    --shell-bg: #0a0a0a;
     --shell-border: rgba(255, 255, 255, 0.06);
     --row-hover: rgba(255, 255, 255, 0.045);
-    --row-active: rgba(154, 165, 133, 0.14);
+    --row-active: rgba(244, 244, 245, 0.1);
     --row-active-border: transparent;
     --row-active-shadow: none;
     --input-fill: rgba(255, 255, 255, 0.04);
     --input-fill-hover: rgba(255, 255, 255, 0.06);
     --input-fill-focus: rgba(255, 255, 255, 0.07);
     --input-border: rgba(255, 255, 255, 0.09);
-    --input-border-hover: rgba(255, 255, 255, 0.14);
-    --input-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    --input-shadow-focus: 0 0 0 3px var(--accent-10), 0 1px 2px rgba(0, 0, 0, 0.1);
+    --input-border-hover: rgba(255, 255, 255, 0.16);
+    --input-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --input-shadow-focus: 0 0 0 3px var(--accent-10), 0 1px 2px rgba(0, 0, 0, 0.2);
     --btn-secondary-bg: rgba(255, 255, 255, 0.04);
-    --btn-secondary-bg-hover: rgba(255, 255, 255, 0.07);
-    --btn-secondary-border: rgba(255, 255, 255, 0.09);
-    --overlay-bg: #2b2b26;
-    --overlay-border: rgba(255, 255, 255, 0.09);
-    --overlay-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 24px 64px rgba(0, 0, 0, 0.42), 0 4px 12px rgba(0, 0, 0, 0.22);
-    --backdrop: rgba(12, 12, 9, 0.5);
-    --backdrop-modal: rgba(12, 12, 9, 0.64);
+    --btn-secondary-bg-hover: rgba(255, 255, 255, 0.08);
+    --btn-secondary-border: rgba(255, 255, 255, 0.1);
+    --overlay-bg: #131313;
+    --overlay-border: rgba(255, 255, 255, 0.1);
+    --overlay-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 24px 64px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --backdrop: rgba(0, 0, 0, 0.55);
+    --backdrop-modal: rgba(0, 0, 0, 0.72);
     --settings-row-bg: rgba(255, 255, 255, 0.03);
-    --chat-dot-grid: rgba(255, 255, 255, 0.018);
-    --login-grid: rgba(154, 165, 133, 0.07);
-    --login-glow: rgba(154, 165, 133, 0.09);
-    --login-vignette: rgba(12, 12, 9, 0.7);
-    --login-card-bg: #26261f;
-    --login-card-border: rgba(255, 255, 255, 0.09);
-    --login-card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 24px 64px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
-    --login-mark-bg: rgba(154, 165, 133, 0.12);
-    --login-mark-border: rgba(154, 165, 133, 0.24);
-    --login-mark-shadow: 0 4px 20px rgba(154, 165, 133, 0.12);
+    --chat-dot-grid: rgba(255, 255, 255, 0.02);
+    --login-grid: rgba(244, 244, 245, 0.06);
+    --login-glow: rgba(244, 244, 245, 0.08);
+    --login-vignette: rgba(0, 0, 0, 0.75);
+    --login-card-bg: #131313;
+    --login-card-border: rgba(255, 255, 255, 0.1);
+    --login-card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 24px 64px rgba(0, 0, 0, 0.55), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --login-mark-bg: rgba(244, 244, 245, 0.08);
+    --login-mark-border: rgba(244, 244, 245, 0.18);
+    --login-mark-shadow: 0 4px 20px rgba(244, 244, 245, 0.08);
 
     /* Legacy aliases (shell / sidebar) */
     --void: var(--bg);
     --panel: var(--surface-elevated);
-    --card: #2a2a23;
+    --card: #1a1a1a;
     --hover: var(--row-hover);
-    --active: rgba(255, 255, 255, 0.07);
+    --active: rgba(255, 255, 255, 0.08);
     --b0: var(--border-subtle);
     --b1: var(--border);
     --b2: var(--border-strong);
-    --b3: rgba(255, 255, 255, 0.2);
+    --b3: rgba(255, 255, 255, 0.22);
     --t1: var(--text);
     --t2: var(--text-secondary);
     --t3: var(--text-tertiary);
-    --t4: rgba(118, 117, 107, 0.75);
-}
-
-/* ─── Sage (light, hero) — warm bone + organic sage identity ─── */
-[data-theme="light"] {
-    color-scheme: light;
-
-    --bg: #e9e9df;
-    --bg-subtle: #eeeee5;
-    --surface: #f4f3ec;
-    --surface-elevated: #fbfaf5;
-    --surface-overlay: #fbfaf5;
-    --text: #2a2a26;
-    --text-secondary: #6f6f66;
-    --text-tertiary: #9a9a8f;
-    --accent: #7c8466;
-    --accent-strong: #5e6650;
-    --accent-muted: rgba(124, 132, 102, 0.34);
-    --bubble-own: #c9d2bb;
-    --bubble-own-text: #33372a;
-    --bubble-other: #e5e4db;
-    --bubble-other-border: rgba(42, 42, 38, 0.05);
-    --bubble-other-text: #2a2a26;
-    --border: rgba(42, 42, 38, 0.08);
-    --border-strong: rgba(42, 42, 38, 0.13);
-    --border-subtle: rgba(42, 42, 38, 0.045);
-    --glass: rgba(244, 243, 236, 0.9);
-    --glass-border: rgba(42, 42, 38, 0.06);
-    --shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 2px rgba(60, 60, 40, 0.05), 0 12px 32px rgba(60, 60, 40, 0.06);
-    --shadow-bubble: 0 1px 2px rgba(60, 60, 40, 0.05);
-    --shadow-bubble-own: 0 1px 2px rgba(92, 102, 70, 0.12);
-    --shadow-bubble-other: 0 1px 2px rgba(60, 60, 40, 0.045);
-    --green: #6e8b5e;
-    --amber: #b8894a;
-    --red: #b4564b;
-    --accent-10: rgba(124, 132, 102, 0.12);
-    --accent-20: rgba(124, 132, 102, 0.2);
-    --green-10: rgba(110, 139, 94, 0.12);
-    --green-20: rgba(110, 139, 94, 0.2);
-    --red-10: rgba(180, 86, 75, 0.1);
-    --red-20: rgba(180, 86, 75, 0.18);
-    --focus: rgba(124, 132, 102, 0.45);
-
-    --shell-bg: rgba(233, 233, 223, 0.92);
-    --shell-border: rgba(42, 42, 38, 0.06);
-    --row-hover: rgba(42, 42, 38, 0.04);
-    --row-active: rgba(124, 132, 102, 0.16);
-    --row-active-border: transparent;
-    --row-active-shadow: none;
-    --input-fill: rgba(255, 255, 255, 0.6);
-    --input-fill-hover: rgba(255, 255, 255, 0.8);
-    --input-fill-focus: #ffffff;
-    --input-border: rgba(42, 42, 38, 0.09);
-    --input-border-hover: rgba(42, 42, 38, 0.14);
-    --input-shadow: 0 1px 2px rgba(60, 60, 40, 0.04);
-    --input-shadow-focus: 0 0 0 3px var(--accent-10), 0 1px 3px rgba(60, 60, 40, 0.05);
-    --btn-secondary-bg: rgba(255, 255, 255, 0.55);
-    --btn-secondary-bg-hover: #ffffff;
-    --btn-secondary-border: rgba(42, 42, 38, 0.08);
-    --overlay-bg: #fbfaf5;
-    --overlay-border: rgba(42, 42, 38, 0.07);
-    --overlay-shadow: 0 0 0 1px rgba(42, 42, 38, 0.03), 0 24px 64px rgba(40, 40, 30, 0.14), 0 4px 12px rgba(40, 40, 30, 0.06);
-    --backdrop: rgba(233, 233, 223, 0.6);
-    --backdrop-modal: rgba(233, 233, 223, 0.78);
-    --settings-row-bg: rgba(255, 255, 255, 0.55);
-    --chat-dot-grid: rgba(42, 42, 38, 0.03);
-    --login-grid: rgba(124, 132, 102, 0.08);
-    --login-glow: rgba(124, 132, 102, 0.1);
-    --login-vignette: rgba(233, 233, 223, 0.32);
-    --login-card-bg: #fbfaf5;
-    --login-card-border: rgba(42, 42, 38, 0.07);
-    --login-card-shadow: 0 0 0 1px rgba(42, 42, 38, 0.03), 0 24px 64px rgba(40, 40, 30, 0.1), 0 4px 12px rgba(40, 40, 30, 0.05);
-    --login-mark-bg: rgba(124, 132, 102, 0.1);
-    --login-mark-border: rgba(124, 132, 102, 0.2);
-    --login-mark-shadow: 0 4px 20px rgba(124, 132, 102, 0.12);
-
-    --void: var(--bg);
-    --panel: var(--surface-elevated);
-    --card: #dee0d2;
-    --hover: var(--row-hover);
-    --active: rgba(42, 42, 38, 0.05);
-    --b0: var(--border-subtle);
-    --b1: var(--border);
-    --b2: var(--border-strong);
-    --b3: rgba(42, 42, 38, 0.18);
-    --t1: var(--text);
-    --t2: var(--text-secondary);
-    --t3: var(--text-tertiary);
-    --t4: #b0b0a4;
-}
-
-/* Smooth theme transitions */
-html {
-    transition:
-        background-color 0.35s ease,
-        color 0.35s ease;
-}
-
-body,
-.chat-main,
-.sidebar,
-.nav-rail,
-.chat-header,
-.input-bar,
-.message-bubble,
-#messageInput,
-.modal-panel {
-    transition:
-        background-color 0.35s ease,
-        border-color 0.35s ease,
-        color 0.35s ease,
-        box-shadow 0.35s ease;
+    --t4: rgba(156, 163, 175, 0.7);
 }
 
 body {
@@ -266,25 +157,22 @@ body {
 }
 
 .input-row {
-    align-items: center;
+    align-items: flex-end;
 }
 
 #sendBtn {
-    background: var(--accent);
-    border-radius: 20px;
-    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 999px;
+    color: var(--text);
     font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: none;
 }
 
 #sendBtn:hover {
-    background: color-mix(in srgb, var(--accent) 88%, #fff);
-    box-shadow: 0 4px 16px var(--accent-20);
-}
-
-[data-theme="light"] #sendBtn {
-    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
 }
 
 /* ─── Message rows ─── */
@@ -455,12 +343,6 @@ body {
     background: var(--red-10);
     border-color: var(--red-20);
     color: var(--red);
-}
-
-[data-theme="light"] {
-    --shadow-1: 0 1px 2px rgba(60, 60, 40, 0.05);
-    --shadow-2: 0 4px 16px rgba(60, 60, 40, 0.07);
-    --shadow-3: 0 24px 64px rgba(40, 40, 30, 0.12);
 }
 
 /* Glass surfaces (sidebar, modals) — lighter blur, solid fill */

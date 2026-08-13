@@ -6,7 +6,6 @@ const MENUS = {
     'chat-header': [
         { id: 'chat.mute', label: 'Mute chat' },
         { type: 'separator' },
-        { id: 'chat.search', label: 'Search in chat', kbd: '⌘⇧F' },
         { id: 'chat.copyLink', label: 'Copy chat link' },
         { id: 'chat.export', label: 'Export local chat', kbd: '⌘⇧E' },
         { type: 'separator' },
