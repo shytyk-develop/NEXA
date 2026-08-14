@@ -6,9 +6,17 @@ export const PROFILE_LIMITS = {
     avatarMaxBytes: 512 * 1024,
 };
 
+export const PROFILE_STATUS = {
+    available: 'Available',
+    away: 'Away',
+    busy: 'Busy',
+    invisible: 'Invisible',
+};
+
 export const DEFAULT_PROFILE = {
     displayName: '',
     bio: '',
+    status: 'available',
     avatarDataUrl: null,
 };
 
@@ -28,6 +36,7 @@ export function loadProfile(username) {
             ...DEFAULT_PROFILE,
             displayName: sanitizeProfileText(saved.displayName, PROFILE_LIMITS.displayName),
             bio: sanitizeProfileText(saved.bio, PROFILE_LIMITS.bio),
+            status: sanitizeProfileStatus(saved.status),
             avatarDataUrl:
                 typeof saved.avatarDataUrl === 'string' && saved.avatarDataUrl.startsWith('data:image/')
                     ? saved.avatarDataUrl
@@ -44,9 +53,14 @@ export function saveProfile(username, profile) {
     const payload = {
         displayName: sanitizeProfileText(profile.displayName, PROFILE_LIMITS.displayName),
         bio: sanitizeProfileText(profile.bio, PROFILE_LIMITS.bio),
+        status: sanitizeProfileStatus(profile.status),
         avatarDataUrl: profile.avatarDataUrl || null,
     };
     localStorage.setItem(profileKey(username), JSON.stringify(payload));
+}
+
+export function sanitizeProfileStatus(value) {
+    return Object.prototype.hasOwnProperty.call(PROFILE_STATUS, value) ? value : 'available';
 }
 
 /** Strip control chars; keep emoji/unicode; never interpret as HTML. */
@@ -223,7 +237,7 @@ export function getStorageBreakdown(username) {
 export function buildStorageReport(username) {
     const b = getStorageBreakdown(username);
     return [
-        'OriginHub local storage report',
+        'NEXA local storage report',
         `User: ${username || '—'}`,
         `Total: ${formatBytes(b.total)}`,
         `Chat history: ${formatBytes(b.history)} (${b.messageCount} messages, ${b.chatCount} chats)`,

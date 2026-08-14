@@ -4,6 +4,7 @@
 const routes = [
     { path: '/', view: 'start' },
     { path: '/login', view: 'login' },
+    { path: '/about-security', view: 'about-security' },
     { path: '/chat', view: 'chat' },
     { path: /^\/chat\/@([a-zA-Z0-9_]+)$/, view: 'chat-user' } // Regular expression for /chat/@username
 ];

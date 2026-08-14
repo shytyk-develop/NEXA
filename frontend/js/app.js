@@ -7,6 +7,7 @@ import {
     setSidebarChats,
     activateChatPanel,
     resetChatPanel,
+    showChatWelcome,
     appendMessage,
     renderMessagesList,
     clearMessageView,
@@ -38,6 +39,7 @@ import {
     searchMessages,
     openSettings,
     openProfile,
+    showChatsView,
     openShortcuts,
     closeModals,
     closeTransientUi,
@@ -116,6 +118,7 @@ import { loadPreferences, applyPreferences, updatePreference } from './preferenc
 import { initProfileSettings } from './profileSettings.js';
 import { initLoginPage, teardownLoginPage } from './loginPage.js';
 import { initStartSite, teardownStartSite } from './startSite.js';
+import { initAboutSecurity, teardownAboutSecurity } from './aboutSecurity.js';
 import { playLoginSuccessReveal, resetLoginBackground } from './loginCanvas.js';
 import {
     addPasteAttachment,
@@ -154,7 +157,6 @@ import {
     clearProfileDirectory,
     ingestUserRecords,
 } from './profileDirectory.js';
-import { initMiniProfile } from './miniProfile.js';
 
 let socketConnection = null;
 let routerReady = false;
@@ -593,43 +595,13 @@ initProfileSettings({
     showToast,
 });
 
-initMiniProfile({
-    getMyUsername: () => state.myUsername,
-    onOpenChat: onContactSelected,
-    showToast,
-    isOnline: (username) => isUserOnline(state, username),
-    isMuted: (username) => isChatMuted(state.myUsername, username),
-    onToggleMute: (partner) => {
-        if (!state.myUsername || !partner) return;
-        const muted = toggleChatMuted(state.myUsername, partner);
-        showToast(muted ? 'Chat muted locally.' : 'Chat unmuted.', 'success');
-        syncRealtimeUi();
-    },
-    showPresence: () => getPrivacyFlags(state.preferences).showOnlineStatus,
-});
-
 registerOverlayActions({
     'chat.search': () => openMessageSearch(),
     'chat.copyLink': () => copyCurrentChatLink(),
     'chat.export': () => exportCurrentChat(),
-    'chat.clearHistory': () => clearCurrentChat(),
-    'chat.delete': () => clearCurrentChat(),
-    'chat.info': () => {
-        if (!state.currentTargetUser) {
-            showToast('Select a chat first.', 'error');
-            return;
-        }
-        const partner = state.currentTargetUser;
-        openChatInfoPopover(
-            partner,
-            isUserOnline(state, partner),
-            state.usersDirectory[partner] || null,
-            {
-                preferences: state.preferences,
-                muted: isChatMuted(state.myUsername, partner),
-            }
-        );
-    },
+    'chat.clearHistory': () => clearCurrentChatHistory(),
+    'chat.delete': () => deleteCurrentChat(),
+    'chat.info': () => openCurrentChatInfo(),
     'chat.mute': () => toggleCurrentChatMute(),
     'settings.modal': () => openSettings(),
     'settings.shortcuts': () => openShortcuts(),
@@ -716,6 +688,7 @@ initMessageActions();
 
 let loginUiMounted = false;
 let startUiMounted = false;
+let aboutSecurityMounted = false;
 
 function setAuthPending(isPending) {
     DOM.pageLogin?.classList.toggle('is-loading', isPending);
@@ -730,6 +703,11 @@ function setAuthPending(isPending) {
 async function handleNavigation(view, param) {
     closeOverlaysForRouteChange();
     document.querySelectorAll('.route-page').forEach(page => page.classList.add('hidden'));
+
+    if (view !== 'about-security' && aboutSecurityMounted) {
+        teardownAboutSecurity();
+        aboutSecurityMounted = false;
+    }
 
     if (view === 'start') {
         if (state.myUsername) {
@@ -763,7 +741,20 @@ async function handleNavigation(view, param) {
         } else {
             resetLoginBackground(DOM.pageLogin);
         }
-    } 
+    }
+    else if (view === 'about-security') {
+        if (startUiMounted) {
+            teardownStartSite();
+            startUiMounted = false;
+        }
+        if (loginUiMounted) {
+            teardownLoginPage();
+            loginUiMounted = false;
+        }
+        DOM.pageAboutSecurity?.classList.remove('hidden');
+        initAboutSecurity(DOM.pageAboutSecurity);
+        aboutSecurityMounted = true;
+    }
     else {
         if (startUiMounted) {
             teardownStartSite();
@@ -791,7 +782,7 @@ async function handleNavigation(view, param) {
                 sendChatFocus(null);
                 cancelReadReceipt();
                 resetChatPanel();
-                DOM.chatWelcome.classList.remove('hidden');
+                showChatWelcome();
             }
         }
     }
@@ -1412,6 +1403,22 @@ DOM.profileBtn?.addEventListener('click', (event) => {
     event.stopPropagation();
     openProfile();
 });
+DOM.railChats?.addEventListener('click', (event) => {
+    event.preventDefault();
+    showChatsView();
+});
+DOM.railProfile?.addEventListener('click', (event) => {
+    event.preventDefault();
+    openProfile();
+});
+DOM.closeProfileBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    showChatsView();
+});
+document.getElementById('uiProfileBackBtn')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    showChatsView();
+});
 DOM.settingsBtn.addEventListener('click', (event) => openSettingsMenu(event));
 DOM.shortcutsBtn.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -1477,6 +1484,20 @@ if (DOM.glassPicker) {
 if (DOM.replyCloseBtn) {
     DOM.replyCloseBtn.addEventListener('click', clearPendingReply);
 }
+
+DOM.peerMuteBtn?.addEventListener('click', () => {
+    if (!state.currentTargetUser) return;
+    showToast('Mute is coming soon.', 'info');
+});
+DOM.peerClearBtn?.addEventListener('click', () => {
+    clearCurrentChatHistory();
+});
+DOM.peerDeleteBtn?.addEventListener('click', () => {
+    deleteCurrentChat();
+});
+DOM.peerSecurityBtn?.addEventListener('click', () => {
+    openCurrentChatInfo();
+});
 
 registerShortcuts({
     closeTransientUi: () => {
@@ -1576,6 +1597,23 @@ function toggleCurrentChatMute() {
     syncRealtimeUi();
 }
 
+function openCurrentChatInfo() {
+    if (!state.currentTargetUser) {
+        showToast('Select a chat first.', 'error');
+        return;
+    }
+    const partner = state.currentTargetUser;
+    openChatInfoPopover(
+        partner,
+        isUserOnline(state, partner),
+        state.usersDirectory[partner] || null,
+        {
+            preferences: state.preferences,
+            muted: isChatMuted(state.myUsername, partner),
+        }
+    );
+}
+
 async function copyCurrentUsername() {
     if (!state.myUsername) {
         showToast("No active identity.", "error");
@@ -1626,14 +1664,14 @@ function exportCurrentChat() {
     showToast("Local chat exported.", "success");
 }
 
-async function clearCurrentChat() {
+async function clearCurrentChatHistory() {
     if (!state.currentTargetUser) {
         showToast("Select a chat first.", "error");
         return;
     }
 
     const partner = state.currentTargetUser;
-    const confirmed = window.confirm(`Delete the entire chat history with ${partner} from the database? This cannot be undone.`);
+    const confirmed = window.confirm(`Clear all messages with ${partner}? This cannot be undone.`);
     if (!confirmed) {
         closeAllPopovers();
         focusComposer();
@@ -1643,17 +1681,49 @@ async function clearCurrentChat() {
     try {
         await deleteConversation(state.token, partner);
         state.chatHistory[partner] = [];
-        state.sidebarChats = state.sidebarChats.filter(chat => chat.username !== partner);
         clearMessageView();
         clearDraft(state.myUsername, partner);
         flushChatHistorySave();
         renderSidebar();
         closeAllPopovers();
-        showToast("Chat history deleted from database.", "success");
+        showToast("Chat history cleared.", "success");
+    } catch (err) {
+        console.error("Conversation clear failed:", err);
+        showToast(err.message || "Could not clear chat history.", "error");
+    } finally {
+        focusComposer();
+    }
+}
+
+async function deleteCurrentChat() {
+    if (!state.currentTargetUser) {
+        showToast("Select a chat first.", "error");
+        return;
+    }
+
+    const partner = state.currentTargetUser;
+    const confirmed = window.confirm(`Delete the chat with ${partner}? This cannot be undone.`);
+    if (!confirmed) {
+        closeAllPopovers();
+        focusComposer();
+        return;
+    }
+
+    try {
+        await deleteConversation(state.token, partner);
+        delete state.chatHistory[partner];
+        state.sidebarChats = state.sidebarChats.filter(chat => chat.username !== partner);
+        clearDraft(state.myUsername, partner);
+        flushChatHistorySave();
+        state.currentTargetUser = null;
+        resetChatPanel();
+        renderSidebar();
+        closeAllPopovers();
+        navigateTo('/chat', handleNavigation);
+        showToast("Chat deleted.", "success");
     } catch (err) {
         console.error("Conversation delete failed:", err);
-        showToast(err.message || "Could not delete chat history.", "error");
-    } finally {
+        showToast(err.message || "Could not delete chat.", "error");
         focusComposer();
     }
 }
@@ -1709,6 +1779,7 @@ function handleLogout() {
     persistCurrentDraft();
     flushChatHistorySave();
     closeOverlaysForRouteChange();
+    showChatsView();
 
     if (socketConnection) {
         socketConnection.close();

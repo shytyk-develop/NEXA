@@ -170,6 +170,32 @@
     width: 288px;
 }
 
+#page-chat .chat-workspace {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    height: 100%;
+    min-width: 0;
+}
+
+#page-chat .chat-workspace[hidden] {
+    display: none !important;
+}
+
+#page-chat .profile-workspace {
+    background: var(--bg);
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+#page-chat .profile-workspace.hidden {
+    display: none;
+}
+
 /* Chat main column — edge-to-edge with the shell */
 #page-chat .chat-main {
     background: var(--bg);
@@ -186,12 +212,24 @@
     position: relative;
 }
 
-/* Header blends into the paper panel */
+#page-chat .chat-stage-atmosphere {
+    inset: 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 28%, #000 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 28%, #000 100%);
+    z-index: 0;
+}
+
+/* Header sits on the glow instead of cutting it */
 #page-chat .chat-header {
-    background: transparent;
+    background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--bg) 82%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 28%, transparent) 70%,
+        transparent 100%
+    );
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: none;
     box-shadow: none;
     flex-shrink: 0;
     position: relative;
@@ -280,6 +318,20 @@
     position: relative;
     width: 100%;
     z-index: var(--z-base);
+}
+
+.chat-stage-atmosphere {
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
+.chat-stage-atmosphere__field {
+    display: block;
+    height: 100%;
+    width: 100%;
 }
 
 /* Full-width header bar; content aligned to chat column */
@@ -402,7 +454,7 @@
         calc(var(--composer-float-offset, 96px) + var(--space-6));
     position: relative;
     scroll-behavior: smooth;
-    z-index: var(--z-base);
+    z-index: 1;
 }
 
 /* Gutter for hover actions outside bubbles */
@@ -539,6 +591,141 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+}
+
+#page-chat .nexa-welcome-banner {
+    background: #0c0c0c;
+    border: 1px solid #1d1d1d;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 14px;
+    margin: 8px 10px 14px;
+    overflow: hidden;
+    padding: 16px 14px 14px;
+}
+
+#page-chat .nexa-welcome-banner.hidden {
+    display: none;
+}
+
+#page-chat .nexa-welcome-banner__row {
+    align-items: flex-start;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    min-height: 92px;
+}
+
+#page-chat .nexa-welcome-banner__copy {
+    flex: 1;
+    min-width: 0;
+    padding-top: 2px;
+}
+
+#page-chat .nexa-welcome-banner__title {
+    color: #f4f4f5;
+    font-family: var(--f-ui);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin: 0 0 8px;
+}
+
+#page-chat .nexa-welcome-banner__tagline {
+    color: #8a8a8a;
+    font-family: var(--f-ui);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.45;
+    margin: 0;
+}
+
+#page-chat .nexa-welcome-banner__art {
+    flex-shrink: 0;
+    height: 96px;
+    margin: -8px -6px 0 0;
+    pointer-events: none;
+    position: relative;
+    width: 96px;
+}
+
+#page-chat .nexa-welcome-banner__art img {
+    display: block;
+    height: 100%;
+    mix-blend-mode: lighten;
+    object-fit: contain;
+    position: relative;
+    width: 100%;
+}
+
+#page-chat .nexa-welcome-banner__btn {
+    align-items: center;
+    background: #f4f4f5;
+    border: 0;
+    border-radius: 12px;
+    color: #0a0a0a;
+    cursor: pointer;
+    display: flex;
+    font-family: var(--f-ui);
+    font-size: 13px;
+    font-weight: 600;
+    justify-content: space-between;
+    padding: 10px 14px;
+    text-align: left;
+    text-decoration: none;
+    width: 100%;
+}
+
+#page-chat .nexa-welcome-banner__btn:hover {
+    background: #fff;
+}
+
+#page-chat .nexa-welcome-banner__btn .ui-icon {
+    height: 16px;
+    width: 16px;
+}
+
+#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__copy,
+#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__art,
+#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__btn {
+    animation: nexa-empty-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__copy,
+#page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__art,
+#page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__btn {
+    opacity: 0;
+}
+
+#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__copy { animation-delay: 0.08s; }
+#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__art { animation-delay: 0.16s; }
+#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__btn { animation-delay: 0.28s; }
+
+@keyframes nexa-empty-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__copy,
+    #page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__art,
+    #page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__btn,
+    #page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__copy,
+    #page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__art,
+    #page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__btn {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
 }
 
 /* Section label rhythm */
