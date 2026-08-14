@@ -66,10 +66,9 @@ export const DOM = {
     scrollBottomBtn: document.getElementById('uiScrollBottomBtn'),
     chatMenuBtn: document.getElementById('uiChatMenuBtn'),
 
-    messageSearchPanel: document.getElementById('uiMessageSearchPanel'),
+    messageSearch: document.getElementById('uiMessageSearch'),
     messageSearchInput: document.getElementById('uiMessageSearchInput'),
     messageSearchCount: document.getElementById('uiMessageSearchCount'),
-    closeMessageSearchBtn: document.getElementById('uiCloseMessageSearchBtn'),
 
     attachBtn: document.getElementById('uiAttachBtn'),
     fileInput: document.getElementById('uiFileInput'),
@@ -107,11 +106,17 @@ export const DOM = {
     toastRegion: document.getElementById('uiToastRegion'),
 
     chatWorkspace: document.getElementById('uiChatWorkspace'),
+    sidebar: document.getElementById('uiSidebar'),
+    sidebarToggle: document.getElementById('uiSidebarToggle'),
+    railCollapsedTools: document.getElementById('uiRailCollapsedTools'),
+    railMark: document.getElementById('uiRailMark'),
+    railSidebarToggle: document.getElementById('uiRailSidebarToggle'),
     railChats: document.getElementById('uiRailChats'),
     railProfile: document.getElementById('uiRailProfile'),
     railPrivacy: document.getElementById('uiRailPrivacy'),
 
     peerPanel: document.getElementById('uiPeerPanel'),
+    peerPanelToggle: document.getElementById('uiPeerPanelToggle'),
     peerEmpty: document.getElementById('uiPeerEmpty'),
     peerBody: document.getElementById('uiPeerBody'),
     peerAvatar: document.getElementById('uiPeerAvatar'),
@@ -145,6 +150,110 @@ initSmartPasteUi({
     closeBtn: DOM.pasteEditorClose,
     isDisabled: () => Boolean(DOM.messageInput?.disabled),
 });
+
+const PEER_PANEL_COLLAPSED_KEY = 'nexa_peer_panel_collapsed';
+
+function readPeerPanelCollapsed() {
+    try {
+        return localStorage.getItem(PEER_PANEL_COLLAPSED_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function setPeerPanelCollapsed(collapsed, persist = true) {
+    const panel = DOM.peerPanel;
+    const btn = DOM.peerPanelToggle;
+    if (!panel) return;
+    panel.classList.toggle('is-collapsed', collapsed);
+    if (btn) {
+        const label = collapsed ? 'Show conversation panel' : 'Hide conversation panel';
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', collapsed ? 'Show panel' : 'Hide panel');
+    }
+    if (!persist) return;
+    try {
+        localStorage.setItem(PEER_PANEL_COLLAPSED_KEY, collapsed ? '1' : '0');
+    } catch {
+        /* ignore quota / private mode */
+    }
+}
+
+function initPeerPanelCollapse() {
+    const panel = DOM.peerPanel;
+    const btn = DOM.peerPanelToggle;
+    if (!panel || !btn) return;
+    const collapsed = readPeerPanelCollapsed();
+    if (collapsed) {
+        panel.classList.add('no-motion');
+        setPeerPanelCollapsed(true, false);
+        requestAnimationFrame(() => panel.classList.remove('no-motion'));
+    }
+    btn.addEventListener('click', () => {
+        setPeerPanelCollapsed(!panel.classList.contains('is-collapsed'));
+    });
+}
+
+initPeerPanelCollapse();
+
+const SIDEBAR_COLLAPSED_KEY = 'nexa_sidebar_collapsed';
+
+function readSidebarCollapsed() {
+    try {
+        return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function setSidebarCollapsed(collapsed, persist = true) {
+    const sidebar = DOM.sidebar;
+    const btn = DOM.sidebarToggle;
+    const tools = DOM.railCollapsedTools;
+    if (!sidebar) return;
+    sidebar.classList.toggle('is-collapsed', collapsed);
+    DOM.pageChat?.classList.toggle('is-sidebar-collapsed', collapsed);
+    if (btn) {
+        const label = collapsed ? 'Show contacts' : 'Hide contacts';
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+    }
+    if (tools) {
+        tools.hidden = !collapsed;
+        tools.setAttribute('aria-hidden', collapsed ? 'false' : 'true');
+    }
+    if (!persist) return;
+    try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+    } catch {
+        /* ignore quota / private mode */
+    }
+}
+
+function initSidebarCollapse() {
+    const sidebar = DOM.sidebar;
+    const btn = DOM.sidebarToggle;
+    const tools = DOM.railCollapsedTools;
+    if (!sidebar || !btn) return;
+    const collapsed = readSidebarCollapsed();
+    if (collapsed) {
+        sidebar.classList.add('no-motion');
+        setSidebarCollapsed(true, false);
+        requestAnimationFrame(() => sidebar.classList.remove('no-motion'));
+    } else if (tools) {
+        tools.hidden = true;
+    }
+    btn.addEventListener('click', () => {
+        setSidebarCollapsed(!sidebar.classList.contains('is-collapsed'));
+    });
+    const expand = () => setSidebarCollapsed(false);
+    DOM.railMark?.addEventListener('click', expand);
+    DOM.railSidebarToggle?.addEventListener('click', expand);
+}
+
+initSidebarCollapse();
 
 const contactsState = {
     users: [],
@@ -529,6 +638,7 @@ function buildReplyPreviewEl(replyTo) {
 
     const preview = document.createElement('span');
     preview.className = 'message-reply-text';
+    preview.dataset.rawText = replyTo.preview || '';
     preview.textContent = replyTo.preview || '';
 
     block.append(author, preview);
@@ -630,7 +740,11 @@ function buildMessageElement(message, previousMessage = null) {
 
     const textEl = document.createElement('span');
     textEl.className = 'message-text';
-    appendLinkedTextContent(textEl, message.text || '', { linkify: true });
+    textEl.dataset.rawText = message.text || '';
+    appendLinkedTextContent(textEl, message.text || '', {
+        linkify: true,
+        highlight: activeMessageSearchQuery(),
+    });
 
     const meta = document.createElement('span');
     meta.className = 'message-meta';
@@ -1127,35 +1241,98 @@ export function closeAllPopovers() {
 }
 
 export function openMessageSearch() {
-    DOM.messageSearchPanel.classList.remove('hidden');
-    DOM.messageSearchInput.focus();
-    DOM.messageSearchInput.select();
-    searchMessages(DOM.messageSearchInput.value);
+    const root = DOM.messageSearch;
+    const input = DOM.messageSearchInput;
+    const btn = DOM.chatSearchBtn;
+    if (!root || !input || btn?.disabled) return;
+    root.classList.add('is-open');
+    const bar = root.querySelector('.expand-search__bar');
+    if (bar) bar.setAttribute('aria-hidden', 'false');
+    if (btn) {
+        btn.setAttribute('aria-expanded', 'true');
+        btn.setAttribute('aria-label', 'Close search');
+        btn.setAttribute('title', 'Close search');
+    }
+    input.tabIndex = 0;
+    window.setTimeout(() => input.focus(), 120);
+    searchMessages(input.value);
 }
 
 export function closeMessageSearch() {
-    DOM.messageSearchPanel.classList.add('hidden');
-    DOM.messageSearchInput.value = '';
+    const root = DOM.messageSearch;
+    const input = DOM.messageSearchInput;
+    const btn = DOM.chatSearchBtn;
+    if (input) {
+        input.value = '';
+        input.tabIndex = -1;
+        input.blur();
+    }
     searchMessages('');
+    if (!root) return;
+    root.classList.remove('is-open');
+    const bar = root.querySelector('.expand-search__bar');
+    if (bar) bar.setAttribute('aria-hidden', 'true');
+    if (btn) {
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-label', 'Search messages');
+        btn.setAttribute('title', 'Search messages');
+    }
+}
+
+export function toggleMessageSearch() {
+    if (DOM.messageSearch?.classList.contains('is-open')) closeMessageSearch();
+    else openMessageSearch();
+}
+
+function activeMessageSearchQuery() {
+    if (!DOM.messageSearch?.classList.contains('is-open')) return '';
+    return (DOM.messageSearchInput?.value || '').trim();
+}
+
+function paintSearchHighlights(root, query) {
+    if (!root) return;
+    const needle = (query || '').trim();
+    root.querySelectorAll('.message-text, .message-reply-text').forEach((el) => {
+        const raw = el.dataset.rawText ?? el.textContent ?? '';
+        el.replaceChildren();
+        appendLinkedTextContent(el, raw, {
+            linkify: !el.classList.contains('message-reply-text'),
+            highlight: needle,
+        });
+    });
 }
 
 export function searchMessages(query) {
-    const normalized = query.trim().toLowerCase();
-    const bubbles = [...DOM.messagesDiv.querySelectorAll('.message-row')];
+    const needle = (query || '').trim();
+    const normalized = needle.toLowerCase();
+    const bubbles = [...(DOM.messagesDiv?.querySelectorAll('.message-row') || [])];
     let matches = 0;
 
     bubbles.forEach((row) => {
-        const haystack = row.textContent.toLowerCase();
-        const isMatch = !normalized || haystack.includes(normalized);
+        const textEl = row.querySelector('.message-text');
+        const replyEl = row.querySelector('.message-reply-text');
+        const raw = `${textEl?.dataset.rawText || ''} ${replyEl?.dataset.rawText || ''}`;
+        const isMatch = !normalized || raw.toLowerCase().includes(normalized);
         row.classList.toggle('is-search-hidden', Boolean(normalized && !isMatch));
         row.classList.toggle('is-search-match', Boolean(normalized && isMatch));
         if (normalized && isMatch) matches += 1;
     });
 
-    DOM.messageSearchCount.textContent = normalized
-        ? `${matches} match${matches === 1 ? '' : 'es'}`
-        : `${bubbles.length} messages`;
+    paintSearchHighlights(DOM.messagesDiv, needle);
+
+    if (DOM.messageSearchCount) {
+        DOM.messageSearchCount.textContent = normalized ? `${matches}` : '';
+        DOM.messageSearchCount.hidden = !normalized;
+    }
 }
+
+document.addEventListener('mousedown', (event) => {
+    const root = DOM.messageSearch;
+    if (!root?.classList.contains('is-open')) return;
+    if (root.contains(event.target)) return;
+    if (DOM.messageSearchInput?.value.trim()) return;
+    closeMessageSearch();
+});
 
 export function openSettings() {
     openModalOverlay('settings', 'settings');

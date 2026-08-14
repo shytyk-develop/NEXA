@@ -36,6 +36,7 @@ import {
     highlightMessageRow,
     openMessageSearch,
     closeMessageSearch,
+    toggleMessageSearch,
     searchMessages,
     openSettings,
     openProfile,
@@ -1454,8 +1455,10 @@ DOM.clearComposerBtn?.addEventListener('click', () => {
     setDraftStatus('Draft cleared.');
     closeEmojiPicker();
 });
-DOM.chatSearchBtn.addEventListener('click', openMessageSearch);
-DOM.closeMessageSearchBtn.addEventListener('click', closeMessageSearch);
+DOM.chatSearchBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleMessageSearch();
+});
 DOM.messageSearchInput.addEventListener('input', () => searchMessages(DOM.messageSearchInput.value));
 DOM.scrollBottomBtn.addEventListener('click', () => scrollMessagesToBottom({ force: true, smooth: true }));
 
