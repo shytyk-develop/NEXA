@@ -3,7 +3,6 @@
 /* ─── Shell surfaces ─── */
 .nav-rail,
 .sidebar,
-.chat-header,
 .input-bar {
     background: var(--shell-bg);
     border-color: var(--shell-border);
@@ -17,8 +16,8 @@
     box-shadow: inset -1px 0 0 var(--shell-border);
 }
 
-.chat-header {
-    box-shadow: 0 1px 0 var(--shell-border);
+#page-chat .chat-header {
+    box-shadow: none;
 }
 
 .chat-main::before {

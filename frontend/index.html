@@ -28,6 +28,8 @@
     <link rel="stylesheet" href="/css/theme-polish.css">
     <link rel="stylesheet" href="/css/brand.css">
     <link rel="stylesheet" href="/css/app-layout.css">
+    <link rel="stylesheet" href="/css/peer-panel.css">
+    <link rel="stylesheet" href="/css/about-security.css">
     <link rel="stylesheet" href="/css/login-page.css">
     <link rel="stylesheet" href="/css/start-site.css">
     <script>
@@ -400,29 +402,74 @@
             flex-direction: column;
             inset: 0;
             justify-content: center;
-            padding: 24px;
+            padding: 24px 24px 120px;
             position: absolute;
             text-align: center;
-            transition: opacity 0.4s, transform 0.4s;
+            transition: opacity 0.35s ease;
             z-index: 30;
+        }
+
+        .welcome-mark {
+            border-radius: 28px;
+            display: block;
+            height: auto;
+            margin: 0 0 28px;
+            opacity: 0;
+            transform: translateY(10px) scale(0.96);
+            width: 112px;
         }
 
         .welcome-h {
             color: var(--t1);
             font-family: var(--f-ui);
-            font-size: 17px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            margin: 0 0 8px;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: -0.015em;
+            margin: 0 0 10px;
+            opacity: 0;
             text-transform: none;
+            transform: translateY(8px);
         }
 
         .welcome-p {
             color: var(--t3);
             font-size: 13.5px;
-            line-height: 1.6;
+            font-weight: 400;
+            letter-spacing: 0.005em;
+            line-height: 1.55;
             margin: 0;
             max-width: 300px;
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        #chat-welcome.is-entering .welcome-mark {
+            animation: welcome-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
+        }
+
+        #chat-welcome.is-entering .welcome-h {
+            animation: welcome-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards;
+        }
+
+        #chat-welcome.is-entering .welcome-p {
+            animation: welcome-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+        }
+
+        @keyframes welcome-in {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .welcome-mark,
+            .welcome-h,
+            .welcome-p {
+                animation: none !important;
+                opacity: 1;
+                transform: none;
+            }
         }
 
         .input-bar {
@@ -1685,29 +1732,207 @@
         <symbol id="icon-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></symbol>
         <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></symbol>
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+        <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></symbol>
         <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
         <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
         <symbol id="icon-paperclip" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
         <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></symbol>
         <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></symbol>
+        <symbol id="icon-bell-off" viewBox="0 0 24 24"><path d="M8.7 4.7A6 6 0 0 1 18 8c0 2.1.4 3.8 1.1 5.2"/><path d="M17 17H3s3-2 3-9a6 6 0 0 1 .3-2"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M2 2l20 20"/></symbol>
+        <symbol id="icon-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></symbol>
+        <symbol id="icon-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
         <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 3v4M16 3v4"/></symbol>
         <symbol id="icon-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+        <symbol id="icon-laptop" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/><path d="M8 20h8"/></symbol>
+        <symbol id="icon-smartphone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+        <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+        <symbol id="icon-hexagon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><circle cx="12" cy="12" r="3"/></symbol>
     </svg>
+
+    <div id="page-about-security" class="route-page about-security hidden">
+        <header class="about-security__nav">
+            <a class="about-security__brand" href="/" data-link>
+                <img src="/brand/nexa-logo.svg" alt="NEXA" width="1007" height="176" decoding="async">
+            </a>
+            <a id="uiAboutSecurityBack" class="about-security__back" href="/chat" data-link>
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg>
+                <span id="uiAboutSecurityBackLabel">Back to chats</span>
+            </a>
+        </header>
+
+        <main class="about-security__main">
+            <header class="about-security__hero">
+                <div>
+                    <p class="about-security__kicker">How NEXA stays private</p>
+                    <h1 class="about-security__title">Your messages are locked before they leave your device.</h1>
+                    <p class="about-security__lead">NEXA is a messenger that runs in your browser. No install, no phone number. And nobody in the middle — not even us — can read what you send.</p>
+                </div>
+                <div class="about-security__art" aria-hidden="true">
+                    <span class="about-security__orbit about-security__orbit--a"></span>
+                    <span class="about-security__orbit about-security__orbit--b"></span>
+                    <span class="about-security__orb about-security__orb--sm"></span>
+                    <span class="about-security__orb about-security__orb--lg"></span>
+                    <img class="about-security__art-lock" src="/brand/nexa-lock-glass.png" alt="" width="200" height="200" decoding="async">
+                </div>
+            </header>
+
+            <section class="about-security__section">
+                <h2 class="about-security__h2">What NEXA is</h2>
+                <p class="about-security__p">Think of it as a quiet room that lives on your computer. You open a tab, pick someone, and talk. The hard security work happens automatically — you don’t have to turn it on.</p>
+            </section>
+
+            <section class="about-security__section">
+                <h2 class="about-security__h2">What happens to a message</h2>
+                <p class="about-security__p">A message is readable only on two devices: yours, and the person you’re talking to. Everywhere in between, it’s just scrambled noise.</p>
+                <div class="sec-flow" aria-hidden="true">
+                    <div class="sec-flow__track">
+                        <div class="sec-flow__icons">
+                            <div class="sec-flow__wire">
+                                <span class="sec-flow__spark"></span>
+                            </div>
+                            <div class="sec-flow__row">
+                                <div class="sec-flow__node is-active" data-flow-node="0">
+                                    <span class="sec-flow__pulse"></span>
+                                    <span class="sec-flow__dot"><svg class="ui-icon"><use href="#icon-user"/></svg></span>
+                                    <span class="sec-flow__label">You</span>
+                                </div>
+                                <div class="sec-flow__node" data-flow-node="1">
+                                    <span class="sec-flow__pulse"></span>
+                                    <span class="sec-flow__dot"><svg class="ui-icon"><use href="#icon-lock"/></svg></span>
+                                    <span class="sec-flow__label">Lock</span>
+                                </div>
+                                <div class="sec-flow__node" data-flow-node="2">
+                                    <span class="sec-flow__pulse"></span>
+                                    <span class="sec-flow__dot"><svg class="ui-icon"><use href="#icon-database"/></svg></span>
+                                    <span class="sec-flow__label">Server</span>
+                                </div>
+                                <div class="sec-flow__node" data-flow-node="3">
+                                    <span class="sec-flow__pulse"></span>
+                                    <span class="sec-flow__dot"><svg class="ui-icon"><use href="#icon-lock"/></svg></span>
+                                    <span class="sec-flow__label">Unlock</span>
+                                </div>
+                                <div class="sec-flow__node" data-flow-node="4">
+                                    <span class="sec-flow__pulse"></span>
+                                    <span class="sec-flow__dot"><svg class="ui-icon"><use href="#icon-user"/></svg></span>
+                                    <span class="sec-flow__label">Them</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sec-flow__lane">
+                            <div class="sec-flow__packet">Hello</div>
+                        </div>
+                    </div>
+                    <p class="sec-flow__caption">Watch the word travel. In the middle it turns into noise. Only the other person’s device can turn it back.</p>
+                </div>
+
+                <div class="sec-stage" aria-hidden="true">
+                    <div class="sec-stage__peer is-you">
+                        <span class="sec-stage__face">You</span>
+                        <div class="sec-stage__bubble" data-stage-you>Hello</div>
+                    </div>
+                    <div class="sec-stage__mid">
+                        <div class="sec-stage__seal">
+                            <span class="sec-stage__seal-ring"></span>
+                            <img src="/brand/nexa-lock-icon.png" alt="" width="72" height="72" decoding="async">
+                        </div>
+                        <div class="sec-stage__tiles" data-stage-tiles>
+                            <span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="sec-stage__peer is-them">
+                        <span class="sec-stage__face">Them</span>
+                        <div class="sec-stage__bubble" data-stage-them></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="about-security__section">
+                <h2 class="about-security__h2">The simple version</h2>
+                <div class="about-security__grid">
+                    <article class="about-security__card">
+                        <span class="about-security__card-ico" aria-hidden="true">
+                            <svg class="ui-icon"><use href="#icon-lock"/></svg>
+                        </span>
+                        <h3>1. Keys stay on your device</h3>
+                        <p>When you sign up, your browser creates a pair of keys. The private one never leaves this device in a form we can use. Your password wraps it so only you can open it.</p>
+                    </article>
+                    <article class="about-security__card">
+                        <span class="about-security__card-ico" aria-hidden="true">
+                            <svg class="ui-icon"><use href="#icon-send"/></svg>
+                        </span>
+                        <h3>2. Lock before send</h3>
+                        <p>Before a message goes anywhere, NEXA locks it. What travels the network is ciphertext — a sealed box. Without the right key, it’s useless.</p>
+                    </article>
+                    <article class="about-security__card">
+                        <span class="about-security__card-ico" aria-hidden="true">
+                            <svg class="ui-icon"><use href="#icon-database"/></svg>
+                        </span>
+                        <h3>3. We deliver. We don’t read.</h3>
+                        <p>Our servers move the sealed box from you to them. Routing is our job. Opening it is not. We store only the locked version.</p>
+                    </article>
+                    <article class="about-security__card">
+                        <span class="about-security__card-ico" aria-hidden="true">
+                            <svg class="ui-icon"><use href="#icon-check-circle"/></svg>
+                        </span>
+                        <h3>4. Only they can open it</h3>
+                        <p>Your chat partner’s device unlocks the message with their key. That’s why a conversation stays between the two of you — even if someone intercepts the traffic.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="about-security__section">
+                <h2 class="about-security__h2">What stays where</h2>
+                <div class="about-security__split">
+                    <div class="about-security__split-pane about-security__split-pane--you">
+                        <h3>On your device</h3>
+                        <div class="sec-preview sec-preview--clear">
+                            <span class="sec-preview__kicker">Readable</span>
+                            <p class="sec-preview__line" data-preview-clear>Hello — see you at 7?</p>
+                        </div>
+                        <ul>
+                            <li>Your private key</li>
+                            <li>Readable messages</li>
+                            <li>Profile, drafts, and chat history</li>
+                        </ul>
+                    </div>
+                    <div class="about-security__split-pane about-security__split-pane--server">
+                        <h3>On the server</h3>
+                        <div class="sec-preview sec-preview--locked">
+                            <span class="sec-preview__kicker">Locked</span>
+                            <p class="sec-preview__line" data-preview-locked>a9f3·c1e8·7b02·d44c</p>
+                        </div>
+                        <ul>
+                            <li>Locked messages only</li>
+                            <li>Who to deliver them to</li>
+                            <li>Nothing we can read as plain text</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="about-security__note">Under the hood: RSA-OAEP-2048 to wrap a one-time AES-GCM-256 key. Encryption runs in your browser via the Web Crypto API.</p>
+            </section>
+
+            <div class="about-security__cta">
+                <a id="uiAboutSecurityCta" class="about-security__cta-btn" href="/chat" data-link>
+                    <span id="uiAboutSecurityCtaLabel">Back to NEXA</span>
+                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+                </a>
+            </div>
+        </main>
+    </div>
 
     <div id="page-chat" class="route-page hidden">
         <nav class="nav-rail" aria-label="App sections">
             <div class="rail-top">
-                <a href="#" class="rail-icon-btn is-active" title="Chats" aria-label="Chats" aria-current="page">
+                <a href="#chats" id="uiRailChats" class="rail-icon-btn is-active" title="Chats" aria-label="Chats" aria-current="page" data-rail="chats">
                     <svg class="ui-icon" aria-hidden="true"><use href="#icon-message"/></svg>
                 </a>
-                <a href="#" class="rail-icon-btn" title="Profile settings" aria-label="Profile settings">
+                <a href="#profile" id="uiRailProfile" class="rail-icon-btn" title="Profile settings" aria-label="Profile settings" data-rail="identity">
                     <svg class="ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
                 </a>
-                <a href="#" class="rail-icon-btn" title="Privacy settings" aria-label="Privacy settings">
+                <a href="/about-security" id="uiRailPrivacy" class="rail-icon-btn" title="Privacy settings" aria-label="Privacy settings" data-link>
                     <svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
-                </a>
-                <a href="#" class="rail-icon-btn" title="Chat data" aria-label="Chat data">
-                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-database"/></svg>
                 </a>
             </div>
             <div class="rail-bottom">
@@ -1726,6 +1951,7 @@
             </div>
         </nav>
 
+        <div id="uiChatWorkspace" class="chat-workspace">
         <aside class="sidebar" aria-label="Navigation and contacts">
             <header class="sidebar-brand">
                 <img src="/brand/nexa-logo.svg" alt="NEXA" class="sidebar-brand__mark" width="1007" height="176" decoding="async">
@@ -1742,6 +1968,21 @@
                     <span class="sidebar-label">Contacts</span>
                 </div>
                 <div id="usersList"></div>
+                <div id="uiWelcomeBanner" class="nexa-welcome-banner hidden">
+                    <div class="nexa-welcome-banner__row">
+                        <div class="nexa-welcome-banner__copy">
+                            <p class="nexa-welcome-banner__title">Welcome to NEXA!</p>
+                            <p class="nexa-welcome-banner__tagline">Private.<br>Encrypted.<br>Yours.</p>
+                        </div>
+                        <div class="nexa-welcome-banner__art" aria-hidden="true">
+                            <img src="/brand/nexa-lock-glass.png" alt="" width="112" height="112" decoding="async">
+                        </div>
+                    </div>
+                    <a id="uiWelcomeLearnMore" class="nexa-welcome-banner__btn" href="/about-security" data-link>
+                        Learn more
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+                    </a>
+                </div>
             </section>
 
             <div class="sidebar-hidden-controls hidden" aria-hidden="true">
@@ -1754,6 +1995,51 @@
         </aside>
 
         <main class="chat-main">
+            <div class="chat-stage-atmosphere" aria-hidden="true">
+                <svg class="chat-stage-atmosphere__field" viewBox="0 0 800 1200" preserveAspectRatio="xMidYMid slice" focusable="false">
+                    <defs>
+                        <linearGradient id="chatSky" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.035"/>
+                            <stop offset="18%" stop-color="#ffffff" stop-opacity="0.018"/>
+                            <stop offset="52%" stop-color="#ffffff" stop-opacity="0.006"/>
+                            <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+                        </linearGradient>
+                        <linearGradient id="chatSilk" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+                            <stop offset="22%" stop-color="#ffffff" stop-opacity="0.018"/>
+                            <stop offset="38%" stop-color="#ffffff" stop-opacity="0.07"/>
+                            <stop offset="68%" stop-color="#ffffff" stop-opacity="0.018"/>
+                            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+                        </linearGradient>
+                        <filter id="chatSoft" x="-20%" y="-10%" width="140%" height="120%">
+                            <feGaussianBlur stdDeviation="32"/>
+                        </filter>
+                    </defs>
+                    <rect width="800" height="1200" fill="url(#chatSky)"/>
+                    <g filter="url(#chatSoft)" fill="url(#chatSilk)">
+                        <ellipse cx="170" cy="460" rx="70" ry="520"/>
+                        <ellipse cx="330" cy="380" rx="90" ry="640"/>
+                        <ellipse cx="490" cy="500" rx="64" ry="500"/>
+                        <ellipse cx="640" cy="360" rx="80" ry="580"/>
+                    </g>
+                    <g fill="#ffffff">
+                        <circle cx="92" cy="140" r="1.1" opacity="0.18"/>
+                        <circle cx="210" cy="86" r="0.8" opacity="0.12"/>
+                        <circle cx="268" cy="230" r="1" opacity="0.16"/>
+                        <circle cx="410" cy="70" r="0.7" opacity="0.1"/>
+                        <circle cx="520" cy="160" r="1.2" opacity="0.2"/>
+                        <circle cx="612" cy="112" r="0.8" opacity="0.12"/>
+                        <circle cx="718" cy="210" r="1" opacity="0.15"/>
+                        <circle cx="148" cy="340" r="0.7" opacity="0.1"/>
+                        <circle cx="356" cy="190" r="0.9" opacity="0.14"/>
+                        <circle cx="678" cy="360" r="0.8" opacity="0.11"/>
+                        <circle cx="88" cy="520" r="0.6" opacity="0.08"/>
+                        <circle cx="760" cy="480" r="0.9" opacity="0.12"/>
+                        <circle cx="244" cy="610" r="0.7" opacity="0.09"/>
+                        <circle cx="574" cy="560" r="0.8" opacity="0.1"/>
+                    </g>
+                </svg>
+            </div>
             <header class="chat-header">
                 <div class="chat-header-inner">
                     <div class="header-left hidden" aria-hidden="true">
@@ -1819,15 +2105,485 @@
 
                 <div id="messages" aria-live="polite"></div>
 
-                <div id="chat-welcome">
-                    <div class="brand-logo brand-logo--welcome" role="img" aria-label="OriginHub">
-                        <svg class="brand-logo__svg" aria-hidden="true"><use href="#brand-originhub"/></svg>
-                    </div>
+                <div id="chat-welcome" class="is-entering">
+                    <img
+                        class="welcome-mark"
+                        src="/brand/nexa-mark.png"
+                        alt="NEXA"
+                        width="177"
+                        height="177"
+                        decoding="async"
+                    >
                     <p class="welcome-h">No conversation selected</p>
                     <p class="welcome-p">Choose a contact from the list to start a private, end-to-end encrypted conversation.</p>
                 </div>
             </div>
         </main>
+
+        <aside id="uiPeerPanel" class="peer-panel is-empty" aria-label="Conversation profile">
+            <div id="uiPeerEmpty" class="peer-panel-empty">
+                <div class="peer-empty-hero">
+                    <div class="peer-empty-art" aria-hidden="true">
+                        <img src="/brand/nexa-chat-secure.png" alt="" width="180" height="180" decoding="async">
+                    </div>
+                    <h3 class="peer-empty-title">Your privacy, our priority</h3>
+                    <p class="peer-empty-copy">All messages are end-to-end encrypted. No one else can read what you send.</p>
+                    <a id="uiPeerEmptyLearnMore" class="peer-empty-btn" href="/about-security" data-link>
+                        Learn more about security
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+                    </a>
+                </div>
+                <div class="peer-empty-hint">
+                    <p class="peer-empty-hint-title">Select a conversation</p>
+                    <p class="peer-empty-hint-copy">Choose a contact to see this profile and start chatting.</p>
+                </div>
+            </div>
+            <div id="uiPeerBody" class="peer-panel-body" hidden>
+                <div class="peer-hero">
+                    <div id="uiPeerAvatar" class="peer-avatar contact-avatar" aria-hidden="true"></div>
+                    <h2 id="uiPeerName" class="peer-name"></h2>
+                    <p id="uiPeerHandle" class="peer-handle"></p>
+                    <p id="uiPeerStatus" class="peer-status"></p>
+                </div>
+
+                <section class="peer-section" aria-labelledby="uiPeerAboutTitle">
+                    <h3 id="uiPeerAboutTitle" class="peer-section-title">About</h3>
+                    <p id="uiPeerBio" class="peer-bio"></p>
+                </section>
+
+                <section class="peer-section peer-section--encrypt" aria-labelledby="uiPeerEncryptTitle">
+                    <div class="peer-encrypt-head">
+                        <h3 id="uiPeerEncryptTitle" class="peer-section-title">Encryption</h3>
+                        <span class="peer-verified">
+                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-check-circle"/></svg>
+                            Verified
+                        </span>
+                    </div>
+                    <p id="uiPeerEncryptCopy" class="peer-encrypt-copy">Messages are end-to-end encrypted.</p>
+                    <button id="uiPeerSecurityBtn" class="peer-security-btn" type="button">View Security Details</button>
+                </section>
+
+                <section class="peer-section peer-section--options" aria-labelledby="uiPeerOptionsTitle">
+                    <h3 id="uiPeerOptionsTitle" class="peer-section-title">Options</h3>
+                    <div class="peer-options">
+                        <button id="uiPeerMuteBtn" class="peer-option" type="button">
+                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-bell-off"/></svg>
+                            Mute
+                        </button>
+                        <button id="uiPeerClearBtn" class="peer-option peer-option--danger" type="button">
+                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-trash"/></svg>
+                            Clear chat history
+                        </button>
+                        <button id="uiPeerDeleteBtn" class="peer-option peer-option--danger" type="button">
+                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-ban"/></svg>
+                            Delete chat
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </aside>
+        </div>
+
+    <section id="uiProfilePanel" class="app-workspace profile-workspace hidden" aria-labelledby="uiProfileTitle">
+        <div class="profile-shell">
+            <nav class="profile-nav" aria-label="Settings">
+                <p class="profile-nav-kicker">Settings</p>
+                <button type="button" class="profile-nav-btn is-active" data-profile-nav="identity" aria-current="page">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Identity</span>
+                        <span class="profile-nav-sub">E2EE-safe</span>
+                    </span>
+                </button>
+                <button type="button" class="profile-nav-btn" data-profile-nav="security">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Security</span>
+                        <span class="profile-nav-sub">Encryption</span>
+                    </span>
+                </button>
+                <button type="button" class="profile-nav-btn" data-profile-nav="privacy">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-eye"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Privacy</span>
+                        <span class="profile-nav-sub">Control</span>
+                    </span>
+                </button>
+                <button type="button" class="profile-nav-btn" data-profile-nav="data">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-database"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Data</span>
+                        <span class="profile-nav-sub">Sync &amp; export</span>
+                    </span>
+                </button>
+                <div class="profile-e2ee-card">
+                    <div class="profile-e2ee-head">
+                        <span class="profile-e2ee-kicker">E2EE status</span>
+                        <span class="profile-e2ee-verified">Verified</span>
+                    </div>
+                    <p class="profile-e2ee-copy">All your data is end-to-end encrypted and stored locally.</p>
+                    <button id="uiProfileViewSecurity" class="profile-e2ee-link" type="button">View security details</button>
+                </div>
+            </nav>
+            <div class="profile-main">
+                <header class="profile-head">
+                    <button id="uiProfileBackBtn" class="mini-icon-btn profile-back-btn" type="button" title="Back to chats" aria-label="Back to chats"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
+                    <div class="profile-head-copy">
+                        <h2 id="uiProfileTitle">Profile settings</h2>
+                        <p id="uiProfileHeadSub" class="profile-head-sub">Manage your identity. Visible only to you.</p>
+                    </div>
+                    <button id="uiCloseProfileBtn" class="mini-icon-btn profile-close-btn" type="button" title="Close profile" aria-label="Close profile"><svg class="ui-icon" aria-hidden="true"><use href="#icon-x"/></svg></button>
+                </header>
+                <div class="profile-body">
+                    <div data-profile-section="identity" class="profile-identity-layout">
+                        <div class="profile-identity-aside">
+                            <div class="profile-avatar-card">
+                                <div class="profile-avatar-orbit" aria-hidden="true">
+                                    <svg class="profile-avatar-rings" viewBox="0 0 280 280" focusable="false">
+                                        <circle cx="140" cy="140" r="78" fill="none" stroke="currentColor" stroke-opacity="0.18"/>
+                                        <circle cx="140" cy="140" r="104" fill="none" stroke="currentColor" stroke-opacity="0.12" stroke-dasharray="2 10"/>
+                                        <circle cx="140" cy="140" r="128" fill="none" stroke="currentColor" stroke-opacity="0.08"/>
+                                        <circle cx="212" cy="72" r="2.2" fill="currentColor" fill-opacity="0.35"/>
+                                        <circle cx="68" cy="196" r="1.6" fill="currentColor" fill-opacity="0.28"/>
+                                        <circle cx="228" cy="168" r="1.4" fill="currentColor" fill-opacity="0.22"/>
+                                    </svg>
+                                    <div id="uiProfileAvatarZone" class="profile-avatar-zone" role="button" tabindex="0" aria-label="Change avatar">
+                                        <img id="uiProfileAvatarImg" class="hidden" alt="">
+                                        <span id="uiProfileAvatarInitials" class="profile-avatar-initials">?</span>
+                                        <div id="uiProfileEyes" class="profile-eyes hidden" aria-hidden="true"></div>
+                                    </div>
+                                </div>
+                                <input id="uiProfileAvatarInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
+                                <div class="profile-avatar-actions">
+                                    <button id="uiProfileAvatarUploadBtn" class="profile-change-avatar" type="button">
+                                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-upload"/></svg>
+                                        Change avatar
+                                    </button>
+                                    <button id="uiProfileAvatarRemoveBtn" class="profile-remove-avatar" type="button" title="Remove avatar" aria-label="Remove avatar">
+                                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-trash"/></svg>
+                                    </button>
+                                </div>
+                                <p class="profile-avatar-hint">JPG, PNG or WEBP. Max 512 KB</p>
+                            </div>
+                            <div class="profile-about-card">
+                                <svg class="profile-about-icon ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
+                                <div class="profile-about-copy">
+                                    <p class="profile-about-title">About your identity</p>
+                                    <p class="profile-about-text">This is your public identity in NEXA. People can find and connect with you using your username.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-form-col">
+                            <div class="profile-field">
+                                <div class="profile-field__head">
+                                    <label for="uiProfileDisplayName">Display name</label>
+                                    <span id="uiProfileNameCount" class="profile-field-meta">0 / 32</span>
+                                </div>
+                                <input id="uiProfileDisplayName" type="text" maxlength="32" placeholder="How you appear in chats" autocomplete="nickname" spellcheck="false">
+                            </div>
+
+                            <div class="profile-field-row">
+                                <div class="profile-field">
+                                    <label for="uiProfileStatus">Status</label>
+                                    <div class="profile-status-control">
+                                        <span id="uiProfileStatusDot" class="profile-status-dot is-available" aria-hidden="true"></span>
+                                        <select id="uiProfileStatus" aria-label="Status">
+                                            <option value="available">Available</option>
+                                            <option value="away">Away</option>
+                                            <option value="busy">Busy</option>
+                                            <option value="invisible">Invisible</option>
+                                        </select>
+                                        <svg class="profile-status-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+                                    </div>
+                                </div>
+                                <div class="profile-field">
+                                    <div class="profile-field__head">
+                                        <label for="uiProfileBio">Bio</label>
+                                        <span id="uiProfileBioCount" class="profile-field-meta">0 / 140</span>
+                                    </div>
+                                    <input id="uiProfileBio" type="text" maxlength="140" placeholder="Building something great" autocomplete="off" spellcheck="true">
+                                </div>
+                            </div>
+
+                            <div class="profile-field">
+                                <label for="uiProfileUsername">Username</label>
+                                <div class="profile-field-control">
+                                    <span id="uiProfileUsername" class="profile-field-value">Loading…</span>
+                                    <button id="uiProfileUsernameEdit" class="profile-field-action" type="button">Edit</button>
+                                </div>
+                                <p id="uiProfileUsernameHint" class="profile-field-hint is-ok">Your username is unique.</p>
+                            </div>
+
+                            <div class="profile-field">
+                                <label>Profile link</label>
+                                <div class="profile-field-control">
+                                    <span id="uiProfileLink" class="profile-field-value">—</span>
+                                    <button id="uiProfileCopyLink" class="profile-field-action" type="button">Copy</button>
+                                </div>
+                                <p class="profile-field-hint">Share this link to connect with others.</p>
+                            </div>
+
+                            <div class="profile-field">
+                                <label>User ID</label>
+                                <div class="profile-field-control">
+                                    <span id="uiProfileUserId" class="profile-field-value profile-field-value--mono">Loading…</span>
+                                    <button id="uiProfileCopyUserId" class="profile-copy-btn profile-field-action" type="button">Copy</button>
+                                </div>
+                                <p class="profile-field-hint">Used for technical and security purposes.</p>
+                            </div>
+
+                            <section class="profile-preview-panel" aria-label="Profile preview">
+                                <h3 class="profile-preview-kicker">Profile preview</h3>
+                                <div id="uiProfilePreviewStage" class="profile-preview-stage">
+                                    <div class="profile-preview-bg" aria-hidden="true">
+                                        <div class="profile-preview-bg__grid"></div>
+                                        <img class="profile-preview-bg__mark" src="/brand/nexa-logo.svg" alt="" decoding="async">
+                                    </div>
+                                    <div class="profile-preview-tilt">
+                                    <div id="uiProfilePreviewMini" class="profile-preview-mini">
+                                        <div class="profile-preview-mini-face">
+                                        <div id="uiProfileAvatarPreview" class="profile-preview-avatar">
+                                            <img id="uiProfilePreviewImg" class="hidden" alt="">
+                                            <span id="uiProfilePreviewInitials">?</span>
+                                        </div>
+                                        <p id="uiProfilePreviewName" class="profile-preview-name">—</p>
+                                        <p id="uiProfilePreviewHandle" class="profile-preview-handle">@</p>
+                                        <p id="uiProfilePreviewBio" class="profile-preview-bio is-placeholder">No bio yet</p>
+                                        <p id="uiProfilePreviewStatus" class="profile-preview-status is-available">
+                                            <span class="profile-preview-status-dot" aria-hidden="true"></span>
+                                            <span id="uiProfilePreviewStatusLabel">Available</span>
+                                        </p>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                                <p class="profile-preview-note">This is how others see your profile.</p>
+                            </section>
+                        </div>
+                    </div>
+
+                    <div data-profile-section="security" class="profile-security-layout hidden">
+                        <section class="profile-sec-block">
+                            <h3 class="profile-sec-kicker">Encryption</h3>
+                            <div class="profile-sec-split">
+                                <div class="profile-sec-split__pane">
+                                    <span class="profile-sec-icon" aria-hidden="true">
+                                        <svg class="ui-icon"><use href="#icon-lock"/></svg>
+                                    </span>
+                                    <div class="profile-sec-copy">
+                                        <p class="profile-sec-title">End-to-end encrypted</p>
+                                        <p class="profile-sec-text">All messages and files are encrypted locally on your device.</p>
+                                    </div>
+                                </div>
+                                <div class="profile-sec-split__pane profile-sec-split__pane--verified">
+                                    <span class="profile-sec-orbit" aria-hidden="true">
+                                        <svg class="profile-sec-orbit-ring" viewBox="0 0 56 56" focusable="false">
+                                            <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" stroke-opacity="0.22" stroke-dasharray="2 5"/>
+                                            <circle cx="28" cy="28" r="16" fill="none" stroke="currentColor" stroke-opacity="0.14"/>
+                                        </svg>
+                                        <svg class="ui-icon"><use href="#icon-lock"/></svg>
+                                    </span>
+                                    <div class="profile-sec-copy">
+                                        <p id="uiProfileSecVerified" class="profile-sec-title is-verified">Verified</p>
+                                        <p id="uiProfileSecVerifiedHint" class="profile-sec-text">Your keys are active and trusted.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="profile-sec-block">
+                            <h3 class="profile-sec-kicker">Device identity</h3>
+                            <div class="profile-sec-card profile-sec-device">
+                                <span class="profile-sec-icon" aria-hidden="true">
+                                    <svg class="ui-icon"><use href="#icon-laptop"/></svg>
+                                </span>
+                                <div class="profile-sec-copy">
+                                    <p class="profile-sec-title">This device</p>
+                                    <p id="uiProfileDeviceName" class="profile-sec-text">—</p>
+                                    <p id="uiProfileDeviceOs" class="profile-sec-meta">—</p>
+                                </div>
+                                <div class="profile-sec-device-meta">
+                                    <span class="profile-sec-meta-label">Last active</span>
+                                    <span id="uiProfileDeviceActive" class="profile-sec-meta-value">Now</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="profile-sec-block">
+                            <h3 class="profile-sec-kicker">Encryption keys</h3>
+                            <button id="uiProfileKeysToggle" class="profile-sec-card profile-sec-keys" type="button" aria-expanded="false" aria-controls="uiProfileFingerprintPanel">
+                                <span class="profile-sec-icon" aria-hidden="true">
+                                    <svg class="ui-icon"><use href="#icon-shield"/></svg>
+                                </span>
+                                <div class="profile-sec-keys-grid">
+                                    <div class="profile-sec-key">
+                                        <span class="profile-sec-key-label">Identity key</span>
+                                        <span id="uiProfileKeyIdentity" class="profile-sec-key-value">RSA-OAEP-2048</span>
+                                    </div>
+                                    <div class="profile-sec-key">
+                                        <span class="profile-sec-key-label">Message cipher</span>
+                                        <span id="uiProfileKeyCipher" class="profile-sec-key-value">AES-GCM-256</span>
+                                    </div>
+                                    <div class="profile-sec-key">
+                                        <span class="profile-sec-key-label">Fingerprint</span>
+                                        <span id="uiProfileKeyFpShort" class="profile-sec-key-value">—</span>
+                                    </div>
+                                </div>
+                                <svg class="profile-sec-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                            </button>
+                            <div id="uiProfileFingerprintPanel" class="profile-sec-fingerprint hidden" hidden>
+                                <div class="profile-fingerprint-head">
+                                    <h4 class="profile-block-title">Full fingerprint</h4>
+                                    <button id="uiProfileCopyFingerprint" class="profile-field-action" type="button">Copy</button>
+                                </div>
+                                <p id="uiProfileFingerprint" class="profile-fingerprint">Loading…</p>
+                            </div>
+                        </section>
+
+                        <section class="profile-sec-block">
+                            <h3 class="profile-sec-kicker">Manage devices</h3>
+                            <button id="uiProfileManageDevices" class="profile-sec-card profile-sec-action" type="button">
+                                <span class="profile-sec-icon" aria-hidden="true">
+                                    <svg class="ui-icon"><use href="#icon-smartphone"/></svg>
+                                </span>
+                                <div class="profile-sec-copy">
+                                    <p class="profile-sec-title">Manage devices</p>
+                                    <p class="profile-sec-text">View and manage all devices connected to your account.</p>
+                                </div>
+                                <svg class="profile-sec-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                            </button>
+                        </section>
+                    </div>
+
+                    <div data-profile-section="privacy" class="profile-privacy-layout hidden">
+                        <section class="profile-sec-block">
+                            <h3 class="profile-sec-kicker">Presence</h3>
+                            <div class="profile-privacy-card">
+                                <label class="profile-privacy-row" for="uiPrefShowOnline">
+                                    <span class="profile-privacy-copy">
+                                        <span class="profile-privacy-label">Show online status</span>
+                                        <span class="profile-privacy-hint" data-privacy-hint="showOnlineStatus"></span>
+                                    </span>
+                                    <span class="profile-switch">
+                                        <input id="uiPrefShowOnline" type="checkbox" data-pref-key="showOnlineStatus">
+                                        <span class="profile-switch__track" aria-hidden="true"></span>
+                                    </span>
+                                </label>
+                                <label class="profile-privacy-row" for="uiPrefReadReceipts">
+                                    <span class="profile-privacy-copy">
+                                        <span class="profile-privacy-label">Read receipts</span>
+                                        <span class="profile-privacy-hint" data-privacy-hint="readReceipts"></span>
+                                    </span>
+                                    <span class="profile-switch">
+                                        <input id="uiPrefReadReceipts" type="checkbox" data-pref-key="readReceipts">
+                                        <span class="profile-switch__track" aria-hidden="true"></span>
+                                    </span>
+                                </label>
+                                <label class="profile-privacy-row" for="uiPrefTypingIndicators">
+                                    <span class="profile-privacy-copy">
+                                        <span class="profile-privacy-label">Typing indicators</span>
+                                        <span class="profile-privacy-hint" data-privacy-hint="typingIndicators"></span>
+                                    </span>
+                                    <span class="profile-switch">
+                                        <input id="uiPrefTypingIndicators" type="checkbox" data-pref-key="typingIndicators">
+                                        <span class="profile-switch__track" aria-hidden="true"></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="uiProfileDataLayout" data-profile-section="data" class="profile-data-layout hidden">
+                        <section class="profile-data-block">
+                            <h3 class="profile-data-kicker">Storage overview</h3>
+                            <div class="profile-data-overview">
+                                <div class="profile-data-donut-wrap">
+                                    <svg class="profile-data-donut" viewBox="0 0 120 120" aria-hidden="true">
+                                        <circle class="profile-data-donut-track" cx="60" cy="60" r="46" pathLength="100"/>
+                                        <circle id="uiProfileDonutMessages" class="profile-data-donut-seg is-messages" cx="60" cy="60" r="46" pathLength="100"/>
+                                        <circle id="uiProfileDonutKeys" class="profile-data-donut-seg is-keys" cx="60" cy="60" r="46" pathLength="100"/>
+                                        <circle id="uiProfileDonutCache" class="profile-data-donut-seg is-cache" cx="60" cy="60" r="46" pathLength="100"/>
+                                    </svg>
+                                    <div class="profile-data-donut-label">
+                                        <span id="uiProfileStorageUsed" class="profile-data-donut-value">—</span>
+                                        <span class="profile-data-donut-caption">Total</span>
+                                    </div>
+                                </div>
+                                <ul class="profile-data-legend">
+                                    <li>
+                                        <span class="profile-data-dot is-messages" aria-hidden="true"></span>
+                                        <span class="profile-data-legend-label">Messages</span>
+                                        <span id="uiProfileHistorySize" class="profile-data-legend-value">—</span>
+                                    </li>
+                                    <li>
+                                        <span class="profile-data-dot is-keys" aria-hidden="true"></span>
+                                        <span class="profile-data-legend-label">Encryption keys</span>
+                                        <span id="uiProfileKeysSize" class="profile-data-legend-value">—</span>
+                                    </li>
+                                    <li>
+                                        <span class="profile-data-dot is-cache" aria-hidden="true"></span>
+                                        <span class="profile-data-legend-label">Profile &amp; cache</span>
+                                        <span id="uiProfileMetaSize" class="profile-data-legend-value">—</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+                        <section class="profile-data-block">
+                            <h3 class="profile-data-kicker">Actions</h3>
+                            <div class="profile-data-actions">
+                                <button id="uiProfileExportDataBtn" class="profile-data-action" type="button">
+                                    <span class="profile-data-action-icon" aria-hidden="true">
+                                        <svg class="ui-icon"><use href="#icon-upload"/></svg>
+                                    </span>
+                                    <span class="profile-data-action-copy">
+                                        <span class="profile-data-action-title">Export chat history</span>
+                                        <span class="profile-data-action-hint">Download your data.</span>
+                                    </span>
+                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                                </button>
+                                <button id="uiProfileClearHistoryBtn" class="profile-data-action is-danger" type="button">
+                                    <span class="profile-data-action-icon" aria-hidden="true">
+                                        <svg class="ui-icon"><use href="#icon-trash"/></svg>
+                                    </span>
+                                    <span class="profile-data-action-copy">
+                                        <span class="profile-data-action-title">Clear chat history</span>
+                                        <span class="profile-data-action-hint">Permanently delete all chats on this device.</span>
+                                    </span>
+                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                                </button>
+                                <button id="uiProfileClearCacheBtn" class="profile-data-action" type="button">
+                                    <span class="profile-data-action-icon" aria-hidden="true">
+                                        <svg class="ui-icon"><use href="#icon-hexagon"/></svg>
+                                    </span>
+                                    <span class="profile-data-action-copy">
+                                        <span class="profile-data-action-title">Clear cache</span>
+                                        <span class="profile-data-action-hint">Free up space on this device.</span>
+                                    </span>
+                                    <span id="uiProfileCacheSize" class="profile-data-action-meta">—</span>
+                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                                </button>
+                                <button id="uiProfileDeleteAccountBtn" class="profile-data-action is-danger" type="button">
+                                    <span class="profile-data-action-icon" aria-hidden="true">
+                                        <svg class="ui-icon"><use href="#icon-trash"/></svg>
+                                    </span>
+                                    <span class="profile-data-action-copy">
+                                        <span class="profile-data-action-title">Delete account</span>
+                                        <span class="profile-data-action-hint">Permanently delete your account and all data.</span>
+                                    </span>
+                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+                <footer class="profile-foot">
+                    <button id="uiProfileSaveBtn" class="profile-btn profile-btn--primary" type="button">Save profile</button>
+                </footer>
+            </div>
+        </div>
+    </section>
+
     </div>
 
     <div id="ui-overlay-root" aria-hidden="true"></div>
@@ -1862,187 +2618,6 @@
         </div>
     </section>
 
-    <section id="uiProfilePanel" class="modal-panel modal-panel--profile hidden" aria-modal="true" role="dialog" aria-labelledby="uiProfileTitle">
-        <div class="profile-shell">
-            <nav class="profile-nav" aria-label="Profile sections">
-                <button type="button" class="profile-nav-btn is-active" data-profile-nav="identity" aria-current="page">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
-                    Identity
-                </button>
-                <button type="button" class="profile-nav-btn" data-profile-nav="security">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
-                    Security
-                </button>
-                <button type="button" class="profile-nav-btn" data-profile-nav="privacy">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-eye"/></svg>
-                    Privacy
-                </button>
-                <button type="button" class="profile-nav-btn" data-profile-nav="data">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-database"/></svg>
-                    Data
-                </button>
-            </nav>
-            <div class="profile-main">
-                <header class="profile-head">
-                    <div class="profile-head-copy">
-                        <h2 id="uiProfileTitle">Identity</h2>
-                        <p id="uiProfileHeadSub" class="profile-head-sub">Your display name, avatar, and local profile</p>
-                    </div>
-                    <button id="uiCloseProfileBtn" class="mini-icon-btn profile-close-btn" type="button" title="Close profile" aria-label="Close profile"><svg class="ui-icon" aria-hidden="true"><use href="#icon-x"/></svg></button>
-                </header>
-                <div class="profile-body">
-                    <div data-profile-section="identity">
-                        <div class="profile-preview-strip">
-                            <div id="uiProfileAvatarPreview" class="profile-preview-avatar">
-                                <img id="uiProfilePreviewImg" class="hidden" alt="">
-                                <span id="uiProfilePreviewInitials">?</span>
-                            </div>
-                            <div class="profile-preview-text">
-                                <p id="uiProfilePreviewName" class="profile-preview-name">—</p>
-                                <p id="uiProfilePreviewBio" class="profile-preview-bio is-placeholder">No status set</p>
-                            </div>
-                        </div>
-
-                        <section class="profile-card">
-                            <div class="profile-identity-toolbar">
-                                <div id="uiProfileAvatarZone" class="profile-avatar-zone profile-avatar-zone--sm" role="button" tabindex="0" aria-label="Change avatar">
-                                    <img id="uiProfileAvatarImg" class="hidden" alt="">
-                                    <span id="uiProfileAvatarInitials" class="profile-avatar-initials">?</span>
-                                    <span class="profile-avatar-overlay"><svg class="ui-icon" aria-hidden="true"><use href="#icon-upload"/></svg></span>
-                                </div>
-                                <input id="uiProfileAvatarInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
-                                <div class="profile-btn-group" role="group" aria-label="Avatar actions">
-                                    <button id="uiProfileAvatarUploadBtn" class="profile-btn profile-btn--soft" type="button">Upload</button>
-                                    <button id="uiProfileAvatarRemoveBtn" class="profile-btn profile-btn--ghost" type="button">Remove</button>
-                                </div>
-                            </div>
-
-                            <div class="profile-card-divider" aria-hidden="true"></div>
-
-                            <div class="profile-fields">
-                                <div class="profile-field">
-                                    <div class="profile-field__head">
-                                        <label for="uiProfileDisplayName">Display name</label>
-                                        <span id="uiProfileNameCount" class="profile-field-meta">0 / 32</span>
-                                    </div>
-                                    <input id="uiProfileDisplayName" type="text" maxlength="32" placeholder="How you appear in chats" autocomplete="nickname" spellcheck="false">
-                                </div>
-                                <div class="profile-field">
-                                    <div class="profile-field__head">
-                                        <label for="uiProfileBio">Bio</label>
-                                        <span id="uiProfileBioCount" class="profile-field-meta">0 / 140</span>
-                                    </div>
-                                    <textarea id="uiProfileBio" rows="2" maxlength="140" placeholder="Available · AFK · Building something great"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="profile-card-divider" aria-hidden="true"></div>
-
-                            <div class="profile-id-row">
-                                <div class="profile-id-copy">
-                                    <span class="profile-id-label">Username</span>
-                                    <span id="uiProfileUsername" class="profile-id-value">Loading…</span>
-                                </div>
-                                <div class="profile-btn-group profile-btn-group--sm">
-                                    <button id="uiProfileCopyUsername" class="profile-btn profile-btn--ghost profile-copy-btn" type="button" title="Copy username" aria-label="Copy username">Copy</button>
-                                </div>
-                            </div>
-                            <div class="profile-id-row">
-                                <div class="profile-id-copy">
-                                    <span class="profile-id-label">User ID</span>
-                                    <span id="uiProfileUserId" class="profile-id-value">Loading…</span>
-                                </div>
-                                <div class="profile-btn-group profile-btn-group--sm">
-                                    <button id="uiProfileCopyUserId" class="profile-btn profile-btn--ghost profile-copy-btn" type="button" title="Copy user ID" aria-label="Copy user ID">Copy</button>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <div data-profile-section="security" class="hidden">
-                        <div class="profile-status-group" role="list" aria-label="Security status">
-                            <span class="profile-status-chip" role="listitem">E2EE enabled</span>
-                            <span class="profile-status-chip" role="listitem">Secure connection</span>
-                            <span class="profile-status-chip" role="listitem">Session verified</span>
-                        </div>
-                        <section class="profile-card profile-card--fingerprint">
-                            <div class="profile-fingerprint-head">
-                                <h3 class="profile-block-title">Encryption fingerprint</h3>
-                                <div class="profile-btn-group profile-btn-group--sm">
-                                    <button id="uiProfileCopyFingerprint" class="profile-btn profile-btn--soft" type="button">Copy</button>
-                                </div>
-                            </div>
-                            <p id="uiProfileFingerprint" class="profile-fingerprint">Loading…</p>
-                        </section>
-                    </div>
-
-                    <div data-profile-section="privacy" class="hidden">
-                        <section class="profile-card profile-toggle-list">
-                            <label class="profile-toggle-row">
-                                <span class="profile-toggle-copy">
-                                    <span class="profile-toggle-label">Show online status</span>
-                                    <span class="profile-toggle-hint" data-privacy-hint="showOnlineStatus"></span>
-                                </span>
-                                <input id="uiPrefShowOnline" type="checkbox" data-pref-key="showOnlineStatus">
-                            </label>
-                            <label class="profile-toggle-row">
-                                <span class="profile-toggle-copy">
-                                    <span class="profile-toggle-label">Read receipts</span>
-                                    <span class="profile-toggle-hint" data-privacy-hint="readReceipts"></span>
-                                </span>
-                                <input id="uiPrefReadReceipts" type="checkbox" data-pref-key="readReceipts">
-                            </label>
-                            <label class="profile-toggle-row">
-                                <span class="profile-toggle-copy">
-                                    <span class="profile-toggle-label">Typing indicators</span>
-                                    <span class="profile-toggle-hint" data-privacy-hint="typingIndicators"></span>
-                                </span>
-                                <input id="uiPrefTypingIndicators" type="checkbox" data-pref-key="typingIndicators">
-                            </label>
-                        </section>
-                    </div>
-
-                    <div data-profile-section="data" class="hidden">
-                        <section class="profile-card">
-                            <div class="profile-stat-row">
-                                <span>Total local storage</span>
-                                <span id="uiProfileStorageUsed">Loading…</span>
-                            </div>
-                            <div class="profile-stat-row">
-                                <span>Chat history</span>
-                                <span id="uiProfileHistorySize">Loading…</span>
-                            </div>
-                            <div class="profile-stat-row">
-                                <span>Encryption keys</span>
-                                <span id="uiProfileKeysSize">Loading…</span>
-                            </div>
-                            <div class="profile-stat-row">
-                                <span>Profile &amp; drafts</span>
-                                <span id="uiProfileMetaSize">Loading…</span>
-                            </div>
-                            <div class="profile-stat-row">
-                                <span>Messages stored</span>
-                                <span id="uiProfileMessageCount">Loading…</span>
-                            </div>
-                            <div class="profile-stat-row">
-                                <span>Active chats</span>
-                                <span id="uiProfileCachedMedia">Loading…</span>
-                            </div>
-                        </section>
-                        <div class="profile-btn-group profile-btn-group--stretch" role="group" aria-label="Data actions">
-                            <button id="uiProfileClearCacheBtn" class="profile-btn profile-btn--ghost" type="button">Clear drafts</button>
-                            <button id="uiProfileClearHistoryBtn" class="profile-btn profile-btn--ghost" type="button">Clear history</button>
-                            <button id="uiProfileExportDataBtn" class="profile-btn profile-btn--soft" type="button">Copy report</button>
-                        </div>
-                    </div>
-                </div>
-                <footer class="profile-foot">
-                    <button id="uiProfileSaveBtn" class="profile-btn profile-btn--primary" type="button">Save changes</button>
-                </footer>
-            </div>
-        </div>
-    </section>
-
     <section id="uiShortcutsPanel" class="modal-panel hidden" aria-modal="true" role="dialog" aria-labelledby="uiShortcutsTitle">
         <div class="modal-head">
             <h2 id="uiShortcutsTitle">Keyboard Shortcuts</h2>
@@ -2063,8 +2638,16 @@
     <div id="uiPasteEditor" class="paste-editor-overlay hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="uiPasteEditorTitle">
         <div class="paste-editor-panel">
             <div class="paste-editor-head">
-                <h2 id="uiPasteEditorTitle" class="paste-editor-title">Pasted text</h2>
-                <p id="uiPasteEditorCount" class="paste-editor-count">0 characters</p>
+                <div class="paste-editor-head-copy">
+                    <p class="paste-editor-kicker">Attachment</p>
+                    <h2 id="uiPasteEditorTitle" class="paste-editor-title">Pasted text</h2>
+                </div>
+                <div class="paste-editor-head-meta">
+                    <p id="uiPasteEditorCount" class="paste-editor-count">0 characters</p>
+                    <button id="uiPasteEditorClose" class="mini-icon-btn" type="button" title="Close" aria-label="Close editor">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-x"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="paste-editor-body">
                 <textarea id="uiPasteEditorText" class="paste-editor-textarea" spellcheck="false" aria-label="Pasted text content"></textarea>

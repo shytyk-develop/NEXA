@@ -13,7 +13,7 @@ import {
     messageContainsLink,
     isSafeWebHref,
 } from './messageLinks.js';
-import { hydrateProfilePrivacy, queueProfilePanelRefresh } from './profileSettings.js';
+import { hydrateProfilePrivacy, onProfilePanelClose, queueProfilePanelRefresh } from './profileSettings.js';
 import { getPrivacyFlags, isChatMuted } from './privacy.js';
 import {
     applyContactAvatar,
@@ -21,7 +21,6 @@ import {
     loadProfile,
 } from './profile.js';
 import { resolveContactProfile } from './profileDirectory.js';
-import { attachMiniProfileHover } from './miniProfile.js';
 import {
     clearPasteAttachments,
     getPasteAttachmentsLength,
@@ -32,6 +31,7 @@ export const DOM = {
     pageStart: document.getElementById('page-start'),
     pageLogin: document.getElementById('page-login'),
     pageChat: document.getElementById('page-chat'),
+    pageAboutSecurity: document.getElementById('page-about-security'),
 
     usernameInput: document.getElementById('usernameInput'),
     passwordInput: document.getElementById('passwordInput'),
@@ -84,6 +84,7 @@ export const DOM = {
     pasteEditorText: document.getElementById('uiPasteEditorText'),
     pasteEditorSave: document.getElementById('uiPasteEditorSave'),
     pasteEditorRemove: document.getElementById('uiPasteEditorRemove'),
+    pasteEditorClose: document.getElementById('uiPasteEditorClose'),
     replyBar: document.getElementById('uiReplyBar'),
     replyLabel: document.getElementById('uiReplyLabel'),
     replyPreview: document.getElementById('uiReplyPreview'),
@@ -103,7 +104,26 @@ export const DOM = {
 
     shortcutsPanel: document.getElementById('uiShortcutsPanel'),
     closeShortcutsBtn: document.getElementById('uiCloseShortcutsBtn'),
-    toastRegion: document.getElementById('uiToastRegion')
+    toastRegion: document.getElementById('uiToastRegion'),
+
+    chatWorkspace: document.getElementById('uiChatWorkspace'),
+    railChats: document.getElementById('uiRailChats'),
+    railProfile: document.getElementById('uiRailProfile'),
+    railPrivacy: document.getElementById('uiRailPrivacy'),
+
+    peerPanel: document.getElementById('uiPeerPanel'),
+    peerEmpty: document.getElementById('uiPeerEmpty'),
+    peerBody: document.getElementById('uiPeerBody'),
+    peerAvatar: document.getElementById('uiPeerAvatar'),
+    peerName: document.getElementById('uiPeerName'),
+    peerHandle: document.getElementById('uiPeerHandle'),
+    peerStatus: document.getElementById('uiPeerStatus'),
+    peerBio: document.getElementById('uiPeerBio'),
+    peerEncryptCopy: document.getElementById('uiPeerEncryptCopy'),
+    peerSecurityBtn: document.getElementById('uiPeerSecurityBtn'),
+    peerMuteBtn: document.getElementById('uiPeerMuteBtn'),
+    peerClearBtn: document.getElementById('uiPeerClearBtn'),
+    peerDeleteBtn: document.getElementById('uiPeerDeleteBtn'),
 };
 
 const missingDomKeys = Object.entries(DOM)
@@ -122,6 +142,7 @@ initSmartPasteUi({
     titleEl: DOM.pasteEditorTitle,
     saveBtn: DOM.pasteEditorSave,
     removeBtn: DOM.pasteEditorRemove,
+    closeBtn: DOM.pasteEditorClose,
     isDisabled: () => Boolean(DOM.messageInput?.disabled),
 });
 
@@ -148,6 +169,7 @@ export function setUiPreferences(preferences) {
     hydrateProfilePrivacy(preferences);
     refreshContactIndicators();
     refreshChatHeaderSubtitle();
+    refreshPeerPanel();
 }
 
 const PRESENCE_ONLINE = 'is-online';
@@ -182,6 +204,7 @@ export function setRealtimeContext(ctx = {}) {
     }
     refreshContactIndicators();
     refreshChatHeaderSubtitle();
+    refreshPeerPanel();
 }
 
 export function updateStatus(status, colorClass) {
@@ -241,6 +264,7 @@ export function clearUsersList(message = 'No conversations yet') {
         empty.className = 'empty-state';
         empty.textContent = message;
         DOM.usersListDiv.appendChild(empty);
+        syncWelcomeBanner(message !== 'No conversations yet');
         return;
     }
     renderFilteredUsers();
@@ -263,6 +287,16 @@ export function showContactsLoading(count = 6) {
         fragment.appendChild(row);
     }
     DOM.usersListDiv.appendChild(fragment);
+    syncWelcomeBanner(true);
+}
+
+export function showChatWelcome() {
+    if (!DOM.chatWelcome) return;
+    DOM.chatWelcome.classList.remove('hidden');
+    DOM.chatWelcome.classList.remove('is-entering');
+    void DOM.chatWelcome.offsetWidth;
+    DOM.chatWelcome.classList.add('is-entering');
+    playEmptyStateIntros();
 }
 
 export function activateChatPanel(username) {
@@ -278,6 +312,7 @@ export function activateChatPanel(username) {
     setChatToolsEnabled(true);
     setActiveContact(username);
     refreshChatHeaderSubtitle();
+    refreshPeerPanel(username);
     autoResizeComposer();
     focusComposer();
 }
@@ -308,6 +343,7 @@ export function resetChatPanel() {
     setDraftStatus(COMPOSER_DEFAULT_META);
     closeMessageSearch();
     setActiveContact(null);
+    refreshPeerPanel(null);
 }
 
 export function renderMessagesList(messages) {
@@ -1125,9 +1161,41 @@ export function openSettings() {
     openModalOverlay('settings', 'settings');
 }
 
-export function openProfile() {
-    openModalOverlay('profile', 'profile');
-    queueProfilePanelRefresh();
+export function showChatsView() {
+    setAppView('chats');
+}
+
+export function openProfile(section = 'identity') {
+    closeOverlay();
+    setAppView('identity');
+    queueProfilePanelRefresh(section);
+}
+
+function setAppView(view) {
+    const isChats = view === 'chats';
+    const isIdentity = view === 'identity';
+
+    if (DOM.chatWorkspace) {
+        DOM.chatWorkspace.hidden = !isChats;
+        DOM.chatWorkspace.setAttribute('aria-hidden', isChats ? 'false' : 'true');
+    }
+    if (DOM.profilePanel) {
+        DOM.profilePanel.classList.toggle('hidden', !isIdentity);
+        DOM.profilePanel.setAttribute('aria-hidden', isIdentity ? 'false' : 'true');
+    }
+    if (!isIdentity) onProfilePanelClose();
+
+    const railMap = {
+        chats: DOM.railChats,
+        identity: DOM.railProfile,
+    };
+    [DOM.railChats, DOM.railProfile, DOM.railPrivacy].forEach((btn) => {
+        if (!btn) return;
+        const on = btn === railMap[view];
+        btn.classList.toggle('is-active', on);
+        if (on) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
+    });
 }
 
 export function openShortcuts() {
@@ -1261,6 +1329,32 @@ export function refreshContactList() {
     renderFilteredUsers();
 }
 
+function restartEntering(el) {
+    if (!el) return;
+    el.classList.remove('is-entering');
+    void el.offsetWidth;
+    el.classList.add('is-entering');
+}
+
+function playEmptyStateIntros() {
+    const banner = document.getElementById('uiWelcomeBanner');
+    if (banner && !banner.classList.contains('hidden')) restartEntering(banner);
+    if (DOM.peerPanel?.classList.contains('is-empty')) restartEntering(DOM.peerEmpty);
+}
+
+function syncWelcomeBanner(forceHide = false) {
+    const banner = document.getElementById('uiWelcomeBanner');
+    if (!banner) return;
+    const show = !forceHide
+        && !contactsState.searchMode
+        && !contactsState.query
+        && contactsState.sidebarChats.length === 0;
+    const wasHidden = banner.classList.contains('hidden');
+    banner.classList.toggle('hidden', !show);
+    if (show && wasHidden) restartEntering(banner);
+    if (!show) banner.classList.remove('is-entering');
+}
+
 function renderFilteredUsers() {
     DOM.usersListDiv.innerHTML = '';
 
@@ -1288,6 +1382,7 @@ function renderFilteredUsers() {
             empty.textContent = 'No conversations yet';
         }
         DOM.usersListDiv.appendChild(empty);
+        syncWelcomeBanner();
         return;
     }
 
@@ -1347,11 +1442,11 @@ function renderFilteredUsers() {
             btn.append(badge);
         }
         btn.onclick = () => contactsState.onUserSelect?.(user.username);
-        attachMiniProfileHover(btn, user.username, user);
         DOM.usersListDiv.appendChild(btn);
     });
 
     setActiveContact(contactsState.activeUsername);
+    syncWelcomeBanner();
 }
 
 function formatSidebarTime(isoValue) {
@@ -1459,6 +1554,78 @@ function refreshChatHeaderIdentity(username) {
     if (DOM.chatHeaderAvatar) {
         applyContactAvatar(DOM.chatHeaderAvatar, username, profile);
     }
+}
+
+function refreshPeerPanel(username = contactsState.activeUsername) {
+    const panel = DOM.peerPanel;
+    if (!panel) return;
+
+    const active = username || null;
+    const empty = !active;
+    const becameEmpty = empty && !panel.classList.contains('is-empty');
+    panel.classList.toggle('is-empty', empty);
+    if (DOM.peerBody) DOM.peerBody.hidden = empty;
+    if (DOM.peerEmpty) DOM.peerEmpty.hidden = !empty;
+    if (becameEmpty) restartEntering(DOM.peerEmpty);
+
+    [DOM.peerMuteBtn, DOM.peerClearBtn, DOM.peerDeleteBtn, DOM.peerSecurityBtn].forEach((btn) => {
+        if (btn) btn.disabled = empty;
+    });
+
+    if (empty) {
+        if (DOM.peerName) DOM.peerName.textContent = '';
+        if (DOM.peerHandle) DOM.peerHandle.textContent = '';
+        if (DOM.peerBio) DOM.peerBio.textContent = '';
+        if (DOM.peerEncryptCopy) {
+            DOM.peerEncryptCopy.textContent = 'Messages are end-to-end encrypted.';
+        }
+        if (DOM.peerStatus) {
+            DOM.peerStatus.textContent = '';
+            DOM.peerStatus.className = 'peer-status';
+        }
+        if (DOM.peerAvatar) {
+            DOM.peerAvatar.replaceChildren();
+            DOM.peerAvatar.classList.remove('has-photo');
+        }
+        return;
+    }
+
+    const sidebarUser = contactsState.sidebarChats.find((u) => u.username === active);
+    const profile = resolveContactProfile(active, sidebarUser, contactsState.myUsername);
+    const label = getDisplayLabel(active, profile);
+
+    if (DOM.peerAvatar) applyContactAvatar(DOM.peerAvatar, active, profile);
+    if (DOM.peerName) DOM.peerName.textContent = label;
+    if (DOM.peerHandle) DOM.peerHandle.textContent = `@${active}`;
+
+    if (DOM.peerBio) {
+        const bioText = profile.bio?.trim();
+        DOM.peerBio.textContent = bioText || 'No bio yet';
+        DOM.peerBio.classList.toggle('is-placeholder', !bioText);
+    }
+
+    if (DOM.peerEncryptCopy) {
+        DOM.peerEncryptCopy.textContent =
+            `Messages are end-to-end encrypted. Only you and ${label} can read them.`;
+    }
+
+    if (!DOM.peerStatus) return;
+
+    if (uiPreferences.typingIndicators && realtimeContext.typingUsers.has(active)) {
+        DOM.peerStatus.textContent = 'typing…';
+        DOM.peerStatus.className = 'peer-status is-typing';
+        return;
+    }
+
+    if (!uiPreferences.showOnlineStatus) {
+        DOM.peerStatus.textContent = '';
+        DOM.peerStatus.className = 'peer-status is-hidden';
+        return;
+    }
+
+    const online = realtimeContext.onlineUsers.has(active);
+    DOM.peerStatus.textContent = online ? 'Online' : 'Offline';
+    DOM.peerStatus.className = `peer-status ${online ? 'is-online' : 'is-offline'}`;
 }
 
 function refreshChatHeaderSubtitle() {
