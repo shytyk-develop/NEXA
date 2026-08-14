@@ -120,42 +120,72 @@ export function messageContainsLink(text) {
     return findLinksInText(text).length > 0;
 }
 
+function appendPlainWithHighlights(parent, text, needle) {
+    if (!text) return;
+    if (!needle) {
+        parent.appendChild(document.createTextNode(text));
+        return;
+    }
+    const hay = text.toLowerCase();
+    const q = needle.toLowerCase();
+    let from = 0;
+    while (from < text.length) {
+        const i = hay.indexOf(q, from);
+        if (i < 0) {
+            parent.appendChild(document.createTextNode(text.slice(from)));
+            return;
+        }
+        if (i > from) {
+            parent.appendChild(document.createTextNode(text.slice(from, i)));
+        }
+        const mark = document.createElement('mark');
+        mark.className = 'search-hit';
+        mark.textContent = text.slice(i, i + q.length);
+        parent.appendChild(mark);
+        from = i + q.length;
+    }
+}
+
 /**
  * Build safe DOM for message body text (text nodes + <a>, no innerHTML).
+ * Optional `highlight` wraps case-insensitive matches in <mark class="search-hit">.
  */
 export function appendLinkedTextContent(container, text, options = {}) {
     const linkify = options.linkify !== false;
-    if (!linkify || !text) {
-        container.appendChild(document.createTextNode(text || ''));
+    const highlight = typeof options.highlight === 'string' ? options.highlight.trim() : '';
+    const source = text || '';
+
+    if (!linkify || !source) {
+        appendPlainWithHighlights(container, source, highlight);
         return;
     }
 
-    const links = findLinksInText(text);
+    const links = findLinksInText(source);
     if (!links.length) {
-        container.appendChild(document.createTextNode(text));
+        appendPlainWithHighlights(container, source, highlight);
         return;
     }
 
     let cursor = 0;
     for (const link of links) {
         if (link.start > cursor) {
-            container.appendChild(document.createTextNode(text.slice(cursor, link.start)));
+            appendPlainWithHighlights(container, source.slice(cursor, link.start), highlight);
         }
 
         const anchor = document.createElement('a');
         anchor.className = 'message-link';
         anchor.href = link.href;
-        anchor.textContent = link.display;
         anchor.target = '_blank';
         anchor.rel = 'noopener noreferrer';
         anchor.title = link.href;
+        appendPlainWithHighlights(anchor, link.display, highlight);
         container.appendChild(anchor);
 
         cursor = link.end;
     }
 
-    if (cursor < text.length) {
-        container.appendChild(document.createTextNode(text.slice(cursor)));
+    if (cursor < source.length) {
+        appendPlainWithHighlights(container, source.slice(cursor), highlight);
     }
 }
 
