@@ -41,6 +41,10 @@ import {
     openSettings,
     openProfile,
     showChatsView,
+    handleProfileBack,
+    handleChatBack,
+    onProfileSectionOpened,
+    isContactSearchOpen,
     openShortcuts,
     closeModals,
     closeTransientUi,
@@ -114,7 +118,7 @@ import {
     decryptPrivateKeyWithPassword
 } from './crypto.js';
 import { saveHistory, loadHistory, saveKeys, loadKeys, saveDraft, loadDraft, clearDraft } from './storage.js';
-import { initRouter, navigateTo } from './router.js';
+import { initRouter, navigateTo, replaceTo } from './router.js';
 import { loadPreferences, applyPreferences, updatePreference } from './preferences.js';
 import { initProfileSettings } from './profileSettings.js';
 import { initLoginPage, teardownLoginPage } from './loginPage.js';
@@ -557,6 +561,7 @@ initProfileSettings({
         }
         showToast('Privacy setting applied.', 'success');
     },
+    onProfileSectionChange: () => onProfileSectionOpened(),
     onProfileSaved: async (profile) => {
         updateProfileRailButton(state.myUsername);
         try {
@@ -870,7 +875,14 @@ async function loadSidebarChats() {
 
     try {
         const chats = await getChats(state.token, 50);
-        state.sidebarChats = chats;
+        state.sidebarChats = chats.map((chat) => {
+            const history = state.chatHistory?.[chat.username] || [];
+            const last = [...history].reverse().find((m) => m?.text && !m.deleted);
+            return {
+                ...chat,
+                last_message_preview: last?.text || chat.last_message_preview || '',
+            };
+        });
         ingestUserRecords(chats);
         chats.forEach(chat => {
             state.usersDirectory[chat.username] = chat.public_key;
@@ -954,6 +966,7 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
                 const decryptedText = await decryptMessage(state.myKeys.privateKey, encryptedBytes);
                 upsertSidebarChat(data.from, {
                     last_message_at: data.timestamp || new Date().toISOString(),
+                    last_message_preview: decryptedText,
                 });
 
                 const isActiveChat = state.currentTargetUser === data.from;
@@ -1296,6 +1309,7 @@ async function handleSendMessage() {
         upsertSidebarChat(state.currentTargetUser, {
             public_key: targetPublicKeyJWK,
             last_message_at: new Date().toISOString(),
+            last_message_preview: text,
         });
 
         processMessage(state.currentTargetUser, createOutgoingMessage({
@@ -1418,7 +1432,19 @@ DOM.closeProfileBtn?.addEventListener('click', (event) => {
 });
 document.getElementById('uiProfileBackBtn')?.addEventListener('click', (event) => {
     event.preventDefault();
-    showChatsView();
+    handleProfileBack();
+});
+document.getElementById('uiProfileNavBackBtn')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    handleProfileBack();
+});
+document.getElementById('uiChatBackBtn')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (/^\/chat\/@/.test(window.location.pathname)) {
+        replaceTo('/chat', handleNavigation);
+        return;
+    }
+    handleChatBack();
 });
 DOM.settingsBtn.addEventListener('click', (event) => openSettingsMenu(event));
 DOM.shortcutsBtn.addEventListener('click', (event) => {
@@ -1430,6 +1456,7 @@ DOM.closeShortcutsBtn.addEventListener('click', closeModals);
 
 DOM.copyUsernameBtn.addEventListener('click', copyCurrentUsername);
 DOM.logoutBtn.addEventListener('click', handleLogout);
+document.getElementById('uiProfileLogoutBtn')?.addEventListener('click', handleLogout);
 
 DOM.chatMenuBtn.addEventListener('click', (event) => openChatMenu(event));
 DOM.composerMenuBtn?.addEventListener('click', (event) => openComposerMenu(event));
@@ -1539,6 +1566,10 @@ function handleContactSearchInput() {
     window.clearTimeout(contactSearchTimer);
 
     if (query.length < 2) {
+        if (isContactSearchOpen()) {
+            renderUsersList([], state.myUsername, onContactSelected, state.currentTargetUser);
+            return;
+        }
         renderSidebar();
         return;
     }

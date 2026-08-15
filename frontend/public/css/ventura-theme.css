@@ -222,7 +222,7 @@ body {
 .message-content-wrap {
     display: flex;
     flex-direction: column;
-    max-width: min(100%, 32rem);
+    max-width: min(100%, var(--msg-bubble-max, 32rem));
     min-width: 0;
 }
 
@@ -242,13 +242,17 @@ body {
 }
 
 /* ─── Bubbles ─── */
+:root {
+    --msg-bubble-max: 32rem;
+}
+
 .message-bubble {
     border-radius: var(--radius-bubble);
     box-shadow: var(--shadow-bubble);
     display: block;
     font-size: 14px;
     line-height: 1.42;
-    max-width: min(32rem, 100%);
+    max-width: min(var(--msg-bubble-max), 100%);
     padding: 9px 15px;
     position: relative;
     width: max-content;
@@ -269,12 +273,9 @@ body {
     justify-content: flex-start;
 }
 
-.message-row--own .message-bubble {
-    max-width: min(32rem, calc(100vw - 7rem));
-}
-
+.message-row--own .message-bubble,
 .message-row--other .message-bubble {
-    max-width: min(32rem, calc(100vw - 7rem));
+    max-width: min(var(--msg-bubble-max), 100%);
 }
 
 .message-meta {
@@ -425,8 +426,39 @@ body {
     margin: 0;
 }
 
-@media (max-width: 760px) {
-    .message-bubble {
-        max-width: 88%;
+/* Shrink bubble islands as the viewport narrows */
+@media (max-width: 1400px) {
+    :root {
+        --msg-bubble-max: 30.5rem;
+    }
+}
+
+@media (max-width: 1200px) {
+    :root {
+        --msg-bubble-max: 28rem;
+    }
+}
+
+@media (max-width: 1000px) {
+    :root {
+        --msg-bubble-max: 25.5rem;
+    }
+}
+
+@media (max-width: 820px) {
+    :root {
+        --msg-bubble-max: 22.5rem;
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --msg-bubble-max: 20rem;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --msg-bubble-max: 17.5rem;
     }
 }

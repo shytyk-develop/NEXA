@@ -432,7 +432,6 @@ body.ui-hide-times .message-time {
         padding-right: 8px;
     }
 
-    .chat-header-tools .mini-icon-btn:not(#uiChatMenuBtn),
     .sidebar-foot {
         display: none;
     }

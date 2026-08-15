@@ -33,6 +33,11 @@ export function navigateTo(url, onRouteChanged) {
     handleRouting(onRouteChanged);
 }
 
+export function replaceTo(url, onRouteChanged) {
+    window.history.replaceState(null, null, url);
+    handleRouting(onRouteChanged);
+}
+
 function handleRouting(onRouteChanged) {
     const path = window.location.pathname || '/';
 
