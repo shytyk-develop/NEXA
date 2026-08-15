@@ -261,34 +261,52 @@ function bindInteractiveSelector(pageStart) {
     const closeLightbox = () => {
         if (!lightbox || !lightboxOpen) return;
         lightboxOpen = false;
-        lightbox.classList.remove('is-visible');
+        lightbox.classList.remove('is-visible', 'is-preparing');
         pageStart.classList.remove('is-iselect-lightbox-open');
         document.body.classList.remove('is-iselect-lightbox-open');
 
         window.setTimeout(() => {
             if (!lightboxOpen) lightbox.hidden = true;
-        }, prefersReduced() ? 0 : 280);
+        }, prefersReduced() ? 0 : 300);
     };
 
-    const openLightbox = (opt = options[activeIndex]) => {
+    const openLightbox = async (opt = options[activeIndex]) => {
         if (!lightbox || !lightboxImg || !opt) return;
         const media = opt.querySelector('.start-iselect__media');
         const title = opt.querySelector('.start-iselect__title')?.textContent?.trim() || '';
         const desc = opt.querySelector('.start-iselect__desc')?.textContent?.trim() || '';
         if (!media) return;
 
-        lightboxImg.src = media.currentSrc || media.src;
+        const nextSrc = media.currentSrc || media.src;
+        if (lightboxImg.getAttribute('src') !== nextSrc) {
+            lightboxImg.src = nextSrc;
+        }
         lightboxImg.alt = media.alt || title;
         if (lightboxTitle) lightboxTitle.textContent = title;
         if (lightboxDesc) lightboxDesc.textContent = desc;
 
+        try {
+            if (typeof lightboxImg.decode === 'function') {
+                await lightboxImg.decode();
+            }
+        } catch {
+            /* cached / decode failures are fine */
+        }
+
         lightbox.hidden = false;
         lightboxOpen = true;
+        lightbox.classList.remove('is-visible');
+        lightbox.classList.add('is-preparing');
         pageStart.classList.add('is-iselect-lightbox-open');
         document.body.classList.add('is-iselect-lightbox-open');
+
+        // Paint one invisible frame with blur already attached, then fade blur + photo together.
         requestAnimationFrame(() => {
-            lightbox.classList.add('is-visible');
-            lightbox.querySelector('.start-iselect-lightbox__close')?.focus();
+            requestAnimationFrame(() => {
+                if (!lightboxOpen) return;
+                lightbox.classList.add('is-visible');
+                lightbox.querySelector('.start-iselect-lightbox__close')?.focus();
+            });
         });
     };
 
