@@ -157,7 +157,7 @@ body {
 }
 
 .input-row {
-    align-items: flex-end;
+    align-items: center;
 }
 
 #sendBtn {

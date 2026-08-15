@@ -1,8 +1,10 @@
 import {
     closeOverlay,
     closeOverlaysForChatChange,
+    getOverlayState,
     openContextMenu,
     openDropdown,
+    openMessageActionsDrawer,
     openModalOverlay,
     openPopoverOverlay,
 } from '../ui/overlays/overlayManager.js';
@@ -1229,14 +1231,20 @@ function handleMessageActionsEvent(event) {
         const bubble = event.target.closest('.message-bubble');
         if (!bubble) return;
 
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (isAppStackViewport()) {
+            openMobileMessageActions(row, bubble);
+            return;
+        }
+
         const { messageId } = resolveRowActionContext(row);
         if (!messageId) {
             notifyActionUnavailable('react');
             return;
         }
 
-        event.preventDefault();
-        event.stopPropagation();
         messageActionHandlers.onReact?.(messageId, null, bubble);
         return;
     }
@@ -1296,6 +1304,33 @@ function handleMessageActionsEvent(event) {
 }
 
 let messageActionsInitialized = false;
+let messageContextPayloadGetter = null;
+let lastMessageTap = { time: 0, row: null };
+
+function openMobileMessageActions(row, bubble) {
+    const payload = messageContextPayloadGetter?.(row);
+    if (!payload) return;
+
+    resolveRowActionContext(row);
+    const messageId = payload.messageId || row.dataset.messageId || null;
+    if (!messageId) {
+        notifyActionUnavailable('react');
+        return;
+    }
+
+    const targetId = messageId || payload.clientMessageId || 'message-actions';
+    const current = getOverlayState();
+    if (current?.type === 'drawer' && current.targetId === targetId) return;
+
+    openMessageActionsDrawer({
+        payload: {
+            ...payload,
+            messageId,
+        },
+        bubble: bubble || row.querySelector('.message-bubble'),
+        row,
+    });
+}
 
 /** One capture-phase listener on #messages — survives DOM updates, no per-row binding. */
 export function initMessageActions() {
@@ -1304,6 +1339,24 @@ export function initMessageActions() {
 
     DOM.messagesDiv.addEventListener('click', handleMessageActionsEvent, true);
     DOM.messagesDiv.addEventListener('dblclick', handleMessageActionsEvent, true);
+
+    DOM.messagesDiv.addEventListener('touchend', (event) => {
+        if (!isAppStackViewport()) return;
+        if (event.target.closest('a, button, .message-reaction-chip, .message-link')) return;
+
+        const bubble = event.target.closest('.message-bubble');
+        const row = event.target.closest('.message-row');
+        if (!bubble || !row) return;
+
+        const now = Date.now();
+        if (lastMessageTap.row === row && now - lastMessageTap.time < 320) {
+            event.preventDefault();
+            lastMessageTap = { time: 0, row: null };
+            openMobileMessageActions(row, bubble);
+            return;
+        }
+        lastMessageTap = { time: now, row };
+    }, { passive: false });
 }
 
 export function scrollToMessageById(messageId) {
@@ -1534,6 +1587,11 @@ export function autoResizeComposer() {
     const nextHeight = Math.min(Math.max(scrollH, minHeight), maxHeight);
     input.style.height = `${nextHeight}px`;
     input.style.overflowY = scrollH > maxHeight ? 'auto' : 'hidden';
+
+    const row = input.closest('.input-row');
+    if (row) {
+        row.classList.toggle('is-composer-multiline', nextHeight > minHeight + 2);
+    }
 }
 
 export function updateComposerMeta(text) {
@@ -1824,6 +1882,8 @@ export function openChatInfoPopover(partner, online, publicKeyJwk = null, extra 
 }
 
 export function initMessageContextMenu(getContextPayload) {
+    messageContextPayloadGetter = getContextPayload;
+
     DOM.messagesDiv.addEventListener('contextmenu', (event) => {
         const row = event.target.closest('.message-row');
         if (!row) return;
@@ -1831,6 +1891,11 @@ export function initMessageContextMenu(getContextPayload) {
 
         const payload = getContextPayload(row);
         if (!payload) return;
+
+        if (isAppStackViewport()) {
+            openMobileMessageActions(row, row.querySelector('.message-bubble'));
+            return;
+        }
 
         openContextMenu({
             x: event.clientX,
