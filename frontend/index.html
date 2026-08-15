@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="/css/brand.css">
     <link rel="stylesheet" href="/css/app-layout.css">
     <link rel="stylesheet" href="/css/peer-panel.css">
+    <link rel="stylesheet" href="/css/mobile-chat.css">
     <link rel="stylesheet" href="/css/about-security.css">
     <link rel="stylesheet" href="/css/login-page.css">
     <link rel="stylesheet" href="/css/start-site.css">
@@ -582,8 +583,8 @@
                 width: 48px;
             }
 
-            .sidebar {
-                width: 156px;
+            .sidebar:not(.is-collapsed) {
+                width: 240px;
             }
 
             .sidebar-head {
@@ -639,11 +640,11 @@
 
         @media (max-width: 520px) {
             .nav-rail {
-                display: none;
+                width: 52px;
             }
 
-            .sidebar {
-                width: 124px;
+            .sidebar:not(.is-collapsed) {
+                width: min(280px, calc(100vw - 52px));
             }
 
             .sidebar-head {
@@ -1936,12 +1937,11 @@
             <div class="rail-top">
                 <a href="#chats" id="uiRailChats" class="rail-icon-btn is-active" title="Chats" aria-label="Chats" aria-current="page" data-rail="chats">
                     <svg class="ui-icon" aria-hidden="true"><use href="#icon-message"/></svg>
+                    <span class="rail-icon-label">Chats</span>
                 </a>
                 <a href="#profile" id="uiRailProfile" class="rail-icon-btn" title="Profile settings" aria-label="Profile settings" data-rail="identity">
                     <svg class="ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
-                </a>
-                <a href="/about-security" id="uiRailPrivacy" class="rail-icon-btn" title="Privacy settings" aria-label="Privacy settings" data-link>
-                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
+                    <span class="rail-icon-label">Profile</span>
                 </a>
             </div>
             <div class="rail-bottom">
@@ -1964,20 +1964,33 @@
         <aside id="uiSidebar" class="sidebar" aria-label="Navigation and contacts">
             <header class="sidebar-brand">
                 <img src="/brand/nexa-logo.svg" alt="NEXA" class="sidebar-brand__mark" width="1007" height="176" decoding="async">
-                <button id="uiSidebarToggle" class="sidebar-brand-toggle" type="button" title="Hide contacts" aria-expanded="true" aria-controls="uiSidebar" aria-label="Hide contacts">
-                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-panel-left"/></svg>
-                </button>
+                <div class="sidebar-brand-actions">
+                    <button id="uiContactSearchOpenBtn" class="mini-icon-btn sidebar-search-open" type="button" title="Find contacts" aria-label="Find contacts">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
+                    </button>
+                    <button id="uiSidebarToggle" class="sidebar-brand-toggle" type="button" title="Hide contacts" aria-expanded="true" aria-controls="uiSidebar" aria-label="Hide contacts">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-panel-left"/></svg>
+                    </button>
+                </div>
             </header>
 
-            <div class="contact-search-wrap">
-                <svg class="contact-search-icon ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
-                <input id="uiContactSearch" class="contact-search-input" type="search" placeholder="Search contacts" autocomplete="off" spellcheck="false">
-                <button id="uiRefreshUsersBtn" class="mini-icon-btn" type="button" title="Refresh contacts" aria-label="Refresh contacts"><svg class="ui-icon" aria-hidden="true"><use href="#icon-refresh"/></svg></button>
+            <button id="uiContactSearchTrigger" class="contact-search-trigger" type="button" title="Search contacts" aria-label="Search contacts">
+                <svg class="contact-search-trigger__icon ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
+                <span class="contact-search-trigger__label">Search contacts</span>
+            </button>
+
+            <div id="uiContactSearchLayer" class="contact-search-layer">
+                <div class="contact-search-wrap">
+                    <svg class="contact-search-icon ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
+                    <input id="uiContactSearch" class="contact-search-input" type="search" placeholder="Search contacts" autocomplete="off" spellcheck="false">
+                    <button id="uiContactSearchBackBtn" class="contact-search-cancel" type="button" title="Cancel search" aria-label="Cancel search">Cancel</button>
+                    <button id="uiRefreshUsersBtn" class="mini-icon-btn" type="button" title="Refresh contacts" aria-label="Refresh contacts"><svg class="ui-icon" aria-hidden="true"><use href="#icon-refresh"/></svg></button>
+                </div>
             </div>
 
             <section class="sidebar-chats" aria-label="Chats">
                 <div class="sidebar-head">
-                    <span class="sidebar-label">Contacts</span>
+                    <span id="uiSidebarLabel" class="sidebar-label">Contacts</span>
                 </div>
                 <div id="usersList"></div>
                 <div id="uiWelcomeBanner" class="nexa-welcome-banner hidden">
@@ -2054,6 +2067,7 @@
             </div>
             <header class="chat-header">
                 <div class="chat-header-inner">
+                    <button id="uiChatBackBtn" class="mini-icon-btn chat-back-btn" type="button" title="Back to chats" aria-label="Back to chats" hidden aria-hidden="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
                     <div class="header-left hidden" aria-hidden="true">
                         <div id="chatHeaderAvatar" class="chat-header-avatar contact-avatar" aria-hidden="true"></div>
                         <div class="header-left__meta">
@@ -2136,12 +2150,19 @@
             </div>
         </main>
 
+        <div id="uiPeerPanelScrim" class="peer-panel-scrim" hidden aria-hidden="true"></div>
         <div class="peer-panel-dock">
         <button id="uiPeerPanelToggle" class="peer-panel-toggle" type="button" title="Hide panel" aria-expanded="true" aria-controls="uiPeerPanel" aria-label="Hide conversation panel">
             <svg class="ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
         </button>
         <aside id="uiPeerPanel" class="peer-panel is-empty" aria-label="Conversation profile">
             <div class="peer-panel-shelf">
+            <div class="peer-sheet-bar">
+                <button id="uiPeerSheetBackBtn" class="mini-icon-btn" type="button" title="Back to chat" aria-label="Back to chat">
+                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg>
+                </button>
+                <p class="peer-sheet-bar__title">Profile</p>
+            </div>
                 <div id="uiPeerEmpty" class="peer-panel-empty">
                 <div class="peer-empty-hero">
                     <div class="peer-empty-art" aria-hidden="true">
@@ -2208,8 +2229,15 @@
         </div>
 
     <section id="uiProfilePanel" class="app-workspace profile-workspace hidden" aria-labelledby="uiProfileTitle">
+        <div id="uiProfileNavScrim" class="profile-nav-scrim" hidden aria-hidden="true"></div>
         <div class="profile-shell">
-            <nav class="profile-nav" aria-label="Settings">
+            <nav id="uiProfileNav" class="profile-nav" aria-label="Settings">
+                <header class="profile-nav-toolbar">
+                    <button id="uiProfileNavBackBtn" class="mini-icon-btn profile-nav-back-btn" type="button" title="Back to chats" aria-label="Back to chats"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
+                    <div class="profile-nav-toolbar-copy">
+                        <p class="profile-nav-toolbar-title">Settings</p>
+                    </div>
+                </header>
                 <p class="profile-nav-kicker">Settings</p>
                 <button type="button" class="profile-nav-btn is-active" data-profile-nav="identity" aria-current="page">
                     <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
@@ -2229,7 +2257,7 @@
                     <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-eye"/></svg>
                     <span class="profile-nav-copy">
                         <span class="profile-nav-label">Privacy</span>
-                        <span class="profile-nav-sub">Control</span>
+                        <span class="profile-nav-sub">Control &amp; security</span>
                     </span>
                 </button>
                 <button type="button" class="profile-nav-btn" data-profile-nav="data">
@@ -2239,18 +2267,28 @@
                         <span class="profile-nav-sub">Sync &amp; export</span>
                     </span>
                 </button>
-                <div class="profile-e2ee-card">
-                    <div class="profile-e2ee-head">
-                        <span class="profile-e2ee-kicker">E2EE status</span>
-                        <span class="profile-e2ee-verified">Verified</span>
+                <button id="uiProfileLogoutBtn" class="profile-nav-btn profile-nav-btn--logout" type="button">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-logout"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Log out</span>
+                        <span class="profile-nav-sub">End this session</span>
+                    </span>
+                </button>
+                <div class="profile-nav-foot">
+                    <div class="profile-e2ee-card">
+                        <div class="profile-e2ee-head">
+                            <span class="profile-e2ee-kicker">E2EE status</span>
+                            <span class="profile-e2ee-verified">Verified</span>
+                        </div>
+                        <p class="profile-e2ee-copy">All your data is end-to-end encrypted and stored locally.</p>
+                        <button id="uiProfileViewSecurity" class="profile-e2ee-link" type="button">View security details</button>
                     </div>
-                    <p class="profile-e2ee-copy">All your data is end-to-end encrypted and stored locally.</p>
-                    <button id="uiProfileViewSecurity" class="profile-e2ee-link" type="button">View security details</button>
                 </div>
             </nav>
             <div class="profile-main">
                 <header class="profile-head">
                     <button id="uiProfileBackBtn" class="mini-icon-btn profile-back-btn" type="button" title="Back to chats" aria-label="Back to chats"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
+                    <button id="uiProfileNavToggle" class="mini-icon-btn profile-nav-toggle" type="button" title="Settings menu" aria-expanded="false" aria-controls="uiProfileNav" aria-label="Open settings menu"><svg class="ui-icon" aria-hidden="true"><use href="#icon-panel-left"/></svg></button>
                     <div class="profile-head-copy">
                         <h2 id="uiProfileTitle">Profile settings</h2>
                         <p id="uiProfileHeadSub" class="profile-head-sub">Manage your identity. Visible only to you.</p>
@@ -2514,6 +2552,20 @@
                                     </span>
                                 </label>
                             </div>
+                        </section>
+
+                        <section class="profile-sec-block">
+                            <h3 class="profile-sec-kicker">How encryption works</h3>
+                            <a id="uiProfileAboutSecurity" class="profile-sec-card profile-sec-action" href="/about-security" data-link>
+                                <span class="profile-sec-icon" aria-hidden="true">
+                                    <svg class="ui-icon"><use href="#icon-shield"/></svg>
+                                </span>
+                                <div class="profile-sec-copy">
+                                    <p class="profile-sec-title">How NEXA stays private</p>
+                                    <p class="profile-sec-text">Learn how your messages are locked before they leave your device.</p>
+                                </div>
+                                <svg class="profile-sec-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                            </a>
                         </section>
                     </div>
 

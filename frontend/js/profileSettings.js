@@ -91,7 +91,7 @@ function bindShell() {
     panel.dataset.profileBound = '1';
 
     panel.querySelectorAll('[data-profile-nav]').forEach((btn) => {
-        btn.addEventListener('click', () => setSection(btn.dataset.profileNav));
+        btn.addEventListener('click', () => setSection(btn.dataset.profileNav, { fromUser: true }));
     });
 
     $p('uiProfileDisplayName')?.addEventListener('input', onIdentityInput);
@@ -132,7 +132,7 @@ function bindShell() {
     $p('uiProfileCopyLink')?.addEventListener('click', copyProfileLink);
     $p('uiProfileCopyUserId')?.addEventListener('click', copyUserId);
     $p('uiProfileCopyFingerprint')?.addEventListener('click', copyFingerprint);
-    $p('uiProfileViewSecurity')?.addEventListener('click', () => setSection('security'));
+    $p('uiProfileViewSecurity')?.addEventListener('click', () => setSection('security', { fromUser: true }));
     $p('uiProfileKeysToggle')?.addEventListener('click', toggleFingerprintPanel);
     $p('uiProfileManageDevices')?.addEventListener('click', () => {
         ctx?.showToast?.('Multi-device management is coming soon.', 'info');
@@ -189,7 +189,7 @@ const PROFILE_SECTION_META = {
     data: ['Data & storage', 'Manage your local data and exports.'],
 };
 
-function setSection(id) {
+function setSection(id, { fromUser = false } = {}) {
     const panel = document.getElementById('uiProfilePanel');
     if (!panel) return;
 
@@ -230,6 +230,8 @@ function setSection(id) {
         dataAnimToken += 1;
         playSectionIntro(panel.querySelector(`[data-profile-section="${CSS.escape(id)}"]`));
     }
+
+    if (fromUser) ctx?.onProfileSectionChange?.(id);
 }
 
 function hydrateIdentity(username) {

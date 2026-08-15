@@ -229,7 +229,8 @@ function mountOverlay(gen) {
     const needsBackdrop =
         overlayState.type === 'modal' ||
         overlayState.type === 'popover' ||
-        overlayState.type === 'context';
+        overlayState.type === 'context' ||
+        (overlayState.type === 'dropdown' && isMobileSheetViewport());
 
     if (needsBackdrop) {
         backdropEl = document.createElement('div');
@@ -247,6 +248,9 @@ function mountOverlay(gen) {
             ? 'menu'
             : overlayState.type;
     surfaceEl.className = `overlay-surface overlay-surface--${surfaceKind}`;
+    if (shouldUseSheetLayout(overlayState.type)) {
+        surfaceEl.classList.add('is-sheet');
+    }
     surfaceEl.setAttribute('role', overlayState.type === 'modal' ? 'dialog' : 'menu');
     surfaceEl.setAttribute('aria-modal', overlayState.type === 'modal' ? 'true' : 'false');
 
@@ -284,11 +288,30 @@ function mountOverlay(gen) {
     });
 }
 
+function isMobileSheetViewport() {
+    return window.matchMedia('(max-width: 760px)').matches;
+}
+
+function shouldUseSheetLayout(type) {
+    return isMobileSheetViewport() && (type === 'dropdown' || type === 'context');
+}
+
 function layoutSurface(el, state) {
     if (state.type === 'modal') {
         applyOverlayPosition(el, { x: 0, y: 0 }, { isModal: true });
         return;
     }
+
+    if (shouldUseSheetLayout(state.type)) {
+        el.style.left = '';
+        el.style.top = '';
+        el.style.right = '';
+        el.style.bottom = '';
+        el.classList.add('is-sheet');
+        return;
+    }
+
+    el.classList.remove('is-sheet');
 
     const rect = el.getBoundingClientRect();
     const menuSize = {

@@ -59,6 +59,10 @@ export const DOM = {
     settingsBtn: document.getElementById('uiSettingsBtn'),
     refreshUsersBtn: document.getElementById('uiRefreshUsersBtn'),
     contactSearchInput: document.getElementById('uiContactSearch'),
+    contactSearchOpenBtn: document.getElementById('uiContactSearchOpenBtn'),
+    contactSearchTrigger: document.getElementById('uiContactSearchTrigger'),
+    contactSearchBackBtn: document.getElementById('uiContactSearchBackBtn'),
+    sidebarLabel: document.getElementById('uiSidebarLabel'),
     copyUsernameBtn: document.getElementById('uiCopyUsernameBtn'),
     logoutBtn: document.getElementById('uiLogoutBtn'),
 
@@ -99,6 +103,11 @@ export const DOM = {
     glassPicker: document.getElementById('uiGlassPicker'),
 
     profilePanel: document.getElementById('uiProfilePanel'),
+    profileNav: document.getElementById('uiProfileNav'),
+    profileNavToggle: document.getElementById('uiProfileNavToggle'),
+    profileNavScrim: document.getElementById('uiProfileNavScrim'),
+    profileNavBackBtn: document.getElementById('uiProfileNavBackBtn'),
+    profileBackBtn: document.getElementById('uiProfileBackBtn'),
     closeProfileBtn: document.getElementById('uiCloseProfileBtn'),
 
     shortcutsPanel: document.getElementById('uiShortcutsPanel'),
@@ -106,6 +115,7 @@ export const DOM = {
     toastRegion: document.getElementById('uiToastRegion'),
 
     chatWorkspace: document.getElementById('uiChatWorkspace'),
+    chatBackBtn: document.getElementById('uiChatBackBtn'),
     sidebar: document.getElementById('uiSidebar'),
     sidebarToggle: document.getElementById('uiSidebarToggle'),
     railCollapsedTools: document.getElementById('uiRailCollapsedTools'),
@@ -113,10 +123,10 @@ export const DOM = {
     railSidebarToggle: document.getElementById('uiRailSidebarToggle'),
     railChats: document.getElementById('uiRailChats'),
     railProfile: document.getElementById('uiRailProfile'),
-    railPrivacy: document.getElementById('uiRailPrivacy'),
 
     peerPanel: document.getElementById('uiPeerPanel'),
     peerPanelToggle: document.getElementById('uiPeerPanelToggle'),
+    peerPanelScrim: document.getElementById('uiPeerPanelScrim'),
     peerEmpty: document.getElementById('uiPeerEmpty'),
     peerBody: document.getElementById('uiPeerBody'),
     peerAvatar: document.getElementById('uiPeerAvatar'),
@@ -152,6 +162,18 @@ initSmartPasteUi({
 });
 
 const PEER_PANEL_COLLAPSED_KEY = 'nexa_peer_panel_collapsed';
+const PEER_NARROW_MQ = '(max-width: 1280px)';
+const SIDEBAR_NARROW_MQ = '(max-width: 1100px)';
+const PROFILE_STACK_MQ = '(max-width: 760px)';
+const APP_STACK_MQ = PROFILE_STACK_MQ;
+
+function isAppStackViewport() {
+    return window.matchMedia(APP_STACK_MQ).matches;
+}
+
+function isProfileStackViewport() {
+    return isAppStackViewport();
+}
 
 function readPeerPanelCollapsed() {
     try {
@@ -166,12 +188,14 @@ function setPeerPanelCollapsed(collapsed, persist = true) {
     const btn = DOM.peerPanelToggle;
     if (!panel) return;
     panel.classList.toggle('is-collapsed', collapsed);
+    DOM.pageChat?.classList.toggle('is-peer-collapsed', collapsed);
     if (btn) {
         const label = collapsed ? 'Show conversation panel' : 'Hide conversation panel';
         btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         btn.setAttribute('aria-label', label);
         btn.setAttribute('title', collapsed ? 'Show panel' : 'Hide panel');
     }
+    syncPeerPanelScrim();
     if (!persist) return;
     try {
         localStorage.setItem(PEER_PANEL_COLLAPSED_KEY, collapsed ? '1' : '0');
@@ -180,19 +204,86 @@ function setPeerPanelCollapsed(collapsed, persist = true) {
     }
 }
 
+function syncPeerPanelScrim() {
+    const scrim = DOM.peerPanelScrim;
+    const panel = DOM.peerPanel;
+    if (!scrim || !panel) return;
+    const overlayMode = window.matchMedia(PEER_NARROW_MQ).matches || isAppStackViewport();
+    const open = !panel.classList.contains('is-collapsed');
+    const show = overlayMode && open;
+    scrim.hidden = !show;
+    scrim.setAttribute('aria-hidden', show ? 'false' : 'true');
+    DOM.pageChat?.classList.toggle('is-peer-overlay-open', show);
+}
+
+export function openPeerProfileSheet() {
+    if (!DOM.peerPanel) return;
+    peerViewportForced = false;
+    peerNarrowUserExpand = window.matchMedia(PEER_NARROW_MQ).matches || isAppStackViewport();
+    setPeerPanelCollapsed(false);
+}
+
+export function closePeerProfileSheet() {
+    peerNarrowUserExpand = false;
+    setPeerPanelCollapsed(true);
+}
+
+/** @type {boolean} */
+let peerViewportForced = false;
+/** @type {boolean} */
+let peerNarrowUserExpand = false;
+/** @type {boolean} */
+let sidebarViewportForced = false;
+/** @type {boolean} */
+let sidebarNarrowUserExpand = false;
+
 function initPeerPanelCollapse() {
     const panel = DOM.peerPanel;
     const btn = DOM.peerPanelToggle;
-    if (!panel || !btn) return;
+    if (!panel) return;
     const collapsed = readPeerPanelCollapsed();
     if (collapsed) {
         panel.classList.add('no-motion');
         setPeerPanelCollapsed(true, false);
         requestAnimationFrame(() => panel.classList.remove('no-motion'));
+    } else if (isAppStackViewport()) {
+        setPeerPanelCollapsed(true, false);
+    } else {
+        DOM.pageChat?.classList.toggle('is-peer-collapsed', false);
+        syncPeerPanelScrim();
     }
-    btn.addEventListener('click', () => {
-        setPeerPanelCollapsed(!panel.classList.contains('is-collapsed'));
+    btn?.addEventListener('click', () => {
+        const next = !panel.classList.contains('is-collapsed');
+        peerViewportForced = false;
+        peerNarrowUserExpand = window.matchMedia(PEER_NARROW_MQ).matches && !next;
+        setPeerPanelCollapsed(next);
     });
+    DOM.peerPanelScrim?.addEventListener('click', () => {
+        peerNarrowUserExpand = false;
+        setPeerPanelCollapsed(true);
+    });
+    document.getElementById('uiPeerSheetBackBtn')?.addEventListener('click', () => {
+        closePeerProfileSheet();
+    });
+
+    const headerLeft = DOM.chatWithTitle?.closest('.header-left');
+    if (headerLeft) {
+        headerLeft.setAttribute('role', 'button');
+        headerLeft.setAttribute('tabindex', '0');
+        headerLeft.setAttribute('aria-label', 'Open contact profile');
+        const openFromHeader = () => {
+            if (!isAppStackViewport()) return;
+            if (headerLeft.classList.contains('hidden')) return;
+            if (!contactsState.activeUsername) return;
+            openPeerProfileSheet();
+        };
+        headerLeft.addEventListener('click', openFromHeader);
+        headerLeft.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            openFromHeader();
+        });
+    }
 }
 
 initPeerPanelCollapse();
@@ -207,10 +298,23 @@ function readSidebarCollapsed() {
     }
 }
 
+function chatsViewActive() {
+    return Boolean(DOM.chatWorkspace && !DOM.chatWorkspace.hidden);
+}
+
+function syncRailCollapsedTools() {
+    const tools = DOM.railCollapsedTools;
+    if (!tools) return;
+    const show = chatsViewActive()
+        && Boolean(DOM.sidebar?.classList.contains('is-collapsed'))
+        && !isAppStackViewport();
+    tools.hidden = !show;
+    tools.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
 function setSidebarCollapsed(collapsed, persist = true) {
     const sidebar = DOM.sidebar;
     const btn = DOM.sidebarToggle;
-    const tools = DOM.railCollapsedTools;
     if (!sidebar) return;
     sidebar.classList.toggle('is-collapsed', collapsed);
     DOM.pageChat?.classList.toggle('is-sidebar-collapsed', collapsed);
@@ -220,10 +324,7 @@ function setSidebarCollapsed(collapsed, persist = true) {
         btn.setAttribute('aria-label', label);
         btn.setAttribute('title', label);
     }
-    if (tools) {
-        tools.hidden = !collapsed;
-        tools.setAttribute('aria-hidden', collapsed ? 'false' : 'true');
-    }
+    syncRailCollapsedTools();
     if (!persist) return;
     try {
         localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
@@ -232,28 +333,251 @@ function setSidebarCollapsed(collapsed, persist = true) {
     }
 }
 
+/** @type {boolean} */
+let profileNavUserExpand = false;
+
+function syncProfileNavScrim() {
+    const scrim = DOM.profileNavScrim;
+    if (!scrim) return;
+    const narrow = window.matchMedia(SIDEBAR_NARROW_MQ).matches;
+    const stack = isProfileStackViewport();
+    const open = Boolean(DOM.pageChat?.classList.contains('is-profile-nav-open'));
+    const show = narrow && !stack && open && Boolean(DOM.profilePanel && !DOM.profilePanel.classList.contains('hidden'));
+    scrim.hidden = !show;
+    scrim.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
+function setProfileNavOpen(open) {
+    DOM.pageChat?.classList.toggle('is-profile-nav-open', open);
+    const btn = DOM.profileNavToggle;
+    if (btn) {
+        const label = open ? 'Hide settings menu' : 'Open settings menu';
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+    }
+    syncProfileNavScrim();
+}
+
+/**
+ * @param {'nav' | 'section' | null} level
+ */
+function setProfileDrillLevel(level) {
+    const page = DOM.pageChat;
+    if (!page) return;
+    page.classList.toggle('is-profile-level-nav', level === 'nav');
+    page.classList.toggle('is-profile-level-section', level === 'section');
+
+    const backToNav = level === 'section';
+    const sectionBackLabel = backToNav ? 'Back to settings' : 'Back to chats';
+    if (DOM.profileBackBtn) {
+        DOM.profileBackBtn.setAttribute('aria-label', sectionBackLabel);
+        DOM.profileBackBtn.setAttribute('title', sectionBackLabel);
+    }
+    if (DOM.profileNavBackBtn) {
+        DOM.profileNavBackBtn.setAttribute('aria-label', 'Back to chats');
+        DOM.profileNavBackBtn.setAttribute('title', 'Back to chats');
+    }
+}
+
+export function onProfileSectionOpened() {
+    if (!isProfileStackViewport()) return;
+    if (DOM.profilePanel?.classList.contains('hidden')) return;
+    setProfileDrillLevel('section');
+}
+
+export function handleProfileBack() {
+    if (
+        isProfileStackViewport()
+        && DOM.pageChat?.classList.contains('is-profile-level-section')
+        && DOM.profilePanel
+        && !DOM.profilePanel.classList.contains('hidden')
+    ) {
+        setProfileDrillLevel('nav');
+        return;
+    }
+    showChatsView();
+}
+
+/**
+ * @param {'list' | 'chat' | null} level
+ */
+function setChatDrillLevel(level) {
+    const page = DOM.pageChat;
+    if (!page) return;
+    page.classList.toggle('is-chat-level-list', level === 'list');
+    page.classList.toggle('is-chat-level-chat', level === 'chat');
+    const back = DOM.chatBackBtn;
+    if (back) {
+        back.hidden = level !== 'chat';
+        back.setAttribute('aria-hidden', level === 'chat' ? 'false' : 'true');
+    }
+    if (level !== 'chat') closePeerProfileSheet();
+}
+
+export function handleChatBack() {
+    if (
+        isAppStackViewport()
+        && chatsViewActive()
+        && DOM.pageChat?.classList.contains('is-chat-level-chat')
+    ) {
+        setChatDrillLevel('list');
+        setActiveContact(null);
+        return;
+    }
+}
+
+function syncChatStackLevel() {
+    if (!isAppStackViewport() || !chatsViewActive()) {
+        setChatDrillLevel(null);
+        return;
+    }
+    const hasLevel = DOM.pageChat?.classList.contains('is-chat-level-list')
+        || DOM.pageChat?.classList.contains('is-chat-level-chat');
+    if (hasLevel) return;
+    setChatDrillLevel(contactsState.activeUsername ? 'chat' : 'list');
+}
+
+function syncViewportPanels() {
+    const peerNarrow = window.matchMedia(PEER_NARROW_MQ).matches;
+    const sidebarNarrow = window.matchMedia(SIDEBAR_NARROW_MQ).matches;
+    const appStack = isAppStackViewport();
+    DOM.pageChat?.classList.toggle('is-viewport-peer-narrow', peerNarrow);
+    DOM.pageChat?.classList.toggle('is-viewport-sidebar-narrow', sidebarNarrow);
+    DOM.pageChat?.classList.toggle('is-viewport-profile-stack', appStack);
+    DOM.pageChat?.classList.toggle('is-viewport-app-stack', appStack);
+
+    if (DOM.peerPanel) {
+        if (peerNarrow) {
+            if (!peerNarrowUserExpand && !DOM.peerPanel.classList.contains('is-collapsed')) {
+                peerViewportForced = true;
+                DOM.peerPanel.classList.add('no-motion');
+                setPeerPanelCollapsed(true, false);
+                requestAnimationFrame(() => DOM.peerPanel?.classList.remove('no-motion'));
+            } else {
+                syncPeerPanelScrim();
+            }
+        } else {
+            peerNarrowUserExpand = false;
+            if (peerViewportForced) {
+                peerViewportForced = false;
+                setPeerPanelCollapsed(readPeerPanelCollapsed(), false);
+            } else {
+                syncPeerPanelScrim();
+            }
+        }
+    }
+
+    if (DOM.sidebar) {
+        if (sidebarNarrow && !appStack) {
+            if (!sidebarNarrowUserExpand && !DOM.sidebar.classList.contains('is-collapsed')) {
+                sidebarViewportForced = true;
+                DOM.sidebar.classList.add('no-motion');
+                setSidebarCollapsed(true, false);
+                requestAnimationFrame(() => DOM.sidebar?.classList.remove('no-motion'));
+            } else {
+                syncRailCollapsedTools();
+            }
+        } else if (!sidebarNarrow && !appStack) {
+            sidebarNarrowUserExpand = false;
+            if (sidebarViewportForced) {
+                sidebarViewportForced = false;
+                setSidebarCollapsed(readSidebarCollapsed(), false);
+            } else {
+                syncRailCollapsedTools();
+            }
+        } else {
+            syncRailCollapsedTools();
+        }
+    } else {
+        syncRailCollapsedTools();
+    }
+
+    if (appStack) {
+        profileNavUserExpand = false;
+        setProfileNavOpen(false);
+        const profileOpen = Boolean(DOM.profilePanel && !DOM.profilePanel.classList.contains('hidden'));
+        if (profileOpen) {
+            const hasLevel = DOM.pageChat?.classList.contains('is-profile-level-nav')
+                || DOM.pageChat?.classList.contains('is-profile-level-section');
+            if (!hasLevel) setProfileDrillLevel('nav');
+        } else {
+            setProfileDrillLevel(null);
+        }
+        syncChatStackLevel();
+    } else {
+        setProfileDrillLevel(null);
+        setChatDrillLevel(null);
+        if (sidebarNarrow) {
+            if (!profileNavUserExpand) setProfileNavOpen(false);
+            else syncProfileNavScrim();
+        } else {
+            profileNavUserExpand = false;
+            setProfileNavOpen(false);
+        }
+    }
+}
+
 function initSidebarCollapse() {
     const sidebar = DOM.sidebar;
     const btn = DOM.sidebarToggle;
-    const tools = DOM.railCollapsedTools;
     if (!sidebar || !btn) return;
     const collapsed = readSidebarCollapsed();
     if (collapsed) {
         sidebar.classList.add('no-motion');
         setSidebarCollapsed(true, false);
         requestAnimationFrame(() => sidebar.classList.remove('no-motion'));
-    } else if (tools) {
-        tools.hidden = true;
+    } else {
+        syncRailCollapsedTools();
     }
     btn.addEventListener('click', () => {
-        setSidebarCollapsed(!sidebar.classList.contains('is-collapsed'));
+        const next = !sidebar.classList.contains('is-collapsed');
+        sidebarViewportForced = false;
+        sidebarNarrowUserExpand = window.matchMedia(SIDEBAR_NARROW_MQ).matches && !next;
+        setSidebarCollapsed(next);
     });
-    const expand = () => setSidebarCollapsed(false);
+    const expand = () => {
+        sidebarViewportForced = false;
+        sidebarNarrowUserExpand = window.matchMedia(SIDEBAR_NARROW_MQ).matches;
+        setSidebarCollapsed(false);
+    };
     DOM.railMark?.addEventListener('click', expand);
     DOM.railSidebarToggle?.addEventListener('click', expand);
 }
 
 initSidebarCollapse();
+
+function initProfileNavCollapse() {
+    const btn = DOM.profileNavToggle;
+    const scrim = DOM.profileNavScrim;
+    const nav = DOM.profileNav;
+    if (!btn && !scrim && !nav) return;
+
+    btn?.addEventListener('click', () => {
+        if (isProfileStackViewport()) return;
+        const next = !DOM.pageChat?.classList.contains('is-profile-nav-open');
+        profileNavUserExpand = window.matchMedia(SIDEBAR_NARROW_MQ).matches && next;
+        setProfileNavOpen(next);
+    });
+    scrim?.addEventListener('click', () => {
+        profileNavUserExpand = false;
+        setProfileNavOpen(false);
+    });
+    nav?.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (!target.closest('[data-profile-nav]')) return;
+        if (isProfileStackViewport()) {
+            setProfileDrillLevel('section');
+            return;
+        }
+        if (!window.matchMedia(SIDEBAR_NARROW_MQ).matches) return;
+        profileNavUserExpand = false;
+        setProfileNavOpen(false);
+    });
+}
+
+initProfileNavCollapse();
 
 const contactsState = {
     users: [],
@@ -264,6 +588,22 @@ const contactsState = {
     searchMode: false,
     onUserSelect: null
 };
+
+function initViewportPanels() {
+    const peerMq = window.matchMedia(PEER_NARROW_MQ);
+    const sidebarMq = window.matchMedia(SIDEBAR_NARROW_MQ);
+    const stackMq = window.matchMedia(APP_STACK_MQ);
+    const run = () => syncViewportPanels();
+    run();
+    if (peerMq.addEventListener) peerMq.addEventListener('change', run);
+    else peerMq.addListener?.(run);
+    if (sidebarMq.addEventListener) sidebarMq.addEventListener('change', run);
+    else sidebarMq.addListener?.(run);
+    if (stackMq.addEventListener) stackMq.addEventListener('change', run);
+    else stackMq.addListener?.(run);
+}
+
+initViewportPanels();
 
 const realtimeContext = {
     onlineUsers: new Set(),
@@ -424,6 +764,8 @@ export function activateChatPanel(username) {
     refreshPeerPanel(username);
     autoResizeComposer();
     focusComposer();
+    if (isAppStackViewport()) setChatDrillLevel('chat');
+    closeContactSearch();
 }
 
 export function resetChatPanel() {
@@ -453,6 +795,7 @@ export function resetChatPanel() {
     closeMessageSearch();
     setActiveContact(null);
     refreshPeerPanel(null);
+    if (isAppStackViewport() && chatsViewActive()) setChatDrillLevel('list');
 }
 
 export function renderMessagesList(messages) {
@@ -1134,10 +1477,53 @@ export function focusComposer() {
     }
 }
 
-export function focusContactSearch() {
-    DOM.contactSearchInput.focus();
-    DOM.contactSearchInput.select();
+export function isContactSearchOpen() {
+    return Boolean(DOM.pageChat?.classList.contains('is-contact-search-open'));
 }
+
+export function openContactSearch() {
+    if (!DOM.pageChat || !DOM.contactSearchInput) return;
+    DOM.pageChat.classList.add('is-contact-search-open');
+    if (DOM.sidebarLabel) DOM.sidebarLabel.textContent = 'Find contacts';
+    DOM.contactSearchInput.value = '';
+    contactsState.query = '';
+    contactsState.searchMode = true;
+    contactsState.users = [];
+    renderFilteredUsers();
+    requestAnimationFrame(() => {
+        DOM.contactSearchInput?.focus();
+    });
+}
+
+export function closeContactSearch() {
+    if (!DOM.pageChat) return;
+    const wasOpen = isContactSearchOpen();
+    DOM.pageChat.classList.remove('is-contact-search-open');
+    if (DOM.sidebarLabel) DOM.sidebarLabel.textContent = 'Contacts';
+    if (!wasOpen) return;
+    if (DOM.contactSearchInput) DOM.contactSearchInput.value = '';
+    contactsState.query = '';
+    contactsState.searchMode = false;
+    contactsState.users = [];
+    renderFilteredUsers();
+}
+
+export function focusContactSearch() {
+    if (isAppStackViewport()) {
+        openContactSearch();
+        return;
+    }
+    DOM.contactSearchInput?.focus();
+    DOM.contactSearchInput?.select();
+}
+
+function initContactSearchSheet() {
+    DOM.contactSearchOpenBtn?.addEventListener('click', () => openContactSearch());
+    DOM.contactSearchTrigger?.addEventListener('click', () => openContactSearch());
+    DOM.contactSearchBackBtn?.addEventListener('click', () => closeContactSearch());
+}
+
+initContactSearchSheet();
 
 export function autoResizeComposer() {
     const minHeight = 44;
@@ -1340,12 +1726,16 @@ export function openSettings() {
 
 export function showChatsView() {
     setAppView('chats');
+    if (isAppStackViewport()) setChatDrillLevel('list');
 }
 
 export function openProfile(section = 'identity') {
     closeOverlay();
     setAppView('identity');
     queueProfilePanelRefresh(section);
+    if (isProfileStackViewport()) {
+        setProfileDrillLevel('nav');
+    }
 }
 
 function setAppView(view) {
@@ -1366,13 +1756,49 @@ function setAppView(view) {
         chats: DOM.railChats,
         identity: DOM.railProfile,
     };
-    [DOM.railChats, DOM.railProfile, DOM.railPrivacy].forEach((btn) => {
+    [DOM.railChats, DOM.railProfile].forEach((btn) => {
         if (!btn) return;
         const on = btn === railMap[view];
         btn.classList.toggle('is-active', on);
         if (on) btn.setAttribute('aria-current', 'page');
         else btn.removeAttribute('aria-current');
     });
+
+    syncRailCollapsedTools();
+
+    if (!isIdentity) {
+        setProfileDrillLevel(null);
+        syncProfileNavScrim();
+        if (isChats && isAppStackViewport()) {
+            syncChatStackLevel();
+        } else if (!isChats) {
+            setChatDrillLevel(null);
+            closeContactSearch();
+        }
+        return;
+    }
+
+    closeContactSearch();
+    if (isProfileStackViewport()) {
+        profileNavUserExpand = false;
+        setProfileNavOpen(false);
+        setChatDrillLevel(null);
+        if (
+            !DOM.pageChat?.classList.contains('is-profile-level-nav')
+            && !DOM.pageChat?.classList.contains('is-profile-level-section')
+        ) {
+            setProfileDrillLevel('nav');
+        }
+    } else if (window.matchMedia(SIDEBAR_NARROW_MQ).matches) {
+        profileNavUserExpand = false;
+        setProfileNavOpen(false);
+        setProfileDrillLevel(null);
+        setChatDrillLevel(null);
+    } else {
+        setProfileDrillLevel(null);
+        setChatDrillLevel(null);
+        syncProfileNavScrim();
+    }
 }
 
 export function openShortcuts() {
@@ -1596,19 +2022,29 @@ function renderFilteredUsers() {
             nameRow.appendChild(handle);
         }
 
+        const time = document.createElement('span');
+        time.className = 'contact-time';
+        time.dataset.contactTime = 'true';
+        applyContactTime(time, user);
+        nameRow.appendChild(time);
+
+        const previewRow = document.createElement('div');
+        previewRow.className = 'contact-preview-row';
+
         const subtitle = document.createElement('div');
         subtitle.className = 'contact-subtitle';
         subtitle.dataset.contactSubtitle = 'true';
         applyContactSubtitle(subtitle, user.username, user);
-
-        meta.append(nameRow, subtitle);
 
         const presence = document.createElement('div');
         presence.className = `contact-presence ${getPresenceClasses(user.username)}`;
         presence.dataset.presenceDot = 'true';
         presence.setAttribute('aria-hidden', 'true');
 
-        btn.append(avatar, meta, presence);
+        previewRow.append(subtitle, presence);
+        meta.append(nameRow, previewRow);
+
+        btn.append(avatar, meta);
 
         const unreadCount = realtimeContext.unreadCounts[user.username] ?? user.unread_count ?? 0;
         if (unreadCount > 0 && user.username !== contactsState.activeUsername) {
@@ -1628,7 +2064,7 @@ function renderFilteredUsers() {
 
 function formatSidebarTime(isoValue) {
     const date = new Date(isoValue);
-    if (Number.isNaN(date.getTime())) return 'Recent activity';
+    if (Number.isNaN(date.getTime())) return '';
 
     const now = new Date();
     if (date.toDateString() === now.toDateString()) {
@@ -1636,6 +2072,39 @@ function formatSidebarTime(isoValue) {
     }
 
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function truncateSidebarPreview(text, maxLen = 42) {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!clean) return '';
+    if (clean.length <= maxLen) return clean;
+    return `${clean.slice(0, maxLen - 1).trimEnd()}…`;
+}
+
+function applyContactTime(timeEl, userHint = null) {
+    const user = userHint || null;
+    const stamp = user?.last_message_at;
+    timeEl.textContent = stamp ? formatSidebarTime(stamp) : '';
+    timeEl.hidden = !timeEl.textContent;
+}
+
+function applyContactSubtitle(subtitleEl, username, userHint = null) {
+    if (contactsState.myUsername && isChatMuted(contactsState.myUsername, username)) {
+        subtitleEl.textContent = 'Muted';
+        subtitleEl.className = 'contact-subtitle is-muted';
+        return;
+    }
+
+    if (uiPreferences.typingIndicators && realtimeContext.typingUsers.has(username)) {
+        subtitleEl.innerHTML = buildTypingDotsHtml();
+        subtitleEl.className = 'contact-subtitle is-typing';
+        return;
+    }
+
+    const user = userHint || findContactUser(username);
+    const preview = truncateSidebarPreview(user?.last_message_preview);
+    subtitleEl.textContent = preview || 'Secure channel';
+    subtitleEl.className = 'contact-subtitle';
 }
 
 function setActiveContact(username) {
@@ -1665,26 +2134,6 @@ function findContactUser(username) {
         || contactsState.users.find(chat => chat.username === username);
 }
 
-function applyContactSubtitle(subtitleEl, username, userHint = null) {
-    if (contactsState.myUsername && isChatMuted(contactsState.myUsername, username)) {
-        subtitleEl.textContent = 'Muted';
-        subtitleEl.className = 'contact-subtitle is-muted';
-        return;
-    }
-
-    if (uiPreferences.typingIndicators && realtimeContext.typingUsers.has(username)) {
-        subtitleEl.innerHTML = buildTypingDotsHtml();
-        subtitleEl.className = 'contact-subtitle is-typing';
-        return;
-    }
-
-    const user = userHint || findContactUser(username);
-    subtitleEl.textContent = user?.last_message_at
-        ? formatSidebarTime(user.last_message_at)
-        : 'Secure channel';
-    subtitleEl.className = 'contact-subtitle';
-}
-
 function buildTypingDotsHtml() {
     return `<span class="typing-dots" aria-label="Typing"><span></span><span></span><span></span></span>`;
 }
@@ -1697,6 +2146,11 @@ function refreshContactIndicators() {
         const presence = row.querySelector('[data-presence-dot]');
         if (presence) {
             presence.className = `contact-presence ${getPresenceClasses(username)}`;
+        }
+
+        const time = row.querySelector('[data-contact-time]');
+        if (time) {
+            applyContactTime(time, findContactUser(username));
         }
 
         const subtitle = row.querySelector('[data-contact-subtitle]');
