@@ -1212,7 +1212,11 @@
 
                 <div class="start-iselect" data-interactive-selector>
                     <figure class="start-iselect__preview">
-                        <div class="start-iselect__preview-frame">
+                        <button
+                            type="button"
+                            class="start-iselect__preview-frame"
+                            aria-label="Open screenshot fullscreen"
+                        >
                             <img
                                 class="start-iselect__preview-img"
                                 src="/screenshots/chats.png"
@@ -1221,7 +1225,11 @@
                                 height="629"
                                 decoding="async"
                             >
-                        </div>
+                            <span class="start-iselect__preview-hint" aria-hidden="true">
+                                <svg class="ui-icon"><use href="#icon-search"/></svg>
+                                <span>Tap to enlarge</span>
+                            </span>
+                        </button>
                         <figcaption class="start-iselect__preview-cap">
                             <span class="start-iselect__preview-title">Chats</span>
                             <span class="start-iselect__preview-desc">Contacts, thread, and encryption in one calm view</span>

@@ -141,6 +141,34 @@ function bindNav(pageStart) {
     }, { passive: true });
 }
 
+function ensureIselectLightbox(pageStart) {
+    let lightbox = pageStart.querySelector('[data-iselect-lightbox]');
+    if (lightbox) return lightbox;
+
+    lightbox = document.createElement('div');
+    lightbox.className = 'start-iselect-lightbox';
+    lightbox.dataset.iselectLightbox = '';
+    lightbox.hidden = true;
+    lightbox.setAttribute('role', 'dialog');
+    lightbox.setAttribute('aria-modal', 'true');
+    lightbox.setAttribute('aria-label', 'Screenshot preview');
+    lightbox.innerHTML = `
+        <button type="button" class="start-iselect-lightbox__backdrop" data-iselect-lightbox-close aria-label="Close preview"></button>
+        <div class="start-iselect-lightbox__panel">
+            <button type="button" class="start-iselect-lightbox__close" data-iselect-lightbox-close aria-label="Close">
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+            </button>
+            <img class="start-iselect-lightbox__img" alt="" width="1024" height="629" decoding="async">
+            <p class="start-iselect-lightbox__cap">
+                <span class="start-iselect-lightbox__title"></span>
+                <span class="start-iselect-lightbox__desc"></span>
+            </p>
+        </div>
+    `;
+    pageStart.appendChild(lightbox);
+    return lightbox;
+}
+
 function bindInteractiveSelector(pageStart) {
     const root = pageStart.querySelector('[data-interactive-selector]');
     if (!root) return;
@@ -148,30 +176,128 @@ function bindInteractiveSelector(pageStart) {
     const options = [...root.querySelectorAll('.start-iselect__option')];
     if (!options.length) return;
 
+    const previewRoot = root.querySelector('.start-iselect__preview');
     const previewImg = root.querySelector('.start-iselect__preview-img');
     const previewTitle = root.querySelector('.start-iselect__preview-title');
     const previewDesc = root.querySelector('.start-iselect__preview-desc');
-    const previewFrame = root.querySelector('.start-iselect__preview-frame');
+    const optionsRail = root.querySelector('.start-iselect__options');
+    const lightbox = pageStart.querySelector('[data-iselect-lightbox]') || ensureIselectLightbox(pageStart);
+    const lightboxImg = lightbox?.querySelector('.start-iselect-lightbox__img');
+    const lightboxTitle = lightbox?.querySelector('.start-iselect-lightbox__title');
+    const lightboxDesc = lightbox?.querySelector('.start-iselect-lightbox__desc');
+    let previewTimer = 0;
+    let lightboxOpen = false;
+    let activeIndex = options.findIndex((o) => o.classList.contains('is-active'));
+    if (activeIndex < 0) activeIndex = 0;
 
-    const syncPreview = (opt) => {
+    const isMobileSelector = () => window.matchMedia('(max-width: 900px)').matches;
+    const prefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Warm the screenshot cache so chip taps don't flash empty frames.
+    options.forEach((opt) => {
+        const src = opt.querySelector('.start-iselect__media')?.getAttribute('src');
+        if (!src) return;
+        const warm = new Image();
+        warm.src = src;
+    });
+
+    const applyPreviewContent = (opt) => {
         if (!previewImg || !opt) return;
         const media = opt.querySelector('.start-iselect__media');
         const title = opt.querySelector('.start-iselect__title')?.textContent?.trim() || '';
         const desc = opt.querySelector('.start-iselect__desc')?.textContent?.trim() || '';
 
         if (media) {
-            previewImg.src = media.currentSrc || media.src;
+            const nextSrc = media.currentSrc || media.src;
+            if (previewImg.getAttribute('src') !== nextSrc) {
+                previewImg.src = nextSrc;
+            }
             previewImg.alt = media.alt || title;
         }
         if (previewTitle) previewTitle.textContent = title;
         if (previewDesc) previewDesc.textContent = desc;
-
-        previewFrame?.classList.remove('is-swap');
-        void previewFrame?.offsetWidth;
-        previewFrame?.classList.add('is-swap');
     };
 
-    const setActive = (next) => {
+    const syncPreview = (opt, { animate = true } = {}) => {
+        window.clearTimeout(previewTimer);
+
+        if (!isMobileSelector() || !animate || prefersReduced() || !previewRoot) {
+            previewRoot?.classList.remove('is-switching', 'is-settling');
+            applyPreviewContent(opt);
+            return;
+        }
+
+        // Out → swap src → in. Force a paint between class flips so CSS transitions run.
+        previewRoot.classList.remove('is-settling');
+        previewRoot.classList.add('is-switching');
+        void previewRoot.offsetWidth;
+
+        previewTimer = window.setTimeout(() => {
+            applyPreviewContent(opt);
+            requestAnimationFrame(() => {
+                previewRoot.classList.remove('is-switching');
+                previewRoot.classList.add('is-settling');
+                previewTimer = window.setTimeout(() => {
+                    previewRoot.classList.remove('is-settling');
+                }, 520);
+            });
+        }, 220);
+    };
+
+    const centerChip = (opt) => {
+        if (!optionsRail || !opt || !isMobileSelector()) return;
+        const railBox = optionsRail.getBoundingClientRect();
+        const chipBox = opt.getBoundingClientRect();
+        const delta =
+            chipBox.left +
+            chipBox.width / 2 -
+            (railBox.left + railBox.width / 2);
+        optionsRail.scrollBy({
+            left: delta,
+            behavior: prefersReduced() ? 'auto' : 'smooth',
+        });
+    };
+
+    const closeLightbox = () => {
+        if (!lightbox || !lightboxOpen) return;
+        lightboxOpen = false;
+        lightbox.classList.remove('is-visible');
+        pageStart.classList.remove('is-iselect-lightbox-open');
+        document.body.classList.remove('is-iselect-lightbox-open');
+
+        window.setTimeout(() => {
+            if (!lightboxOpen) lightbox.hidden = true;
+        }, prefersReduced() ? 0 : 280);
+    };
+
+    const openLightbox = (opt = options[activeIndex]) => {
+        if (!lightbox || !lightboxImg || !opt) return;
+        const media = opt.querySelector('.start-iselect__media');
+        const title = opt.querySelector('.start-iselect__title')?.textContent?.trim() || '';
+        const desc = opt.querySelector('.start-iselect__desc')?.textContent?.trim() || '';
+        if (!media) return;
+
+        lightboxImg.src = media.currentSrc || media.src;
+        lightboxImg.alt = media.alt || title;
+        if (lightboxTitle) lightboxTitle.textContent = title;
+        if (lightboxDesc) lightboxDesc.textContent = desc;
+
+        lightbox.hidden = false;
+        lightboxOpen = true;
+        pageStart.classList.add('is-iselect-lightbox-open');
+        document.body.classList.add('is-iselect-lightbox-open');
+        requestAnimationFrame(() => {
+            lightbox.classList.add('is-visible');
+            lightbox.querySelector('.start-iselect-lightbox__close')?.focus();
+        });
+    };
+
+    const setActive = (next, { animatePreview = true } = {}) => {
+        if (next === activeIndex && options[next]?.classList.contains('is-active')) {
+            return;
+        }
+        activeIndex = next;
+
         options.forEach((opt, i) => {
             const on = i === next;
             opt.classList.toggle('is-active', on);
@@ -179,25 +305,62 @@ function bindInteractiveSelector(pageStart) {
         });
 
         const active = options[next];
-        syncPreview(active);
-        if (window.matchMedia('(max-width: 767px)').matches) {
-            active?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-        }
+        syncPreview(active, { animate: animatePreview });
+        centerChip(active);
     };
 
-    root.addEventListener('click', (event) => {
-        const opt = event.target.closest('.start-iselect__option');
-        if (!opt || !root.contains(opt)) return;
-        const index = options.indexOf(opt);
-        if (index < 0 || opt.classList.contains('is-active')) return;
-        setActive(index);
+    // Lightbox lives on pageStart (not inside the parallax transform).
+    lightbox?.addEventListener('click', (event) => {
+        if (event.target.closest('[data-iselect-lightbox-close]')) {
+            event.preventDefault();
+            closeLightbox();
+        }
     });
 
-    root.addEventListener('keydown', (event) => {
+    root.addEventListener('click', (event) => {
+        const previewFrame = event.target.closest('.start-iselect__preview-frame');
+        if (previewFrame && root.contains(previewFrame)) {
+            event.preventDefault();
+            openLightbox(options[activeIndex]);
+            return;
+        }
+
         const opt = event.target.closest('.start-iselect__option');
         if (!opt || !root.contains(opt)) return;
         const index = options.indexOf(opt);
         if (index < 0) return;
+
+        // Active desktop panel: tap the shot itself to enlarge.
+        if (opt.classList.contains('is-active') && event.target.closest('.start-iselect__stage')) {
+            event.preventDefault();
+            openLightbox(opt);
+            return;
+        }
+
+        if (opt.classList.contains('is-active')) return;
+        setActive(index);
+    });
+
+    root.addEventListener('keydown', (event) => {
+        if (lightboxOpen && event.key === 'Escape') {
+            event.preventDefault();
+            closeLightbox();
+            return;
+        }
+
+        const opt = event.target.closest('.start-iselect__option');
+        if (!opt || !root.contains(opt)) return;
+        const index = options.indexOf(opt);
+        if (index < 0) return;
+
+        if ((event.key === 'Enter' || event.key === ' ') && opt.classList.contains('is-active')) {
+            // Only enlarge when focus is on the option and it's already active.
+            if (!isMobileSelector()) {
+                event.preventDefault();
+                openLightbox(opt);
+                return;
+            }
+        }
 
         let next = index;
         if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
@@ -217,7 +380,12 @@ function bindInteractiveSelector(pageStart) {
         options[next].focus();
     });
 
-    syncPreview(options.find((o) => o.classList.contains('is-active')) || options[0]);
+    document.addEventListener('keydown', (event) => {
+        if (!lightboxOpen || event.key !== 'Escape') return;
+        closeLightbox();
+    });
+
+    applyPreviewContent(options[activeIndex]);
 
     // Staggered entrance like the React component.
     options.forEach((opt, i) => {
