@@ -66,7 +66,6 @@ export const DOM = {
     contactSearchBackBtn: document.getElementById('uiContactSearchBackBtn'),
     sidebarLabel: document.getElementById('uiSidebarLabel'),
     copyUsernameBtn: document.getElementById('uiCopyUsernameBtn'),
-    logoutBtn: document.getElementById('uiLogoutBtn'),
 
     chatSearchBtn: document.getElementById('uiChatSearchBtn'),
     scrollBottomBtn: document.getElementById('uiScrollBottomBtn'),

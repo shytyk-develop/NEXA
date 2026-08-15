@@ -1455,7 +1455,6 @@ DOM.closeSettingsBtn.addEventListener('click', closeModals);
 DOM.closeShortcutsBtn.addEventListener('click', closeModals);
 
 DOM.copyUsernameBtn.addEventListener('click', copyCurrentUsername);
-DOM.logoutBtn.addEventListener('click', handleLogout);
 document.getElementById('uiProfileLogoutBtn')?.addEventListener('click', handleLogout);
 
 DOM.chatMenuBtn.addEventListener('click', (event) => openChatMenu(event));

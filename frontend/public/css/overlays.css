@@ -206,28 +206,44 @@
 }
 
 /* Message actions drawer (mobile double-tap) — vaul-like bottom sheet */
+:root {
+    --message-drawer-duration: 520ms;
+    --message-drawer-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .overlay-backdrop.is-drawer {
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    background: rgba(0, 0, 0, 0.55);
-    transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+    background: rgba(0, 0, 0, 0.48);
+    transition: opacity var(--message-drawer-duration) var(--message-drawer-ease);
+    z-index: 1;
+}
+
+/* Thread rides up with the sheet via transform only (no mid-open scroll commit). */
+#messages.is-drawer-lifting {
+    scroll-behavior: auto !important;
+    transition: transform var(--message-drawer-duration) var(--message-drawer-ease);
+    will-change: transform;
+}
+
+.message-row.is-message-spotlight .message-bubble {
+    opacity: 0;
 }
 
 .message-actions-spotlight {
     opacity: 0;
     pointer-events: none;
     position: fixed;
-    transform: translate3d(0, 6px, 0) scale(0.985);
     transition:
-        opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-    will-change: opacity, transform;
-    z-index: 10000;
+        opacity 0.28s var(--message-drawer-ease),
+        top var(--message-drawer-duration) var(--message-drawer-ease),
+        left var(--message-drawer-duration) var(--message-drawer-ease),
+        width var(--message-drawer-duration) var(--message-drawer-ease);
+    z-index: 2;
 }
 
 .message-actions-spotlight.is-visible {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
 }
 
 .message-actions-spotlight .message-bubble {
@@ -256,9 +272,10 @@
     top: auto !important;
     transform: translate3d(0, 100%, 0);
     transform-origin: bottom center;
-    transition: transform 0.48s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform var(--message-drawer-duration) var(--message-drawer-ease);
     will-change: transform;
     width: auto !important;
+    z-index: 3;
 }
 
 .overlay-surface--drawer.is-visible {
@@ -269,8 +286,8 @@
 .overlay-surface--drawer.is-closing {
     opacity: 1;
     transform: translate3d(0, 100%, 0);
-    transition-duration: 0.36s;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: var(--message-drawer-duration);
+    transition-timing-function: var(--message-drawer-ease);
 }
 
 .message-actions-drawer__handle {
@@ -370,8 +387,9 @@
     .overlay-surface--drawer.is-visible,
     .overlay-surface--drawer.is-closing,
     .message-actions-spotlight,
-    .message-actions-spotlight.is-visible {
-        transition: none;
+    .message-actions-spotlight.is-visible,
+    #messages.is-drawer-lifting {
+        transition: none !important;
     }
 }
 

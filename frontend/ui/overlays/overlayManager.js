@@ -9,7 +9,10 @@ import { computeOverlayPosition, applyOverlayPosition } from './positioning.js';
 import { overlayDebug, isOverlayDebugEnabled } from './debug.js';
 
 export const ANIM_MS = 150;
-const DRAWER_ANIM_MS = 480;
+/** Keep in sync with `--message-drawer-duration` / ease in overlays.css */
+const DRAWER_ANIM_MS = 520;
+const DRAWER_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const DRAWER_GAP_PX = 10;
 const OPEN_GUARD_MS = 160;
 
 /** @type {import('./overlayManager.js').OverlayState | null} */
@@ -20,6 +23,8 @@ let closeTimer = null;
 let openFrame = null;
 let ignoreOutsideUntil = 0;
 let isClosing = false;
+/** @type {{ liftPx: number, startTop: number, endTop: number, left: number, width: number, height: number } | null} */
+let pendingDrawerLift = null;
 
 let rootEl = null;
 let backdropEl = null;
@@ -122,12 +127,19 @@ function animateClose(gen, reason) {
         isClosing = true;
         overlayDebug('close-start', { reason, gen });
 
+        const duration = overlayState.type === 'drawer' ? DRAWER_ANIM_MS : ANIM_MS;
+
+        if (overlayState.type === 'drawer') {
+            // Hand real bubble back before sheet/backdrop animate, so nothing
+            // fades out while the source message is still opacity:0.
+            beginMessagesDrawerLiftClose();
+        } else {
+            spotlightEl?.classList.remove('is-visible');
+        }
+
         surfaceEl?.classList.remove('is-visible');
         surfaceEl?.classList.add('is-closing');
         backdropEl?.classList.remove('is-visible');
-        spotlightEl?.classList.remove('is-visible');
-
-        const duration = overlayState.type === 'drawer' ? DRAWER_ANIM_MS : ANIM_MS;
 
         closeTimer = window.setTimeout(() => {
             if (overlayState?.generation === gen) {
@@ -306,17 +318,26 @@ function mountOverlay(gen) {
 
     const reveal = () => {
         if (overlayState?.generation !== gen || !surfaceEl) return;
+
+        if (overlayState.type === 'drawer') {
+            // Use real sheet height so the bubble stops closer to the drawer.
+            refinePendingDrawerLift(surfaceEl.offsetHeight || estimateMessageDrawerHeight());
+        }
+
         backdropEl?.classList.add('is-visible');
         surfaceEl.classList.add('is-visible');
         spotlightEl?.classList.add('is-visible');
         layoutSurface(surfaceEl, overlayState);
+        if (overlayState.type === 'drawer') {
+            playMessagesDrawerLiftOpen();
+        }
     };
 
-    // Drawer needs a painted closed frame before sliding up, or the open snaps.
+    // One frame so the drawer paints in its off-screen state, then slides up
+    // in lockstep with the messages lift.
     if (overlayState.type === 'drawer') {
-        openFrame = window.requestAnimationFrame(() => {
-            openFrame = window.requestAnimationFrame(reveal);
-        });
+        void surfaceEl.offsetWidth;
+        openFrame = window.requestAnimationFrame(reveal);
     } else {
         reveal();
     }
@@ -326,6 +347,7 @@ function clearMessageSpotlight() {
     document.querySelectorAll('.message-row.is-message-spotlight').forEach((row) => {
         row.classList.remove('is-message-spotlight');
     });
+    clearMessagesDrawerLift();
     spotlightEl = null;
 }
 
@@ -556,15 +578,16 @@ export function openContextMenu({ x, y, payload, targetId = null }) {
  */
 export function openMessageActionsDrawer({ payload, bubble = null, row = null }) {
     const sourceBubble = bubble || row?.querySelector('.message-bubble');
-    const rect = sourceBubble?.getBoundingClientRect();
-    const spotlightRect = rect
-        ? {
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-        }
-        : null;
+    const messagesEl = document.getElementById('messages');
+    const drawerHeight = estimateMessageDrawerHeight();
+
+    const liftPlan = prepareMessagesDrawerLiftPlan(
+        messagesEl,
+        sourceBubble,
+        drawerHeight,
+        DRAWER_GAP_PX
+    );
+    pendingDrawerLift = liftPlan;
 
     let spotlightHtml = '';
     if (sourceBubble) {
@@ -580,6 +603,16 @@ export function openMessageActionsDrawer({ payload, bubble = null, row = null })
         row.classList.add('is-message-spotlight');
     }
 
+    // Spotlight starts at the bubble's current place; it rides up with the lift.
+    const spotlightRect = liftPlan
+        ? {
+            top: liftPlan.startTop,
+            left: liftPlan.left,
+            width: liftPlan.width,
+            height: liftPlan.height,
+        }
+        : null;
+
     return openOverlay({
         type: 'drawer',
         payload: {
@@ -589,6 +622,181 @@ export function openMessageActionsDrawer({ payload, bubble = null, row = null })
         },
         targetId: payload?.messageId || payload?.clientMessageId || 'message-actions',
     });
+}
+
+function estimateMessageDrawerHeight() {
+    return Math.min(Math.round(window.innerHeight * 0.55), 420);
+}
+
+function prefersReducedDrawerMotion() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function computeLiftPx(bubbleTop, bubbleBottom, drawerHeight, gap) {
+    const limit = window.innerHeight - drawerHeight - gap;
+    const needed = bubbleBottom > limit ? Math.ceil(bubbleBottom - limit) : 0;
+    const maxLift = Math.max(0, Math.floor(bubbleTop - 12));
+    return Math.min(needed, maxLift);
+}
+
+/**
+ * Measure how far the bubble must travel. Transform-only — no scrollTop swaps
+ * (those caused the mid-open freeze).
+ */
+function prepareMessagesDrawerLiftPlan(messagesEl, bubble, drawerHeight, gap = DRAWER_GAP_PX) {
+    if (!bubble) return null;
+
+    const rect = bubble.getBoundingClientRect();
+    const liftPx = computeLiftPx(rect.top, rect.bottom, drawerHeight, gap);
+
+    if (messagesEl && liftPx > 0 && !prefersReducedDrawerMotion()) {
+        messagesEl.dataset.drawerLiftScroll = String(liftPx);
+        messagesEl.classList.add('is-drawer-lifting');
+        messagesEl.style.transform = 'translate3d(0, 0, 0)';
+    } else if (messagesEl && liftPx > 0) {
+        messagesEl.dataset.drawerLiftScroll = String(liftPx);
+    }
+
+    return {
+        liftPx,
+        startTop: rect.top,
+        endTop: rect.top - liftPx,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+    };
+}
+
+/** Recompute lift with the painted sheet height before motion starts. */
+function refinePendingDrawerLift(drawerHeight) {
+    if (!pendingDrawerLift) return;
+
+    const row = document.querySelector('.message-row.is-message-spotlight');
+    const bubble = row?.querySelector('.message-bubble');
+    if (!bubble) return;
+
+    const rect = bubble.getBoundingClientRect();
+    const liftPx = computeLiftPx(rect.top, rect.bottom, drawerHeight, DRAWER_GAP_PX);
+    pendingDrawerLift = {
+        ...pendingDrawerLift,
+        liftPx,
+        startTop: rect.top,
+        endTop: rect.top - liftPx,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+    };
+
+    const messagesEl = document.getElementById('messages');
+    if (messagesEl) {
+        messagesEl.dataset.drawerLiftScroll = String(liftPx);
+        if (liftPx > 0 && !prefersReducedDrawerMotion()) {
+            messagesEl.classList.add('is-drawer-lifting');
+        }
+    }
+
+    if (spotlightEl) {
+        spotlightEl.style.top = `${pendingDrawerLift.startTop}px`;
+        spotlightEl.style.left = `${pendingDrawerLift.left}px`;
+        spotlightEl.style.width = `${pendingDrawerLift.width}px`;
+    }
+}
+
+/** Start list + spotlight motion on the same frame as the drawer slide. */
+function playMessagesDrawerLiftOpen() {
+    const plan = pendingDrawerLift;
+    const messagesEl = document.getElementById('messages');
+    if (!plan) return;
+
+    if (spotlightEl && plan.liftPx > 0) {
+        spotlightEl.style.top = `${plan.endTop}px`;
+    }
+
+    if (!messagesEl || plan.liftPx <= 0) {
+        return;
+    }
+
+    if (prefersReducedDrawerMotion()) {
+        messagesEl.scrollTop += plan.liftPx;
+        messagesEl.dataset.drawerLiftCommitted = '1';
+        return;
+    }
+
+    messagesEl.dataset.drawerLiftScroll = String(plan.liftPx);
+    messagesEl.classList.add('is-drawer-lifting');
+    messagesEl.style.transform = `translate3d(0, -${plan.liftPx}px, 0)`;
+}
+
+/** Show the real bubble and drop the clone in the same frame (no fade hole). */
+function handoffDrawerSpotlightToMessage() {
+    document.querySelectorAll('.message-row.is-message-spotlight').forEach((row) => {
+        row.classList.remove('is-message-spotlight');
+    });
+
+    if (!spotlightEl) return;
+    spotlightEl.style.transition = 'none';
+    spotlightEl.style.opacity = '0';
+    spotlightEl.classList.remove('is-visible');
+}
+
+/** Reverse the lift in sync with the drawer closing. */
+function beginMessagesDrawerLiftClose() {
+    const messagesEl = document.getElementById('messages');
+    const liftPx = Number(messagesEl?.dataset?.drawerLiftScroll) || pendingDrawerLift?.liftPx || 0;
+    const committed = messagesEl?.dataset?.drawerLiftCommitted === '1';
+
+    // Always restore the source bubble first — otherwise it pops in after destroy.
+    handoffDrawerSpotlightToMessage();
+
+    if (!messagesEl) return;
+
+    if (prefersReducedDrawerMotion()) {
+        if (committed && liftPx > 0) {
+            messagesEl.scrollTop = Math.max(0, messagesEl.scrollTop - liftPx);
+            messagesEl.dataset.drawerLiftCommitted = '0';
+        }
+        return;
+    }
+
+    if (liftPx <= 0) return;
+
+    // Real bubble is visible again while still lifted — ease the thread back down.
+    messagesEl.classList.add('is-drawer-lifting');
+    messagesEl.style.transform = 'translate3d(0, 0, 0)';
+}
+
+function clearMessagesDrawerLift(messagesEl = document.getElementById('messages')) {
+    pendingDrawerLift = null;
+
+    if (!messagesEl) return;
+    if (
+        !messagesEl.dataset?.drawerLiftScroll &&
+        !messagesEl.classList.contains('is-drawer-lifting')
+    ) {
+        return;
+    }
+
+    const liftPx = Number(messagesEl.dataset.drawerLiftScroll) || 0;
+    const committed = messagesEl.dataset.drawerLiftCommitted === '1';
+
+    delete messagesEl.dataset.drawerLiftScroll;
+    delete messagesEl.dataset.drawerLiftCommitted;
+    delete messagesEl.dataset.drawerLift;
+
+    // Freeze at the settled pose so removing the class cannot snap a trailing transition.
+    messagesEl.style.transition = 'none';
+    messagesEl.style.transform = 'translate3d(0, 0, 0)';
+    void messagesEl.offsetHeight;
+    messagesEl.classList.remove('is-drawer-lifting', 'is-drawer-lifting-close');
+    messagesEl.style.transform = '';
+    messagesEl.style.paddingBottom = '';
+    messagesEl.style.transition = '';
+
+    if (committed && liftPx > 0) {
+        messagesEl.style.scrollBehavior = 'auto';
+        messagesEl.scrollTop = Math.max(0, messagesEl.scrollTop - liftPx);
+        messagesEl.style.scrollBehavior = '';
+    }
 }
 
 export function openPopoverOverlay({ popoverId, anchor, payload = {}, targetId = null }) {
