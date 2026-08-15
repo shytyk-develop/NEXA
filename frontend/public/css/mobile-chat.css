@@ -410,32 +410,45 @@
 }
 
 #page-chat.is-viewport-app-stack .chat-main > .input-bar .input-row {
-    align-items: flex-end;
-    gap: 4px;
-    min-height: 40px;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
 }
 
 #page-chat.is-viewport-app-stack .input-row .btn-attach,
 #page-chat.is-viewport-app-stack .input-row .composer-actions {
-    align-self: flex-end;
+    align-self: center;
 }
 
 #page-chat.is-viewport-app-stack .input-row .btn-attach,
 #page-chat.is-viewport-app-stack #sendBtn {
-    height: 40px;
-    width: 40px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    height: 44px;
+    min-width: 44px;
+    width: 44px;
 }
 
 #page-chat.is-viewport-app-stack .composer-actions {
     align-items: center;
+    align-self: center;
     gap: 0;
+    height: 44px;
 }
 
-#page-chat.is-viewport-app-stack .composer-field #messageInput {
-    border-radius: 18px !important;
-    line-height: 22px;
-    min-height: 40px;
-    padding: 9px 12px !important;
+#page-chat.is-viewport-app-stack .composer-field {
+    align-items: center;
+    display: flex;
+    min-height: 44px;
+}
+
+#page-chat.is-viewport-app-stack .chat-main > .input-bar .input-row.is-composer-multiline {
+    align-items: flex-end;
+}
+
+#page-chat.is-viewport-app-stack .chat-main > .input-bar .input-row.is-composer-multiline .btn-attach,
+#page-chat.is-viewport-app-stack .chat-main > .input-bar .input-row.is-composer-multiline .composer-actions {
+    align-self: flex-end;
 }
 
 #page-chat.is-viewport-app-stack #uiClearComposerBtn {
@@ -555,8 +568,16 @@
 }
 
 /* Bottom sheets for menus on small screens */
+#page-chat.is-viewport-app-stack .message-hover-actions {
+    display: none !important;
+}
+
 @media (max-width: 760px) {
-    .overlay-surface.is-sheet {
+    .message-hover-actions {
+        display: none !important;
+    }
+
+    .overlay-surface.is-sheet:not(.overlay-surface--drawer) {
         border-radius: 18px 18px 14px 14px;
         bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
         left: 10px !important;
@@ -571,15 +592,15 @@
         width: auto !important;
     }
 
-    .overlay-surface.is-sheet.is-visible {
+    .overlay-surface.is-sheet:not(.overlay-surface--drawer).is-visible {
         transform: translateY(0);
     }
 
-    .overlay-surface.is-sheet.is-closing {
+    .overlay-surface.is-sheet:not(.overlay-surface--drawer).is-closing {
         transform: translateY(14px);
     }
 
-    .overlay-surface.is-sheet .overlay-menu-item {
+    .overlay-surface.is-sheet:not(.overlay-surface--drawer) .overlay-menu-item {
         border-radius: 12px;
         font-size: 15px;
         min-height: 48px;
@@ -590,3 +611,4 @@
         display: inline-flex;
     }
 }
+

@@ -204,3 +204,174 @@
 .message-row.is-highlighted .message-bubble {
     box-shadow: 0 0 0 2px var(--accent-muted), var(--shadow-bubble);
 }
+
+/* Message actions drawer (mobile double-tap) — vaul-like bottom sheet */
+.overlay-backdrop.is-drawer {
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    background: rgba(0, 0, 0, 0.55);
+    transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.message-actions-spotlight {
+    opacity: 0;
+    pointer-events: none;
+    position: fixed;
+    transform: translate3d(0, 6px, 0) scale(0.985);
+    transition:
+        opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+    z-index: 10000;
+}
+
+.message-actions-spotlight.is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+.message-actions-spotlight .message-bubble {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    margin: 0;
+    max-width: none;
+    pointer-events: none;
+    width: 100%;
+}
+
+.overlay-surface--drawer {
+    background: #121212;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 0;
+    border-radius: 24px 24px 0 0;
+    bottom: 0 !important;
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    left: 0 !important;
+    max-height: min(78vh, 560px);
+    opacity: 1;
+    overflow: auto;
+    padding: 0 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    right: 0 !important;
+    top: auto !important;
+    transform: translate3d(0, 100%, 0);
+    transform-origin: bottom center;
+    transition: transform 0.48s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+    width: auto !important;
+}
+
+.overlay-surface--drawer.is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+.overlay-surface--drawer.is-closing {
+    opacity: 1;
+    transform: translate3d(0, 100%, 0);
+    transition-duration: 0.36s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.message-actions-drawer__handle {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    flex-shrink: 0;
+    height: 5px;
+    margin: 10px auto 4px;
+    width: 44px;
+}
+
+.message-actions-drawer__header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 8px 20px 12px;
+}
+
+.message-actions-drawer__title {
+    color: #f4f4f5;
+    font-family: var(--f-ui);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+    text-align: center;
+}
+
+.message-actions-drawer__body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 12px 8px;
+}
+
+.message-actions-drawer__reactions {
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    overflow-x: auto;
+    padding: 2px 4px 6px;
+    scrollbar-width: none;
+}
+
+.message-actions-drawer__reactions::-webkit-scrollbar {
+    display: none;
+}
+
+.message-actions-drawer__reaction {
+    align-items: center;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 1 0 auto;
+    font-size: 22px;
+    height: 44px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 44px;
+    padding: 0;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.message-actions-drawer__reaction:active {
+    transform: scale(0.94);
+}
+
+.message-actions-drawer__reaction:hover,
+.message-actions-drawer__reaction:focus-visible {
+    background: #222;
+    outline: none;
+}
+
+.message-actions-drawer__reaction:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.message-actions-drawer__menu {
+    background: #0c0c0c;
+    border: 1px solid #1d1d1d;
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 4px;
+}
+
+.message-actions-drawer__menu .overlay-menu-item {
+    border-radius: 12px;
+    font-size: 15px;
+    min-height: 48px;
+    padding: 12px 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overlay-surface--drawer,
+    .overlay-surface--drawer.is-visible,
+    .overlay-surface--drawer.is-closing,
+    .message-actions-spotlight,
+    .message-actions-spotlight.is-visible {
+        transition: none;
+    }
+}
+

@@ -4,10 +4,12 @@ import { renderDropdown } from './dropdown.js';
 import { renderContextMenu } from './contextMenu.js';
 import { renderPopover } from './popover.js';
 import { renderModal, attachModalPanel, releaseModalPanel } from './modal.js';
+import { renderMessageActionsDrawer } from './messageActionsDrawer.js';
 import { computeOverlayPosition, applyOverlayPosition } from './positioning.js';
 import { overlayDebug, isOverlayDebugEnabled } from './debug.js';
 
 export const ANIM_MS = 150;
+const DRAWER_ANIM_MS = 480;
 const OPEN_GUARD_MS = 160;
 
 /** @type {import('./overlayManager.js').OverlayState | null} */
@@ -22,6 +24,7 @@ let isClosing = false;
 let rootEl = null;
 let backdropEl = null;
 let surfaceEl = null;
+let spotlightEl = null;
 
 /** @type {Record<string, Function>} */
 let actions = {};
@@ -35,7 +38,7 @@ let scrollTargets = [];
 
 /**
  * @typedef {Object} OverlayState
- * @property {'dropdown'|'context'|'popover'|'modal'} type
+ * @property {'dropdown'|'context'|'popover'|'modal'|'drawer'} type
  * @property {{ x: number, y: number }} [position]
  * @property {Object} [anchorRect]
  * @property {Record<string, unknown>} payload
@@ -92,14 +95,17 @@ function hardDestroy(reason) {
         releaseModalPanel(closingState.payload.modalId);
     }
 
+    clearMessageSpotlight();
+
     overlayState = null;
     isClosing = false;
     backdropEl = null;
     surfaceEl = null;
+    spotlightEl = null;
 
     if (rootEl) {
         rootEl.innerHTML = '';
-        rootEl.classList.remove('is-active');
+        rootEl.classList.remove('is-active', 'is-message-drawer');
         rootEl.setAttribute('aria-hidden', 'true');
     }
 
@@ -119,6 +125,9 @@ function animateClose(gen, reason) {
         surfaceEl?.classList.remove('is-visible');
         surfaceEl?.classList.add('is-closing');
         backdropEl?.classList.remove('is-visible');
+        spotlightEl?.classList.remove('is-visible');
+
+        const duration = overlayState.type === 'drawer' ? DRAWER_ANIM_MS : ANIM_MS;
 
         closeTimer = window.setTimeout(() => {
             if (overlayState?.generation === gen) {
@@ -127,7 +136,7 @@ function animateClose(gen, reason) {
             isClosing = false;
             overlayDebug('close-done', { reason, gen });
             resolve();
-        }, ANIM_MS);
+        }, duration);
     });
 }
 
@@ -224,17 +233,21 @@ function mountOverlay(gen) {
 
     rootEl.innerHTML = '';
     rootEl.classList.add('is-active');
+    rootEl.classList.toggle('is-message-drawer', overlayState.type === 'drawer');
     rootEl.setAttribute('aria-hidden', 'false');
 
     const needsBackdrop =
         overlayState.type === 'modal' ||
         overlayState.type === 'popover' ||
         overlayState.type === 'context' ||
+        overlayState.type === 'drawer' ||
         (overlayState.type === 'dropdown' && isMobileSheetViewport());
 
     if (needsBackdrop) {
         backdropEl = document.createElement('div');
-        backdropEl.className = `overlay-backdrop${overlayState.type === 'modal' ? ' is-modal' : ''}`;
+        backdropEl.className = `overlay-backdrop${
+            overlayState.type === 'modal' || overlayState.type === 'drawer' ? ' is-modal' : ''
+        }${overlayState.type === 'drawer' ? ' is-drawer' : ''}`;
         backdropEl.addEventListener('click', (event) => {
             event.stopPropagation();
             closeOverlay({ reason: 'backdrop' });
@@ -242,17 +255,29 @@ function mountOverlay(gen) {
         rootEl.appendChild(backdropEl);
     }
 
+    if (overlayState.type === 'drawer' && overlayState.payload?.spotlightRect) {
+        mountMessageSpotlight(overlayState.payload);
+    }
+
     surfaceEl = document.createElement('div');
     const surfaceKind =
         overlayState.type === 'context'
             ? 'menu'
-            : overlayState.type;
+            : overlayState.type === 'drawer'
+                ? 'drawer'
+                : overlayState.type;
     surfaceEl.className = `overlay-surface overlay-surface--${surfaceKind}`;
-    if (shouldUseSheetLayout(overlayState.type)) {
+    if (shouldUseSheetLayout(overlayState.type) || overlayState.type === 'drawer') {
         surfaceEl.classList.add('is-sheet');
     }
-    surfaceEl.setAttribute('role', overlayState.type === 'modal' ? 'dialog' : 'menu');
-    surfaceEl.setAttribute('aria-modal', overlayState.type === 'modal' ? 'true' : 'false');
+    surfaceEl.setAttribute(
+        'role',
+        overlayState.type === 'modal' || overlayState.type === 'drawer' ? 'dialog' : 'menu'
+    );
+    surfaceEl.setAttribute(
+        'aria-modal',
+        overlayState.type === 'modal' || overlayState.type === 'drawer' ? 'true' : 'false'
+    );
 
     switch (overlayState.type) {
         case 'dropdown':
@@ -263,6 +288,9 @@ function mountOverlay(gen) {
             break;
         case 'popover':
             renderPopover(surfaceEl, overlayState, runOverlayAction);
+            break;
+        case 'drawer':
+            renderMessageActionsDrawer(surfaceEl, overlayState, runOverlayAction);
             break;
         case 'modal':
             renderModal(surfaceEl, overlayState);
@@ -276,16 +304,47 @@ function mountOverlay(gen) {
 
     layoutSurface(surfaceEl, overlayState);
 
-    // Show immediately (double rAF could skip is-visible on fast re-open).
-    if (overlayState?.generation === gen && surfaceEl) {
+    const reveal = () => {
+        if (overlayState?.generation !== gen || !surfaceEl) return;
         backdropEl?.classList.add('is-visible');
         surfaceEl.classList.add('is-visible');
+        spotlightEl?.classList.add('is-visible');
+        layoutSurface(surfaceEl, overlayState);
+    };
+
+    // Drawer needs a painted closed frame before sliding up, or the open snaps.
+    if (overlayState.type === 'drawer') {
+        openFrame = window.requestAnimationFrame(() => {
+            openFrame = window.requestAnimationFrame(reveal);
+        });
+    } else {
+        reveal();
+    }
+}
+
+function clearMessageSpotlight() {
+    document.querySelectorAll('.message-row.is-message-spotlight').forEach((row) => {
+        row.classList.remove('is-message-spotlight');
+    });
+    spotlightEl = null;
+}
+
+function mountMessageSpotlight(payload) {
+    const rect = payload.spotlightRect;
+    if (!rect || !rootEl) return;
+
+    spotlightEl = document.createElement('div');
+    spotlightEl.className = 'message-actions-spotlight';
+    spotlightEl.style.top = `${rect.top}px`;
+    spotlightEl.style.left = `${rect.left}px`;
+    spotlightEl.style.width = `${rect.width}px`;
+    spotlightEl.setAttribute('aria-hidden', 'true');
+
+    if (payload.spotlightHtml) {
+        spotlightEl.innerHTML = payload.spotlightHtml;
     }
 
-    openFrame = window.requestAnimationFrame(() => {
-        if (overlayState?.generation !== gen || !surfaceEl) return;
-        layoutSurface(surfaceEl, overlayState);
-    });
+    rootEl.appendChild(spotlightEl);
 }
 
 function isMobileSheetViewport() {
@@ -302,7 +361,7 @@ function layoutSurface(el, state) {
         return;
     }
 
-    if (shouldUseSheetLayout(state.type)) {
+    if (state.type === 'drawer' || shouldUseSheetLayout(state.type)) {
         el.style.left = '';
         el.style.top = '';
         el.style.right = '';
@@ -488,6 +547,47 @@ export function openContextMenu({ x, y, payload, targetId = null }) {
         position: { x, y },
         payload,
         targetId,
+    });
+}
+
+/**
+ * Mobile message actions drawer (reactions + menu), with bubble spotlight.
+ * @param {{ payload: Record<string, unknown>, bubble?: HTMLElement|null, row?: HTMLElement|null }} opts
+ */
+export function openMessageActionsDrawer({ payload, bubble = null, row = null }) {
+    const sourceBubble = bubble || row?.querySelector('.message-bubble');
+    const rect = sourceBubble?.getBoundingClientRect();
+    const spotlightRect = rect
+        ? {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+        }
+        : null;
+
+    let spotlightHtml = '';
+    if (sourceBubble) {
+        const clone = sourceBubble.cloneNode(true);
+        clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+        spotlightHtml = clone.outerHTML;
+    }
+
+    if (row) {
+        document.querySelectorAll('.message-row.is-message-spotlight').forEach((el) => {
+            el.classList.remove('is-message-spotlight');
+        });
+        row.classList.add('is-message-spotlight');
+    }
+
+    return openOverlay({
+        type: 'drawer',
+        payload: {
+            ...payload,
+            spotlightRect,
+            spotlightHtml,
+        },
+        targetId: payload?.messageId || payload?.clientMessageId || 'message-actions',
     });
 }
 
