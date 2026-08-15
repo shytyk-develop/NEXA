@@ -1207,53 +1207,105 @@
                 <header class="start-head start-head--center" data-reveal>
                     <p class="start-eyebrow">The product</p>
                     <h2 class="start-h2">Familiar. Calm.<br><span class="start-h2__dim">Finally private.</span></h2>
-                    <p class="start-lead">You shouldn’t need a manual to feel safe. Here’s a peek at the interface — screenshots go here when they’re ready.</p>
+                    <p class="start-lead">Tap a screen to explore the interface. Every shot stays full and readable.</p>
                 </header>
 
-                <div class="start-showcase__tabs" role="tablist" aria-label="Interface views" data-reveal-stagger>
-                    <button type="button" class="start-showcase__tab is-active" data-showcase-tab="chats" role="tab" aria-selected="true">Chats</button>
-                    <button type="button" class="start-showcase__tab" data-showcase-tab="privacy" role="tab" aria-selected="false">Privacy</button>
-                    <button type="button" class="start-showcase__tab" data-showcase-tab="themes" role="tab" aria-selected="false">Look</button>
-                    <button type="button" class="start-showcase__tab" data-showcase-tab="profile" role="tab" aria-selected="false">Profiles</button>
-                </div>
+                <div class="start-iselect" data-interactive-selector>
+                    <figure class="start-iselect__preview">
+                        <div class="start-iselect__preview-frame">
+                            <img
+                                class="start-iselect__preview-img"
+                                src="/screenshots/chats.png"
+                                alt="NEXA chats workspace"
+                                width="1024"
+                                height="629"
+                                decoding="async"
+                            >
+                        </div>
+                        <figcaption class="start-iselect__preview-cap">
+                            <span class="start-iselect__preview-title">Chats</span>
+                            <span class="start-iselect__preview-desc">Contacts, thread, and encryption in one calm view</span>
+                        </figcaption>
+                    </figure>
 
-                <div class="start-showcase__frame" data-reveal>
-                    <div class="start-showcase__chrome" aria-hidden="true">
-                        <span class="start-showcase__dot"></span>
-                        <span class="start-showcase__dot"></span>
-                        <span class="start-showcase__dot"></span>
-                        <span class="start-showcase__url">nexa.chat</span>
-                    </div>
-                    <div class="start-showcase__viewport">
-                        <!-- Replace each .start-shot with an <img> of the real screenshot when ready -->
-                        <div class="start-showcase__panel is-active" data-showcase-panel="chats">
-                            <div class="start-shot">
-                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-                                <span class="start-shot__label">Chats — screenshot coming soon</span>
-                                <span class="start-shot__hint">Your conversations, clear and calm</span>
-                            </div>
-                        </div>
-                        <div class="start-showcase__panel" data-showcase-panel="privacy">
-                            <div class="start-shot">
-                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2 4 5v6c0 5.25 3.4 10.15 8 11 4.6-.85 8-5.75 8-11V5l-8-3z"/></svg></span>
-                                <span class="start-shot__label">Privacy — screenshot coming soon</span>
-                                <span class="start-shot__hint">You’re in control of what’s shared</span>
-                            </div>
-                        </div>
-                        <div class="start-showcase__panel" data-showcase-panel="themes">
-                            <div class="start-shot">
-                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.75-.15 2.55-.4"/></svg></span>
-                                <span class="start-shot__label">Look — screenshot coming soon</span>
-                                <span class="start-shot__hint">Dark monochrome — same as this page</span>
-                            </div>
-                        </div>
-                        <div class="start-showcase__panel" data-showcase-panel="profile">
-                            <div class="start-shot">
-                                <span class="start-shot__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>
-                                <span class="start-shot__label">Profiles — screenshot coming soon</span>
-                                <span class="start-shot__hint">How you show up to others</span>
-                            </div>
-                        </div>
+                    <div class="start-iselect__options" role="listbox" aria-label="Product screens">
+                        <button type="button" class="start-iselect__option is-active is-ready" role="option" aria-selected="true" data-iselect-index="0">
+                            <span class="start-iselect__stage">
+                                <img class="start-iselect__media" src="/screenshots/chats.png" alt="NEXA chats workspace" width="1024" height="629" decoding="async">
+                            </span>
+                            <span class="start-iselect__label">
+                                <span class="start-iselect__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-message"/></svg></span>
+                                <span class="start-iselect__info">
+                                    <span class="start-iselect__title">Chats</span>
+                                    <span class="start-iselect__desc">Contacts, thread, and encryption in one calm view</span>
+                                </span>
+                            </span>
+                        </button>
+
+                        <button type="button" class="start-iselect__option" role="option" aria-selected="false" data-iselect-index="1">
+                            <span class="start-iselect__stage">
+                                <img class="start-iselect__media" src="/screenshots/profile.png" alt="NEXA identity settings" width="1024" height="629" loading="lazy" decoding="async">
+                            </span>
+                            <span class="start-iselect__label">
+                                <span class="start-iselect__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-user"/></svg></span>
+                                <span class="start-iselect__info">
+                                    <span class="start-iselect__title">Identity</span>
+                                    <span class="start-iselect__desc">Avatar, bio, username, and profile preview</span>
+                                </span>
+                            </span>
+                        </button>
+
+                        <button type="button" class="start-iselect__option" role="option" aria-selected="false" data-iselect-index="2">
+                            <span class="start-iselect__stage">
+                                <img class="start-iselect__media" src="/screenshots/security.png" alt="NEXA security settings" width="1024" height="629" loading="lazy" decoding="async">
+                            </span>
+                            <span class="start-iselect__label">
+                                <span class="start-iselect__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-shield"/></svg></span>
+                                <span class="start-iselect__info">
+                                    <span class="start-iselect__title">Security</span>
+                                    <span class="start-iselect__desc">Encryption status, device identity, and keys</span>
+                                </span>
+                            </span>
+                        </button>
+
+                        <button type="button" class="start-iselect__option" role="option" aria-selected="false" data-iselect-index="3">
+                            <span class="start-iselect__stage">
+                                <img class="start-iselect__media" src="/screenshots/privacy.png" alt="NEXA privacy settings" width="1024" height="629" loading="lazy" decoding="async">
+                            </span>
+                            <span class="start-iselect__label">
+                                <span class="start-iselect__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-eye"/></svg></span>
+                                <span class="start-iselect__info">
+                                    <span class="start-iselect__title">Privacy</span>
+                                    <span class="start-iselect__desc">Presence, receipts, and typing — your call</span>
+                                </span>
+                            </span>
+                        </button>
+
+                        <button type="button" class="start-iselect__option" role="option" aria-selected="false" data-iselect-index="4">
+                            <span class="start-iselect__stage">
+                                <img class="start-iselect__media" src="/screenshots/data.png" alt="NEXA data and storage" width="1024" height="629" loading="lazy" decoding="async">
+                            </span>
+                            <span class="start-iselect__label">
+                                <span class="start-iselect__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-database"/></svg></span>
+                                <span class="start-iselect__info">
+                                    <span class="start-iselect__title">Data</span>
+                                    <span class="start-iselect__desc">Storage overview, export, and local clear</span>
+                                </span>
+                            </span>
+                        </button>
+
+                        <button type="button" class="start-iselect__option" role="option" aria-selected="false" data-iselect-index="5">
+                            <span class="start-iselect__stage">
+                                <img class="start-iselect__media" src="/screenshots/privacy-story.png" alt="How NEXA privacy works" width="1024" height="629" loading="lazy" decoding="async">
+                            </span>
+                            <span class="start-iselect__label">
+                                <span class="start-iselect__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-lock"/></svg></span>
+                                <span class="start-iselect__info">
+                                    <span class="start-iselect__title">How it works</span>
+                                    <span class="start-iselect__desc">Lock, transit, delivery — in plain language</span>
+                                </span>
+                            </span>
+                        </button>
                     </div>
                 </div>
             </section>

@@ -48,7 +48,7 @@ function bindOnce(pageStart) {
     bound = true;
 
     bindNav(pageStart);
-    bindShowcaseTabs(pageStart);
+    bindInteractiveSelector(pageStart);
     bindFaq(pageStart);
     bindQuotes(pageStart);
     bindCardSpotlight(pageStart);
@@ -141,23 +141,89 @@ function bindNav(pageStart) {
     }, { passive: true });
 }
 
-function bindShowcaseTabs(pageStart) {
-    const tabs = [...pageStart.querySelectorAll('[data-showcase-tab]')];
-    const panels = [...pageStart.querySelectorAll('[data-showcase-panel]')];
-    if (!tabs.length) return;
+function bindInteractiveSelector(pageStart) {
+    const root = pageStart.querySelector('[data-interactive-selector]');
+    if (!root) return;
 
-    tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-            const id = tab.dataset.showcaseTab;
-            tabs.forEach((t) => {
-                const on = t === tab;
-                t.classList.toggle('is-active', on);
-                t.setAttribute('aria-selected', on ? 'true' : 'false');
-            });
-            panels.forEach((p) => {
-                p.classList.toggle('is-active', p.dataset.showcasePanel === id);
-            });
+    const options = [...root.querySelectorAll('.start-iselect__option')];
+    if (!options.length) return;
+
+    const previewImg = root.querySelector('.start-iselect__preview-img');
+    const previewTitle = root.querySelector('.start-iselect__preview-title');
+    const previewDesc = root.querySelector('.start-iselect__preview-desc');
+    const previewFrame = root.querySelector('.start-iselect__preview-frame');
+
+    const syncPreview = (opt) => {
+        if (!previewImg || !opt) return;
+        const media = opt.querySelector('.start-iselect__media');
+        const title = opt.querySelector('.start-iselect__title')?.textContent?.trim() || '';
+        const desc = opt.querySelector('.start-iselect__desc')?.textContent?.trim() || '';
+
+        if (media) {
+            previewImg.src = media.currentSrc || media.src;
+            previewImg.alt = media.alt || title;
+        }
+        if (previewTitle) previewTitle.textContent = title;
+        if (previewDesc) previewDesc.textContent = desc;
+
+        previewFrame?.classList.remove('is-swap');
+        void previewFrame?.offsetWidth;
+        previewFrame?.classList.add('is-swap');
+    };
+
+    const setActive = (next) => {
+        options.forEach((opt, i) => {
+            const on = i === next;
+            opt.classList.toggle('is-active', on);
+            opt.setAttribute('aria-selected', on ? 'true' : 'false');
         });
+
+        const active = options[next];
+        syncPreview(active);
+        if (window.matchMedia('(max-width: 767px)').matches) {
+            active?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+    };
+
+    root.addEventListener('click', (event) => {
+        const opt = event.target.closest('.start-iselect__option');
+        if (!opt || !root.contains(opt)) return;
+        const index = options.indexOf(opt);
+        if (index < 0 || opt.classList.contains('is-active')) return;
+        setActive(index);
+    });
+
+    root.addEventListener('keydown', (event) => {
+        const opt = event.target.closest('.start-iselect__option');
+        if (!opt || !root.contains(opt)) return;
+        const index = options.indexOf(opt);
+        if (index < 0) return;
+
+        let next = index;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+            next = (index + 1) % options.length;
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+            next = (index - 1 + options.length) % options.length;
+        } else if (event.key === 'Home') {
+            next = 0;
+        } else if (event.key === 'End') {
+            next = options.length - 1;
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        setActive(next);
+        options[next].focus();
+    });
+
+    syncPreview(options.find((o) => o.classList.contains('is-active')) || options[0]);
+
+    // Staggered entrance like the React component.
+    options.forEach((opt, i) => {
+        window.setTimeout(() => {
+            opt.classList.add('is-ready');
+        }, 180 * i);
     });
 }
 
@@ -623,9 +689,8 @@ function revealBlock(tl, el) {
     const from = { opacity: 0, scale: 0.965, filter: 'blur(10px)' };
     const to = { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power3.out' };
 
-    // The showcase frame already has a scrubbed parallax on `y`; a second tween
-    // writing the same property would make the two fight each frame.
-    if (!el.matches('.start-showcase__frame')) {
+    // Showcase selector already owns its entrance; don't also slide it on reveal.
+    if (!el.matches('.start-showcase__frame, .start-iselect')) {
         from.y = 52;
         to.y = 0;
     }
@@ -826,14 +891,14 @@ function startMotion(pageStart) {
             });
         });
 
-        // The showcase frame drifts slightly against the scroll for depth.
-        const frame = pageStart.querySelector('.start-showcase__frame');
-        if (frame) {
-            gsap.fromTo(frame, { y: 56 }, {
-                y: -28,
+        // Soft parallax on the interactive selector shell.
+        const iselect = pageStart.querySelector('.start-iselect');
+        if (iselect) {
+            gsap.fromTo(iselect, { y: 36 }, {
+                y: -16,
                 ease: 'none',
                 scrollTrigger: {
-                    trigger: frame,
+                    trigger: iselect,
                     scroller: pageStart,
                     start: 'top bottom',
                     end: 'bottom top',
