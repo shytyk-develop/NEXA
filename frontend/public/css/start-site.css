@@ -2497,6 +2497,31 @@
     }
 }
 
+/* Very small phones: enlarge mock UI chrome without resizing the shot shell. */
+@media (max-width: 560px) {
+    .start-fc__title {
+        font-size: 20px;
+    }
+
+    .start-fc__desc {
+        font-size: 14.5px;
+        line-height: 1.5;
+    }
+
+    .start-fc__shot .fcui {
+        /* zoom grows text/icons in-place; shot width/height stay the same */
+        zoom: 1.34;
+    }
+
+    @supports not (zoom: 1) {
+        .start-fc__shot .fcui {
+            transform: scale(1.34);
+            transform-origin: top center;
+            width: 100%;
+        }
+    }
+}
+
 /* ─── Split rows ─── */
 .start-split {
     align-items: center;
@@ -4233,14 +4258,22 @@ body.is-iselect-lightbox-open,
     .start-mobile__cta {
         align-items: center;
         flex-direction: row;
-        flex-wrap: wrap;
-        gap: 16px 18px;
+        flex-wrap: nowrap;
+        gap: 12px 14px;
         margin-top: 26px;
     }
 
+    .start-mobile__store {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
     .start-mobile__note {
-        gap: 8px;
+        flex: 0 1 auto;
+        gap: 6px;
         margin-left: 0;
+        max-width: 11rem;
+        min-width: 0;
         rotate: -8deg;
     }
 
@@ -4265,14 +4298,41 @@ body.is-iselect-lightbox-open,
         padding: 28px 20px 26px;
     }
 
+    .start-mobile__cta {
+        gap: 10px;
+    }
+
     .start-mobile__store {
-        flex: 0 0 auto;
-        justify-content: center;
+        flex: 0 1 auto;
+        gap: 8px;
+        justify-content: flex-start;
+        padding: 10px 14px 10px 12px;
         width: auto;
     }
 
+    .start-mobile__apple {
+        height: 28px;
+        width: 28px;
+    }
+
+    .start-mobile__store-kicker {
+        font-size: 9px;
+    }
+
+    .start-mobile__store-name {
+        font-size: 17px;
+    }
+
     .start-mobile__note {
+        font-size: 15px;
+        gap: 5px;
         margin-left: 0;
+        max-width: 7.5rem;
+    }
+
+    .start-mobile__note-arrow {
+        height: 12px;
+        width: 24px;
     }
 
     .start-mobile__feats {
