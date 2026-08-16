@@ -125,18 +125,21 @@ function bindNav(pageStart) {
     if (!header) return;
 
     let menuCloseTimer = 0;
-    const MENU_CLOSE_MS = 520;
+    const MENU_CLOSE_MS = 580;
 
     const openMenu = () => {
         if (!toggle || !menu) return;
         clearTimeout(menuCloseTimer);
         menu.hidden = false;
-        // Allow the browser to apply the open grid before transitioning.
-        void menu.offsetHeight;
-        header.classList.add('is-open');
-        toggle.setAttribute('aria-expanded', 'true');
-        toggle.setAttribute('aria-label', 'Close menu');
-        menu.setAttribute('aria-hidden', 'false');
+        // Two frames so the 0fr → 1fr grid transition always runs.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                header.classList.add('is-open');
+                toggle.setAttribute('aria-expanded', 'true');
+                toggle.setAttribute('aria-label', 'Close menu');
+                menu.setAttribute('aria-hidden', 'false');
+            });
+        });
     };
 
     const closeMenu = () => {
@@ -675,7 +678,7 @@ function stopQuotesRotation() {
 
 function bindCardSpotlight(pageStart) {
     pageStart.addEventListener('pointermove', (e) => {
-        const card = e.target.closest('.start-card, .start-mobile__panel');
+        const card = e.target.closest('.start-card');
         if (!card) return;
         const rect = card.getBoundingClientRect();
         card.style.setProperty('--mx', `${e.clientX - rect.left}px`);
