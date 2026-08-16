@@ -40,7 +40,7 @@ const DEFAULTS = {
     },
 };
 
-/** Hero preset — the panel values the reference frame was rendered from. */
+/** Hero preset — lighter than the lab max so first paint stays responsive. */
 export const HERO_VORTEX_PRESET = {
     background: '#000000',
     topRadius: 0,
@@ -52,13 +52,13 @@ export const HERO_VORTEX_PRESET = {
     speed: 10,
     direction: 'right',
     lineOptions: {
-        count: 240,
+        count: 140,
         color: '#a7a7a7',
         glow: 5,
     },
     dots: true,
     dotOptions: {
-        count: 4850,
+        count: 2400,
         size: 7,
         color: '#ffffff',
         glow: 10,
@@ -66,16 +66,43 @@ export const HERO_VORTEX_PRESET = {
     },
     comets: true,
     cometOptions: {
-        count: 7,
+        count: 4,
         speed: 10,
         color: '#fffee3',
         glow: 10,
-        tail: 20,
+        tail: 18,
         delay: 8,
         collide: 1,
     },
     repel: false,
 };
+
+function adaptHeroPreset(base) {
+    const narrow = window.matchMedia('(max-width: 900px)').matches;
+    const saveData = Boolean(navigator.connection?.saveData);
+    const cores = navigator.hardwareConcurrency || 4;
+    if (!narrow && !saveData && cores >= 6) return base;
+
+    return {
+        ...base,
+        lineOptions: {
+            ...base.lineOptions,
+            count: saveData ? 60 : 90,
+            glow: 4,
+        },
+        dots: true,
+        dotOptions: {
+            ...base.dotOptions,
+            count: saveData ? 700 : 1200,
+            glow: 7,
+        },
+        comets: !saveData,
+        cometOptions: {
+            ...base.cometOptions,
+            count: saveData ? 0 : 2,
+        },
+    };
+}
 
 const TAU = Math.PI * 2;
 const PX_PER_WORLD = 60;
@@ -290,14 +317,18 @@ function buildEngineConfig(props, running) {
 }
 
 function createVortex(canvas, container, cfgRef) {
+    const narrow = window.matchMedia('(max-width: 900px)').matches;
     const renderer = new THREE.WebGLRenderer({
         canvas,
-        antialias: true,
+        antialias: !narrow,
         alpha: true,
         powerPreference: 'high-performance',
     });
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(Math.min(
+        window.devicePixelRatio || 1,
+        narrow ? 1 : 1.5,
+    ));
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.toneMappingExposure = 1.25;
 
@@ -1035,7 +1066,7 @@ export function mountVortex(container, props = HERO_VORTEX_PRESET) {
     else container.appendChild(canvas);
 
     const cfgRef = {
-        current: buildEngineConfig(props, !prefersReducedMotion()),
+        current: buildEngineConfig(adaptHeroPreset(props), !prefersReducedMotion()),
     };
 
     try {

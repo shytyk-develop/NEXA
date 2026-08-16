@@ -23,8 +23,9 @@ export function mountCtaBand(root) {
     }
 
     if (particlesHost && !reducedMotion()) {
+        const narrow = window.matchMedia('(max-width: 900px)').matches;
         cleanups.push(mountParticles(particlesHost, {
-            quantity: 120,
+            quantity: narrow ? 36 : 56,
             color: '#9a9a9a',
             vy: -0.12,
             vx: 0.04,
