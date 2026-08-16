@@ -13,6 +13,8 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 let bound = false;
 let motionCtx = null;
 let quotesTimer = 0;
+let armProductAutoplay = null;
+let clearProductProgress = null;
 let orbitCtl = null;
 
 export function initStartSite(pageStart) {
@@ -27,12 +29,14 @@ export function initStartSite(pageStart) {
     startOrbit(pageStart);
     startMotion(pageStart);
     startQuotesRotation(pageStart);
+    armProductAutoplay?.();
 }
 
 export function teardownStartSite() {
     motionCtx?.revert();
     motionCtx = null;
     stopQuotesRotation();
+    stopProductAutoplay();
     stopOrbit();
     destroyFeatureCarousel();
     destroyCtaBand();
@@ -48,7 +52,7 @@ function bindOnce(pageStart) {
     bound = true;
 
     bindNav(pageStart);
-    bindInteractiveSelector(pageStart);
+    bindProductShowcase(pageStart);
     bindFaq(pageStart);
     bindQuotes(pageStart);
     bindCardSpotlight(pageStart);
@@ -169,93 +173,150 @@ function ensureIselectLightbox(pageStart) {
     return lightbox;
 }
 
-function bindInteractiveSelector(pageStart) {
-    const root = pageStart.querySelector('[data-interactive-selector]');
+function stopProductAutoplay() {
+    clearProductProgress?.();
+}
+
+function bindProductShowcase(pageStart) {
+    const root = pageStart.querySelector('[data-product-showcase]');
     if (!root) return;
 
-    const options = [...root.querySelectorAll('.start-iselect__option')];
-    if (!options.length) return;
+    const dots = [...root.querySelectorAll('.start-product__dot')];
+    if (!dots.length) return;
 
-    const previewRoot = root.querySelector('.start-iselect__preview');
-    const previewImg = root.querySelector('.start-iselect__preview-img');
-    const previewTitle = root.querySelector('.start-iselect__preview-title');
-    const previewDesc = root.querySelector('.start-iselect__preview-desc');
-    const optionsRail = root.querySelector('.start-iselect__options');
+    const shot = root.querySelector('[data-product-shot]');
+    const titleEl = root.querySelector('[data-product-title]');
+    const descEl = root.querySelector('[data-product-desc]');
+    const frame = root.querySelector('[data-product-frame]');
+    const explore = pageStart.querySelector('[data-product-explore]');
+    const pills = pageStart.querySelector('.start-product__pills');
     const lightbox = pageStart.querySelector('[data-iselect-lightbox]') || ensureIselectLightbox(pageStart);
     const lightboxImg = lightbox?.querySelector('.start-iselect-lightbox__img');
     const lightboxTitle = lightbox?.querySelector('.start-iselect-lightbox__title');
     const lightboxDesc = lightbox?.querySelector('.start-iselect-lightbox__desc');
-    let previewTimer = 0;
+
+    let switchTimer = 0;
+    let resumeTimer = 0;
     let lightboxOpen = false;
-    let activeIndex = options.findIndex((o) => o.classList.contains('is-active'));
+    let inView = false;
+    let pausedByUser = false;
+    let hovering = false;
+    let activeIndex = dots.findIndex((d) => d.classList.contains('is-active'));
     if (activeIndex < 0) activeIndex = 0;
 
-    const isMobileSelector = () => window.matchMedia('(max-width: 900px)').matches;
+    const AUTOPLAY_MS = 2800;
+    const RESUME_MS = 800;
     const prefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Warm the screenshot cache so chip taps don't flash empty frames.
-    options.forEach((opt) => {
-        const src = opt.querySelector('.start-iselect__media')?.getAttribute('src');
+    root.style.setProperty('--product-autoplay-ms', `${AUTOPLAY_MS}ms`);
+
+    const slideOf = (dot) => ({
+        src: dot?.dataset.src || '',
+        title: dot?.dataset.title || '',
+        desc: dot?.dataset.desc || '',
+        alt: dot?.dataset.alt || dot?.dataset.title || '',
+    });
+
+    dots.forEach((dot) => {
+        const src = dot.dataset.src;
         if (!src) return;
         const warm = new Image();
         warm.src = src;
     });
 
-    const applyPreviewContent = (opt) => {
-        if (!previewImg || !opt) return;
-        const media = opt.querySelector('.start-iselect__media');
-        const title = opt.querySelector('.start-iselect__title')?.textContent?.trim() || '';
-        const desc = opt.querySelector('.start-iselect__desc')?.textContent?.trim() || '';
+    const applySlide = (dot) => {
+        const slide = slideOf(dot);
+        if (!shot || !slide.src) return;
 
-        if (media) {
-            const nextSrc = media.currentSrc || media.src;
-            if (previewImg.getAttribute('src') !== nextSrc) {
-                previewImg.src = nextSrc;
-            }
-            previewImg.alt = media.alt || title;
+        if (shot.getAttribute('src') !== slide.src) {
+            shot.src = slide.src;
         }
-        if (previewTitle) previewTitle.textContent = title;
-        if (previewDesc) previewDesc.textContent = desc;
+        shot.alt = slide.alt;
+        if (titleEl) titleEl.textContent = slide.title;
+        if (descEl) descEl.textContent = slide.desc;
     };
 
-    const syncPreview = (opt, { animate = true } = {}) => {
-        window.clearTimeout(previewTimer);
+    const syncSlide = (dot, { animate = true } = {}) => {
+        window.clearTimeout(switchTimer);
 
-        if (!isMobileSelector() || !animate || prefersReduced() || !previewRoot) {
-            previewRoot?.classList.remove('is-switching', 'is-settling');
-            applyPreviewContent(opt);
+        if (!animate || prefersReduced()) {
+            root.classList.remove('is-switching', 'is-settling');
+            applySlide(dot);
             return;
         }
 
-        // Out → swap src → in. Force a paint between class flips so CSS transitions run.
-        previewRoot.classList.remove('is-settling');
-        previewRoot.classList.add('is-switching');
-        void previewRoot.offsetWidth;
+        root.classList.remove('is-settling');
+        root.classList.add('is-switching');
+        void root.offsetWidth;
 
-        previewTimer = window.setTimeout(() => {
-            applyPreviewContent(opt);
+        switchTimer = window.setTimeout(() => {
+            applySlide(dot);
             requestAnimationFrame(() => {
-                previewRoot.classList.remove('is-switching');
-                previewRoot.classList.add('is-settling');
-                previewTimer = window.setTimeout(() => {
-                    previewRoot.classList.remove('is-settling');
+                root.classList.remove('is-switching');
+                root.classList.add('is-settling');
+                switchTimer = window.setTimeout(() => {
+                    root.classList.remove('is-settling');
                 }, 520);
             });
         }, 220);
     };
 
-    const centerChip = (opt) => {
-        if (!optionsRail || !opt || !isMobileSelector()) return;
-        const railBox = optionsRail.getBoundingClientRect();
-        const chipBox = opt.getBoundingClientRect();
-        const delta =
-            chipBox.left +
-            chipBox.width / 2 -
-            (railBox.left + railBox.width / 2);
-        optionsRail.scrollBy({
-            left: delta,
-            behavior: prefersReduced() ? 'auto' : 'smooth',
-        });
+    const clearFill = () => {
+        root.classList.remove('is-autoplay-paused');
+        dots.forEach((dot) => dot.classList.remove('is-filling'));
+    };
+
+    const restartFill = () => {
+        if (prefersReduced() || lightboxOpen || pausedByUser || hovering || !inView || dots.length < 2) {
+            clearFill();
+            return;
+        }
+
+        const active = dots[activeIndex];
+        dots.forEach((dot) => dot.classList.remove('is-filling'));
+        root.classList.remove('is-autoplay-paused');
+        // Retrigger CSS fill animation from 0.
+        void active.offsetWidth;
+        active.classList.add('is-filling');
+    };
+
+    const pauseFill = () => {
+        if (dots[activeIndex]?.classList.contains('is-filling')) {
+            root.classList.add('is-autoplay-paused');
+        }
+    };
+
+    const startAutoplay = () => {
+        if (prefersReduced() || lightboxOpen || pausedByUser || hovering || !inView || dots.length < 2) {
+            if (!hovering) clearFill();
+            else pauseFill();
+            return;
+        }
+
+        const active = dots[activeIndex];
+        if (active?.classList.contains('is-filling') && root.classList.contains('is-autoplay-paused')) {
+            root.classList.remove('is-autoplay-paused');
+            return;
+        }
+
+        restartFill();
+    };
+
+    const bumpAutoplay = () => {
+        pausedByUser = true;
+        clearFill();
+        window.clearTimeout(resumeTimer);
+        // After a manual pick, briefly settle then keep autoplay going on the new slide.
+        resumeTimer = window.setTimeout(() => {
+            pausedByUser = false;
+            startAutoplay();
+        }, RESUME_MS);
+    };
+
+    clearProductProgress = () => {
+        window.clearTimeout(resumeTimer);
+        pausedByUser = false;
+        clearFill();
     };
 
     const closeLightbox = () => {
@@ -268,22 +329,23 @@ function bindInteractiveSelector(pageStart) {
         window.setTimeout(() => {
             if (!lightboxOpen) lightbox.hidden = true;
         }, prefersReduced() ? 0 : 300);
+
+        startAutoplay();
     };
 
-    const openLightbox = async (opt = options[activeIndex]) => {
-        if (!lightbox || !lightboxImg || !opt) return;
-        const media = opt.querySelector('.start-iselect__media');
-        const title = opt.querySelector('.start-iselect__title')?.textContent?.trim() || '';
-        const desc = opt.querySelector('.start-iselect__desc')?.textContent?.trim() || '';
-        if (!media) return;
+    const openLightbox = async (dot = dots[activeIndex]) => {
+        if (!lightbox || !lightboxImg || !dot) return;
+        const slide = slideOf(dot);
+        if (!slide.src) return;
 
-        const nextSrc = media.currentSrc || media.src;
-        if (lightboxImg.getAttribute('src') !== nextSrc) {
-            lightboxImg.src = nextSrc;
+        clearFill();
+
+        if (lightboxImg.getAttribute('src') !== slide.src) {
+            lightboxImg.src = slide.src;
         }
-        lightboxImg.alt = media.alt || title;
-        if (lightboxTitle) lightboxTitle.textContent = title;
-        if (lightboxDesc) lightboxDesc.textContent = desc;
+        lightboxImg.alt = slide.alt;
+        if (lightboxTitle) lightboxTitle.textContent = slide.title;
+        if (lightboxDesc) lightboxDesc.textContent = slide.desc;
 
         try {
             if (typeof lightboxImg.decode === 'function') {
@@ -300,7 +362,6 @@ function bindInteractiveSelector(pageStart) {
         pageStart.classList.add('is-iselect-lightbox-open');
         document.body.classList.add('is-iselect-lightbox-open');
 
-        // Paint one invisible frame with blur already attached, then fade blur + photo together.
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (!lightboxOpen) return;
@@ -310,24 +371,33 @@ function bindInteractiveSelector(pageStart) {
         });
     };
 
-    const setActive = (next, { animatePreview = true } = {}) => {
-        if (next === activeIndex && options[next]?.classList.contains('is-active')) {
+    const setActive = (next, { animate = true, fromAutoplay = false } = {}) => {
+        if (next === activeIndex && dots[next]?.classList.contains('is-active')) {
             return;
         }
         activeIndex = next;
 
-        options.forEach((opt, i) => {
+        dots.forEach((dot, i) => {
             const on = i === next;
-            opt.classList.toggle('is-active', on);
-            opt.setAttribute('aria-selected', on ? 'true' : 'false');
+            dot.classList.toggle('is-active', on);
+            dot.setAttribute('aria-selected', on ? 'true' : 'false');
+            if (!on) dot.classList.remove('is-filling');
         });
 
-        const active = options[next];
-        syncPreview(active, { animate: animatePreview });
-        centerChip(active);
+        syncSlide(dots[next], { animate });
+        if (fromAutoplay) restartFill();
+        else bumpAutoplay();
     };
 
-    // Lightbox lives on pageStart (not inside the parallax transform).
+    dots.forEach((dot) => {
+        dot.addEventListener('animationend', (event) => {
+            if (event.animationName !== 'start-product-dot-fill') return;
+            if (!dot.classList.contains('is-active') || !dot.classList.contains('is-filling')) return;
+            if (root.classList.contains('is-autoplay-paused')) return;
+            setActive((activeIndex + 1) % dots.length, { fromAutoplay: true });
+        });
+    });
+
     lightbox?.addEventListener('click', (event) => {
         if (event.target.closest('[data-iselect-lightbox-close]')) {
             event.preventDefault();
@@ -335,27 +405,16 @@ function bindInteractiveSelector(pageStart) {
         }
     });
 
-    root.addEventListener('click', (event) => {
-        const previewFrame = event.target.closest('.start-iselect__preview-frame');
-        if (previewFrame && root.contains(previewFrame)) {
-            event.preventDefault();
-            openLightbox(options[activeIndex]);
-            return;
-        }
+    frame?.addEventListener('click', (event) => {
+        event.preventDefault();
+        openLightbox(dots[activeIndex]);
+    });
 
-        const opt = event.target.closest('.start-iselect__option');
-        if (!opt || !root.contains(opt)) return;
-        const index = options.indexOf(opt);
+    root.querySelector('[data-product-dots]')?.addEventListener('click', (event) => {
+        const dot = event.target.closest('.start-product__dot');
+        if (!dot || !root.contains(dot)) return;
+        const index = dots.indexOf(dot);
         if (index < 0) return;
-
-        // Active desktop panel: tap the shot itself to enlarge.
-        if (opt.classList.contains('is-active') && event.target.closest('.start-iselect__stage')) {
-            event.preventDefault();
-            openLightbox(opt);
-            return;
-        }
-
-        if (opt.classList.contains('is-active')) return;
         setActive(index);
     });
 
@@ -366,36 +425,74 @@ function bindInteractiveSelector(pageStart) {
             return;
         }
 
-        const opt = event.target.closest('.start-iselect__option');
-        if (!opt || !root.contains(opt)) return;
-        const index = options.indexOf(opt);
-        if (index < 0) return;
+        const inDots = event.target.closest('.start-product__dot');
+        const inFrame = event.target.closest('[data-product-frame]');
+        if (!inDots && !inFrame) return;
 
-        if ((event.key === 'Enter' || event.key === ' ') && opt.classList.contains('is-active')) {
-            // Only enlarge when focus is on the option and it's already active.
-            if (!isMobileSelector()) {
-                event.preventDefault();
-                openLightbox(opt);
-                return;
-            }
-        }
-
-        let next = index;
+        let next = activeIndex;
         if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-            next = (index + 1) % options.length;
+            next = (activeIndex + 1) % dots.length;
         } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-            next = (index - 1 + options.length) % options.length;
+            next = (activeIndex - 1 + dots.length) % dots.length;
         } else if (event.key === 'Home') {
             next = 0;
         } else if (event.key === 'End') {
-            next = options.length - 1;
+            next = dots.length - 1;
         } else {
             return;
         }
 
         event.preventDefault();
         setActive(next);
-        options[next].focus();
+        dots[next].focus();
+    });
+
+    // Swipe between slides on the frame (mobile-friendly).
+    let touchX = null;
+    let touchY = null;
+    frame?.addEventListener('touchstart', (event) => {
+        const t = event.changedTouches?.[0];
+        if (!t) return;
+        touchX = t.clientX;
+        touchY = t.clientY;
+    }, { passive: true });
+
+    frame?.addEventListener('touchend', (event) => {
+        const t = event.changedTouches?.[0];
+        if (!t || touchX == null || touchY == null) return;
+        const dx = t.clientX - touchX;
+        const dy = t.clientY - touchY;
+        touchX = null;
+        touchY = null;
+        if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+        if (dx < 0) setActive((activeIndex + 1) % dots.length);
+        else setActive((activeIndex - 1 + dots.length) % dots.length);
+    }, { passive: true });
+
+    // Pause progress only while the mouse rests on the preview frame.
+    // Dots stay outside this so tapping a bubble doesn't kill autoplay.
+    frame?.addEventListener('pointerenter', (event) => {
+        if (event.pointerType && event.pointerType !== 'mouse') return;
+        hovering = true;
+        pauseFill();
+        window.clearTimeout(resumeTimer);
+    });
+    frame?.addEventListener('pointerleave', (event) => {
+        if (event.pointerType && event.pointerType !== 'mouse') return;
+        hovering = false;
+        if (!pausedByUser) startAutoplay();
+    });
+
+    explore?.addEventListener('click', (event) => {
+        event.preventDefault();
+        bumpAutoplay();
+        root.scrollIntoView({
+            behavior: prefersReduced() ? 'auto' : 'smooth',
+            block: 'center',
+        });
+        window.setTimeout(() => {
+            frame?.focus({ preventScroll: true });
+        }, prefersReduced() ? 0 : 420);
     });
 
     document.addEventListener('keydown', (event) => {
@@ -403,14 +500,57 @@ function bindInteractiveSelector(pageStart) {
         closeLightbox();
     });
 
-    applyPreviewContent(options[activeIndex]);
+    // Autoplay only while the product stage is on screen.
+    if (typeof IntersectionObserver !== 'undefined') {
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                inView = entry.isIntersecting && entry.intersectionRatio > 0.35;
+                if (inView) startAutoplay();
+                else clearFill();
+            });
+        }, { threshold: [0, 0.35, 0.6] });
+        io.observe(root);
+    } else {
+        inView = true;
+        startAutoplay();
+    }
 
-    // Staggered entrance like the React component.
-    options.forEach((opt, i) => {
-        window.setTimeout(() => {
-            opt.classList.add('is-ready');
-        }, 180 * i);
-    });
+    armProductAutoplay = () => {
+        const rect = root.getBoundingClientRect();
+        const vh = window.innerHeight || 1;
+        inView = rect.bottom > vh * 0.12 && rect.top < vh * 0.88;
+        pausedByUser = false;
+        window.clearTimeout(resumeTimer);
+        startAutoplay();
+    };
+
+    // Staggered pill entrance when the product block enters the viewport.
+    if (pills) {
+        const revealPills = () => {
+            if (pills.classList.contains('is-in')) return;
+            pills.classList.add('is-in');
+            window.setTimeout(() => {
+                pills.classList.add('is-settled');
+            }, prefersReduced() ? 0 : 900);
+        };
+
+        if (prefersReduced()) {
+            revealPills();
+        } else if (typeof IntersectionObserver !== 'undefined') {
+            const pillsIo = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    revealPills();
+                    pillsIo.disconnect();
+                });
+            }, { threshold: 0.25 });
+            pillsIo.observe(pills);
+        } else {
+            revealPills();
+        }
+    }
+
+    applySlide(dots[activeIndex]);
 }
 
 function bindFaq(pageStart) {
@@ -875,8 +1015,8 @@ function revealBlock(tl, el) {
     const from = { opacity: 0, scale: 0.965, filter: 'blur(10px)' };
     const to = { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power3.out' };
 
-    // Showcase selector already owns its entrance; don't also slide it on reveal.
-    if (!el.matches('.start-showcase__frame, .start-iselect')) {
+    // Showcase stage already owns its entrance; don't also slide it on reveal.
+    if (!el.matches('.start-showcase__frame, .start-iselect, .start-product__stage')) {
         from.y = 52;
         to.y = 0;
     }
@@ -1077,14 +1217,14 @@ function startMotion(pageStart) {
             });
         });
 
-        // Soft parallax on the interactive selector shell.
-        const iselect = pageStart.querySelector('.start-iselect');
-        if (iselect) {
-            gsap.fromTo(iselect, { y: 36 }, {
+        // Soft parallax on the product stage shell.
+        const productStage = pageStart.querySelector('.start-product__stage');
+        if (productStage) {
+            gsap.fromTo(productStage, { y: 36 }, {
                 y: -16,
                 ease: 'none',
                 scrollTrigger: {
-                    trigger: iselect,
+                    trigger: productStage,
                     scroller: pageStart,
                     start: 'top bottom',
                     end: 'bottom top',
