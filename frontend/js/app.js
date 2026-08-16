@@ -124,7 +124,6 @@ import { initProfileSettings } from './profileSettings.js';
 import { initLoginPage, teardownLoginPage } from './loginPage.js';
 import { initStartSite, teardownStartSite } from './startSite.js';
 import { initAboutSecurity, teardownAboutSecurity } from './aboutSecurity.js';
-import { playLoginSuccessReveal, resetLoginBackground } from './loginCanvas.js';
 import {
     addPasteAttachment,
     clearPasteAttachments,
@@ -745,7 +744,7 @@ async function handleNavigation(view, param) {
             initLoginPage(DOM.pageLogin);
             loginUiMounted = true;
         } else {
-            resetLoginBackground(DOM.pageLogin);
+            import('./loginCanvas.js').then((mod) => mod.resetLoginBackground(DOM.pageLogin)).catch(() => {});
         }
     }
     else if (view === 'about-security') {
@@ -837,6 +836,7 @@ async function handleAuth(isLogin) {
             };
 
             setAuthPending(true);
+            const { playLoginSuccessReveal } = await import('./loginCanvas.js');
             await playLoginSuccessReveal(DOM.pageLogin);
             finishLoginSetup(username, savedKeysJWK.publicKey);
 

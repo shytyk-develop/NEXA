@@ -1,14 +1,20 @@
-import { mountLoginBackground, destroyLoginBackground } from './loginCanvas.js';
+let destroyLoginBackgroundFn = () => {};
 
 export function initLoginPage(pageLogin) {
     if (!pageLogin) return;
 
-    mountLoginBackground(pageLogin);
     bindLoginNav(pageLogin);
+
+    // THREE login canvas is heavy — keep it out of the start-route chunk.
+    import('./loginCanvas.js').then((mod) => {
+        destroyLoginBackgroundFn = mod.destroyLoginBackground;
+        mod.mountLoginBackground(pageLogin);
+    }).catch(() => {});
 }
 
 export function teardownLoginPage() {
-    destroyLoginBackground();
+    destroyLoginBackgroundFn();
+    destroyLoginBackgroundFn = () => {};
 }
 
 function bindLoginNav(pageLogin) {

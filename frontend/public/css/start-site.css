@@ -1065,7 +1065,7 @@
 }
 
 /* ─── Step mockups ───────────────────────────────────────────────
-   Flat, minimal UI cards — thin borders, no gloss. */
+   Flat UI cards with a metallic rim light (top/left catch). */
 .start-fc__shot {
     --fc-scale: 1;
     --cycle: 5.8s;
@@ -1078,7 +1078,7 @@
     --ui-live: #34d399;
 
     background: #0a0a0a;
-    border: 1px solid var(--ui-line);
+    border: none;
     border-radius: 20px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
     container-type: inline-size;
@@ -1090,6 +1090,58 @@
     transform: scale(var(--fc-scale));
     transition: transform 0.5s ease, box-shadow 0.45s ease;
     user-select: none;
+}
+
+/* Continuous 1px rim — brighter on the lit top-left edge, like the reference. */
+.start-fc__shot::before {
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.72) 0%,
+        rgba(255, 255, 255, 0.38) 12%,
+        rgba(255, 255, 255, 0.14) 28%,
+        rgba(255, 255, 255, 0.07) 48%,
+        rgba(255, 255, 255, 0.05) 72%,
+        rgba(255, 255, 255, 0.12) 100%
+    );
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    padding: 1px;
+    pointer-events: none;
+    position: absolute;
+    z-index: 6;
+}
+
+/* Soft top streak — the sharp rim catch from the reference. */
+.start-fc__shot::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.12) 6%,
+        rgba(255, 255, 255, 0.55) 18%,
+        rgba(255, 255, 255, 0.75) 32%,
+        rgba(255, 255, 255, 0.35) 48%,
+        rgba(255, 255, 255, 0.5) 62%,
+        rgba(255, 255, 255, 0.2) 78%,
+        transparent 100%
+    );
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.18);
+    content: "";
+    height: 1px;
+    left: 6%;
+    pointer-events: none;
+    position: absolute;
+    right: 6%;
+    top: 0;
+    z-index: 7;
 }
 
 .fcui {
@@ -2107,31 +2159,38 @@
 }
 
 .start-fc__steps-list {
+    align-items: center;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
     justify-content: center;
     list-style: none;
     margin: 0;
     padding: 0;
-    width: 100%;
+    width: auto;
 }
 
 @media (min-width: 768px) {
     .start-fc__steps-list {
-        width: 83.333%;
+        width: auto;
     }
 }
 
 .start-fc__pill {
+    align-items: center;
     background: rgba(115, 115, 115, 0.1);
     border-radius: 999px;
+    box-sizing: border-box;
     cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    justify-content: center;
+    min-height: 0;
+    min-width: 0;
     opacity: 0.5;
-    padding: 4px 12px;
+    padding: 5px 12px;
     pointer-events: auto;
-    transform: scale(0.8);
-    transition: background 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    transition: background 0.3s ease, opacity 0.3s ease;
 }
 
 .start-fc__pill.is-done {
@@ -2139,17 +2198,19 @@
 }
 
 .start-fc__pill.is-active {
-    background: rgba(115, 115, 115, 0.1);
+    background: rgba(115, 115, 115, 0.16);
     opacity: 1;
-    transform: scale(1);
 }
 
 .start-fc__pill-row {
     align-items: center;
     display: flex;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    gap: 8px;
+    gap: 7px;
+    justify-content: center;
+    max-width: 100%;
+    min-width: 0;
     pointer-events: none;
 }
 
@@ -2159,28 +2220,28 @@
     border-radius: 50%;
     display: inline-flex;
     flex-shrink: 0;
-    height: 16px;
+    height: 15px;
     justify-content: center;
-    transition: background 0.3s ease, transform 0.3s ease;
-    width: 16px;
+    transition: background 0.3s ease;
+    width: 15px;
 }
 
 .start-fc__pill-num {
     color: #f4f4f5;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1;
 }
 
 .start-fc__pill-check {
     color: #fff;
     display: none;
-    height: 12px;
-    width: 12px;
+    height: 11px;
+    width: 11px;
 }
 
 .start-fc__pill.is-active .start-fc__pill-dot {
     background: rgba(115, 115, 115, 0.5);
-    transform: scale(1.2);
+    transform: none;
 }
 
 .start-fc__pill.is-active .start-fc__pill-num {
@@ -2201,9 +2262,13 @@
 
 .start-fc__pill-label {
     color: #737373;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: color 0.3s ease;
+    white-space: nowrap;
 }
 
 .start-fc__pill.is-active .start-fc__pill-label {
@@ -2232,7 +2297,7 @@
     }
 }
 
-/* Mobile: stacked phone layout — one mock, readable steps, no overlapping cards */
+/* Mobile: pills → copy on top; mock cards peek out from the bottom edge */
 @media (max-width: 767px) {
     .start-fc {
         margin-top: 28px;
@@ -2255,13 +2320,17 @@
         padding: 0;
     }
 
+    .start-fc__card {
+        overflow: hidden;
+    }
+
     .start-fc__inner {
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
         margin: 0;
         min-height: 0;
-        padding: 14px 14px 18px;
+        padding: 14px 14px 0;
         width: 100%;
     }
 
@@ -2280,24 +2349,25 @@
 
     .start-fc__steps-list {
         display: grid;
-        gap: 6px;
+        gap: 4px;
         grid-template-columns: repeat(4, 1fr);
         width: 100%;
     }
 
     .start-fc__pill {
         align-items: center;
+        border-radius: 999px;
         display: flex;
+        flex: unset;
         justify-content: center;
+        min-height: 0;
         min-width: 0;
         opacity: 0.45;
-        padding: 8px 4px;
-        transform: none;
+        padding: 5px 3px;
     }
 
     .start-fc__pill.is-active {
         opacity: 1;
-        transform: none;
     }
 
     .start-fc__pill.is-done {
@@ -2306,14 +2376,29 @@
 
     .start-fc__pill-row {
         flex-direction: column;
-        gap: 4px;
+        font-size: 11px;
+        gap: 3px;
         justify-content: center;
+    }
+
+    .start-fc__pill-dot {
+        height: 13px;
+        width: 13px;
+    }
+
+    .start-fc__pill-num {
+        font-size: 10px;
+    }
+
+    .start-fc__pill-check {
+        height: 10px;
+        width: 10px;
     }
 
     .start-fc__pill-label {
         display: block;
-        font-size: 10px;
-        letter-spacing: 0.02em;
+        font-size: 9px;
+        letter-spacing: 0.01em;
         line-height: 1.1;
         overflow: hidden;
         text-align: center;
@@ -2323,8 +2408,8 @@
     }
 
     .start-fc__copy {
-        margin-top: 16px;
-        order: 3;
+        margin-top: 18px;
+        order: 2;
         position: relative;
         width: 100%;
         z-index: 3;
@@ -2340,39 +2425,53 @@
     }
 
     .start-fc__stage {
-        height: min(420px, calc(72vw * 1.45));
-        margin-top: 18px;
-        order: 2;
+        flex: 0 0 auto;
+        height: min(360px, calc(100vw * 0.92));
+        margin: 20px -14px 0;
+        order: 3;
+        overflow: visible;
         position: relative;
-        width: 100%;
+        width: calc(100% + 28px);
         z-index: 2;
     }
 
-    .start-fc__shot--s1a {
-        border-radius: 16px;
-        height: 76%;
-        left: 8%;
+    .start-fc__panel {
+        overflow: visible;
+    }
+
+    /* Every mock hangs off the bottom edge and gets clipped by the card. */
+    .start-fc__shot--s1a,
+    .start-fc__shot--s2a,
+    .start-fc__shot--s3a,
+    .start-fc__shot--s4a {
+        left: 50%;
         right: auto;
-        top: 8%;
-        width: 84%;
+        top: auto;
+        transform: translateX(-50%) scale(var(--fc-scale));
+        transform-origin: center bottom;
+    }
+
+    .start-fc__shot--s1a {
+        --fc-scale: 1;
+        border-radius: 18px;
+        bottom: -22%;
+        height: 92%;
+        width: 86%;
     }
 
     .start-fc__shot--s2a {
-        border-radius: 18px;
-        height: 52%;
-        left: 6%;
-        right: auto;
-        top: 26%;
-        width: 88%;
+        --fc-scale: 1;
+        border-radius: 20px;
+        bottom: -16%;
+        height: 72%;
+        width: 90%;
     }
 
     .start-fc__shot--s3a {
-        --fc-scale: 1.08;
-        border-radius: 22px;
-        height: 92%;
-        left: 14%;
-        right: auto;
-        top: 4%;
+        --fc-scale: 1.06;
+        border-radius: 24px;
+        bottom: -28%;
+        height: 108%;
         width: 72%;
     }
 
@@ -2381,20 +2480,18 @@
     }
 
     .start-fc__shot--s4a {
-        --fc-scale: 1.1;
-        border-radius: 20px;
-        height: 82%;
-        left: 8%;
-        right: auto;
-        top: 8%;
+        --fc-scale: 1.08;
+        border-radius: 22px;
+        bottom: -24%;
+        height: 100%;
         width: 84%;
     }
 
     .start-fc__hit {
-        border-radius: 18px;
+        border-radius: 0 0 18px 18px;
         height: auto;
         inset: auto 0 0;
-        top: 42%;
+        top: 38%;
         width: 100%;
         z-index: 2;
     }
@@ -3369,54 +3466,54 @@ body.is-iselect-lightbox-open,
     display: none;
 }
 
-/* Centre core — circular pulse, same structure as the React demo */
+/* Centre core — NEXA mark with soft pulse rings */
 .start-orbit__center {
     align-items: center;
-    background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 48%, #71717a 100%);
+    background: transparent;
     border-radius: 50%;
-    box-shadow: 0 0 40px rgba(243, 244, 246, 0.18);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 0 40px rgba(243, 244, 246, 0.14);
     display: flex;
-    height: 64px;
+    height: 72px;
     justify-content: center;
     left: 50%;
+    overflow: hidden;
     pointer-events: none;
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 64px;
+    width: 72px;
     z-index: 10;
 }
 
-.start-orbit__center::after {
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 50%;
-    content: "";
-    height: 32px;
-    width: 32px;
-}
-
-.start-orbit__center svg {
-    display: none;
+.start-orbit__center-mark {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    width: 100%;
+    z-index: 1;
 }
 
 .start-orbit__center-ping {
     animation: start-orbit-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
-    height: 80px;
+    height: 92px;
     left: 50%;
     opacity: 0.7;
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 80px;
+    width: 92px;
 }
 
 .start-orbit__center-ping--late {
     animation-delay: 0.5s;
-    height: 96px;
+    height: 110px;
     opacity: 0.5;
-    width: 96px;
+    width: 110px;
 }
 
 .start-orbit__field {
@@ -3744,15 +3841,16 @@ body.is-iselect-lightbox-open,
 .start-mobile__eyebrow {
     align-items: center;
     display: inline-flex;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 20px;
 }
 
-.start-mobile__dot {
-    background: #a1a1aa;
-    border-radius: 50%;
-    height: 6px;
-    width: 6px;
+.start-mobile__eyebrow-apple {
+    color: #d4d4d8;
+    display: block;
+    flex-shrink: 0;
+    height: 14px;
+    width: 14px;
 }
 
 .start-mobile__title {
@@ -3943,8 +4041,9 @@ body.is-iselect-lightbox-open,
 
 .start-mobile__feats {
     align-items: stretch;
-    display: flex;
-    gap: 0;
+    display: grid;
+    gap: 0 32px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     list-style: none;
     margin: 40px 0 0;
     padding: 0;
@@ -3955,7 +4054,6 @@ body.is-iselect-lightbox-open,
     align-items: center;
     color: #fff;
     display: flex;
-    flex: 1 1 0;
     flex-direction: row;
     font-size: 13px;
     font-weight: 500;
@@ -3963,16 +4061,8 @@ body.is-iselect-lightbox-open,
     letter-spacing: -0.01em;
     line-height: 1.25;
     min-width: 0;
-    padding: 0 14px;
+    padding: 0;
     position: relative;
-}
-
-.start-mobile__feats li:first-child {
-    padding-left: 0;
-}
-
-.start-mobile__feats li:last-child {
-    padding-right: 0;
 }
 
 .start-mobile__feats li:not(:last-child)::after {
@@ -3980,7 +4070,7 @@ body.is-iselect-lightbox-open,
     bottom: 10%;
     content: "";
     position: absolute;
-    right: 0;
+    right: -16px;
     top: 10%;
     width: 1px;
 }
@@ -4186,8 +4276,10 @@ body.is-iselect-lightbox-open,
     }
 
     .start-mobile__feats {
+        display: flex;
         flex-direction: column;
         gap: 14px;
+        grid-template-columns: none;
         margin-top: 28px;
         padding-top: 22px;
     }
@@ -4955,23 +5047,19 @@ body.is-iselect-lightbox-open,
     }
 
     .start-orbit__center {
-        height: 52px;
-        width: 52px;
-    }
-
-    .start-orbit__center::after {
-        height: 24px;
-        width: 24px;
+        border-radius: 50%;
+        height: 56px;
+        width: 56px;
     }
 
     .start-orbit__center-ping {
-        height: 64px;
-        width: 64px;
+        height: 72px;
+        width: 72px;
     }
 
     .start-orbit__center-ping--late {
-        height: 78px;
-        width: 78px;
+        height: 88px;
+        width: 88px;
     }
 
     .start-orbit__card {

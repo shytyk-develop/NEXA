@@ -1,8 +1,5 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { destroyVortex, mountVortex } from './vortex.js';
-import { destroyFeatureCarousel, mountFeatureCarousel } from './featureCarousel.js';
-import { destroyCtaBand, mountCtaBand } from './ctaBand.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -16,31 +13,90 @@ let quotesTimer = 0;
 let armProductAutoplay = null;
 let clearProductProgress = null;
 let orbitCtl = null;
+let startGen = 0;
+let destroyVortexFn = () => {};
+let destroyFeatureCarouselFn = () => {};
+let destroyCtaBandFn = () => {};
+/** @type {IntersectionObserver[]} */
+let lazyObservers = [];
+
+function afterPaint(fn) {
+    requestAnimationFrame(() => requestAnimationFrame(fn));
+}
+
+function whenVisible(el, fn, { root = null, rootMargin = '240px 0px' } = {}) {
+    if (!el) return;
+    if (typeof IntersectionObserver !== 'function') {
+        fn();
+        return;
+    }
+    const io = new IntersectionObserver((entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        lazyObservers = lazyObservers.filter((o) => o !== io);
+        fn();
+    }, { root, rootMargin });
+    lazyObservers.push(io);
+    io.observe(el);
+}
 
 export function initStartSite(pageStart) {
     if (!pageStart) return;
 
+    const gen = ++startGen;
     bindOnce(pageStart);
     pageStart.querySelector('.start-nav')?.classList.remove('is-visible');
     pageStart.querySelector('.start-nav')?.setAttribute('aria-hidden', 'true');
-    mountVortex(pageStart.querySelector('#startHeroVortex'));
-    mountFeatureCarousel(pageStart.querySelector('[data-feature-carousel]'));
-    mountCtaBand(pageStart.querySelector('[data-cta-band]'));
     startOrbit(pageStart);
     startMotion(pageStart);
     startQuotesRotation(pageStart);
     armProductAutoplay?.();
+
+    // THREE vortex is the heaviest hero cost — wait for first paint, then load.
+    afterPaint(() => {
+        if (gen !== startGen) return;
+        import('./vortex.js').then((mod) => {
+            if (gen !== startGen) return;
+            destroyVortexFn = mod.destroyVortex;
+            mod.mountVortex(pageStart.querySelector('#startHeroVortex'));
+        }).catch(() => {});
+    });
+
+    // Below-the-fold widgets: fetch only when they approach the viewport.
+    whenVisible(pageStart.querySelector('[data-feature-carousel]'), () => {
+        if (gen !== startGen) return;
+        import('./featureCarousel.js').then((mod) => {
+            if (gen !== startGen) return;
+            destroyFeatureCarouselFn = mod.destroyFeatureCarousel;
+            mod.mountFeatureCarousel(pageStart.querySelector('[data-feature-carousel]'));
+        }).catch(() => {});
+    }, { root: pageStart, rootMargin: '280px 0px' });
+
+    whenVisible(pageStart.querySelector('[data-cta-band]'), () => {
+        if (gen !== startGen) return;
+        import('./ctaBand.js').then((mod) => {
+            if (gen !== startGen) return;
+            destroyCtaBandFn = mod.destroyCtaBand;
+            mod.mountCtaBand(pageStart.querySelector('[data-cta-band]'));
+        }).catch(() => {});
+    }, { root: pageStart, rootMargin: '320px 0px' });
 }
 
 export function teardownStartSite() {
+    startGen += 1;
+    lazyObservers.forEach((o) => o.disconnect());
+    lazyObservers = [];
     motionCtx?.revert();
     motionCtx = null;
     stopQuotesRotation();
     stopProductAutoplay();
     stopOrbit();
-    destroyFeatureCarousel();
-    destroyCtaBand();
-    destroyVortex();
+    destroyFeatureCarouselFn();
+    destroyCtaBandFn();
+    destroyVortexFn();
+    destroyFeatureCarouselFn = () => {};
+    destroyCtaBandFn = () => {};
+    destroyVortexFn = () => {};
     // Re-arm the intro so the next visit plays it from the top.
     document.querySelector('.start-hero')?.classList.remove('is-ready');
 }
