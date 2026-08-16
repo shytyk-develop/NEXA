@@ -1,7 +1,8 @@
 import { gsap } from 'gsap';
 
-// Long enough for a panel's looping mockup animation to play through once.
-const INTERVAL_MS = 4800;
+// Long enough for a panel's looping mockup animation to play through once
+// (Talk needs ask → reply → like → follow-up).
+const INTERVAL_MS = 5600;
 
 const STEPS = [
     {
