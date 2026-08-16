@@ -619,7 +619,7 @@ function stopQuotesRotation() {
 
 function bindCardSpotlight(pageStart) {
     pageStart.addEventListener('pointermove', (e) => {
-        const card = e.target.closest('.start-card');
+        const card = e.target.closest('.start-card, .start-mobile__panel');
         if (!card) return;
         const rect = card.getBoundingClientRect();
         card.style.setProperty('--mx', `${e.clientX - rect.left}px`);
@@ -917,7 +917,7 @@ function playHeroIntro(pageStart) {
 // out of a soft blur. Keeping the vocabulary this small is what makes the whole
 // page feel like one piece rather than a pile of effects.
 const HEADING_SEL = '.start-h2, .start-h3, .start-cta-band__title';
-const TEXT_GROUP_SEL = '.start-head, .start-split__copy, .start-cta-band';
+const TEXT_GROUP_SEL = '.start-head, .start-split__copy, .start-cta-band, .start-mobile__copy';
 const PART_SEL = [
     '.start-eyebrow',
     '.start-h2',
@@ -929,6 +929,9 @@ const PART_SEL = [
     '.start-cta-band__text',
     '.start-cta-band__eyebrow',
     '.start-cta-band__actions',
+    '.start-mobile__store',
+    '.start-mobile__note',
+    '.start-mobile__feats li',
 ].join(', ');
 
 /** Wrap each word in a clipping box so it can slide up from behind its own
@@ -1005,7 +1008,7 @@ function revealTextGroup(tl, el) {
             at += 0.3;
         } else {
             fadeUp(tl, part, at);
-            at += part.matches('.start-checks li') ? 0.08 : 0.12;
+            at += part.matches('.start-checks li, .start-mobile__feats li') ? 0.08 : 0.12;
         }
     });
 }
@@ -1176,6 +1179,11 @@ function startMotion(pageStart) {
         });
 
         pageStart.querySelectorAll('[data-reveal]').forEach((el) => {
+            // Phone art is desktop-only; skip its entrance on tablet/phone.
+            if (el.matches('.start-mobile__visual') && window.matchMedia('(max-width: 1023px)').matches) {
+                return;
+            }
+
             const tl = gsap.timeline({ scrollTrigger: trigger(el, { start: 'top 88%' }) });
             if (el.matches(TEXT_GROUP_SEL)) {
                 revealTextGroup(tl, el);
@@ -1248,6 +1256,22 @@ function startMotion(pageStart) {
                 },
             });
         });
+
+        // Phone drifts against the copy so the mobile panel feels alive in scroll.
+        const mobilePhone = pageStart.querySelector('.start-mobile__phone');
+        if (mobilePhone && window.matchMedia('(min-width: 1024px)').matches) {
+            gsap.fromTo(mobilePhone, { y: 40 }, {
+                y: -28,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: mobilePhone.closest('.start-mobile__panel') || mobilePhone,
+                    scroller: pageStart,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: 0.7,
+                },
+            });
+        }
     }, pageStart);
 
     // Measure after the page is visible and laid out.
