@@ -1068,7 +1068,7 @@
    Flat, minimal UI cards — thin borders, no gloss. */
 .start-fc__shot {
     --fc-scale: 1;
-    --cycle: 5.2s;
+    --cycle: 5.8s;
     --ui-bg: #050505;
     --ui-text: #f4f4f5;
     --ui-muted: #888888;
@@ -1448,70 +1448,148 @@
 }
 
 .fcui__avatar--lg {
-    font-size: 5.5cqw;
-    height: 16cqw;
-    margin: 0 auto 3.2cqw;
-    width: 16cqw;
+    font-size: 5.2cqw;
+    height: 14cqw;
+    margin: 0 0 2.8cqw;
+    width: 14cqw;
 }
 
-/* ── Profile card ── */
-.fcui--profile {
-    align-items: center;
+.fcui__avatar--rose {
+    background: linear-gradient(160deg, #9a6a64 0%, #523430 100%);
+}
+
+/* ── Profile preview (mirrors app profile-preview) ── */
+.fcui--preview {
     background: #050505;
-    justify-content: center;
-    padding: 5cqw 4.5cqw;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    padding: 3.4cqw 3.2cqw 3.2cqw;
 }
 
-.fcui__profile-kicker {
-    color: var(--ui-muted);
+.fcui__preview-kicker {
+    color: #8a8a8a;
     font-size: 2cqw;
-    font-weight: 650;
-    letter-spacing: 0.14em;
-    margin: 0 0 4cqw;
+    font-weight: 550;
+    letter-spacing: 0.08em;
+    margin: 0 0 2.4cqw 0.4cqw;
     text-transform: uppercase;
 }
 
-.fcui__profile-name {
-    color: #fff;
-    font-size: 3.4cqw;
-    font-weight: 600;
+.fcui__preview-stage {
+    align-items: center;
+    background: #050505;
+    border: 1px solid #1d1d1d;
+    border-radius: 3.2cqw;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+    padding: 5cqw 4cqw;
+    position: relative;
+}
+
+.fcui__preview-bg {
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
+.fcui__preview-grid {
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 7cqw 7cqw;
+    inset: 0;
+    mask-image: radial-gradient(ellipse at 50% 42%, #000 22%, transparent 82%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 42%, #000 22%, transparent 82%);
+    position: absolute;
+}
+
+.fcui__preview-mark {
+    display: block;
+    height: auto;
+    left: 0;
+    mask-image: linear-gradient(180deg, #000 0%, transparent 92%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 92%);
+    opacity: 0.055;
+    position: absolute;
+    top: 52%;
+    transform: translateY(-42%);
+    width: 100%;
+}
+
+.fcui__preview-card {
+    align-items: center;
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 28%, transparent 52%),
+        rgba(10, 10, 12, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 3.6cqw;
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    padding: 5cqw 4.5cqw 4cqw;
+    position: relative;
+    text-align: center;
+    width: min(100%, 72cqw);
+    z-index: 1;
+}
+
+.fcui__preview-card .fcui__avatar--lg {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+}
+
+.fcui__preview-name {
+    color: #f4f4f5;
+    font-size: 3.2cqw;
+    font-weight: 550;
     letter-spacing: -0.02em;
     margin: 0;
 }
 
-.fcui__profile-handle {
-    color: var(--ui-muted);
-    font-size: 2.5cqw;
-    margin: 0.8cqw 0 2.8cqw;
+.fcui__preview-handle {
+    color: #8a8a8a;
+    font-size: 2.35cqw;
+    margin: 0.7cqw 0 2cqw;
 }
 
-.fcui__profile-status {
+.fcui__preview-bio {
+    color: #6e6e6e;
+    font-size: 2.2cqw;
+    line-height: 1.4;
+    margin: 0 0 2.6cqw;
+}
+
+.fcui__preview-status {
     align-items: center;
     color: var(--ui-live);
     display: inline-flex;
-    font-size: 2.3cqw;
-    font-weight: 550;
+    font-size: 2.2cqw;
+    font-weight: 500;
     gap: 1.2cqw;
-    margin: 0 0 4.5cqw;
+    margin: 0;
 }
 
-.fcui__profile-status i {
+.fcui__preview-status i {
     background: currentColor;
     border-radius: 50%;
-    height: 1.5cqw;
-    width: 1.5cqw;
-}
-
-.fcui__cta--block {
-    width: 100%;
-    justify-content: center;
+    box-shadow: 0 0 1.2cqw currentColor;
+    height: 1.45cqw;
+    width: 1.45cqw;
 }
 
 .fcui--browser,
 .fcui--pad,
 .fcui--chat,
-.fcui--profile {
+.fcui--preview {
     min-height: 100%;
 }
 
@@ -1729,7 +1807,7 @@
 
 .start-fc__panel.is-active .fcui__online i,
 .start-fc__panel.is-active .fcui__presence.is-online,
-.start-fc__panel.is-active .fcui__profile-status i {
+.start-fc__panel.is-active .fcui__preview-status i {
     animation: fcuiBreathe 2.2s ease-in-out infinite;
 }
 
@@ -1739,7 +1817,23 @@
 
 .start-fc__panel.is-active .fcui__react {
     animation: fcuiSeq var(--cycle) ease-in-out infinite both;
-    animation-delay: 2.2s;
+}
+
+/* Step 4 — conversation beat: ask → reply → like → our follow-up */
+.start-fc__panel.is-active .start-fc__shot--s4a .fcui__msg--own.fcui__seq--2 {
+    animation-delay: 0.4s;
+}
+
+.start-fc__panel.is-active .start-fc__shot--s4a .fcui__msg--other.fcui__late {
+    animation-delay: 1.45s;
+}
+
+.start-fc__panel.is-active .start-fc__shot--s4a .fcui__react {
+    animation-delay: 2.4s;
+}
+
+.start-fc__panel.is-active .start-fc__shot--s4a .fcui__msg--own.fcui__late--3 {
+    animation-delay: 3.35s;
 }
 
 @keyframes fcuiSeq {
@@ -1803,13 +1897,13 @@
 }
 
 .start-fc__shot--s3b {
-    /* Find: profile of the person you found — fills the left */
-    border-radius: 24px;
-    height: 62%;
-    left: 4%;
+    /* Find: profile preview — fills the left */
+    border-radius: 22px;
+    height: 70%;
+    left: 3%;
     right: auto;
-    top: 28%;
-    width: 36%;
+    top: 22%;
+    width: 38%;
     z-index: 1;
 }
 
@@ -1894,81 +1988,93 @@
     width: 1.9cqw;
 }
 
-/* Step 4 — punch up the message bubble */
+/* Step 4 — readable chat type (not oversized) */
 .start-fc__shot--s4a .fcui__chat-head {
-    padding: 3.2cqw 3.4cqw;
+    padding: 2.4cqw 2.8cqw;
 }
 
 .start-fc__shot--s4a .fcui__ident strong {
-    font-size: 3.2cqw;
+    font-size: 2.35cqw;
 }
 
 .start-fc__shot--s4a .fcui__online {
-    font-size: 2.6cqw !important;
+    font-size: 1.9cqw !important;
 }
 
 .start-fc__shot--s4a .fcui__chat {
-    gap: 3.2cqw;
+    gap: 2.4cqw;
     justify-content: center;
-    padding: 5cqw 4cqw;
+    padding: 3.6cqw 3.2cqw;
 }
 
 .start-fc__shot--s4a .fcui__msg {
-    max-width: 94%;
+    max-width: 88%;
 }
 
 .start-fc__shot--s4a .fcui__bubble {
-    border-radius: 4.2cqw;
-    gap: 1.4cqw;
-    padding: 3.2cqw 3.6cqw 2.4cqw;
+    border-radius: 3.2cqw;
+    gap: 1cqw;
+    padding: 2.2cqw 2.6cqw 1.7cqw;
 }
 
 .start-fc__shot--s4a .fcui__msg--own .fcui__bubble {
-    border-bottom-right-radius: 1.2cqw;
+    border-bottom-right-radius: 1cqw;
 }
 
 .start-fc__shot--s4a .fcui__msg--other .fcui__bubble {
-    border-bottom-left-radius: 1.2cqw;
+    border-bottom-left-radius: 1cqw;
 }
 
 .start-fc__shot--s4a .fcui__bubble-text {
-    font-size: 3.5cqw;
-    font-weight: 500;
-    line-height: 1.35;
+    font-size: 2.35cqw;
+    font-weight: 450;
+    line-height: 1.4;
 }
 
 .start-fc__shot--s4a .fcui__bubble-meta {
-    font-size: 2.4cqw;
+    font-size: 1.75cqw;
 }
 
 .start-fc__shot--s4a .fcui__react {
-    bottom: -2cqw;
-    font-size: 3cqw;
-    padding: 0.7cqw 1.4cqw;
+    bottom: -1.5cqw;
+    font-size: 2.2cqw;
+    padding: 0.5cqw 1cqw;
 }
 
 .start-fc__shot--s4a .fcui__composer {
-    gap: 2cqw;
-    padding: 1.8cqw 1.6cqw 1.8cqw 3.2cqw;
+    gap: 1.5cqw;
+    padding: 1.3cqw 1.3cqw 1.3cqw 2.5cqw;
 }
 
 .start-fc__shot--s4a .fcui__composer-text {
-    font-size: 3cqw;
+    font-size: 2.2cqw;
 }
 
 .start-fc__shot--s4a .fcui__attach {
-    height: 3.8cqw;
-    width: 3.8cqw;
+    height: 3cqw;
+    width: 3cqw;
 }
 
 .start-fc__shot--s4a .fcui__send {
-    height: 6.8cqw;
-    width: 6.8cqw;
+    height: 5.2cqw;
+    width: 5.2cqw;
 }
 
 .start-fc__shot--s4a .fcui__send svg {
-    height: 3.2cqw;
-    width: 3.2cqw;
+    height: 2.5cqw;
+    width: 2.5cqw;
+}
+
+.start-fc__shot--s4a .fcui__avatar--sm {
+    font-size: 1.8cqw;
+    height: 5.6cqw;
+    width: 5.6cqw;
+}
+
+.start-fc__shot--s4a .fcui__back,
+.start-fc__shot--s4a .fcui__chat-tools svg {
+    height: 2.5cqw;
+    width: 2.5cqw;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1977,7 +2083,7 @@
     .start-fc__panel.is-active .fcui__caret,
     .start-fc__panel.is-active .fcui__online i,
     .start-fc__panel.is-active .fcui__presence.is-online,
-    .start-fc__panel.is-active .fcui__profile-status i,
+    .start-fc__panel.is-active .fcui__preview-status i,
     .start-fc__panel.is-active .fcui__send,
     .start-fc__panel.is-active .fcui__react {
         animation: none;
