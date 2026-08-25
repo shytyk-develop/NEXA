@@ -280,7 +280,9 @@ origin-e2e-chat/
 ├── backend/
 │   ├── main.py              # FastAPI app, REST routes, WebSocket endpoint
 │   ├── ws_manager.py        # Connection manager, event routing, presence
-│   ├── database.py          # PostgreSQL schema, queries, connection pool
+│   ├── database.py          # PostgreSQL queries, connection pool
+│   ├── alembic.ini          # Alembic config
+│   ├── alembic/             # Schema migrations
 │   └── requirements.txt
 ├── frontend/
 │   ├── index.html           # SPA shell and inline critical styles
@@ -312,7 +314,8 @@ origin-e2e-chat/
 |------|-------------|
 | `backend/main.py` | HTTP API and WebSocket entry point |
 | `backend/ws_manager.py` | Real-time event dispatch and session state |
-| `backend/database.py` | Schema migrations on startup, all SQL access |
+| `backend/database.py` | All SQL access and connection pool |
+| `backend/alembic/` | Schema migrations (Alembic) |
 | `frontend/js/crypto.js` | Encryption implementation — start here for security review |
 | `frontend/js/app.js` | Orchestrates login, chat, and WebSocket event handling |
 | `frontend/ui/overlays/` | Shared overlay manager used by menus and modals |
@@ -350,7 +353,11 @@ DATABASE_URL=postgresql://user:password@localhost:5432/originhub
 JWT_SECRET_KEY=replace_with_a_long_random_secret_at_least_32_bytes
 ```
 
-Tables are created automatically when the backend module loads (`database.init_db()` runs on import).
+Apply schema migrations (required before first start):
+
+```bash
+alembic upgrade head
+```
 
 Start the API server:
 
@@ -430,11 +437,27 @@ CORS allowed origins are configured in `backend/main.py`.
 
 ```bash
 cd backend
-source venv/bin/activate
+source venv/bin/activate   # or ../venv if using repo-root venv
 uvicorn main:app --reload --port 8000
 ```
 
 Interactive API docs: `http://localhost:8000/docs`
+
+### Database migrations (Alembic)
+
+Schema changes live under `backend/alembic/versions/`. Always use a PostgreSQL `DATABASE_URL`.
+
+```bash
+cd backend
+# apply pending migrations
+alembic upgrade head
+
+# create a new revision after editing the generated file
+alembic revision -m "add_foo_column"
+
+# existing DB already matches baseline schema
+alembic stamp head
+```
 
 ### Frontend
 
@@ -450,7 +473,7 @@ npm run preview   # serve production build locally
 **Backend (example: Render)**
 
 1. Create a Web Service from the `backend/` directory.
-2. Set start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+2. Set start command: `alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT`
 3. Add environment variables: `DATABASE_URL`, `JWT_SECRET_KEY`.
 4. Attach a PostgreSQL instance and copy its connection string.
 
