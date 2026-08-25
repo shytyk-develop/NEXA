@@ -1,0 +1,8 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "pythonVersion": "3.11",
+  "include": ["backend"],
+  "exclude": ["venv", "frontend", "**/__pycache__"],
+  "reportMissingModuleSource": "none"
+}
