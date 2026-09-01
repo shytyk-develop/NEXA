@@ -1515,6 +1515,16 @@
     font-weight: 500;
 }
 
+#page-chat .profile-workspace .profile-sec-meta-value.is-online {
+    color: #d4f562;
+}
+
+#page-chat .profile-workspace .profile-devices-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 #page-chat .profile-workspace .profile-sec-keys-grid {
     display: grid;
     flex: 1;

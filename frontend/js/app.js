@@ -133,7 +133,7 @@ import {
     setPasteAttachmentsChangeHandler,
     shouldCapturePaste,
 } from './smartPaste.js';
-import { getPrivacyFlags, isChatMuted, toggleChatMuted } from './privacy.js';
+import { getPrivacyFlags, isChatMuted, toggleChatMuted, loadMutedChats } from './privacy.js';
 import { registerShortcuts } from './shortcuts.js';
 import {
     buildChatTranscript,
@@ -155,7 +155,19 @@ import {
     deleteMessage,
     deleteConversation,
     updateProfile,
+    registerDevice,
+    syncMuted,
 } from './api.js';
+import {
+    detectDeviceInfo,
+    devicePayload,
+    enrichDeviceInfo,
+} from './device.js';
+import {
+    ensureNotificationPermission,
+    notificationPrefs,
+    notifyIncomingMessage,
+} from './notifications.js';
 import {
     cacheRemoteProfileFromApi,
     clearProfileDirectory,
@@ -546,6 +558,7 @@ initProfileSettings({
         return null;
     },
     getPreferences: () => state.preferences,
+    getToken: () => state.token || localStorage.getItem('auth_token') || '',
     onPreferenceChange: (key, value) => {
         state.preferences = updatePreference(state.preferences, key, value);
         setPreferenceControls(state.preferences);
@@ -897,6 +910,58 @@ async function loadSidebarChats() {
     }
 }
 
+async function registerCurrentDevice(info = detectDeviceInfo()) {
+    if (!state.token) return;
+    try {
+        await registerDevice(state.token, devicePayload(info));
+    } catch (err) {
+        console.warn('Device registration failed:', err);
+    }
+}
+
+async function enrichAndRegisterDevice() {
+    const info = await enrichDeviceInfo(detectDeviceInfo());
+    await registerCurrentDevice(info);
+}
+
+async function ensureDesktopNotifications() {
+    if (!notificationPrefs(state.preferences).enabled) return;
+    await ensureNotificationPermission();
+}
+
+async function syncMutedToServer() {
+    if (!state.token || !state.myUsername) return;
+    try {
+        await syncMuted(state.token, [...loadMutedChats(state.myUsername)]);
+    } catch (err) {
+        console.warn('Mute sync failed:', err);
+    }
+}
+
+function chatLabel(username) {
+    const chat = (state.sidebarChats || []).find((row) => row.username === username);
+    const name = chat?.display_name || chat?.displayName;
+    return (name && String(name).trim()) || username;
+}
+
+function maybeNotifyIncomingMessage(from, text, isActiveChat) {
+    const prefs = notificationPrefs(state.preferences);
+    if (!prefs.enabled) return;
+    if (isChatMuted(state.myUsername, from)) return;
+    if (isActiveChat && document.visibilityState === 'visible') return;
+
+    const preview = String(text || '').trim();
+    notifyIncomingMessage({
+        title: chatLabel(from),
+        body: prefs.preview ? (preview || 'New message') : 'New message',
+        tag: `nexa-message-${from}`,
+        sound: prefs.sound,
+        onClick: () => {
+            void switchChat(from);
+        },
+    });
+}
+
 // Runs after SUCCESSFUL login
 function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat') {
     state.myUsername = username;
@@ -909,6 +974,9 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
     showContactsLoading();
     loadSidebarChats();
     ensureRealtime();
+    void registerCurrentDevice();
+    void ensureDesktopNotifications();
+    void syncMutedToServer();
 
     if (socketConnection) {
         socketConnection.close();
@@ -918,14 +986,17 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
         state.token,
         (activeSocket) => {
             updateStatus("Online", "text-green-500");
+            const device = devicePayload(detectDeviceInfo());
             sendPacket(activeSocket, "join", {
                 username: state.myUsername,
                 public_key: exportedPublicKeyJSON,
                 share_presence: getPrivacyFlags(state.preferences).showOnlineStatus,
+                ...device,
             });
             if (state.currentTargetUser) {
                 sendPacket(activeSocket, "chat_focus", { partner: state.currentTargetUser });
             }
+            void enrichAndRegisterDevice();
         },
         async (event) => {
             const data = JSON.parse(event.data);
@@ -973,6 +1044,7 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
                 if (!isActiveChat && !isChatMuted(state.myUsername, data.from)) {
                     ensureRealtime().incrementUnread(data.from);
                 }
+                maybeNotifyIncomingMessage(data.from, decryptedText, isActiveChat);
 
                 const incoming = {
                     id: data.id,
@@ -1499,6 +1571,30 @@ DOM.fileInput.addEventListener('change', () => {
 bindPreferenceToggle(DOM.prefEnterSend, 'enterToSend');
 bindPreferenceToggle(DOM.prefCompactMode, 'compactMode');
 bindPreferenceToggle(DOM.prefShowTimestamps, 'showTimestamps');
+bindPreferenceToggle(DOM.prefMessagePreview, 'messageNotificationPreview');
+bindPreferenceToggle(DOM.prefMessageSound, 'messageNotificationSound');
+
+if (DOM.prefMessageNotifications) {
+    DOM.prefMessageNotifications.addEventListener('change', async () => {
+        const enabled = DOM.prefMessageNotifications.checked;
+        if (enabled) {
+            const granted = await ensureNotificationPermission();
+            if (!granted) {
+                DOM.prefMessageNotifications.checked = false;
+                state.preferences = updatePreference(state.preferences, 'messageNotifications', false);
+                setPreferenceControls(state.preferences);
+                showToast(
+                    notificationPermissionDeniedMessage(),
+                    'error'
+                );
+                return;
+            }
+        }
+        state.preferences = updatePreference(state.preferences, 'messageNotifications', enabled);
+        setPreferenceControls(state.preferences);
+        showToast('Notification setting saved.', 'success');
+    });
+}
 
 if (DOM.glassPicker) {
     DOM.glassPicker.addEventListener('click', (event) => {
@@ -1550,11 +1646,17 @@ function handleAuthKeyboard(event) {
 }
 
 function bindPreferenceToggle(control, key) {
+    if (!control) return;
     control.addEventListener('change', () => {
         state.preferences = updatePreference(state.preferences, key, control.checked);
         setPreferenceControls(state.preferences);
         showToast("Interface setting saved.", "success");
     });
+}
+
+function notificationPermissionDeniedMessage() {
+    if (!('Notification' in window)) return 'This browser does not support desktop notifications.';
+    return 'Notifications are blocked. Allow them in the browser settings, then try again.';
 }
 
 function handleContactSearchInput() {
@@ -1628,6 +1730,7 @@ function toggleCurrentChatMute() {
     closeAllPopovers();
     showToast(muted ? 'Chat muted locally.' : 'Chat unmuted.', 'success');
     syncRealtimeUi();
+    void syncMutedToServer();
 }
 
 function openCurrentChatInfo() {

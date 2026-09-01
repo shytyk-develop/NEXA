@@ -2517,6 +2517,18 @@
                         </section>
                     </div>
 
+                    <div data-profile-section="devices" class="profile-security-layout hidden">
+                        <section class="profile-sec-block">
+                            <h3 class="profile-sec-kicker">Current session</h3>
+                            <div id="uiProfileDevicesCurrent" class="profile-devices-stack"></div>
+                        </section>
+                        <section id="uiProfileDevicesOthersWrap" class="profile-sec-block" hidden>
+                            <h3 class="profile-sec-kicker">Active sessions</h3>
+                            <div id="uiProfileDevicesOthers" class="profile-devices-stack"></div>
+                        </section>
+                        <p id="uiProfileDevicesEmpty" class="profile-sec-text" hidden>No other devices are signed in.</p>
+                    </div>
+
                     <div data-profile-section="privacy" class="profile-privacy-layout hidden">
                         <section class="profile-sec-block">
                             <h3 class="profile-sec-kicker">Presence</h3>
@@ -2681,6 +2693,18 @@
             <label class="toggle-row">
                 <input id="uiPrefShowTimestamps" type="checkbox">
                 <span>Show message timestamps</span>
+            </label>
+            <label class="toggle-row">
+                <input id="uiPrefMessageNotifications" type="checkbox">
+                <span>Message notifications</span>
+            </label>
+            <label class="toggle-row">
+                <input id="uiPrefMessagePreview" type="checkbox">
+                <span>Show message preview</span>
+            </label>
+            <label class="toggle-row">
+                <input id="uiPrefMessageSound" type="checkbox">
+                <span>Notification sound</span>
             </label>
             <div class="toggle-row" style="flex-direction: column; align-items: stretch; cursor: default;">
                 <p class="settings-label">Glass intensity</p>

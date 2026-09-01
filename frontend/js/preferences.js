@@ -11,6 +11,9 @@ export const DEFAULT_PREFERENCES = {
     typingIndicators: true,
     profileVisible: true,
     linkPreviews: true,
+    messageNotifications: true,
+    messageNotificationPreview: true,
+    messageNotificationSound: true,
 };
 
 export function applyTheme() {
