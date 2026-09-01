@@ -4,6 +4,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 import qrcode
+from qrcode.constants import ERROR_CORRECT_H
 
 QR_SCHEME_PREFIX = "nexa:u/"
 MARK_PATH = Path(__file__).resolve().parent / "assets" / "nexa-n-mark.png"
@@ -27,7 +28,7 @@ def qr_payload(username: str, token: str) -> str:
 def render_qr_png(payload: str) -> bytes:
     qr = qrcode.QRCode(
         version=None,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=1,
         border=0,
     )
@@ -89,7 +90,7 @@ def _render_liquid_matrix(matrix: list[list[bool]]) -> Image.Image:
                 )
 
     melted = layer.filter(ImageFilter.GaussianBlur(radius=max(1.0, cell * 0.10)))
-    melted = melted.point(lambda pixel: 255 if pixel >= 128 else 0)
+    melted = melted.point(_binarize_melted_pixel)
 
     color = melted.convert("RGB")
     draw_color = ImageDraw.Draw(color)
@@ -148,15 +149,22 @@ def _embed_logo(image: Image.Image) -> Image.Image:
     return Image.alpha_composite(out, overlay).convert("RGB")
 
 
+def _binarize_melted_pixel(pixel: float) -> float:
+    return 255.0 if pixel >= 128 else 0.0
+
+
 def _flatten_mark_black(mark: Image.Image) -> Image.Image:
     """Logo artwork uses near-black; match the QR canvas so the disc doesn't halo."""
-    pixels = mark.load()
-    width, height = mark.size
+    rgba = mark.convert("RGBA")
+    width, height = rgba.size
     for y in range(height):
         for x in range(width):
-            red, green, blue, alpha = pixels[x, y]
+            pixel = rgba.getpixel((x, y))
+            if not isinstance(pixel, tuple) or len(pixel) < 4:
+                continue
+            red, green, blue, alpha = pixel[0], pixel[1], pixel[2], pixel[3]
             if alpha == 0:
                 continue
             if red < 48 and green < 48 and blue < 48:
-                pixels[x, y] = (0, 0, 0, 255)
-    return mark
+                rgba.putpixel((x, y), (0, 0, 0, 255))
+    return rgba
