@@ -11,9 +11,7 @@ import {
 import { getMyReaction, getReactionCounts, QUICK_REACTIONS } from './messageReactions.js';
 import {
     appendLinkedTextContent,
-    createLinkSecurityNotice,
-    messageContainsLink,
-    isSafeWebHref,
+    handleExternalLinkClick,
 } from './messageLinks.js';
 import { hydrateProfilePrivacy, onProfilePanelClose, queueProfilePanelRefresh } from './profileSettings.js';
 import { getPrivacyFlags, isChatMuted } from './privacy.js';
@@ -101,6 +99,9 @@ export const DOM = {
     prefEnterSend: document.getElementById('uiPrefEnterSend'),
     prefCompactMode: document.getElementById('uiPrefCompactMode'),
     prefShowTimestamps: document.getElementById('uiPrefShowTimestamps'),
+    prefMessageNotifications: document.getElementById('uiPrefMessageNotifications'),
+    prefMessagePreview: document.getElementById('uiPrefMessagePreview'),
+    prefMessageSound: document.getElementById('uiPrefMessageSound'),
     glassPicker: document.getElementById('uiGlassPicker'),
 
     profilePanel: document.getElementById('uiProfilePanel'),
@@ -1110,10 +1111,6 @@ function buildMessageElement(message, previousMessage = null) {
     bodyRow.append(textEl, meta);
     inner.append(bodyRow);
 
-    if (messageContainsLink(message.text)) {
-        inner.append(createLinkSecurityNotice());
-    }
-
     bubble.append(inner);
 
     const hoverActions = document.createElement('div');
@@ -1215,10 +1212,7 @@ function handleMessageActionsEvent(event) {
     if (event.type === 'click') {
         const link = event.target.closest('.message-link');
         if (link) {
-            const href = link.getAttribute('href');
-            if (!href || !isSafeWebHref(href)) {
-                event.preventDefault();
-            }
+            handleExternalLinkClick(event, link);
             return;
         }
     }
@@ -1932,6 +1926,15 @@ export function setPreferenceControls(preferences) {
     DOM.prefEnterSend.checked = preferences.enterToSend;
     DOM.prefCompactMode.checked = preferences.compactMode;
     DOM.prefShowTimestamps.checked = preferences.showTimestamps;
+    if (DOM.prefMessageNotifications) {
+        DOM.prefMessageNotifications.checked = preferences.messageNotifications !== false;
+    }
+    if (DOM.prefMessagePreview) {
+        DOM.prefMessagePreview.checked = preferences.messageNotificationPreview !== false;
+    }
+    if (DOM.prefMessageSound) {
+        DOM.prefMessageSound.checked = preferences.messageNotificationSound !== false;
+    }
 
     syncPickerActive(DOM.glassPicker, 'data-glass-value', preferences.glassIntensity || 'medium');
     setUiPreferences(preferences);

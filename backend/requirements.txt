@@ -5,5 +5,9 @@ psycopg2-binary
 python-dotenv
 bcrypt
 PyJWT
+cryptography
+httpx[http2]
 alembic
 SQLAlchemy
+qrcode
+pillow

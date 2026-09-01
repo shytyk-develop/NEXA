@@ -83,11 +83,11 @@
     font: inherit;
     margin: 0;
     max-width: 100%;
-    min-width: 0;
+    min-width: 100%;
     padding: 4px 8px 4px 6px;
     text-align: left;
     transition: background 120ms ease;
-    width: 100%;
+    width: 0;
 }
 
 .message-bubble--own .message-reply-preview {

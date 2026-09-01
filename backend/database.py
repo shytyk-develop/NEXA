@@ -5,10 +5,14 @@ from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import execute_values
 import json
 import os
+import time
+import uuid
 import bcrypt
 from dotenv import load_dotenv
 from typing import Optional
 from datetime import datetime, timezone
+
+from qr_codes import build_user_qr_png, new_qr_token, qr_payload
 
 # Load variables from .env (for local development)
 load_dotenv()
@@ -17,7 +21,22 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --- HIGH LOAD CONFIGURATION: CONNECTION POOL ---
 # Initialize a global connection pool (min 2, max 20 threads/connections)
-db_pool = ThreadedConnectionPool(2, 20, dsn=DATABASE_URL)
+def _create_pool(retries: int = 4, delay: float = 1.5) -> ThreadedConnectionPool:
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set")
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            return ThreadedConnectionPool(2, 20, dsn=DATABASE_URL)
+        except psycopg2.OperationalError as exc:
+            last_error = exc
+            if attempt == retries:
+                break
+            time.sleep(delay)
+    raise last_error
+
+
+db_pool = _create_pool()
 
 def get_connection():
     """Retrieves a functional connection from the connection pool"""
@@ -55,11 +74,17 @@ def register_user_db(username: str, password: str, public_key, encrypted_private
         public_key_str = public_key
     
     hashed_pw = hash_password(password)
+    qr_token = new_qr_token()
+    qr_png = build_user_qr_png(username, qr_token)
     
     try:
         cursor.execute(
-            'INSERT INTO users (username, password_hash, public_key, encrypted_private_key) VALUES (%s, %s, %s, %s)', 
-            (username, hashed_pw, public_key_str, encrypted_private_key)
+            '''
+            INSERT INTO users (
+                username, password_hash, public_key, encrypted_private_key, qr_token, qr_png
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+            ''',
+            (username, hashed_pw, public_key_str, encrypted_private_key, qr_token, psycopg2.Binary(qr_png))
         )
         conn.commit()
         return True
@@ -355,7 +380,41 @@ def get_user_profile_db(username: str) -> Optional[dict]:
         "display_name": user.get("display_name", ""),
         "bio": user.get("bio", ""),
         "avatar_data": user.get("avatar_data"),
+        "status": user.get("status") or "",
     }
+
+def ensure_user_qr_db(username: str) -> Optional[dict]:
+    """Return QR payload and PNG, creating them if this user predates the column."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'SELECT qr_token, qr_png FROM users WHERE username = %s',
+            (username,),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        token = str(row[0]) if row[0] else new_qr_token()
+        # Rebuild so visual style updates (liquid Telegram look) apply to existing users.
+        png = build_user_qr_png(username, token)
+        cursor.execute(
+            'UPDATE users SET qr_token = %s, qr_png = %s WHERE username = %s',
+            (token, psycopg2.Binary(png), username),
+        )
+        conn.commit()
+        return {
+            "username": username,
+            "token": token,
+            "payload": qr_payload(username, token),
+            "png": png,
+        }
+    except Exception as exc:
+        conn.rollback()
+        raise exc
+    finally:
+        release_connection(conn)
 
 # --- OPTIMIZED MESSAGE FUNCTIONS WITH BATCHING & PAGINATION ---
 
@@ -689,6 +748,261 @@ def get_and_delete_offline_messages(receiver: str) -> list:
         } for row in rows]
     finally:
         release_connection(conn)
+
+ALLOWED_DEVICE_PLATFORMS = {
+    "ios",
+    "ipados",
+    "macos",
+    "windows",
+    "android",
+    "linux",
+    "web",
+    "unknown",
+}
+
+
+def parse_device_id(value) -> Optional[str]:
+    if not value:
+        return None
+    try:
+        return str(uuid.UUID(str(value).strip()))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def sanitize_device_text(value, max_len: int) -> str:
+    if not isinstance(value, str):
+        return ""
+    cleaned = "".join(ch for ch in value.strip() if ch.isprintable())
+    return cleaned[:max_len]
+
+
+def sanitize_device_platform(value) -> str:
+    key = value.strip().lower() if isinstance(value, str) else ""
+    return key if key in ALLOWED_DEVICE_PLATFORMS else "unknown"
+
+
+def _session_row_to_dict(row) -> dict:
+    last_seen = row[6]
+    created_at = row[7]
+    return {
+        "id": row[0],
+        "username": row[1],
+        "device_id": str(row[2]),
+        "device_name": row[3] or "",
+        "platform": row[4] or "unknown",
+        "os_version": row[5] or "",
+        "last_seen": last_seen.isoformat() if last_seen else None,
+        "created_at": created_at.isoformat() if created_at else None,
+    }
+
+
+def sanitize_apns_token(value) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    token = "".join(ch for ch in value if ch.isalnum()).lower()
+    if 32 <= len(token) <= 256:
+        return token
+    return None
+
+
+def upsert_user_session_db(
+    username: str,
+    device_id: str,
+    device_name: str = "",
+    platform: str = "unknown",
+    os_version: str = "",
+    apns_token: Optional[str] = None,
+    apns_sandbox: Optional[bool] = None,
+    notify_messages: Optional[bool] = None,
+    notify_sound: Optional[bool] = None,
+    notify_preview: Optional[bool] = None,
+) -> Optional[dict]:
+    parsed_id = parse_device_id(device_id)
+    if not parsed_id:
+        return None
+
+    name = sanitize_device_text(device_name, 64)
+    plat = sanitize_device_platform(platform)
+    os_label = sanitize_device_text(os_version, 64)
+    fallback_name = name or "Unknown device"
+    token = sanitize_apns_token(apns_token)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO user_sessions (
+                username, device_id, device_name, platform, os_version, last_seen,
+                apns_token, apns_sandbox, notify_messages, notify_sound, notify_preview
+            )
+            VALUES (
+                %s, %s, %s, %s, %s, CURRENT_TIMESTAMP,
+                %s, COALESCE(%s, TRUE), COALESCE(%s, TRUE), COALESCE(%s, TRUE), COALESCE(%s, TRUE)
+            )
+            ON CONFLICT (username, device_id) DO UPDATE SET
+                device_name = CASE
+                    WHEN EXCLUDED.device_name <> '' AND EXCLUDED.device_name <> 'Unknown device'
+                    THEN EXCLUDED.device_name
+                    ELSE user_sessions.device_name
+                END,
+                platform = CASE
+                    WHEN EXCLUDED.platform <> 'unknown' THEN EXCLUDED.platform
+                    ELSE user_sessions.platform
+                END,
+                os_version = CASE
+                    WHEN EXCLUDED.os_version <> '' THEN EXCLUDED.os_version
+                    ELSE user_sessions.os_version
+                END,
+                last_seen = CURRENT_TIMESTAMP,
+                apns_token = COALESCE(%s, user_sessions.apns_token),
+                apns_sandbox = COALESCE(%s, user_sessions.apns_sandbox),
+                notify_messages = COALESCE(%s, user_sessions.notify_messages),
+                notify_sound = COALESCE(%s, user_sessions.notify_sound),
+                notify_preview = COALESCE(%s, user_sessions.notify_preview)
+            RETURNING id, username, device_id, device_name, platform, os_version, last_seen, created_at
+            """,
+            (
+                username,
+                parsed_id,
+                fallback_name,
+                plat,
+                os_label,
+                token,
+                apns_sandbox,
+                notify_messages,
+                notify_sound,
+                notify_preview,
+                token,
+                apns_sandbox,
+                notify_messages,
+                notify_sound,
+                notify_preview,
+            ),
+        )
+        row = cursor.fetchone()
+        conn.commit()
+        return _session_row_to_dict(row) if row else None
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        release_connection(conn)
+
+
+def list_user_sessions_db(username: str) -> list:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT id, username, device_id, device_name, platform, os_version, last_seen, created_at
+            FROM user_sessions
+            WHERE username = %s
+            ORDER BY last_seen DESC
+            """,
+            (username,),
+        )
+        return [_session_row_to_dict(row) for row in cursor.fetchall()]
+    finally:
+        release_connection(conn)
+
+
+def list_apns_targets_db(username: str) -> list:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT device_id, apns_token, apns_sandbox, notify_messages, notify_sound, notify_preview
+            FROM user_sessions
+            WHERE username = %s
+              AND apns_token IS NOT NULL
+              AND apns_token <> ''
+            """,
+            (username,),
+        )
+        return [
+            {
+                "device_id": str(row[0]),
+                "apns_token": row[1],
+                "apns_sandbox": bool(row[2]),
+                "notify_messages": bool(row[3]) if row[3] is not None else True,
+                "notify_sound": bool(row[4]) if row[4] is not None else True,
+                "notify_preview": bool(row[5]) if row[5] is not None else True,
+            }
+            for row in cursor.fetchall()
+        ]
+    finally:
+        release_connection(conn)
+
+
+def clear_apns_token_db(apns_token: str) -> None:
+    token = sanitize_apns_token(apns_token)
+    if not token:
+        return
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE user_sessions SET apns_token = NULL WHERE apns_token = %s",
+            (token,),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        release_connection(conn)
+
+
+def set_muted_partners_db(username: str, partners: list) -> list:
+    cleaned = []
+    seen = set()
+    for raw in partners:
+        if not isinstance(raw, str):
+            continue
+        partner = raw.strip().lower()
+        if not partner or partner == username or partner in seen:
+            continue
+        seen.add(partner)
+        cleaned.append(partner)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM muted_chats WHERE username = %s", (username,))
+        for partner in cleaned:
+            cursor.execute(
+                """
+                INSERT INTO muted_chats (username, partner)
+                VALUES (%s, %s)
+                ON CONFLICT DO NOTHING
+                """,
+                (username, partner),
+            )
+        conn.commit()
+        return cleaned
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        release_connection(conn)
+
+
+def is_muted_db(username: str, partner: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT 1 FROM muted_chats WHERE username = %s AND partner = %s",
+            (username, partner),
+        )
+        return cursor.fetchone() is not None
+    finally:
+        release_connection(conn)
+
 
 def _parse_public_key(public_key_str):
     try:

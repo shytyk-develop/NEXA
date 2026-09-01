@@ -1,6 +1,7 @@
 // frontend/js/network.js
 
-const WS_BASE_URL = "wss://originhub.onrender.com/ws";
+// const WS_BASE_URL = "wss://originhub.onrender.com/ws";
+const WS_BASE_URL = "ws://localhost:8000/ws";
 const RECONNECT_BASE_MS = 800;
 const RECONNECT_MAX_MS = 12000;
 

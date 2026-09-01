@@ -10,7 +10,7 @@ import database
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[WebSocket, Dict[str, Any]] = {}
-        self.username_to_websocket: Dict[str, WebSocket] = {}
+        self.username_to_websockets: Dict[str, Set[WebSocket]] = {}
         self.online_usernames: Set[str] = set()
 
     async def connect(self, websocket: WebSocket):
@@ -19,33 +19,60 @@ class ConnectionManager:
             "username": None,
             "public_key": None,
             "active_chat": None,
+            "device_id": None,
         }
 
     async def disconnect(self, websocket: WebSocket):
         session = self.active_connections.pop(websocket, None)
         username = session.get("username") if session else None
-        if username:
-            mapped = self.username_to_websocket.get(username)
-            if mapped is websocket:
-                del self.username_to_websocket[username]
-                self.online_usernames.discard(username)
+        if not username:
+            return
+
+        sockets = self.username_to_websockets.get(username)
+        if sockets:
+            sockets.discard(websocket)
+            if not sockets:
+                del self.username_to_websockets[username]
+
+        remaining = self.username_to_websockets.get(username, set())
+        if remaining:
+            if not self._user_shares_presence(username):
                 await self.broadcast_presence(username, False)
+            return
+
+        self.online_usernames.discard(username)
+        await self.broadcast_presence(username, False)
+
+    def get_websockets_for_user(self, username: str) -> list:
+        return list(self.username_to_websockets.get(username, set()))
 
     def get_websocket_for_user(self, username: str) -> Optional[WebSocket]:
-        return self.username_to_websocket.get(username)
+        sockets = self.get_websockets_for_user(username)
+        return sockets[0] if sockets else None
+
+    def online_device_ids(self, username: str) -> Set[str]:
+        ids: Set[str] = set()
+        for ws in self.username_to_websockets.get(username, set()):
+            device_id = self.active_connections.get(ws, {}).get("device_id")
+            if device_id:
+                ids.add(device_id)
+        return ids
 
     def _session_username(self, websocket: WebSocket) -> Optional[str]:
         return self.active_connections.get(websocket, {}).get("username")
 
-    def _visible_online_usernames(self) -> list:
-        visible = []
-        for username in self.online_usernames:
-            ws = self.username_to_websocket.get(username)
-            if not ws:
-                continue
+    def _user_shares_presence(self, username: str) -> bool:
+        for ws in self.username_to_websockets.get(username, set()):
             if self.active_connections.get(ws, {}).get("share_presence", True):
-                visible.append(username)
-        return sorted(visible)
+                return True
+        return False
+
+    def _visible_online_usernames(self) -> list:
+        return sorted(
+            username
+            for username in self.online_usernames
+            if self._user_shares_presence(username)
+        )
 
     async def register_user(
         self,
@@ -53,25 +80,50 @@ class ConnectionManager:
         username: str,
         public_key: str,
         share_presence: bool = True,
+        device_id: Optional[str] = None,
+        device_name: Optional[str] = None,
+        platform: Optional[str] = None,
+        os_version: Optional[str] = None,
     ):
-        previous = self.username_to_websocket.get(username)
-        if previous and previous is not websocket:
-            await self.disconnect(previous)
-            try:
-                await previous.close(code=1000, reason="Replaced by a newer session")
-            except Exception:
-                pass
+        parsed_device_id = database.parse_device_id(device_id)
+        sockets = self.username_to_websockets.setdefault(username, set())
+
+        if parsed_device_id:
+            for existing in list(sockets):
+                if existing is websocket:
+                    continue
+                if self.active_connections.get(existing, {}).get("device_id") != parsed_device_id:
+                    continue
+                await self.disconnect(existing)
+                try:
+                    await existing.close(code=1000, reason="Replaced by a newer session")
+                except Exception:
+                    pass
+
+        had_other_devices = any(ws is not websocket for ws in self.username_to_websockets.get(username, set()))
 
         self.active_connections[websocket]["username"] = username
         self.active_connections[websocket]["public_key"] = public_key
         self.active_connections[websocket]["share_presence"] = share_presence
+        self.active_connections[websocket]["device_id"] = parsed_device_id
         profile = await asyncio.to_thread(database.get_user_profile_db, username)
         if profile:
             self.active_connections[websocket]["display_name"] = profile.get("display_name", "")
             self.active_connections[websocket]["bio"] = profile.get("bio", "")
             self.active_connections[websocket]["avatar_data"] = profile.get("avatar_data")
-        self.username_to_websocket[username] = websocket
+            self.active_connections[websocket]["status"] = profile.get("status") or ""
+        self.username_to_websockets.setdefault(username, set()).add(websocket)
         self.online_usernames.add(username)
+
+        if parsed_device_id:
+            await asyncio.to_thread(
+                database.upsert_user_session_db,
+                username,
+                parsed_device_id,
+                device_name or "",
+                platform or "unknown",
+                os_version or "",
+            )
 
         await self._send_json(websocket, {
             "type": "presence_sync",
@@ -80,27 +132,26 @@ class ConnectionManager:
         if share_presence:
             await self.broadcast_presence(username, True, exclude=websocket)
 
-        offline_msgs = await asyncio.to_thread(
-            database.get_and_delete_offline_messages, username
-        )
-        for msg in offline_msgs:
-            packet = {
-                "type": "message",
-                "from": msg["sender"],
-                "content": msg["content"],
-                "id": msg.get("id"),
-                "client_message_id": msg.get("client_message_id"),
-                "timestamp": msg.get("timestamp"),
-            }
-            await websocket.send_text(json.dumps(packet))
+        if not had_other_devices:
+            offline_msgs = await asyncio.to_thread(
+                database.get_and_delete_offline_messages, username
+            )
+            for msg in offline_msgs:
+                packet = {
+                    "type": "message",
+                    "from": msg["sender"],
+                    "content": msg["content"],
+                    "id": msg.get("id"),
+                    "client_message_id": msg.get("client_message_id"),
+                    "timestamp": msg.get("timestamp"),
+                }
+                await websocket.send_text(json.dumps(packet))
 
         return True
 
     async def broadcast_presence(self, username: str, is_online: bool, exclude: Optional[WebSocket] = None):
-        if is_online:
-            ws = self.username_to_websocket.get(username)
-            if ws and not self.active_connections.get(ws, {}).get("share_presence", True):
-                return
+        if is_online and not self._user_shares_presence(username):
+            return
 
         payload = {
             "type": "presence",
@@ -116,17 +167,20 @@ class ConnectionManager:
                 await self.disconnect(ws)
 
     async def broadcast_users_list(self):
-        users_from_db = [
-            {
-                "username": session["username"],
+        seen = {}
+        for session in self.active_connections.values():
+            username = session.get("username")
+            if not username or not session.get("public_key") or username in seen:
+                continue
+            seen[username] = {
+                "username": username,
                 "public_key": session["public_key"],
                 "display_name": session.get("display_name", ""),
                 "bio": session.get("bio", ""),
                 "avatar_data": session.get("avatar_data"),
+                "status": session.get("status") or "",
             }
-            for session in self.active_connections.values()
-            if session.get("username") and session.get("public_key")
-        ]
+        users_from_db = list(seen.values())
         message = {"type": "users_list", "users": users_from_db}
         message_json = json.dumps(message)
         for ws in list(self.active_connections.keys()):
@@ -136,15 +190,15 @@ class ConnectionManager:
                 await self.disconnect(ws)
 
     async def set_user_profile(self, username: str, profile: dict):
-        ws = self.username_to_websocket.get(username)
-        if not ws:
-            return
-        session = self.active_connections.get(ws)
-        if not session:
-            return
-        session["display_name"] = profile.get("display_name", "")
-        session["bio"] = profile.get("bio", "")
-        session["avatar_data"] = profile.get("avatar_data")
+        for ws in self.get_websockets_for_user(username):
+            session = self.active_connections.get(ws)
+            if not session:
+                continue
+            session["display_name"] = profile.get("display_name", "")
+            session["bio"] = profile.get("bio", "")
+            session["avatar_data"] = profile.get("avatar_data")
+            if "status" in profile:
+                session["status"] = profile.get("status") or ""
 
     async def broadcast_profile_update(self, username: str, profile: dict):
         await self.set_user_profile(username, profile)
@@ -154,6 +208,7 @@ class ConnectionManager:
             "display_name": profile.get("display_name", ""),
             "bio": profile.get("bio", ""),
             "avatar_data": profile.get("avatar_data"),
+            "status": profile.get("status") or "",
         }
         for ws in list(self.active_connections.keys()):
             try:
@@ -165,15 +220,17 @@ class ConnectionManager:
         await websocket.send_text(json.dumps(payload))
 
     async def _notify_user(self, username: str, payload: dict):
-        ws = self.get_websocket_for_user(username)
-        if not ws:
+        sockets = self.get_websockets_for_user(username)
+        if not sockets:
             return False
-        try:
-            await self._send_json(ws, payload)
-            return True
-        except Exception:
-            await self.disconnect(ws)
-            return False
+        delivered = False
+        for ws in sockets:
+            try:
+                await self._send_json(ws, payload)
+                delivered = True
+            except Exception:
+                await self.disconnect(ws)
+        return delivered
 
     async def notify_message_deleted(self, metadata: dict):
         """Push message_deleted to both conversation participants (all tabs via WS)."""
@@ -341,8 +398,9 @@ class ConnectionManager:
             "reply_to_message_id": validated_reply_id,
         }
 
-        target_websocket = self.get_websocket_for_user(target_username)
-        if target_websocket:
+        target_sockets = self.get_websockets_for_user(target_username)
+        delivered_sockets = []
+        for target_websocket in target_sockets:
             try:
                 if is_new_chat:
                     await self._send_json(target_websocket, {
@@ -353,9 +411,9 @@ class ConnectionManager:
                         },
                     })
                 await self._send_json(target_websocket, packet)
+                delivered_sockets.append(target_websocket)
             except Exception:
                 await self.disconnect(target_websocket)
-                target_websocket = None
 
         saved_message = await asyncio.to_thread(
             database.save_chat_history_message,
@@ -370,29 +428,32 @@ class ConnectionManager:
         packet["id"] = saved_message["id"]
         packet["timestamp"] = saved_message["timestamp"]
 
-        if target_websocket:
-            try:
-                await self._send_json(target_websocket, {
-                    "type": "message_sync",
-                    "from": sender_username,
-                    "client_message_id": client_message_id,
-                    "id": saved_message["id"],
-                    "timestamp": saved_message["timestamp"],
-                    "reply_to_message_id": validated_reply_id,
-                })
-                unread_count = await asyncio.to_thread(
-                    database.get_unread_count_db, target_username, sender_username
-                )
-                await self._send_json(target_websocket, {
-                    "type": "unread_sync",
-                    "partner": sender_username,
-                    "unread_count": unread_count,
-                })
-            except Exception:
-                await self.disconnect(target_websocket)
-                target_websocket = None
+        if delivered_sockets:
+            unread_count = await asyncio.to_thread(
+                database.get_unread_count_db, target_username, sender_username
+            )
+            still_alive = []
+            for target_websocket in delivered_sockets:
+                try:
+                    await self._send_json(target_websocket, {
+                        "type": "message_sync",
+                        "from": sender_username,
+                        "client_message_id": client_message_id,
+                        "id": saved_message["id"],
+                        "timestamp": saved_message["timestamp"],
+                        "reply_to_message_id": validated_reply_id,
+                    })
+                    await self._send_json(target_websocket, {
+                        "type": "unread_sync",
+                        "partner": sender_username,
+                        "unread_count": unread_count,
+                    })
+                    still_alive.append(target_websocket)
+                except Exception:
+                    await self.disconnect(target_websocket)
+            delivered_sockets = still_alive
 
-        if not target_websocket:
+        if not delivered_sockets:
             await asyncio.to_thread(
                 database.save_offline_message,
                 sender_username,
@@ -427,6 +488,47 @@ class ConnectionManager:
                     "partner": partner_data,
                     "last_message_at": saved_message["timestamp"],
                 })
+
+        await self._push_incoming_message(sender_username, target_username)
+
+    async def _push_incoming_message(self, sender_username: str, target_username: str):
+        try:
+            import apns
+        except ImportError:
+            return
+        if not apns.is_configured():
+            return
+        if await asyncio.to_thread(database.is_muted_db, target_username, sender_username):
+            return
+
+        online_ids = {device_id.lower() for device_id in self.online_device_ids(target_username)}
+        targets = await asyncio.to_thread(database.list_apns_targets_db, target_username)
+        if not targets:
+            return
+
+        profile = await asyncio.to_thread(database.get_user_profile_db, sender_username)
+        sender_label = (profile or {}).get("display_name") or sender_username
+        unread = await asyncio.to_thread(database.get_unread_counts_db, target_username)
+        badge = sum(int(count or 0) for count in unread.values())
+
+        for row in targets:
+            device_id = str(row.get("device_id") or "").lower()
+            if device_id and device_id in online_ids:
+                continue
+            if not row.get("notify_messages", True):
+                continue
+            title = sender_label if row.get("notify_preview", True) else "NEXA"
+            result = await apns.send_message_alert(
+                row["apns_token"],
+                sandbox=bool(row.get("apns_sandbox", True)),
+                title=title,
+                body="New message",
+                badge=badge,
+                partner=sender_username,
+                sound=bool(row.get("notify_sound", True)),
+            )
+            if result == "gone":
+                await asyncio.to_thread(database.clear_apns_token_db, row["apns_token"])
 
     async def handle_reaction(self, data: dict, websocket: WebSocket):
         username = self._session_username(websocket)

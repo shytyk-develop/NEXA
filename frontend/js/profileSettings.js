@@ -25,6 +25,8 @@ import { getPrivacyFlags } from './privacy.js';
 import { loadHistory } from './storage.js';
 import { setProfileEyesActive } from './eyeTracking.js';
 import { startPreviewTilt, stopPreviewTilt } from './cardTilt.js';
+import { getDevices, registerDevice } from './api.js';
+import { detectDeviceInfo, devicePayload, getDeviceId } from './device.js';
 
 const PRIVACY_HINTS = {
     showOnlineStatus: {
@@ -135,7 +137,7 @@ function bindShell() {
     $p('uiProfileViewSecurity')?.addEventListener('click', () => setSection('security', { fromUser: true }));
     $p('uiProfileKeysToggle')?.addEventListener('click', toggleFingerprintPanel);
     $p('uiProfileManageDevices')?.addEventListener('click', () => {
-        ctx?.showToast?.('Multi-device management is coming soon.', 'info');
+        setSection('devices', { fromUser: true });
     });
 
     panel.querySelectorAll('[data-pref-key]').forEach((input) => {
@@ -180,6 +182,9 @@ export function onProfilePanelOpen() {
     void hydrateSecurity();
     hydratePrivacy();
     hydrateData(username);
+    if (pendingProfileSection === 'devices') {
+        void hydrateDevices();
+    }
 }
 
 const PROFILE_SECTION_META = {
@@ -187,6 +192,7 @@ const PROFILE_SECTION_META = {
     security: ['Security', 'Built with privacy by design.'],
     privacy: ['Privacy', 'Control your visibility and interactions.'],
     data: ['Data & storage', 'Manage your local data and exports.'],
+    devices: ['Devices', 'Sessions signed into this account.'],
 };
 
 function setSection(id, { fromUser = false } = {}) {
@@ -226,6 +232,10 @@ function setSection(id, { fromUser = false } = {}) {
 
     if (id === 'data') {
         playDataIntro(resolveUsername());
+    } else if (id === 'devices') {
+        dataAnimToken += 1;
+        playSectionIntro(panel.querySelector(`[data-profile-section="${CSS.escape(id)}"]`));
+        void hydrateDevices();
     } else {
         dataAnimToken += 1;
         playSectionIntro(panel.querySelector(`[data-profile-section="${CSS.escape(id)}"]`));
@@ -365,44 +375,112 @@ function hydrateDeviceIdentity() {
     const nameEl = $p('uiProfileDeviceName');
     const osEl = $p('uiProfileDeviceOs');
     const activeEl = $p('uiProfileDeviceActive');
-    const info = detectDeviceInfo();
+    const info = detectDeviceInfo({ includeBrowser: true });
     if (nameEl) nameEl.textContent = info.name;
-    if (osEl) osEl.textContent = info.os;
+    if (osEl) osEl.textContent = info.osVersion || info.os;
     if (activeEl) activeEl.textContent = 'Now';
 }
 
-function detectDeviceInfo() {
-    const ua = navigator.userAgent || '';
-    const platform = navigator.userAgentData?.platform || navigator.platform || '';
-    let name = 'This browser';
-    let os = platform || 'Unknown OS';
+function deviceIconHref(platform) {
+    if (platform === 'ios' || platform === 'android' || platform === 'ipados') {
+        return '#icon-smartphone';
+    }
+    return '#icon-laptop';
+}
 
-    if (/Macintosh|Mac OS X/i.test(ua) || /Mac/i.test(platform)) {
-        name = /iPhone|iPad/i.test(ua) ? 'Apple device' : 'Mac';
-        const ver = ua.match(/Mac OS X (\d+[._]\d+(?:[._]\d+)?)/);
-        os = ver ? `macOS ${ver[1].replace(/_/g, '.')}` : 'macOS';
-    } else if (/Windows/i.test(ua)) {
-        name = 'Windows PC';
-        os = /Windows NT 10/i.test(ua) ? 'Windows 10/11' : 'Windows';
-    } else if (/Android/i.test(ua)) {
-        name = 'Android device';
-        const ver = ua.match(/Android (\d+(?:\.\d+)?)/);
-        os = ver ? `Android ${ver[1]}` : 'Android';
-    } else if (/iPhone|iPad|iPod/i.test(ua)) {
-        name = /iPad/i.test(ua) ? 'iPad' : 'iPhone';
-        const ver = ua.match(/OS (\d+[._]\d+)/);
-        os = ver ? `iOS ${ver[1].replace(/_/g, '.')}` : 'iOS';
-    } else if (/Linux/i.test(ua) || /Linux/i.test(platform)) {
-        name = 'Linux PC';
-        os = 'Linux';
+function formatLastSeen(iso, online) {
+    if (online) return 'Online';
+    if (!iso) return 'Offline';
+    const then = Date.parse(iso);
+    if (Number.isNaN(then)) return 'Offline';
+    const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+}
+
+function renderDeviceRow(device, { current = false } = {}) {
+    const online = Boolean(device.online) || current;
+    const status = formatLastSeen(device.last_seen, online);
+    const os = device.os_version || 'Unknown OS';
+    const subtitle = current ? `${os} · This device` : os;
+    const row = document.createElement('div');
+    row.className = 'profile-sec-card profile-sec-device';
+    row.innerHTML = `
+        <span class="profile-sec-icon" aria-hidden="true">
+            <svg class="ui-icon"><use href="${deviceIconHref(device.platform)}"/></svg>
+        </span>
+        <div class="profile-sec-copy">
+            <p class="profile-sec-title">${escapeHtml(device.device_name || 'Unknown device')}</p>
+            <p class="profile-sec-text">${escapeHtml(subtitle)}</p>
+        </div>
+        <div class="profile-sec-device-meta">
+            <span class="profile-sec-meta-value${online ? ' is-online' : ''}">${escapeHtml(status)}</span>
+        </div>
+    `;
+    return row;
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+async function hydrateDevices() {
+    const currentHost = $p('uiProfileDevicesCurrent');
+    const othersHost = $p('uiProfileDevicesOthers');
+    const othersWrap = $p('uiProfileDevicesOthersWrap');
+    const emptyEl = $p('uiProfileDevicesEmpty');
+    if (!currentHost) return;
+
+    currentHost.replaceChildren();
+    othersHost?.replaceChildren();
+    if (othersWrap) othersWrap.hidden = true;
+    if (emptyEl) emptyEl.hidden = true;
+
+    const local = detectDeviceInfo();
+    const token = ctx?.getToken?.() || localStorage.getItem('auth_token') || '';
+    let devices = [];
+    if (token) {
+        try {
+            await registerDevice(token, devicePayload(local));
+        } catch {
+            /* list can still succeed from a previous join */
+        }
+        try {
+            const payload = await getDevices(token, getDeviceId());
+            devices = Array.isArray(payload?.devices) ? payload.devices : [];
+        } catch {
+            devices = [];
+        }
     }
 
-    if (/Edg\//i.test(ua)) name = `${name} · Edge`;
-    else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) name = `${name} · Chrome`;
-    else if (/Firefox\//i.test(ua)) name = `${name} · Firefox`;
-    else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) name = `${name} · Safari`;
+    if (!devices.length) {
+        devices = [{
+            device_id: local.deviceId,
+            device_name: local.name,
+            platform: local.platform,
+            os_version: local.osVersion,
+            online: true,
+            this_device: true,
+        }];
+    }
 
-    return { name, os };
+    const currentId = getDeviceId();
+    const current = devices.filter((d) => d.this_device || d.device_id === currentId);
+    const others = devices.filter((d) => !(d.this_device || d.device_id === currentId));
+    const currentRows = current.length ? current : devices.slice(0, 1);
+
+    currentRows.forEach((device) => currentHost.appendChild(renderDeviceRow(device, { current: true })));
+    if (others.length && othersHost && othersWrap) {
+        othersWrap.hidden = false;
+        others.forEach((device) => othersHost.appendChild(renderDeviceRow(device)));
+    }
 }
 
 function toggleFingerprintPanel() {

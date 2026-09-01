@@ -1,4 +1,6 @@
-export const API_URL = "https://originhub.onrender.com";
+// export const API_URL = "https://originhub.onrender.com";
+export const API_URL = "http://localhost:8000";
+
 
 export function normalizeUsername(value) {
     return value.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -59,6 +61,24 @@ export async function updateProfile(token, profile) {
         bio: profile.bio || '',
         avatar_data: profile.avatarDataUrl || null,
     }, token);
+}
+
+export async function registerDevice(token, device) {
+    return putJson('/api/me/device', {
+        device_id: device.device_id || device.deviceId,
+        device_name: device.device_name || device.name || '',
+        platform: device.platform || 'unknown',
+        os_version: device.os_version || device.osVersion || device.os || '',
+    }, token);
+}
+
+export async function getDevices(token, deviceId) {
+    const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : '';
+    return getJson(`/api/me/devices${query}`, token);
+}
+
+export async function syncMuted(token, partners) {
+    return putJson('/api/me/muted', { partners: partners || [] }, token);
 }
 
 async function postJson(path, payload) {

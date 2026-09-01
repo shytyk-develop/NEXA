@@ -1,6 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Any, Optional
 import json
@@ -16,7 +17,13 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://nexatalk.vercel.app", "http://localhost:5173", "http://127.0.0.1:5173"],  
+    allow_origins=[
+        "https://nexatalk.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],   
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,6 +79,20 @@ class ProfileUpdateRequest(BaseModel):
     display_name: str = ""
     bio: str = ""
     avatar_data: Optional[str] = None
+
+class DeviceUpsertRequest(BaseModel):
+    device_id: str
+    device_name: str = ""
+    platform: str = "unknown"
+    os_version: str = ""
+    apns_token: Optional[str] = None
+    apns_sandbox: Optional[bool] = None
+    notify_messages: Optional[bool] = None
+    notify_sound: Optional[bool] = None
+    notify_preview: Optional[bool] = None
+
+class MutedPartnersRequest(BaseModel):
+    partners: list[str] = []
 
 PROFILE_DISPLAY_NAME_MAX = 32
 PROFILE_BIO_MAX = 140
@@ -186,6 +207,83 @@ async def update_profile(req: ProfileUpdateRequest, authorization: Optional[str]
     await manager.broadcast_profile_update(current_username, profile)
     return {"username": current_username, **profile}
 
+@app.get("/api/me/qr")
+async def get_my_qr(authorization: Optional[str] = Header(default=None)):
+    """PNG of the authenticated user's unique add-contact QR code."""
+    current_username = get_current_username(authorization)
+    qr = database.ensure_user_qr_db(current_username)
+    if qr is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return Response(
+        content=qr["png"],
+        media_type="image/png",
+        headers={
+            "Cache-Control": "private, no-store",
+            "Content-Disposition": f'inline; filename="nexa-qr-{current_username}.png"',
+        },
+    )
+
+@app.get("/api/me/qr/meta")
+async def get_my_qr_meta(authorization: Optional[str] = Header(default=None)):
+    """JSON payload for the authenticated user's QR (web and future clients)."""
+    current_username = get_current_username(authorization)
+    qr = database.ensure_user_qr_db(current_username)
+    if qr is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "username": qr["username"],
+        "payload": qr["payload"],
+    }
+
+@app.put("/api/me/device")
+async def upsert_my_device(req: DeviceUpsertRequest, authorization: Optional[str] = Header(default=None)):
+    current_username = get_current_username(authorization)
+    session = database.upsert_user_session_db(
+        current_username,
+        req.device_id,
+        req.device_name,
+        req.platform,
+        req.os_version,
+        apns_token=req.apns_token,
+        apns_sandbox=req.apns_sandbox,
+        notify_messages=req.notify_messages,
+        notify_sound=req.notify_sound,
+        notify_preview=req.notify_preview,
+    )
+    if session is None:
+        raise HTTPException(status_code=422, detail="Invalid device_id")
+    parsed_id = database.parse_device_id(req.device_id)
+    session["online"] = parsed_id in manager.online_device_ids(current_username)
+    session["this_device"] = True
+    return session
+
+@app.get("/api/me/devices")
+async def list_my_devices(
+    authorization: Optional[str] = Header(default=None),
+    device_id: Optional[str] = Query(default=None),
+):
+    current_username = get_current_username(authorization)
+    current_id = database.parse_device_id(device_id)
+    online_ids = manager.online_device_ids(current_username)
+    devices = []
+    for session in database.list_user_sessions_db(current_username):
+        sid = session["device_id"]
+        session["online"] = sid in online_ids
+        session["this_device"] = bool(current_id and sid == current_id)
+        devices.append(session)
+    return {"devices": devices}
+
+@app.put("/api/me/muted")
+async def set_muted_partners(req: MutedPartnersRequest, authorization: Optional[str] = Header(default=None)):
+    current_username = get_current_username(authorization)
+    partners = []
+    for raw in req.partners:
+        partner = normalize_username(raw)
+        if USERNAME_RE.fullmatch(partner) and partner != current_username:
+            partners.append(partner)
+    saved = database.set_muted_partners_db(current_username, partners)
+    return {"partners": saved}
+
 @app.delete("/api/history/message/{message_id}")
 async def delete_message(message_id: int, authorization: Optional[str] = Header(default=None)):
     current_username = get_current_username(authorization)
@@ -243,6 +341,10 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                     username,
                     data["public_key"],
                     share_presence=bool(data.get("share_presence", True)),
+                    device_id=data.get("device_id"),
+                    device_name=data.get("device_name"),
+                    platform=data.get("platform"),
+                    os_version=data.get("os_version"),
                 )
                 await manager.broadcast_users_list()
                 
