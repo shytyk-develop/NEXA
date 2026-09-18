@@ -4,12 +4,12 @@
 [data-theme="dark"] {
     color-scheme: dark;
 
-    /* Surfaces — pure black + near-black panels (start-site) */
-    --bg: #000000;
-    --bg-subtle: #0a0a0a;
-    --surface: #0e0e0e;
-    --surface-elevated: #131313;
-    --surface-overlay: #1a1a1a;
+    /* Surfaces — void + floating panels */
+    --bg: var(--nexa-void, #000000);
+    --bg-subtle: var(--nexa-surface, #0a0a0a);
+    --surface: var(--nexa-surface-chat, #0d0d0d);
+    --surface-elevated: var(--nexa-surface-elevated, #111111);
+    --surface-overlay: var(--nexa-surface-interactive, #181818);
     /* Text — start-site --txt / --txt-2 / --txt-3 */
     --text: #f4f4f5;
     --text-secondary: rgba(212, 212, 216, 0.78);
@@ -18,20 +18,21 @@
     --accent: #f4f4f5;
     --accent-strong: #ffffff;
     --accent-muted: rgba(244, 244, 245, 0.28);
-    --bubble-own: #e4e4e7;
-    --bubble-own-text: #0a0a0a;
-    --bubble-other: #181818;
-    --bubble-other-border: rgba(255, 255, 255, 0.06);
+    --glass-intensity: 50;
+    --bubble-own: color-mix(in srgb, #3f3f46 calc(25% + var(--glass-intensity) * 0.55%), transparent);
+    --bubble-own-text: #f4f4f5;
+    --bubble-other: color-mix(in srgb, #1a1a1a calc(20% + var(--glass-intensity) * 0.55%), transparent);
+    --bubble-other-border: color-mix(in srgb, #fff 5%, transparent);
     --bubble-other-text: #f4f4f5;
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.16);
-    --border-subtle: rgba(255, 255, 255, 0.045);
+    --border: rgba(255, 255, 255, 0.035);
+    --border-strong: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.025);
     --glass: rgba(14, 14, 14, 0.92);
-    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.035);
     --shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
     --shadow-bubble: 0 1px 1px rgba(0, 0, 0, 0.28);
-    --shadow-bubble-own: 0 1px 2px rgba(0, 0, 0, 0.22);
-    --shadow-bubble-other: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-bubble-own: inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent);
+    --shadow-bubble-other: inset 0 1px 0 color-mix(in srgb, #fff 3%, transparent);
     --green: #86efac;
     --amber: #fbbf24;
     --red: #f87171;
@@ -44,8 +45,8 @@
     --focus: rgba(244, 244, 245, 0.45);
 
     /* Polish tokens */
-    --shell-bg: #0a0a0a;
-    --shell-border: rgba(255, 255, 255, 0.06);
+    --shell-bg: var(--nexa-surface, #0a0a0a);
+    --shell-border: rgba(255, 255, 255, 0.03);
     --row-hover: rgba(255, 255, 255, 0.045);
     --row-active: rgba(244, 244, 245, 0.1);
     --row-active-border: transparent;
@@ -104,11 +105,11 @@ body {
 
 /* ─── Chat layout (centered column) ─── */
 .chat-main {
-    background: var(--bg);
+    background: transparent;
 }
 
 .chat-main::before {
-    opacity: 0.35;
+    opacity: 0;
 }
 
 /* chat-stage / #messages layout — app-layout.css */
@@ -195,8 +196,9 @@ body {
     margin-top: 2px;
 }
 
-.message-row:not(.message-row--grouped) {
-    margin-top: var(--space-3);
+.message-row + .message-row.message-row--new-group,
+.message-row + .message-row:not(.message-row--grouped) {
+    margin-top: 8px;
 }
 
 @keyframes messageIn {
@@ -222,8 +224,13 @@ body {
 .message-content-wrap {
     display: flex;
     flex-direction: column;
-    max-width: min(100%, var(--msg-bubble-max, 32rem));
+    /* Continuous width vs thread size — no breakpoint jumps while the peer panel eases. */
+    max-width: min(
+        var(--msg-bubble-cap, 440px),
+        calc(56cqi + max(0px, 900px - 100cqi) * 0.28)
+    );
     min-width: 0;
+    overflow: visible;
 }
 
 .message-row--own .message-content-wrap {
@@ -237,13 +244,20 @@ body {
 .message-shell {
     display: inline-block;
     max-width: 100%;
+    overflow: visible;
     position: relative;
     vertical-align: top;
 }
 
+.message-row:hover,
+.message-row:focus-within {
+    z-index: 3;
+}
+
 /* ─── Bubbles ─── */
 :root {
-    --msg-bubble-max: 32rem;
+    --msg-bubble-cap: 440px;
+    --msg-bubble-max: min(56%, 440px);
 }
 
 .message-bubble {
@@ -252,40 +266,74 @@ body {
     display: block;
     font-size: 14px;
     line-height: 1.42;
-    max-width: min(var(--msg-bubble-max), 100%);
-    padding: 9px 15px;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 8px 12px 11px;
     position: relative;
+    transition: border-radius 160ms var(--ease-out);
     width: max-content;
 }
 
 .message-bubble--own {
     background: var(--bubble-own);
-    border-bottom-right-radius: var(--radius-bubble-tail);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid color-mix(in srgb, #fff 5%, transparent);
     color: var(--bubble-own-text);
-    justify-content: flex-end;
 }
 
 .message-bubble--other {
     background: var(--bubble-other);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid var(--bubble-other-border);
-    border-bottom-left-radius: var(--radius-bubble-tail);
     color: var(--bubble-other-text);
-    justify-content: flex-start;
 }
 
-.message-row--own .message-bubble,
-.message-row--other .message-bubble {
-    max-width: min(var(--msg-bubble-max), 100%);
+/* Tail is a tighter corner, only on the last bubble of a sender cluster. */
+.message-bubble--own.message-bubble--cluster-single {
+    border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail) var(--radius-bubble);
+}
+
+.message-bubble--own.message-bubble--cluster-first {
+    border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-join) var(--radius-bubble);
+}
+
+.message-bubble--own.message-bubble--cluster-middle {
+    border-radius: var(--radius-bubble) var(--radius-bubble-join) var(--radius-bubble-join) var(--radius-bubble);
+}
+
+.message-bubble--own.message-bubble--cluster-last {
+    border-radius: var(--radius-bubble) var(--radius-bubble-join) var(--radius-bubble-tail) var(--radius-bubble);
+}
+
+.message-bubble--other.message-bubble--cluster-single {
+    border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail);
+}
+
+.message-bubble--other.message-bubble--cluster-first {
+    border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-join);
+}
+
+.message-bubble--other.message-bubble--cluster-middle {
+    border-radius: var(--radius-bubble-join) var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-join);
+}
+
+.message-bubble--other.message-bubble--cluster-last {
+    border-radius: var(--radius-bubble-join) var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail);
 }
 
 .message-meta {
     align-items: baseline;
     display: inline-flex;
-    flex-shrink: 0;
+    float: right;
     font-size: 10px;
     gap: 4px;
     line-height: 1;
+    margin-left: 8px;
     opacity: 0.72;
+    position: relative;
+    top: 5px;
     white-space: nowrap;
 }
 
@@ -294,7 +342,7 @@ body {
 }
 
 .message-bubble--other .message-meta {
-    color: var(--text-secondary);
+    color: color-mix(in srgb, var(--bubble-other-text) 75%, transparent);
 }
 
 .message-time {
@@ -426,39 +474,8 @@ body {
     margin: 0;
 }
 
-/* Shrink bubble islands as the viewport narrows */
-@media (max-width: 1400px) {
-    :root {
-        --msg-bubble-max: 30.5rem;
-    }
-}
-
-@media (max-width: 1200px) {
-    :root {
-        --msg-bubble-max: 28rem;
-    }
-}
-
-@media (max-width: 1000px) {
-    :root {
-        --msg-bubble-max: 25.5rem;
-    }
-}
-
-@media (max-width: 820px) {
-    :root {
-        --msg-bubble-max: 22.5rem;
-    }
-}
-
 @media (max-width: 640px) {
-    :root {
-        --msg-bubble-max: 20rem;
-    }
-}
-
-@media (max-width: 480px) {
-    :root {
-        --msg-bubble-max: 17.5rem;
+    .message-content-wrap {
+        max-width: min(72%, calc(100% - 36px));
     }
 }

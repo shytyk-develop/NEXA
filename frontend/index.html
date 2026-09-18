@@ -42,8 +42,26 @@
             document.documentElement.setAttribute('data-theme', 'dark');
             try {
                 var p = JSON.parse(localStorage.getItem('originhub_ui_preferences') || '{}');
-                document.documentElement.dataset.glass = p.glassIntensity || 'medium';
+                var glass = p.glassIntensity;
+                if (glass === 'low') glass = 30;
+                else if (glass === 'medium') glass = 50;
+                else if (glass === 'high') glass = 80;
+                glass = Number(glass);
+                if (!isFinite(glass)) glass = 50;
+                glass = Math.round(Math.min(100, Math.max(0, glass)) / 10) * 10;
+                document.documentElement.style.setProperty('--glass-intensity', String(glass));
+                document.documentElement.dataset.glass = glass <= 30 ? 'low' : glass >= 70 ? 'high' : 'medium';
+                var dim = p.wallpaperDim;
+                if (dim === 'low') dim = 40;
+                else if (dim === 'medium') dim = 60;
+                else if (dim === 'high') dim = 80;
+                dim = Number(dim);
+                if (!isFinite(dim)) dim = 80;
+                dim = Math.round(Math.min(100, Math.max(0, dim)) / 10) * 10;
+                document.documentElement.style.setProperty('--dim-intensity', String(dim));
             } catch (e) {
+                document.documentElement.style.setProperty('--glass-intensity', '50');
+                document.documentElement.style.setProperty('--dim-intensity', '80');
                 document.documentElement.dataset.glass = 'medium';
             }
         })();
@@ -126,7 +144,9 @@
             display: flex;
             flex-direction: row;
             height: 100%;
+            isolation: isolate;
             min-width: 0;
+            position: relative;
             width: 100%;
         }
 
@@ -407,80 +427,43 @@
             flex-direction: column;
             inset: 0;
             justify-content: center;
+            opacity: 1;
             padding: 24px 24px 120px;
             position: absolute;
             text-align: center;
-            transition: opacity 0.35s ease;
+            transition:
+                opacity 0.2s ease,
+                visibility 0.2s linear;
+            visibility: visible;
             z-index: 30;
         }
 
-        .welcome-mark {
-            border-radius: 28px;
-            display: block;
-            height: auto;
-            margin: 0 0 28px;
+        #page-chat.is-compose-search #chat-welcome {
             opacity: 0;
-            transform: translateY(10px) scale(0.96);
-            width: 112px;
+            pointer-events: none;
+            visibility: hidden;
         }
 
-        .welcome-h {
-            color: var(--t1);
+        .welcome-label {
+            color: #3f3f46;
             font-family: var(--f-ui);
-            font-size: 16px;
-            font-weight: 500;
-            letter-spacing: -0.015em;
-            margin: 0 0 10px;
-            opacity: 0;
-            text-transform: none;
-            transform: translateY(8px);
-        }
-
-        .welcome-p {
-            color: var(--t3);
-            font-size: 13.5px;
-            font-weight: 400;
-            letter-spacing: 0.005em;
-            line-height: 1.55;
+            font-size: 14px;
+            font-weight: 450;
+            letter-spacing: 0.01em;
             margin: 0;
-            max-width: 300px;
-            opacity: 0;
-            transform: translateY(8px);
-        }
-
-        #chat-welcome.is-entering .welcome-mark {
-            animation: welcome-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
-        }
-
-        #chat-welcome.is-entering .welcome-h {
-            animation: welcome-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards;
-        }
-
-        #chat-welcome.is-entering .welcome-p {
-            animation: welcome-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
-        }
-
-        @keyframes welcome-in {
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            opacity: 1;
+            user-select: none;
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .welcome-mark,
-            .welcome-h,
-            .welcome-p {
-                animation: none !important;
-                opacity: 1;
-                transform: none;
+            #chat-welcome {
+                transition: none;
             }
         }
 
         .input-bar {
             background: transparent;
             border-top: none;
-            position: relative;
             z-index: 20;
         }
 
@@ -1748,6 +1731,10 @@
         <symbol id="icon-smartphone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
         <symbol id="icon-panel-left" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 3v18"/></symbol>
         <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+        <symbol id="icon-layout-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+        <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></symbol>
+        <symbol id="icon-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 7L9 5l-3 7H2"/></symbol>
+        <symbol id="icon-clipboard" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
         <symbol id="icon-eye-off" viewBox="0 0 24 24"><path d="M9.9 4.2A10.9 10.9 0 0 1 12 4c7 0 10 8 10 8a17.6 17.6 0 0 1-2.2 3.3"/><path d="M6.6 6.6C3.7 8.5 2 12 2 12s3 8 10 8c1.5 0 2.8-.3 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m3 3 18 18"/></symbol>
         <symbol id="icon-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></symbol>
         <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
@@ -1928,7 +1915,11 @@
     </div>
 
     <div id="page-chat" class="route-page hidden">
-        <nav class="nav-rail" aria-label="App sections">
+        <div class="left-capsule" id="uiLeftCapsule">
+            <button id="uiSidebarToggle" class="sidebar-capsule-toggle" type="button" title="Hide contacts" aria-expanded="true" aria-controls="uiSidebar" aria-label="Hide contacts">
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+            </button>
+            <div class="left-capsule-shelf">
             <div id="uiRailCollapsedTools" class="rail-collapsed-tools" hidden>
                 <button id="uiRailMark" class="rail-mark" type="button" title="Show contacts" aria-label="Show contacts">
                     <img src="/brand/nexa-mark.png" alt="" width="40" height="40" decoding="async">
@@ -1937,61 +1928,14 @@
                     <svg class="ui-icon" aria-hidden="true"><use href="#icon-panel-left"/></svg>
                 </button>
             </div>
-            <div class="rail-top">
-                <a href="#chats" id="uiRailChats" class="rail-icon-btn is-active" title="Chats" aria-label="Chats" aria-current="page" data-rail="chats">
-                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-message"/></svg>
-                    <span class="rail-icon-label">Chats</span>
-                </a>
-                <a href="#profile" id="uiRailProfile" class="rail-icon-btn" title="Profile settings" aria-label="Profile settings" data-rail="identity">
-                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
-                    <span class="rail-icon-label">Profile</span>
-                </a>
-            </div>
-            <div class="rail-bottom">
-                <button id="uiProfileBtn" class="rail-profile-btn" type="button" title="Profile &amp; identity" aria-label="Profile and identity">
-                    <span class="rail-profile-btn__av" aria-hidden="true">
-                        <svg class="ui-icon"><use href="#icon-user"/></svg>
-                    </span>
-                    <span class="rail-profile-btn__meta">
-                        <span class="rail-profile-btn__label">you</span>
-                        <span id="status" class="rail-presence status-offline" title="Disconnected" aria-label="Disconnected"></span>
-                    </span>
-                </button>
-            </div>
-        </nav>
 
-        <div id="uiChatWorkspace" class="chat-workspace">
         <aside id="uiSidebar" class="sidebar" aria-label="Navigation and contacts">
             <header class="sidebar-brand">
                 <img src="/brand/nexa-logo.svg" alt="NEXA" class="sidebar-brand__mark" width="1007" height="176" decoding="async">
-                <div class="sidebar-brand-actions">
-                    <button id="uiContactSearchOpenBtn" class="mini-icon-btn sidebar-search-open" type="button" title="Find contacts" aria-label="Find contacts">
-                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
-                    </button>
-                    <button id="uiSidebarToggle" class="sidebar-brand-toggle" type="button" title="Hide contacts" aria-expanded="true" aria-controls="uiSidebar" aria-label="Hide contacts">
-                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-panel-left"/></svg>
-                    </button>
-                </div>
+                <button id="uiRefreshUsersBtn" class="mini-icon-btn sidebar-brand__reload" type="button" title="Refresh contacts" aria-label="Refresh contacts"><svg class="ui-icon" aria-hidden="true"><use href="#icon-refresh"/></svg></button>
             </header>
 
-            <button id="uiContactSearchTrigger" class="contact-search-trigger" type="button" title="Search contacts" aria-label="Search contacts">
-                <svg class="contact-search-trigger__icon ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
-                <span class="contact-search-trigger__label">Search contacts</span>
-            </button>
-
-            <div id="uiContactSearchLayer" class="contact-search-layer">
-                <div class="contact-search-wrap">
-                    <svg class="contact-search-icon ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
-                    <input id="uiContactSearch" class="contact-search-input" type="search" placeholder="Search contacts" autocomplete="off" spellcheck="false">
-                    <button id="uiContactSearchBackBtn" class="contact-search-cancel" type="button" title="Cancel search" aria-label="Cancel search">Cancel</button>
-                    <button id="uiRefreshUsersBtn" class="mini-icon-btn" type="button" title="Refresh contacts" aria-label="Refresh contacts"><svg class="ui-icon" aria-hidden="true"><use href="#icon-refresh"/></svg></button>
-                </div>
-            </div>
-
             <section class="sidebar-chats" aria-label="Chats">
-                <div class="sidebar-head">
-                    <span id="uiSidebarLabel" class="sidebar-label">Contacts</span>
-                </div>
                 <div id="usersList"></div>
                 <div id="uiWelcomeBanner" class="nexa-welcome-banner hidden">
                     <div class="nexa-welcome-banner__row">
@@ -2011,6 +1955,7 @@
             </section>
 
             <div class="sidebar-hidden-controls hidden" aria-hidden="true">
+                <span id="status" class="sidebar-dock__status rail-presence status-offline" title="Disconnected" aria-label="Disconnected"></span>
                 <button id="uiSettingsBtn" type="button" tabindex="-1" title="Interface settings" aria-label="Interface settings"><svg class="ui-icon" aria-hidden="true"><use href="#icon-settings"/></svg></button>
                 <button id="uiFocusContactsBtn" type="button" tabindex="-1" title="Focus contacts" aria-label="Focus contacts"><svg class="ui-icon" aria-hidden="true"><use href="#icon-users"/></svg></button>
                 <button id="uiFocusComposerBtn" type="button" tabindex="-1" title="Focus composer" aria-label="Focus composer"><svg class="ui-icon" aria-hidden="true"><use href="#icon-message"/></svg></button>
@@ -2019,6 +1964,76 @@
             </div>
         </aside>
 
+            <div class="sidebar-dock-bar">
+                <nav id="uiSidebarDock" class="sidebar-dock" aria-label="App sections">
+                    <a href="#chats" id="uiRailChats" class="sidebar-dock__item is-active" title="Chats" aria-label="Chats" aria-current="page" data-rail="chats">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-message"/></svg>
+                    </a>
+                    <a href="#profile" id="uiRailProfile" class="sidebar-dock__item" title="Profile" aria-label="Profile" data-rail="identity">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
+                    </a>
+                    <button type="button" id="uiDockSettings" class="sidebar-dock__item" title="Settings" aria-label="Settings" data-rail="settings">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-settings"/></svg>
+                    </button>
+                </nav>
+                <button type="button" id="uiDockNewChat" class="sidebar-dock-compose" title="New chat" aria-label="New chat">
+                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-search"/></svg>
+                </button>
+            </div>
+
+            <nav id="uiProfileNav" class="profile-nav" hidden aria-hidden="true" aria-label="Settings">
+                <header class="profile-nav-toolbar">
+                    <button id="uiProfileNavBackBtn" class="mini-icon-btn profile-nav-back-btn" type="button" title="Back to chats" aria-label="Back to chats"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
+                    <div class="profile-nav-toolbar-copy">
+                        <p class="profile-nav-toolbar-title">Settings</p>
+                    </div>
+                </header>
+                <p class="profile-nav-kicker">Settings</p>
+                <button type="button" class="profile-nav-btn is-active" data-profile-nav="appearance" aria-current="page">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-palette"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Appearance</span>
+                    </span>
+                </button>
+                <button type="button" class="profile-nav-btn" data-profile-nav="security">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Security</span>
+                    </span>
+                </button>
+                <button type="button" class="profile-nav-btn" data-profile-nav="privacy">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-eye"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Privacy</span>
+                    </span>
+                </button>
+                <button type="button" class="profile-nav-btn" data-profile-nav="data">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-database"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Data</span>
+                    </span>
+                </button>
+                <button id="uiProfileLogoutBtn" class="profile-nav-btn profile-nav-btn--logout" type="button">
+                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-logout"/></svg>
+                    <span class="profile-nav-copy">
+                        <span class="profile-nav-label">Log out</span>
+                    </span>
+                </button>
+                <div class="profile-nav-foot">
+                    <div class="profile-e2ee-card">
+                        <div class="profile-e2ee-head">
+                            <span class="profile-e2ee-kicker">E2EE status</span>
+                            <span class="profile-e2ee-verified">Verified</span>
+                        </div>
+                        <p class="profile-e2ee-copy">All your data is end-to-end encrypted and stored locally.</p>
+                        <button id="uiProfileViewSecurity" class="profile-e2ee-link" type="button">View security details</button>
+                    </div>
+                </div>
+            </nav>
+            </div>
+        </div>
+
+        <div id="uiChatWorkspace" class="chat-workspace">
         <main class="chat-main">
             <div class="chat-stage-atmosphere" aria-hidden="true">
                 <svg class="chat-stage-atmosphere__field" viewBox="0 0 800 1200" preserveAspectRatio="xMidYMid slice" focusable="false">
@@ -2066,6 +2081,7 @@
                 </svg>
             </div>
             <header class="chat-header">
+                <div class="chat-header-stack">
                 <div class="chat-header-inner">
                     <button id="uiChatBackBtn" class="mini-icon-btn chat-back-btn" type="button" title="Back to chats" aria-label="Back to chats" hidden aria-hidden="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
                     <div class="header-left hidden" aria-hidden="true">
@@ -2087,13 +2103,17 @@
                                 <svg class="ui-icon expand-search__icon-close" aria-hidden="true"><use href="#icon-x"/></svg>
                             </button>
                         </div>
-                        <button id="uiScrollBottomBtn" class="mini-icon-btn" type="button" title="Scroll to bottom" aria-label="Scroll to bottom"><svg class="ui-icon" aria-hidden="true"><use href="#icon-chevron-down"/></svg></button>
                         <button id="uiChatMenuBtn" class="mini-icon-btn" type="button" title="Chat actions" aria-haspopup="menu" aria-label="Chat actions"><svg class="ui-icon" aria-hidden="true"><use href="#icon-more"/></svg></button>
                     </div>
+                </div>
+                <div id="uiComposeSpotlight" class="compose-spotlight" hidden aria-hidden="true">
+                    <div id="uiComposeReactRoot"></div>
+                </div>
                 </div>
             </header>
 
             <div class="input-bar">
+                <div id="uiPasteAttachments" class="paste-attachments hidden" aria-hidden="true" aria-label="Pasted text"></div>
                 <div id="uiReplyBar" class="composer-reply-bar hidden" aria-live="polite">
                     <div class="composer-reply-accent" aria-hidden="true"></div>
                     <div class="composer-reply-body">
@@ -2103,31 +2123,35 @@
                     <button id="uiReplyCloseBtn" type="button" class="composer-reply-close" title="Cancel reply" aria-label="Cancel reply"><svg class="ui-icon" aria-hidden="true"><use href="#icon-x"/></svg></button>
                 </div>
                 <span id="uiDraftStatus" class="composer-status hidden" aria-live="polite"></span>
-                <div id="uiPasteAttachments" class="paste-attachments hidden" aria-hidden="true" aria-label="Pasted text"></div>
-                <div class="input-row">
-                    <button id="uiAttachBtn" class="btn-attach" type="button" title="Attach file" aria-label="Attach file"><svg class="ui-icon" aria-hidden="true"><use href="#icon-paperclip"/></svg></button>
-                    <input id="uiFileInput" class="hidden" type="file" multiple>
-                    <div class="composer-field">
-                        <textarea id="messageInput" placeholder="Type a message…" rows="1" maxlength="2000" disabled></textarea>
-                    </div>
-                    <div class="composer-actions">
-                        <div class="composer-emoji-wrap">
-                            <button id="uiEmojiBtn" class="btn-attach" type="button" title="Insert emoji" aria-label="Insert emoji" aria-expanded="false" aria-haspopup="true" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-smile"/></svg></button>
-                            <div id="uiEmojiPicker" class="composer-emoji-picker hidden" role="listbox" aria-label="Emoji">
-                                <button type="button" class="composer-emoji-item" data-emoji="😀" aria-label="Smile">😀</button>
-                                <button type="button" class="composer-emoji-item" data-emoji="🚀" aria-label="Rocket">🚀</button>
-                                <button type="button" class="composer-emoji-item" data-emoji="🔥" aria-label="Fire">🔥</button>
-                                <button type="button" class="composer-emoji-item" data-emoji="✨" aria-label="Sparkles">✨</button>
-                                <button type="button" class="composer-emoji-item" data-emoji="❤️" aria-label="Heart">❤️</button>
-                                <button type="button" class="composer-emoji-item" data-emoji="👍" aria-label="Thumbs up">👍</button>
-                                <button type="button" class="composer-emoji-item" data-emoji="🤔" aria-label="Thinking">🤔</button>
-                                <button type="button" class="composer-emoji-item" data-emoji="🎉" aria-label="Party">🎉</button>
-                            </div>
+                <div class="composer-input-dock">
+                    <div class="input-row">
+                        <button id="uiAttachBtn" class="btn-attach" type="button" title="Attach file" aria-label="Attach file"><svg class="ui-icon" aria-hidden="true"><use href="#icon-paperclip"/></svg></button>
+                        <input id="uiFileInput" class="hidden" type="file" multiple>
+                        <div class="composer-field">
+                            <textarea id="messageInput" placeholder="Type a message…" rows="1" maxlength="2000" disabled></textarea>
                         </div>
-                        <button id="uiClearComposerBtn" class="btn-attach" type="button" title="Clear message" aria-label="Clear message" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-trash"/></svg></button>
-                        <button id="uiComposerMenuBtn" class="hidden" type="button" tabindex="-1" title="Message tools" aria-haspopup="menu" aria-label="Message tools"></button>
-                        <button id="sendBtn" type="button" title="Send message" aria-label="Send message" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-send"/></svg></button>
+                        <div class="composer-actions">
+                            <div class="composer-emoji-wrap">
+                                <button id="uiEmojiBtn" class="btn-attach" type="button" title="Insert emoji" aria-label="Insert emoji" aria-expanded="false" aria-haspopup="true" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-smile"/></svg></button>
+                                <div id="uiEmojiPicker" class="composer-emoji-picker hidden" role="listbox" aria-label="Emoji">
+                                    <button type="button" class="composer-emoji-item" data-emoji="😀" aria-label="Smile">😀</button>
+                                    <button type="button" class="composer-emoji-item" data-emoji="🚀" aria-label="Rocket">🚀</button>
+                                    <button type="button" class="composer-emoji-item" data-emoji="🔥" aria-label="Fire">🔥</button>
+                                    <button type="button" class="composer-emoji-item" data-emoji="✨" aria-label="Sparkles">✨</button>
+                                    <button type="button" class="composer-emoji-item" data-emoji="❤️" aria-label="Heart">❤️</button>
+                                    <button type="button" class="composer-emoji-item" data-emoji="👍" aria-label="Thumbs up">👍</button>
+                                    <button type="button" class="composer-emoji-item" data-emoji="🤔" aria-label="Thinking">🤔</button>
+                                    <button type="button" class="composer-emoji-item" data-emoji="🎉" aria-label="Party">🎉</button>
+                                </div>
+                            </div>
+                            <button id="uiClearComposerBtn" class="btn-attach" type="button" title="Clear message" aria-label="Clear message" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-trash"/></svg></button>
+                            <button id="uiComposerMenuBtn" class="hidden" type="button" tabindex="-1" title="Message tools" aria-haspopup="menu" aria-label="Message tools"></button>
+                            <button id="sendBtn" type="button" title="Send message" aria-label="Send message" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-send"/></svg></button>
+                        </div>
                     </div>
+                    <button id="uiScrollBottomBtn" class="chat-jump-bottom" type="button" title="Scroll to bottom" aria-label="Scroll to bottom" aria-hidden="true">
+                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+                    </button>
                 </div>
                 <span id="uiCharCounter" class="composer-char-counter">0 / 2000</span>
             </div>
@@ -2135,17 +2159,8 @@
             <div class="chat-stage">
                 <div id="messages" aria-live="polite"></div>
 
-                <div id="chat-welcome" class="is-entering">
-                    <img
-                        class="welcome-mark"
-                        src="/brand/nexa-mark.png"
-                        alt="NEXA"
-                        width="177"
-                        height="177"
-                        decoding="async"
-                    >
-                    <p class="welcome-h">No conversation selected</p>
-                    <p class="welcome-p">Choose a contact from the list to start a private, end-to-end encrypted conversation.</p>
+                <div id="chat-welcome">
+                    <p class="welcome-label">Select Chat</p>
                 </div>
             </div>
         </main>
@@ -2163,21 +2178,36 @@
                 </button>
                 <p class="peer-sheet-bar__title">Profile</p>
             </div>
-                <div id="uiPeerEmpty" class="peer-panel-empty">
-                <div class="peer-empty-hero">
-                    <div class="peer-empty-art" aria-hidden="true">
-                        <img src="/brand/nexa-chat-secure.png" alt="" width="180" height="180" decoding="async">
+                <div id="uiPeerEmpty" class="peer-panel-empty is-entering">
+                <div class="peer-empty-hero peer-empty-hero--welcome">
+                    <div class="peer-empty-core">
+                        <div class="peer-empty-art" aria-hidden="true">
+                            <svg class="peer-empty-icon" aria-hidden="true">
+                                <use href="#icon-shield"/>
+                            </svg>
+                        </div>
+                        <h3 class="peer-empty-title">Your privacy, our priority</h3>
+                        <p class="peer-empty-copy">All messages are end-to-end encrypted. No one else can read what you send.</p>
+                        <div class="peer-empty-cta">
+                            <a id="uiPeerEmptyLearnMore" class="peer-empty-btn" href="/about-security" data-link>
+                                Learn more about security
+                                <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+                            </a>
+                        </div>
                     </div>
-                    <h3 class="peer-empty-title">Your privacy, our priority</h3>
-                    <p class="peer-empty-copy">All messages are end-to-end encrypted. No one else can read what you send.</p>
-                    <a id="uiPeerEmptyLearnMore" class="peer-empty-btn" href="/about-security" data-link>
-                        Learn more about security
-                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
-                    </a>
                 </div>
-                <div class="peer-empty-hint">
-                    <p class="peer-empty-hint-title">Select a conversation</p>
-                    <p class="peer-empty-hint-copy">Choose a contact to see this profile and start chatting.</p>
+                <div class="peer-empty-hero peer-empty-hero--compose" aria-hidden="true">
+                    <div class="peer-empty-core">
+                        <div class="peer-empty-art" aria-hidden="true">
+                            <svg class="peer-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="7"></circle>
+                                <path d="m20 20-3.5-3.5"></path>
+                            </svg>
+                        </div>
+                        <h3 class="peer-empty-title">Choose a search mode</h3>
+                        <p class="peer-empty-copy">Pick a widget on the right, then type to find people, chats, or messages.</p>
+                        <div class="peer-empty-cta" aria-hidden="true"></div>
+                    </div>
                 </div>
             </div>
             <div id="uiPeerBody" class="peer-panel-body" hidden>
@@ -2231,66 +2261,12 @@
     <section id="uiProfilePanel" class="app-workspace profile-workspace hidden" aria-labelledby="uiProfileTitle">
         <div id="uiProfileNavScrim" class="profile-nav-scrim" hidden aria-hidden="true"></div>
         <div class="profile-shell">
-            <nav id="uiProfileNav" class="profile-nav" aria-label="Settings">
-                <header class="profile-nav-toolbar">
-                    <button id="uiProfileNavBackBtn" class="mini-icon-btn profile-nav-back-btn" type="button" title="Back to chats" aria-label="Back to chats"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
-                    <div class="profile-nav-toolbar-copy">
-                        <p class="profile-nav-toolbar-title">Settings</p>
-                    </div>
-                </header>
-                <p class="profile-nav-kicker">Settings</p>
-                <button type="button" class="profile-nav-btn is-active" data-profile-nav="identity" aria-current="page">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-user"/></svg>
-                    <span class="profile-nav-copy">
-                        <span class="profile-nav-label">Identity</span>
-                        <span class="profile-nav-sub">E2EE-safe</span>
-                    </span>
-                </button>
-                <button type="button" class="profile-nav-btn" data-profile-nav="security">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
-                    <span class="profile-nav-copy">
-                        <span class="profile-nav-label">Security</span>
-                        <span class="profile-nav-sub">Encryption</span>
-                    </span>
-                </button>
-                <button type="button" class="profile-nav-btn" data-profile-nav="privacy">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-eye"/></svg>
-                    <span class="profile-nav-copy">
-                        <span class="profile-nav-label">Privacy</span>
-                        <span class="profile-nav-sub">Control &amp; security</span>
-                    </span>
-                </button>
-                <button type="button" class="profile-nav-btn" data-profile-nav="data">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-database"/></svg>
-                    <span class="profile-nav-copy">
-                        <span class="profile-nav-label">Data</span>
-                        <span class="profile-nav-sub">Sync &amp; export</span>
-                    </span>
-                </button>
-                <button id="uiProfileLogoutBtn" class="profile-nav-btn profile-nav-btn--logout" type="button">
-                    <svg class="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-logout"/></svg>
-                    <span class="profile-nav-copy">
-                        <span class="profile-nav-label">Log out</span>
-                        <span class="profile-nav-sub">End this session</span>
-                    </span>
-                </button>
-                <div class="profile-nav-foot">
-                    <div class="profile-e2ee-card">
-                        <div class="profile-e2ee-head">
-                            <span class="profile-e2ee-kicker">E2EE status</span>
-                            <span class="profile-e2ee-verified">Verified</span>
-                        </div>
-                        <p class="profile-e2ee-copy">All your data is end-to-end encrypted and stored locally.</p>
-                        <button id="uiProfileViewSecurity" class="profile-e2ee-link" type="button">View security details</button>
-                    </div>
-                </div>
-            </nav>
             <div class="profile-main">
                 <header class="profile-head">
                     <button id="uiProfileBackBtn" class="mini-icon-btn profile-back-btn" type="button" title="Back to chats" aria-label="Back to chats"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
                     <button id="uiProfileNavToggle" class="mini-icon-btn profile-nav-toggle" type="button" title="Settings menu" aria-expanded="false" aria-controls="uiProfileNav" aria-label="Open settings menu"><svg class="ui-icon" aria-hidden="true"><use href="#icon-panel-left"/></svg></button>
                     <div class="profile-head-copy">
-                        <h2 id="uiProfileTitle">Profile settings</h2>
+                        <h2 id="uiProfileTitle">Profile</h2>
                         <p id="uiProfileHeadSub" class="profile-head-sub">Manage your identity. Visible only to you.</p>
                     </div>
                     <button id="uiCloseProfileBtn" class="mini-icon-btn profile-close-btn" type="button" title="Close profile" aria-label="Close profile"><svg class="ui-icon" aria-hidden="true"><use href="#icon-x"/></svg></button>
@@ -2420,6 +2396,212 @@
                                     </div>
                                 </div>
                                 <p class="profile-preview-note">This is how others see your profile.</p>
+                            </section>
+                        </div>
+                    </div>
+
+                    <div id="uiProfileAppearanceLayout" data-profile-section="appearance" class="profile-appearance-layout hidden">
+                        <div class="profile-appearance-controls">
+                            <section class="profile-sec-block">
+                                <h3 class="profile-sec-kicker">Chat preview</h3>
+                                <p class="profile-appearance-lead">Tune the look of Nexa. The preview mirrors what you pick — and the live chat updates with it.</p>
+                                <div id="uiAppearancePreview" class="appearance-preview" data-appearance-glass="50" data-appearance-dim="80" data-appearance-density="comfortable" style="--preview-glass: 50; --preview-dim: 80;" aria-label="Messenger appearance preview">
+                                    <div class="appearance-preview__stage">
+                                        <div class="appearance-preview__wallpaper" data-appearance-wallpaper-layer aria-hidden="true"></div>
+                                        <div class="appearance-preview__dim" data-appearance-dim-layer aria-hidden="true"></div>
+                                        <div class="appearance-preview__shell">
+                                            <aside class="appearance-preview__rail" aria-hidden="true">
+                                                <span class="appearance-preview__rail-dot"></span>
+                                                <span class="appearance-preview__rail-dot"></span>
+                                                <span class="appearance-preview__rail-dot"></span>
+                                            </aside>
+                                            <div class="appearance-preview__left">
+                                                <div class="appearance-preview__search"></div>
+                                                <div class="appearance-preview__chat-row is-active">
+                                                    <span class="appearance-preview__avatar"></span>
+                                                    <span class="appearance-preview__chat-lines">
+                                                        <span class="appearance-preview__line is-name"></span>
+                                                        <span class="appearance-preview__line is-snip"></span>
+                                                    </span>
+                                                </div>
+                                                <div class="appearance-preview__chat-row">
+                                                    <span class="appearance-preview__avatar"></span>
+                                                    <span class="appearance-preview__chat-lines">
+                                                        <span class="appearance-preview__line is-name"></span>
+                                                        <span class="appearance-preview__line is-snip"></span>
+                                                    </span>
+                                                </div>
+                                                <div class="appearance-preview__chat-row">
+                                                    <span class="appearance-preview__avatar"></span>
+                                                    <span class="appearance-preview__chat-lines">
+                                                        <span class="appearance-preview__line is-name"></span>
+                                                        <span class="appearance-preview__line is-snip"></span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="appearance-preview__main">
+                                                <header class="appearance-preview__header">
+                                                    <span class="appearance-preview__header-avatar"></span>
+                                                    <span class="appearance-preview__header-copy">
+                                                        <span class="appearance-preview__header-name">Alex</span>
+                                                        <span class="appearance-preview__header-meta">end-to-end encrypted</span>
+                                                    </span>
+                                                </header>
+                                                <div class="appearance-preview__thread">
+                                                    <div class="appearance-preview__bubble is-other">Hey — still on for tonight?</div>
+                                                    <div class="appearance-preview__bubble is-own">Yes. I’ll send the details here.</div>
+                                                    <div class="appearance-preview__bubble is-other">Perfect. Only we can read this.</div>
+                                                </div>
+                                                <div class="appearance-preview__composer">
+                                                    <span class="appearance-preview__composer-field">Message</span>
+                                                    <span class="appearance-preview__composer-send" aria-hidden="true"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="appearance-preview__note">Changes apply to your messenger immediately and are saved on this device.</p>
+                                </div>
+                            </section>
+
+                            <section class="profile-sec-block">
+                                <h3 class="profile-sec-kicker">Atmosphere</h3>
+                                <div class="appearance-level-row">
+                                    <div class="appearance-option-card appearance-option-card--level" role="group" aria-label="Glass intensity">
+                                        <nexa-level-slider
+                                            id="uiAppearanceGlassLevel"
+                                            inline
+                                            open
+                                            label="Glass"
+                                            axis-start="Clearer"
+                                            axis-end="Deeper"
+                                            hint="Higher glass makes panels, bubbles, and the composer more frosted and opaque. Ultracode is the densest glass."
+                                            value="2"
+                                        ></nexa-level-slider>
+                                    </div>
+                                    <div class="appearance-option-card appearance-option-card--level" role="group" aria-label="Wallpaper dim">
+                                        <nexa-level-slider
+                                            id="uiAppearanceDimLevel"
+                                            inline
+                                            open
+                                            label="Dim"
+                                            axis-start="Softer"
+                                            axis-end="Stronger"
+                                            hint="Higher dim pushes the wallpaper into the background so messages stay readable. Ultracode is the darkest veil."
+                                            value="4"
+                                        ></nexa-level-slider>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="profile-sec-block">
+                                <h3 class="profile-sec-kicker">Wallpaper</h3>
+                                <p class="profile-appearance-lead">Pick a gradient atmosphere for the chat stage. Scroll sideways for more.</p>
+                                <div id="uiAppearanceWallpaperGrid" class="appearance-wallpaper-grid" role="radiogroup" aria-label="Chat wallpaper">
+                                    <button type="button" class="appearance-wallpaper-card is-active" data-appearance-wallpaper="mist" role="radio" aria-checked="true">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--mist" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Mist</span>
+                                            <span class="appearance-wallpaper-card__sub">Soft grain</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="ember" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--ember" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Ember</span>
+                                            <span class="appearance-wallpaper-card__sub">Warm dusk</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="aurora" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--aurora" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Aurora</span>
+                                            <span class="appearance-wallpaper-card__sub">Cool bloom</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="tide" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--tide" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Tide</span>
+                                            <span class="appearance-wallpaper-card__sub">Deep blue</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="sage" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--sage" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Sage</span>
+                                            <span class="appearance-wallpaper-card__sub">Quiet green</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="cobalt" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--cobalt" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Cobalt</span>
+                                            <span class="appearance-wallpaper-card__sub">Night ink</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="rose" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--rose" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Rose</span>
+                                            <span class="appearance-wallpaper-card__sub">Muted blush</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="dusk" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--dusk" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Dusk</span>
+                                            <span class="appearance-wallpaper-card__sub">Violet fall</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="graphite" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--graphite" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Graphite</span>
+                                            <span class="appearance-wallpaper-card__sub">Cool metal</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="void" role="radio" aria-checked="false">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--void" aria-hidden="true"></span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Void</span>
+                                            <span class="appearance-wallpaper-card__sub">Pure black</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="appearance-wallpaper-card appearance-wallpaper-card--upload" data-appearance-wallpaper="custom" role="radio" aria-checked="false" disabled title="Custom wallpaper coming soon">
+                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--upload" aria-hidden="true">
+                                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-upload"/></svg>
+                                        </span>
+                                        <span class="appearance-wallpaper-card__meta">
+                                            <span class="appearance-wallpaper-card__label">Upload</span>
+                                            <span class="appearance-wallpaper-card__sub">Soon</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </section>
+
+                            <section class="profile-sec-block">
+                                <h3 class="profile-sec-kicker">Chat layout</h3>
+                                <div class="appearance-option-card" role="group" aria-label="Message density">
+                                    <div class="appearance-option-head">
+                                        <div class="appearance-option-copy">
+                                            <p class="appearance-option-title">Message density</p>
+                                            <p class="appearance-option-hint">Comfortable spacing for reading, or a tighter thread when you want more on screen.</p>
+                                        </div>
+                                    </div>
+                                    <div id="uiAppearanceDensityPicker" class="appearance-chip-row" role="radiogroup" aria-label="Message density">
+                                        <button type="button" class="appearance-chip is-active" data-appearance-density="comfortable" role="radio" aria-checked="true">Comfortable</button>
+                                        <button type="button" class="appearance-chip" data-appearance-density="compact" role="radio" aria-checked="false">Compact</button>
+                                    </div>
+                                </div>
+                                <div class="appearance-option-card appearance-option-card--static">
+                                    <div class="appearance-option-head">
+                                        <div class="appearance-option-copy">
+                                            <p class="appearance-option-title">Bubble style</p>
+                                            <p class="appearance-option-hint">Matte glass bubbles are the current look. More styles can plug in here later.</p>
+                                        </div>
+                                        <span class="appearance-option-badge">Glass</span>
+                                    </div>
+                                </div>
                             </section>
                         </div>
                     </div>
@@ -2706,12 +2888,20 @@
                 <input id="uiPrefMessageSound" type="checkbox">
                 <span>Notification sound</span>
             </label>
-            <div class="toggle-row" style="flex-direction: column; align-items: stretch; cursor: default;">
-                <p class="settings-label">Glass intensity</p>
-                <div id="uiGlassPicker" class="theme-picker" role="group" aria-label="Glass intensity">
-                    <button type="button" data-glass-value="low">Soft</button>
-                    <button type="button" data-glass-value="medium">Balanced</button>
-                    <button type="button" data-glass-value="high">Deep</button>
+            <div class="toggle-row appearance-settings-slider" style="flex-direction: column; align-items: stretch; cursor: default;">
+                <div class="appearance-option-head">
+                    <p class="settings-label" id="uiSettingsGlassLabel">Glass intensity</p>
+                    <span id="uiSettingsGlassValue" class="appearance-slider-value" aria-hidden="true">50%</span>
+                </div>
+                <div class="appearance-slider" data-appearance-slider="glass-settings">
+                    <div class="appearance-slider__ticks" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <input id="uiGlassSlider" class="appearance-slider__input" type="range" min="0" max="100" step="10" value="50" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="50 percent" aria-labelledby="uiSettingsGlassLabel">
+                    <div class="appearance-slider__ends">
+                        <span>0%</span>
+                        <span>100%</span>
+                    </div>
                 </div>
             </div>
         </div>

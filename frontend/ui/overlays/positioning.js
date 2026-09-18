@@ -7,11 +7,12 @@ const DEFAULT_GAP = 6;
  * @param {DOMRectReadOnly|{top:number,left:number,right:number,bottom:number,width:number,height:number}} [anchorRect]
  * @param {{x:number,y:number}} [pointer]
  * @param {{ width: number, height: number }} menuSize
- * @param {{ pad?: number, gap?: number }} [opts]
+ * @param {{ pad?: number, gap?: number, prefer?: 'above'|'below', align?: 'start'|'center'|'end', minY?: number, maxY?: number }} [opts]
  */
 export function computeOverlayPosition(anchorRect, pointer, menuSize, opts = {}) {
     const pad = opts.pad ?? DEFAULT_PAD;
     const gap = opts.gap ?? DEFAULT_GAP;
+    const align = opts.align || 'start';
     const menuW = Math.max(menuSize.width, 1);
     const menuH = Math.max(menuSize.height, 1);
 
@@ -21,9 +22,15 @@ export function computeOverlayPosition(anchorRect, pointer, menuSize, opts = {})
     const vw = vv?.width ?? window.innerWidth;
     const vh = vv?.height ?? window.innerHeight;
     const maxX = offsetLeft + vw - pad;
-    const maxY = offsetTop + vh - pad;
     const minX = offsetLeft + pad;
-    const minY = offsetTop + pad;
+    let minY = offsetTop + pad;
+    let maxY = offsetTop + vh - pad;
+    if (Number.isFinite(opts.minY)) minY = Math.max(minY, opts.minY);
+    if (Number.isFinite(opts.maxY)) maxY = Math.min(maxY, opts.maxY);
+    if (minY > maxY - 1) {
+        minY = offsetTop + pad;
+        maxY = offsetTop + vh - pad;
+    }
 
     let x = minX;
     let y = minY;
@@ -32,12 +39,26 @@ export function computeOverlayPosition(anchorRect, pointer, menuSize, opts = {})
     let placement = 'default';
 
     if (anchorRect) {
+        const prefer = opts.prefer === 'above' ? 'above' : 'below';
         const belowY = anchorRect.bottom + gap;
         const aboveY = anchorRect.top - menuH - gap;
         const fitsBelow = belowY + menuH <= maxY;
         const fitsAbove = aboveY >= minY;
 
-        if (fitsBelow) {
+        if (prefer === 'above') {
+            if (fitsAbove) {
+                y = aboveY;
+                flipY = true;
+                placement = 'above';
+            } else if (fitsBelow) {
+                y = belowY;
+                placement = 'below';
+            } else {
+                y = clamp(aboveY, minY, maxY - menuH);
+                flipY = true;
+                placement = 'above-clamped';
+            }
+        } else if (fitsBelow) {
             y = belowY;
             placement = 'below';
         } else if (fitsAbove) {
@@ -49,7 +70,13 @@ export function computeOverlayPosition(anchorRect, pointer, menuSize, opts = {})
             placement = 'below-clamped';
         }
 
-        x = anchorRect.left;
+        if (align === 'center') {
+            x = anchorRect.left + (anchorRect.width - menuW) / 2;
+        } else if (align === 'end') {
+            x = anchorRect.right - menuW;
+        } else {
+            x = anchorRect.left;
+        }
         if (x + menuW > maxX) {
             x = anchorRect.right - menuW;
             flipX = true;
@@ -77,6 +104,7 @@ export function computeOverlayPosition(anchorRect, pointer, menuSize, opts = {})
         y: Math.round(y),
         flipX,
         flipY,
+        align,
         placement,
         viewport: Object.freeze({
             offsetLeft,
@@ -99,15 +127,9 @@ export function applyOverlayPosition(el, result, { isModal = false } = {}) {
     el.style.left = `${result.x}px`;
     el.style.top = `${result.y}px`;
 
-    if (result.flipY && result.flipX) {
-        el.style.transformOrigin = 'bottom right';
-    } else if (result.flipY) {
-        el.style.transformOrigin = 'bottom left';
-    } else if (result.flipX) {
-        el.style.transformOrigin = 'top right';
-    } else {
-        el.style.transformOrigin = 'top left';
-    }
+    const xOrigin = result.align === 'center' ? 'center' : result.flipX ? 'right' : 'left';
+    const yOrigin = result.flipY ? 'bottom' : 'top';
+    el.style.transformOrigin = `${xOrigin} ${yOrigin}`;
 }
 
 function clamp(value, min, max) {

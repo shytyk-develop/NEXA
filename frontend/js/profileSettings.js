@@ -1,4 +1,4 @@
-// Profile Settings — identity, security, privacy, data (appearance lives in Interface Settings).
+// Profile Settings — identity, appearance, security, privacy, data.
 
 import { buildChatTranscript, copyText, downloadTextFile, makeSafeFilename } from './chatActions.js';
 import {
@@ -27,6 +27,10 @@ import { setProfileEyesActive } from './eyeTracking.js';
 import { startPreviewTilt, stopPreviewTilt } from './cardTilt.js';
 import { getDevices, registerDevice } from './api.js';
 import { detectDeviceInfo, devicePayload, getDeviceId } from './device.js';
+import {
+    levelIndexToPercent,
+    percentToLevelIndex,
+} from '../ui/levelSlider.js';
 
 const PRIVACY_HINTS = {
     showOnlineStatus: {
@@ -92,7 +96,7 @@ function bindShell() {
     if (panel.dataset.profileBound) return;
     panel.dataset.profileBound = '1';
 
-    panel.querySelectorAll('[data-profile-nav]').forEach((btn) => {
+    document.querySelectorAll('[data-profile-nav]').forEach((btn) => {
         btn.addEventListener('click', () => setSection(btn.dataset.profileNav, { fromUser: true }));
     });
 
@@ -134,9 +138,19 @@ function bindShell() {
     $p('uiProfileCopyLink')?.addEventListener('click', copyProfileLink);
     $p('uiProfileCopyUserId')?.addEventListener('click', copyUserId);
     $p('uiProfileCopyFingerprint')?.addEventListener('click', copyFingerprint);
-    $p('uiProfileViewSecurity')?.addEventListener('click', () => setSection('security', { fromUser: true }));
+    $p('uiProfileViewSecurity')?.addEventListener('click', () => {
+        if (typeof ctx?.openSettingsSection === 'function') {
+            ctx.openSettingsSection('security');
+            return;
+        }
+        setSection('security', { fromUser: true });
+    });
     $p('uiProfileKeysToggle')?.addEventListener('click', toggleFingerprintPanel);
     $p('uiProfileManageDevices')?.addEventListener('click', () => {
+        if (typeof ctx?.openSettingsSection === 'function') {
+            ctx.openSettingsSection('devices');
+            return;
+        }
         setSection('devices', { fromUser: true });
     });
 
@@ -153,6 +167,8 @@ function bindShell() {
     $p('uiProfileClearHistoryBtn')?.addEventListener('click', clearHistory);
     $p('uiProfileExportDataBtn')?.addEventListener('click', exportStorageReport);
     $p('uiProfileDeleteAccountBtn')?.addEventListener('click', onDeleteAccount);
+
+    bindAppearancePreviewControls();
 }
 
 function syncPreviewTilt(active) {
@@ -176,19 +192,22 @@ export function onProfilePanelOpen() {
     const username = resolveUsername();
     draftProfile = loadProfile(username);
     avatarPreviewUrl = draftProfile.avatarDataUrl;
-    setSection(pendingProfileSection || 'identity');
+    const section = pendingProfileSection || 'identity';
     pendingProfileSection = 'identity';
+    setSection(section);
     hydrateIdentity(username);
     void hydrateSecurity();
     hydratePrivacy();
+    hydrateAppearanceControls(ctx?.getPreferences?.());
     hydrateData(username);
-    if (pendingProfileSection === 'devices') {
+    if (section === 'devices') {
         void hydrateDevices();
     }
 }
 
 const PROFILE_SECTION_META = {
-    identity: ['Profile settings', 'Manage your identity. Visible only to you.'],
+    identity: ['Profile', 'Manage your identity. Visible only to you.'],
+    appearance: ['Appearance', 'Theme, wallpaper, and how chats look.'],
     security: ['Security', 'Built with privacy by design.'],
     privacy: ['Privacy', 'Control your visibility and interactions.'],
     data: ['Data & storage', 'Manage your local data and exports.'],
@@ -199,7 +218,7 @@ function setSection(id, { fromUser = false } = {}) {
     const panel = document.getElementById('uiProfilePanel');
     if (!panel) return;
 
-    panel.querySelectorAll('[data-profile-nav]').forEach((btn) => {
+    document.querySelectorAll('[data-profile-nav]').forEach((btn) => {
         const on = btn.dataset.profileNav === id;
         btn.classList.toggle('is-active', on);
         btn.setAttribute('aria-current', on ? 'page' : 'false');
@@ -954,6 +973,123 @@ async function copyField(text) {
     } catch {
         ctx?.showToast?.('Copy failed.', 'error');
     }
+}
+
+/** Appearance controls — level sliders + wallpaper/density. */
+function bindAppearancePreviewControls() {
+    const root = $p('uiProfileAppearanceLayout');
+    if (!root || root.dataset.appearanceBound) return;
+    root.dataset.appearanceBound = '1';
+
+    bindLevelSlider($p('uiAppearanceGlassLevel'), 'glassIntensity');
+    bindLevelSlider($p('uiAppearanceDimLevel'), 'wallpaperDim');
+
+    root.addEventListener('click', (event) => {
+        const densityChip = event.target.closest('#uiAppearanceDensityPicker [data-appearance-density]');
+        if (densityChip) {
+            applyAppearancePreference(
+                'compactMode',
+                densityChip.dataset.appearanceDensity === 'compact'
+            );
+            return;
+        }
+
+        const wallpaper = event.target.closest('#uiAppearanceWallpaperGrid [data-appearance-wallpaper]');
+        if (!wallpaper || wallpaper.disabled) return;
+        applyAppearancePreference('wallpaper', wallpaper.dataset.appearanceWallpaper);
+    });
+}
+
+function bindLevelSlider(el, key) {
+    if (!el) return;
+
+    const applyFromEvent = (event, silent) => {
+        const percent = Number.isFinite(event?.detail?.percent)
+            ? event.detail.percent
+            : levelIndexToPercent(el.levelIndex ?? Math.round(Number(el.value) || 0));
+        const previewPatch = key === 'glassIntensity'
+            ? { appearanceGlass: percent }
+            : { appearanceDim: percent };
+        syncAppearancePreview(previewPatch);
+        applyAppearancePreference(key, percent, { silent });
+    };
+
+    el.addEventListener('input', (event) => applyFromEvent(event, true));
+    el.addEventListener('change', (event) => applyFromEvent(event, false));
+}
+
+function applyAppearancePreference(key, value, opts = {}) {
+    if (typeof ctx?.onPreferenceChange === 'function') {
+        ctx.onPreferenceChange(key, value, opts);
+        return;
+    }
+    hydrateAppearanceControls(ctx?.getPreferences?.() || {});
+}
+
+export function hydrateAppearanceControls(preferences = {}) {
+    const prefs = preferences || ctx?.getPreferences?.() || {};
+    const glass = levelIndexToPercent(percentToLevelIndex(prefs.glassIntensity ?? 50));
+    const dim = levelIndexToPercent(percentToLevelIndex(prefs.wallpaperDim ?? 80));
+    const wallpaper = prefs.wallpaper || 'mist';
+    const density = prefs.compactMode ? 'compact' : 'comfortable';
+
+    const glassLevel = $p('uiAppearanceGlassLevel');
+    const dimLevel = $p('uiAppearanceDimLevel');
+
+    if (glassLevel) glassLevel.value = percentToLevelIndex(glass);
+    if (dimLevel) dimLevel.value = percentToLevelIndex(dim);
+
+    syncChipGroup('#uiAppearanceDensityPicker', 'data-appearance-density', density);
+
+    const grid = $p('uiAppearanceWallpaperGrid');
+    grid?.querySelectorAll('[data-appearance-wallpaper]').forEach((btn) => {
+        if (btn.disabled) return;
+        const on = btn.dataset.appearanceWallpaper === wallpaper;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+
+    syncAppearancePreview({
+        appearanceWallpaper: wallpaper,
+        appearanceGlass: glass,
+        appearanceDim: dim,
+        appearanceDensity: density,
+    });
+}
+
+function syncChipGroup(selector, attr, value) {
+    const group = document.querySelector(selector);
+    if (!group) return;
+    group.querySelectorAll(`[${attr}]`).forEach((btn) => {
+        const on = btn.getAttribute(attr) === String(value);
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+}
+
+function syncAppearancePreview(partial = {}) {
+    const preview = $p('uiAppearancePreview');
+    if (!preview) return;
+
+    const wallpaper = partial.appearanceWallpaper
+        || preview.dataset.appearanceWallpaper
+        || 'mist';
+    const glass = levelIndexToPercent(
+        percentToLevelIndex(partial.appearanceGlass ?? preview.dataset.appearanceGlass ?? 50)
+    );
+    const dim = levelIndexToPercent(
+        percentToLevelIndex(partial.appearanceDim ?? preview.dataset.appearanceDim ?? 80)
+    );
+    const density = partial.appearanceDensity
+        || preview.dataset.appearanceDensity
+        || 'comfortable';
+
+    preview.dataset.appearanceWallpaper = wallpaper;
+    preview.dataset.appearanceGlass = String(glass);
+    preview.dataset.appearanceDim = String(dim);
+    preview.dataset.appearanceDensity = density;
+    preview.style.setProperty('--preview-glass', String(glass));
+    preview.style.setProperty('--preview-dim', String(dim));
 }
 
 export function hydrateProfilePrivacy(preferences) {

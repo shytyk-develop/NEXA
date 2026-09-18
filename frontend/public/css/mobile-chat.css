@@ -4,55 +4,25 @@
     display: none;
 }
 
-/* Sliding segment thumb — Chats ↔ Profile */
-#page-chat.is-viewport-app-stack .nav-rail .rail-top::before {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
-    bottom: 4px;
-    content: "";
-    left: 4px;
-    pointer-events: none;
-    position: absolute;
-    top: 4px;
-    transform: translateX(0);
-    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-    width: calc((100% - 10px) / 2);
-    will-change: transform;
-    z-index: 0;
-}
-
-#page-chat.is-viewport-app-stack .nav-rail .rail-top:has(#uiRailProfile.is-active)::before,
-#page-chat.is-viewport-app-stack .nav-rail .rail-top:has(#uiRailProfile[aria-current="page"])::before {
-    transform: translateX(calc(100% + 2px));
-}
-
-#page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn.is-active,
-#page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn[aria-current="page"] {
+/* Active dock item color — sliding capsule lives in app-layout.css */
+#page-chat.is-viewport-app-stack .sidebar-dock__item.is-active,
+#page-chat.is-viewport-app-stack .sidebar-dock__item[aria-current="page"] {
     background: transparent;
-    color: #fff;
+    color: var(--dock-accent);
     font-weight: 600;
 }
 
-#page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn.is-active .ui-icon,
-#page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn[aria-current="page"] .ui-icon {
-    transform: scale(1.06);
-    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+#page-chat.is-viewport-app-stack .sidebar-dock__item.is-active .ui-icon,
+#page-chat.is-viewport-app-stack .sidebar-dock__item[aria-current="page"] .ui-icon {
+    transform: scale(1.04);
 }
 
-#page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn:active:not(.is-active) {
+#page-chat.is-viewport-app-stack .sidebar-dock__item:active:not(.is-active) {
     transform: scale(0.97);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #page-chat.is-viewport-app-stack .nav-rail .rail-top::before,
-    #page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn,
-    #page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn .ui-icon {
-        transition: none;
-    }
-
-    #page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn.is-active .ui-icon,
-    #page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn[aria-current="page"] .ui-icon,
-    #page-chat.is-viewport-app-stack .nav-rail .rail-icon-btn:active:not(.is-active) {
+    #page-chat.is-viewport-app-stack .sidebar-dock__item:active:not(.is-active) {
         transform: none;
     }
 }
@@ -60,14 +30,14 @@
 #page-chat.is-viewport-app-stack .sidebar-brand {
     align-items: center;
     border-bottom: none;
-    justify-content: center;
+    justify-content: space-between;
     margin-bottom: 0;
     min-height: 48px;
     padding: 14px 20px 4px;
 }
 
 #page-chat.is-viewport-app-stack .sidebar-brand__mark {
-    height: 18px;
+    height: 24px;
 }
 
 #page-chat.is-viewport-app-stack .sidebar-search-open,
@@ -127,10 +97,6 @@
     overflow-x: hidden;
     padding: 0 0 12px;
     width: 100%;
-}
-
-#page-chat.is-viewport-app-stack .sidebar-head {
-    padding: 18px 20px 10px;
 }
 
 #page-chat.is-viewport-app-stack .sidebar-label {
@@ -368,9 +334,23 @@
     margin: 8px 16px 16px;
 }
 
+#page-chat.is-viewport-app-stack .chat-header-stack {
+    height: 100%;
+    min-height: var(--layout-header-h);
+}
+
 #page-chat.is-viewport-app-stack .chat-header-inner {
     gap: 8px;
     padding: 0 12px;
+}
+
+#page-chat.is-viewport-app-stack .chat-header {
+    position: relative;
+    overflow: visible;
+}
+
+#page-chat.is-viewport-app-stack.is-compose-search .compose-spotlight {
+    padding: 0;
 }
 
 #page-chat.is-viewport-app-stack .header-left {
@@ -395,6 +375,7 @@
 }
 
 #page-chat.is-viewport-app-stack .chat-main > .input-bar {
+    --composer-x: 0%;
     background: #141414;
     border: 1px solid #242424;
     border-radius: 24px;
@@ -405,7 +386,6 @@
     max-width: none;
     padding: 6px;
     right: 12px;
-    transform: none;
     width: auto;
 }
 

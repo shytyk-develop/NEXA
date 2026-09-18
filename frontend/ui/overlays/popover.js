@@ -1,9 +1,8 @@
 // Anchored popovers — chat info, quick appearance, reactions.
 
-import { closeOverlay } from './overlayManager.js';
-import { QUICK_REACTIONS } from '../../js/messageReactions.js';
 import { computeKeyFingerprint } from '../../js/profile.js';
 import { getPrivacyFlags } from '../../js/privacy.js';
+import { appendReactionPicker } from './reactionPicker.js';
 
 export function renderPopover(container, state, runAction) {
     const { popoverId } = state.payload || {};
@@ -14,7 +13,7 @@ export function renderPopover(container, state, runAction) {
     }
 
     if (popoverId === 'reactions') {
-        renderReactionPicker(container, state.payload, runAction);
+        appendReactionPicker(container, state.payload, runAction);
         return;
     }
 
@@ -62,29 +61,6 @@ async function renderChatInfo(container, payload, runAction) {
     }
 
     container.append(title, body, meta);
-}
-
-function renderReactionPicker(container, payload, runAction) {
-    const title = document.createElement('h3');
-    title.className = 'overlay-popover-title';
-    title.textContent = 'React';
-
-    const picker = document.createElement('div');
-    picker.className = 'reaction-picker';
-
-    QUICK_REACTIONS.forEach((emoji) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'reaction-picker-btn';
-        btn.textContent = emoji;
-        btn.addEventListener('click', () => {
-            closeOverlay({ reason: 'reaction-pick' });
-            runAction('reaction.pick', { messageId: payload?.messageId, emoji });
-        });
-        picker.append(btn);
-    });
-
-    container.append(title, picker);
 }
 
 function appendMeta(dl, label, value) {

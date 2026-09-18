@@ -7,6 +7,7 @@ import {
     setSidebarChats,
     activateChatPanel,
     resetChatPanel,
+    showPeerEmpty,
     showChatWelcome,
     appendMessage,
     renderMessagesList,
@@ -33,18 +34,20 @@ import {
     openChatInfoPopover,
     initMessageContextMenu,
     initMessageActions,
+    initJumpToBottom,
     highlightMessageRow,
+    findMessageElement,
     openMessageSearch,
     closeMessageSearch,
     toggleMessageSearch,
     searchMessages,
     openSettings,
+    openAppSettings,
     openProfile,
     showChatsView,
     handleProfileBack,
     handleChatBack,
     onProfileSectionOpened,
-    isContactSearchOpen,
     openShortcuts,
     closeModals,
     closeTransientUi,
@@ -121,6 +124,12 @@ import { saveHistory, loadHistory, saveKeys, loadKeys, saveDraft, loadDraft, cle
 import { initRouter, navigateTo, replaceTo } from './router.js';
 import { loadPreferences, applyPreferences, updatePreference } from './preferences.js';
 import { initProfileSettings } from './profileSettings.js';
+import {
+    initComposeSearch,
+    openComposeSearch,
+    closeComposeSearch,
+    isComposeSearchOpen,
+} from './composeSearch.js';
 import { initLoginPage, teardownLoginPage } from './loginPage.js';
 import { initStartSite, teardownStartSite } from './startSite.js';
 import { initAboutSecurity, teardownAboutSecurity } from './aboutSecurity.js';
@@ -148,7 +157,6 @@ import {
     usernamePolicyText,
     loginRequest,
     registerRequest,
-    searchUsers,
     getChats,
     getUser,
     getHistory,
@@ -176,7 +184,7 @@ import {
 
 let socketConnection = null;
 let routerReady = false;
-let contactSearchTimer = null;
+let messageSearchTimer = null;
 let saveChatHistoryTimer = null;
 let realtime = null;
 let state = {
@@ -222,8 +230,100 @@ function getSocket() {
     return socketConnection?.current || null;
 }
 
+let pendingMessageJump = null;
+let switchChatEpoch = 0;
+
+function consumePendingMessageJump(username) {
+    const pending = pendingMessageJump;
+    if (!pending) return;
+    if (
+        username
+        && normalizeUsername(pending.username) !== normalizeUsername(username)
+    ) {
+        return;
+    }
+    pendingMessageJump = null;
+    const tryJump = () => {
+        const row = findMessageElement({
+            messageId: pending.messageId,
+            clientMessageId: pending.clientMessageId,
+        });
+        if (!row) return false;
+        DOM.messagesDiv
+            ?.querySelectorAll('.message-row.is-highlighted')
+            .forEach((el) => el.classList.remove('is-highlighted'));
+        row.classList.add('is-highlighted');
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        window.setTimeout(() => row.classList.remove('is-highlighted'), 1600);
+        return true;
+    };
+    window.requestAnimationFrame(() => {
+        if (tryJump()) return;
+        window.setTimeout(tryJump, 80);
+    });
+}
+
 function onContactSelected(username) {
+    closeComposeSearch();
+    // Leave Profile/Settings so the chat workspace is visible again.
+    showChatsView();
     navigateTo(`/chat/@${username}`, handleNavigation);
+}
+
+function openNewChatCompose() {
+    showChatsView();
+    closeMessageSearch();
+    closeAllPopovers();
+
+    if (isComposeSearchOpen()) {
+        document.getElementById('uiComposeSearchInput')?.focus({ preventScroll: true });
+        return;
+    }
+
+    const leavingChat =
+        Boolean(state.currentTargetUser)
+        || /^\/chat\/@/i.test(window.location.pathname);
+
+    // Spotlight first so welcome CSS hide is active before any panel reset.
+    openComposeSearch();
+
+    if (leavingChat) {
+        leaveActiveChatForCompose();
+    }
+}
+
+function leaveActiveChatForCompose() {
+    switchChatEpoch += 1;
+    pendingMessageJump = null;
+    persistCurrentDraft();
+    flushChatHistorySave();
+    cancelReadReceipt();
+    clearPendingReply();
+    state.currentTargetUser = null;
+    sendChatFocus(null);
+    // Peer rail must flip with Spotlight — don't wait on message exit.
+    showPeerEmpty();
+
+    const messages = DOM.messagesDiv;
+    const finish = () => {
+        messages?.classList.remove('is-compose-exit');
+        resetChatPanel();
+        // Keep welcome mounted under Spotlight so it can fade with the composer on close.
+        if (DOM.chatWelcome) DOM.chatWelcome.classList.remove('hidden');
+        if (window.location.pathname !== '/chat') {
+            window.history.pushState(null, null, '/chat');
+        }
+        renderSidebar();
+        syncRealtimeUi();
+    };
+
+    if (messages?.children.length) {
+        messages.classList.add('is-compose-exit');
+        window.setTimeout(finish, 220);
+        return;
+    }
+
+    finish();
 }
 
 function renderSidebar() {
@@ -338,16 +438,17 @@ function handleToggleReaction(messageId, emoji, anchor) {
         return;
     }
 
-    if (anchor) {
-        openReactionPicker(anchor, messageId);
-        return;
-    }
-
     const partner = state.currentTargetUser;
     const message = (state.chatHistory[partner] || []).find(
         (m) => String(m.id) === String(messageId)
     );
     const mine = message ? getMyReaction(message.reactions, state.myUsername) : null;
+
+    if (anchor) {
+        openReactionPicker(anchor, messageId, mine);
+        return;
+    }
+
     if (mine) {
         sendReactionForMessage(messageId, mine);
     }
@@ -559,7 +660,7 @@ initProfileSettings({
     },
     getPreferences: () => state.preferences,
     getToken: () => state.token || localStorage.getItem('auth_token') || '',
-    onPreferenceChange: (key, value) => {
+    onPreferenceChange: (key, value, opts = {}) => {
         state.preferences = updatePreference(state.preferences, key, value);
         setPreferenceControls(state.preferences);
         syncUiPreferences();
@@ -571,8 +672,14 @@ initProfileSettings({
             state.typingUsers = new Set();
             syncRealtimeUi();
         }
-        showToast('Privacy setting applied.', 'success');
+        const appearanceKeys = new Set(['glassIntensity', 'wallpaper', 'wallpaperDim', 'compactMode']);
+        if (appearanceKeys.has(key)) {
+            if (!opts.silent) showToast('Appearance updated.', 'success');
+            return;
+        }
+        if (!opts.silent) showToast('Privacy setting applied.', 'success');
     },
+    openSettingsSection: (section) => openAppSettings(section),
     onProfileSectionChange: () => onProfileSectionOpened(),
     onProfileSaved: async (profile) => {
         updateProfileRailButton(state.myUsername);
@@ -611,6 +718,42 @@ initProfileSettings({
         }
     },
     showToast,
+});
+
+initComposeSearch({
+    getToken: () => state.token || localStorage.getItem('auth_token') || '',
+    getMyUsername: () => state.myUsername || '',
+    getConversations: () => state.sidebarChats || [],
+    getChatHistory: () => state.chatHistory || {},
+    onSelect: (result) => {
+        const username = typeof result === 'string' ? result : result?.username;
+        if (!username) return;
+
+        if (result && typeof result === 'object' && result.kind === 'message') {
+            pendingMessageJump = {
+                username,
+                messageId: result.messageId,
+                clientMessageId: result.clientMessageId,
+            };
+            const alreadyOpen = window.location.pathname.toLowerCase()
+                === `/chat/@${normalizeUsername(username)}`;
+            if (alreadyOpen) {
+                closeComposeSearch();
+                consumePendingMessageJump(username);
+                return;
+            }
+        } else {
+            pendingMessageJump = null;
+        }
+
+        onContactSelected(username);
+    },
+    onRestoreWelcome: () => {
+        if (!state.currentTargetUser) showChatWelcome({ animate: false });
+    },
+    onError: (err) => {
+        showToast(err?.message || 'User search failed.', 'error');
+    },
 });
 
 registerOverlayActions({
@@ -657,7 +800,10 @@ registerOverlayActions({
         const row = DOM.messagesDiv.querySelector(
             `[data-message-id="${CSS.escape(String(payload.messageId))}"]`
         );
-        const anchor = row?.querySelector('.message-bubble') || row;
+        const anchor =
+            row?.querySelector('.message-content-wrap') ||
+            row?.querySelector('.message-bubble') ||
+            row;
         handleToggleReaction(payload.messageId, null, anchor);
     },
     'reaction.pick': (payload) => {
@@ -699,10 +845,13 @@ initMessageContextMenu((row) => {
         messageId: message?.id != null ? String(message.id) : (row.dataset.messageId || null),
         clientMessageId: row.dataset.clientMessageId || null,
         messageType: row.dataset.messageType,
+        author: row.dataset.messageType === 'outgoing' ? 'You' : (row.dataset.messageSender || 'Message'),
         text,
+        currentEmoji: message ? getMyReaction(message.reactions, state.myUsername) : null,
     };
 });
 initMessageActions();
+initJumpToBottom();
 
 let loginUiMounted = false;
 let startUiMounted = false;
@@ -794,8 +943,12 @@ async function handleNavigation(view, param) {
 
             if (view === 'chat-user' && param) {
                 const targetUser = param;
+                closeComposeSearch();
                 switchChat(targetUser);
             } else {
+                closeComposeSearch();
+                switchChatEpoch += 1;
+                pendingMessageJump = null;
                 state.currentTargetUser = null;
                 sendChatFocus(null);
                 cancelReadReceipt();
@@ -1255,15 +1408,20 @@ async function ensureUserKey(username) {
 
 // Switches active chat with cloud-history parsing layer integration
 async function switchChat(username) {
+    const epoch = ++switchChatEpoch;
+    closeComposeSearch();
     username = normalizeUsername(username);
     if (!isValidUsername(username)) {
+        pendingMessageJump = null;
         showToast(usernamePolicyText(), "error");
         navigateTo('/chat', handleNavigation);
         return;
     }
 
     const userReady = await ensureUserKey(username);
+    if (epoch !== switchChatEpoch) return;
     if (!userReady) {
+        pendingMessageJump = null;
         navigateTo('/chat', handleNavigation);
         return;
     }
@@ -1282,6 +1440,7 @@ async function switchChat(username) {
     // Fetch latest 50 messages slice. Server doesn't know plain text content!
     try {
         const cloudHistory = await getHistory(state.token, state.myUsername, username, 50, 0);
+        if (epoch !== switchChatEpoch) return;
         state.chatHistory[username] = [];
 
         for (const msg of cloudHistory) {
@@ -1302,9 +1461,12 @@ async function switchChat(username) {
         console.warn("Database sync unreachable, using browser cache storage fallback:", err);
     }
 
+    if (epoch !== switchChatEpoch) return;
+
     if (state.chatHistory[username]?.length) {
         renderMessagesList(state.chatHistory[username]);
     }
+    consumePendingMessageJump(username);
     clearPasteAttachments();
     setComposerValue(loadDraft(state.myUsername, username));
     setDraftStatus(getComposerValue() ? "Draft restored locally" : "End-to-end encrypted");
@@ -1479,24 +1641,34 @@ setPasteAttachmentsChangeHandler(() => {
     updateComposerMeta(getComposerValue());
 });
 
-DOM.contactSearchInput.addEventListener('input', () => {
-    handleContactSearchInput();
-});
-
-DOM.refreshUsersBtn.addEventListener('click', refreshUsersDirectory);
-DOM.focusContactsBtn.addEventListener('click', focusContactSearch);
+DOM.refreshUsersBtn?.addEventListener('click', refreshUsersDirectory);
+DOM.focusContactsBtn?.addEventListener('click', focusContactSearch);
 DOM.focusComposerBtn.addEventListener('click', focusComposer);
-DOM.profileBtn?.addEventListener('click', (event) => {
-    event.stopPropagation();
-    openProfile();
-});
 DOM.railChats?.addEventListener('click', (event) => {
     event.preventDefault();
+    if (isComposeSearchOpen()) {
+        closeComposeSearch({ restoreWelcome: !state.currentTargetUser });
+        if (!state.currentTargetUser && window.location.pathname !== '/chat') {
+            navigateTo('/chat', handleNavigation);
+        }
+        showChatsView();
+        return;
+    }
     showChatsView();
 });
 DOM.railProfile?.addEventListener('click', (event) => {
     event.preventDefault();
+    closeComposeSearch({ immediate: true });
     openProfile();
+});
+DOM.dockSettings?.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeComposeSearch({ immediate: true });
+    openAppSettings('appearance');
+});
+DOM.dockNewChat?.addEventListener('click', (event) => {
+    event.preventDefault();
+    openNewChatCompose();
 });
 DOM.closeProfileBtn?.addEventListener('click', (event) => {
     event.preventDefault();
@@ -1557,7 +1729,13 @@ DOM.chatSearchBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     toggleMessageSearch();
 });
-DOM.messageSearchInput.addEventListener('input', () => searchMessages(DOM.messageSearchInput.value));
+DOM.messageSearchInput.addEventListener('input', () => {
+    const value = DOM.messageSearchInput.value;
+    window.clearTimeout(messageSearchTimer);
+    messageSearchTimer = window.setTimeout(() => {
+        searchMessages(value);
+    }, 80);
+});
 DOM.scrollBottomBtn.addEventListener('click', () => scrollMessagesToBottom({ force: true, smooth: true }));
 
 DOM.attachBtn.addEventListener('click', () => DOM.fileInput.click());
@@ -1596,14 +1774,15 @@ if (DOM.prefMessageNotifications) {
     });
 }
 
-if (DOM.glassPicker) {
-    DOM.glassPicker.addEventListener('click', (event) => {
-        const btn = event.target.closest('[data-glass-value]');
-        if (!btn) return;
-        state.preferences = updatePreference(state.preferences, 'glassIntensity', btn.dataset.glassValue);
+if (DOM.glassSlider) {
+    const commitGlass = (silent) => {
+        const value = Number(DOM.glassSlider.value);
+        state.preferences = updatePreference(state.preferences, 'glassIntensity', value);
         setPreferenceControls(state.preferences);
-        showToast('Glass intensity updated.', 'success');
-    });
+        if (!silent) showToast('Appearance updated.', 'success');
+    };
+    DOM.glassSlider.addEventListener('input', () => commitGlass(true));
+    DOM.glassSlider.addEventListener('change', () => commitGlass(false));
 }
 
 if (DOM.replyCloseBtn) {
@@ -1659,41 +1838,9 @@ function notificationPermissionDeniedMessage() {
     return 'Notifications are blocked. Allow them in the browser settings, then try again.';
 }
 
-function handleContactSearchInput() {
-    const query = normalizeUsername(DOM.contactSearchInput.value);
-    DOM.contactSearchInput.value = query;
-    filterUsers(query);
-
-    window.clearTimeout(contactSearchTimer);
-
-    if (query.length < 2) {
-        if (isContactSearchOpen()) {
-            renderUsersList([], state.myUsername, onContactSelected, state.currentTargetUser);
-            return;
-        }
-        renderSidebar();
-        return;
-    }
-
-    clearUsersList("Searching...");
-    contactSearchTimer = window.setTimeout(() => {
-        performUserSearch(query);
-    }, 220);
-}
-
-async function performUserSearch(query) {
-    try {
-        const users = await searchUsers(state.token, query, 20);
-        ingestUserRecords(users);
-        users.forEach(user => {
-            state.usersDirectory[user.username] = user.public_key;
-        });
-        renderUsersList(users, state.myUsername, onContactSelected, state.currentTargetUser);
-    } catch (err) {
-        console.error("User search failed:", err);
-        clearUsersList("Search failed");
-        showToast(err.message || "User search failed.", "error");
-    }
+function refreshUsersDirectory() {
+    loadSidebarChats();
+    showToast("Conversations refreshed.", "success");
 }
 
 function persistCurrentDraft() {
@@ -1707,17 +1854,6 @@ function persistCurrentDraft() {
         clearDraft(state.myUsername, state.currentTargetUser);
         setDraftStatus("End-to-end encrypted");
     }
-}
-
-function refreshUsersDirectory() {
-    const query = normalizeUsername(DOM.contactSearchInput.value);
-    if (query.length < 2) {
-        loadSidebarChats();
-        showToast("Conversations refreshed.", "success");
-        return;
-    }
-
-    performUserSearch(query);
 }
 
 function toggleCurrentChatMute() {
@@ -1921,7 +2057,6 @@ function handleLogout() {
         socketConnection.close();
         socketConnection = null;
     }
-    window.clearTimeout(contactSearchTimer);
 
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_username');
@@ -1944,7 +2079,7 @@ function handleLogout() {
 
     DOM.usernameInput.value = "";
     DOM.passwordInput.value = "";
-    DOM.contactSearchInput.value = "";
+    if (DOM.contactSearchInput) DOM.contactSearchInput.value = "";
     filterUsers("");
     clearUsersList();
     resetChatPanel();

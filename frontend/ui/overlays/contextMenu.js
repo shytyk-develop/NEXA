@@ -1,11 +1,11 @@
 // Message context menu (right-click).
 
 import { closeOverlay } from './overlayManager.js';
+import { appendReactionPicker } from './reactionPicker.js';
 
 export function getMessageContextItems(payload) {
     const items = [
         { id: 'message.reply', label: 'Reply', disabled: !payload?.messageId },
-        { id: 'message.react', label: 'React', disabled: !payload?.messageId },
         { id: 'message.copy', label: 'Copy' },
     ];
 
@@ -21,37 +21,77 @@ export function getMessageContextItems(payload) {
     return items;
 }
 
-export function renderContextMenu(container, state, runAction) {
-    const items = getMessageContextItems(state.payload);
-    const list = document.createElement('ul');
-    list.className = 'overlay-menu-list';
+function appendMessagePreview(container, payload) {
+    const text = typeof payload?.text === 'string' ? payload.text.trim() : '';
+    const author = payload?.author || (payload?.messageType === 'outgoing' ? 'You' : '');
+    if (!text && !author) return;
 
-    items.forEach((item) => {
+    const preview = document.createElement('div');
+    preview.className = 'message-actions-card__preview';
+
+    if (author) {
+        const name = document.createElement('div');
+        name.className = 'message-actions-card__preview-author';
+        name.textContent = author;
+        preview.append(name);
+    }
+
+    if (text) {
+        const body = document.createElement('p');
+        body.className = 'message-actions-card__preview-text';
+        body.textContent = text;
+        preview.append(body);
+    }
+
+    container.append(preview);
+}
+
+export function renderContextMenu(container, state, runAction) {
+    const payload = state.payload || {};
+
+    if (payload.messageId) {
+        appendMessagePreview(container, payload);
+        appendReactionPicker(container, payload, runAction, { variant: 'menu' });
+    }
+
+    const groups = [];
+    let current = [];
+    getMessageContextItems(payload).forEach((item) => {
         if (item.type === 'separator') {
-            const sep = document.createElement('li');
-            sep.className = 'overlay-menu-separator';
-            list.appendChild(sep);
+            if (current.length) {
+                groups.push(current);
+                current = [];
+            }
             return;
         }
+        current.push(item);
+    });
+    if (current.length) groups.push(current);
 
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'overlay-menu-item';
-        btn.role = 'menuitem';
-        btn.textContent = item.label;
-        if (item.danger) btn.classList.add('is-danger');
-        if (item.disabled) btn.disabled = true;
+    groups.forEach((group) => {
+        const list = document.createElement('ul');
+        list.className = 'overlay-menu-list message-actions-card__group';
 
-        btn.addEventListener('click', () => {
-            if (item.disabled) return;
-            closeOverlay({ reason: 'menu-action' });
-            runAction(item.id, state.payload);
+        group.forEach((item) => {
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'overlay-menu-item';
+            btn.role = 'menuitem';
+            btn.textContent = item.label;
+            if (item.danger) btn.classList.add('is-danger');
+            if (item.disabled) btn.disabled = true;
+
+            btn.addEventListener('click', () => {
+                if (item.disabled) return;
+                closeOverlay({ reason: 'menu-action' });
+                runAction(item.id, payload);
+            });
+
+            li.append(btn);
+            list.appendChild(li);
         });
 
-        li.append(btn);
-        list.appendChild(li);
+        container.appendChild(list);
     });
-
-    container.appendChild(list);
 }

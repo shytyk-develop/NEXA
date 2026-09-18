@@ -3,7 +3,9 @@
 import { normalizeUsername } from './api.js';
 import { findChatHistoryKey } from './messageDelete.js';
 
+export const DEFAULT_QUICK_REACTION = '❤️';
 export const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏'];
+export const MORE_REACTIONS = ['🎉', '🤔', '✨', '🚀', '😀', '👎'];
 
 export function normalizeReactionsList(reactions) {
     if (!Array.isArray(reactions)) return [];

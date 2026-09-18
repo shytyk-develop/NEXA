@@ -91,12 +91,13 @@
 }
 
 .message-bubble--own .message-reply-preview {
-    background: color-mix(in srgb, var(--bubble-own-text) 12%, transparent);
-    border-left-color: color-mix(in srgb, var(--bubble-own-text) 70%, #fff);
+    background: color-mix(in srgb, #fff 10%, transparent);
+    border-left-color: color-mix(in srgb, #fff 55%, transparent);
 }
 
 .message-bubble--other .message-reply-preview {
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    background: color-mix(in srgb, #fff 8%, transparent);
+    border-left-color: color-mix(in srgb, #fff 45%, transparent);
 }
 
 .message-reply-preview:hover {
@@ -121,6 +122,10 @@
     color: color-mix(in srgb, var(--bubble-own-text) 85%, #fff);
 }
 
+.message-bubble--other .message-reply-author {
+    color: color-mix(in srgb, var(--bubble-other-text) 85%, #fff);
+}
+
 .message-reply-text {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -139,19 +144,23 @@
     color: color-mix(in srgb, var(--bubble-own-text) 72%, transparent);
 }
 
+.message-bubble--other .message-reply-text {
+    color: color-mix(in srgb, var(--bubble-other-text) 72%, transparent);
+}
+
 .message-body-row {
-    align-items: flex-end;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 8px;
+    display: block;
     max-width: 100%;
     min-width: 0;
 }
 
+.message-body-row::after {
+    clear: both;
+    content: "";
+    display: table;
+}
+
 .message-text {
-    flex: 1 1 auto;
-    max-width: 100%;
-    min-width: 0;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
     word-break: break-word;
@@ -192,6 +201,86 @@
 
 .message-row--own .message-hover-actions {
     right: calc(100% + var(--space-2));
+}
+
+.message-react-fab {
+    align-items: center;
+    background: #1c1c1c;
+    border: 1px solid #323232;
+    border-radius: 999px;
+    bottom: -6px;
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 15px;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+    position: absolute;
+    transition:
+        opacity var(--duration-fast) ease,
+        visibility var(--duration-fast) ease,
+        background 120ms ease,
+        border-color 120ms ease;
+    visibility: hidden;
+    width: 28px;
+    z-index: 6;
+}
+
+.message-row--other .message-react-fab {
+    right: -6px;
+}
+
+.message-row--own .message-react-fab {
+    left: -6px;
+}
+
+.message-bubble:hover ~ .message-react-fab:not(.is-active) {
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0.8s, 0.8s, 0s, 0s;
+    visibility: visible;
+}
+
+.message-react-fab:hover:not(.is-active),
+.message-react-fab:focus-visible:not(.is-active) {
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0s;
+    visibility: visible;
+}
+
+.message-react-fab:hover,
+.message-react-fab:focus-visible {
+    background: #262626;
+    border-color: #4a4a4a;
+    outline: none;
+}
+
+.message-row.has-quick-reaction .message-react-fab,
+.message-row:has(.message-reaction-chip.is-mine) .message-react-fab,
+.message-react-fab.is-active {
+    opacity: 0;
+    pointer-events: none;
+    transition-delay: 0s;
+    visibility: hidden;
+}
+
+.message-row.is-actions-pending .message-bubble:hover ~ .message-react-fab:not(.is-active) {
+    opacity: 0.35;
+}
+
+.message-react-fab[aria-disabled="true"] {
+    cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .message-bubble:hover ~ .message-react-fab:not(.is-active) {
+        transition-delay: 0s;
+    }
 }
 
 #uiDraftStatus.danger,
@@ -235,66 +324,211 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin-top: 4px;
-    max-width: 100%;
-    width: 100%;
+    margin-top: -8px;
+    max-width: calc(100% - 12px);
+    padding: 0 4px;
+    position: relative;
+    width: auto;
+    z-index: 2;
+}
+
+.message-row:has(.message-reactions) {
+    padding-bottom: 6px;
 }
 
 .message-reaction-chip {
     align-items: center;
-    backdrop-filter: blur(12px);
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: #1c1c1c;
+    border: 1px solid #323232;
     border-radius: 999px;
     color: var(--text);
     cursor: pointer;
     display: inline-flex;
-    font-size: 12px;
+    font-size: 13px;
     gap: 4px;
     line-height: 1;
+    min-height: 22px;
+    padding: 3px 7px;
+    transition: background 120ms, border-color 120ms;
+}
+
+.message-reaction-chip:has(.message-reaction-count) {
     padding: 3px 8px 3px 6px;
-    transition: background 120ms, border-color 120ms, transform 100ms;
 }
 
 .message-reaction-chip:hover {
-    background: var(--hover);
-    border-color: var(--accent-muted);
+    background: #2a2a2a;
+    border-color: #555;
 }
 
 .message-reaction-chip.is-mine {
-    background: var(--accent-10);
-    border-color: var(--accent-muted);
+    background: #262626;
+    border-color: #5a5a5a;
 }
 
 .message-reaction-count {
     color: var(--text-secondary);
-    font-size: 10px;
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
 }
 
 .reaction-picker {
+    align-items: center;
     display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    justify-content: flex-start;
+    padding: 0;
+}
+
+.reaction-picker.is-expanded {
     flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
-    padding: 4px 2px;
+    max-width: 280px;
 }
 
-.reaction-picker-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+.message-actions-card__preview {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    margin: 0 0 10px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+}
+
+.message-actions-card__preview-author {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.message-actions-card__preview-text {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 6px 0 0;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.reaction-picker--menu {
+    gap: 4px;
+    justify-content: space-between;
+    margin: 0 0 10px;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 2px 2px 10px;
+    scrollbar-width: none;
+}
+
+.reaction-picker--menu::-webkit-scrollbar {
+    display: none;
+}
+
+.reaction-picker--menu .reaction-picker-btn,
+.reaction-picker--menu .reaction-picker-more {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    flex: 0 0 34px;
+    font-size: 18px;
+    height: 34px;
+    width: 34px;
+}
+
+.reaction-picker--menu .reaction-picker-btn.is-active {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.reaction-picker--menu .reaction-picker-btn:hover,
+.reaction-picker--menu .reaction-picker-more:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: none;
+}
+
+.message-actions-card__group {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    margin: 0;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 4px;
+}
+
+.message-actions-card__group + .message-actions-card__group {
+    margin-top: 8px;
+}
+
+.overlay-surface--message-actions .overlay-menu-item {
+    border-radius: 10px;
+    min-height: 44px;
+}
+
+.overlay-surface--message-actions .overlay-menu-item:hover,
+.overlay-surface--message-actions .overlay-menu-item:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.overlay-surface--message-actions .overlay-menu-item.is-danger:hover {
+    background: rgba(255, 80, 80, 0.12);
+}
+
+.reaction-picker-btn,
+.reaction-picker-more {
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: var(--text);
     cursor: pointer;
-    font-size: 20px;
-    height: 36px;
-    line-height: 36px;
-    transition: transform 100ms ease, background 120ms;
-    width: 36px;
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: 18px;
+    height: 34px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    transition: background 120ms, transform 100ms;
+    width: 34px;
 }
 
-.reaction-picker-btn:hover {
-    background: var(--hover);
-    transform: scale(1.12);
+.reaction-picker-more {
+    color: var(--text-secondary);
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.reaction-picker-btn:hover,
+.reaction-picker-more:hover {
+    background: color-mix(in srgb, #fff 8%, transparent);
+    transform: scale(1.08);
+}
+
+.reaction-picker-btn.is-active {
+    background: color-mix(in srgb, #fff 12%, transparent);
+}
+
+.reaction-picker-btn:focus-visible,
+.reaction-picker-more:focus-visible {
+    background: color-mix(in srgb, #fff 10%, transparent);
+    outline: none;
 }
 
 .message-row--own .message-content-wrap .message-reactions {

@@ -26,8 +26,22 @@
     --radius-xl: 22px;
     --radius-2xl: 28px;
     --radius-pill: 999px;
-    --radius-bubble: 20px;
-    --radius-bubble-tail: 20px;
+    --radius-bubble: 18px;
+    --radius-bubble-join: 8px;
+    --radius-bubble-tail: 4px;
+
+    /* Floating shell — void → surface → elevated → interactive */
+    --nexa-void: #000000;
+    --nexa-surface: #0a0a0a;
+    --nexa-surface-chat: #0d0d0d;
+    --nexa-surface-elevated: #111111;
+    --nexa-surface-interactive: #181818;
+    --nexa-surface-radius: 32px;
+    --nexa-surface-gap: 16px;
+    --nexa-surface-inset: 20px;
+    --nexa-surface-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.015),
+        0 8px 30px rgba(0, 0, 0, 0.25);
 
     /* Motion */
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

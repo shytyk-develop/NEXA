@@ -248,12 +248,15 @@ function mountOverlay(gen) {
     rootEl.classList.toggle('is-message-drawer', overlayState.type === 'drawer');
     rootEl.setAttribute('aria-hidden', 'false');
 
+    const reaction = isReactionPopover(overlayState);
+    const quiet = reaction;
     const needsBackdrop =
-        overlayState.type === 'modal' ||
-        overlayState.type === 'popover' ||
-        overlayState.type === 'context' ||
-        overlayState.type === 'drawer' ||
-        (overlayState.type === 'dropdown' && isMobileSheetViewport());
+        !quiet &&
+        (overlayState.type === 'modal' ||
+            overlayState.type === 'popover' ||
+            overlayState.type === 'drawer' ||
+            overlayState.type === 'context' ||
+            (overlayState.type === 'dropdown' && isMobileSheetViewport()));
 
     if (needsBackdrop) {
         backdropEl = document.createElement('div');
@@ -278,13 +281,21 @@ function mountOverlay(gen) {
             : overlayState.type === 'drawer'
                 ? 'drawer'
                 : overlayState.type;
-    surfaceEl.className = `overlay-surface overlay-surface--${surfaceKind}`;
-    if (shouldUseSheetLayout(overlayState.type) || overlayState.type === 'drawer') {
+    surfaceEl.className = reaction
+        ? 'overlay-surface overlay-surface--reaction'
+        : overlayState.type === 'context'
+            ? 'overlay-surface overlay-surface--menu overlay-surface--message-actions'
+            : `overlay-surface overlay-surface--${surfaceKind}`;
+    if (!reaction && (shouldUseSheetLayout(overlayState.type) || overlayState.type === 'drawer')) {
         surfaceEl.classList.add('is-sheet');
     }
     surfaceEl.setAttribute(
         'role',
-        overlayState.type === 'modal' || overlayState.type === 'drawer' ? 'dialog' : 'menu'
+        overlayState.type === 'modal' || overlayState.type === 'drawer'
+            ? 'dialog'
+            : reaction
+                ? 'presentation'
+                : 'menu'
     );
     surfaceEl.setAttribute(
         'aria-modal',
@@ -369,6 +380,25 @@ function mountMessageSpotlight(payload) {
     rootEl.appendChild(spotlightEl);
 }
 
+function isReactionPopover(state) {
+    return state?.type === 'popover' && state.payload?.popoverId === 'reactions';
+}
+
+function reactionPositionOpts() {
+    const header = document.querySelector('#page-chat .chat-header');
+    const composer = document.querySelector('#page-chat .chat-main > .input-bar');
+    const headerBottom = header?.getBoundingClientRect().bottom ?? 0;
+    const composerTop = composer?.getBoundingClientRect().top;
+    return {
+        prefer: 'above',
+        align: 'center',
+        gap: 8,
+        pad: 12,
+        minY: headerBottom + 8,
+        maxY: Number.isFinite(composerTop) ? composerTop - 8 : undefined,
+    };
+}
+
 function isMobileSheetViewport() {
     return window.matchMedia('(max-width: 760px)').matches;
 }
@@ -414,7 +444,8 @@ function layoutSurface(el, state) {
     const position = computeOverlayPosition(
         anchorRect,
         state.position,
-        menuSize
+        menuSize,
+        isReactionPopover(state) ? reactionPositionOpts() : undefined
     );
 
     applyOverlayPosition(el, position, { isModal: false });
@@ -499,7 +530,9 @@ function bindGlobalListeners() {
         const onScroll = () => {
             if (
                 overlayState &&
-                (overlayState.type === 'dropdown' || overlayState.type === 'context')
+                (overlayState.type === 'dropdown' ||
+                    overlayState.type === 'context' ||
+                    isReactionPopover(overlayState))
             ) {
                 closeOverlay({ immediate: true, reason: 'scroll' });
             }

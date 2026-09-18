@@ -17,12 +17,12 @@
 }
 
 .message-bubble--own .message-link {
-    color: color-mix(in srgb, var(--bubble-own-text) 85%, #000);
-    text-decoration-color: color-mix(in srgb, var(--bubble-own-text) 45%, transparent);
+    color: color-mix(in srgb, var(--accent) 70%, #fff);
+    text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
 .message-bubble--own .message-link:hover {
-    color: #000;
+    color: #fff;
 }
 
 .overlay-surface--modal:has(.modal-panel--link-confirm) {

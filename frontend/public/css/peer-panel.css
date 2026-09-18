@@ -1,14 +1,28 @@
 /* Right-hand conversation profile — chat shell only */
 
 #page-chat .peer-panel-dock {
+    --peer-motion-duration: 0.5s;
+    --peer-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --peer-toggle-h: 88px;
     flex-shrink: 0;
     height: 100%;
+    overflow: visible;
     position: relative;
+    transition: margin-right var(--peer-motion-duration) var(--peer-motion-ease);
+}
+
+#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) {
+    --peer-motion-duration: 0.52s;
+    --peer-motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #page-chat .peer-panel {
-    background: #000;
-    border-left: 1px solid #1a1a1a;
+    background: var(--peer-panel-glass, var(--panel-glass));
+    backdrop-filter: blur(36px) saturate(180%);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    border: 1px solid var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke)));
+    border-left-color: transparent;
+    border-radius: var(--nexa-surface-radius, 22px);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -16,15 +30,48 @@
     overflow: hidden;
     position: relative;
     transition:
-        width 0.48s cubic-bezier(0.22, 1, 0.36, 1),
-        border-color 0.32s ease;
+        width var(--peer-motion-duration, 0.5s) var(--peer-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+        border-color calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
+        background calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
+        box-shadow calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
+        backdrop-filter calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
+        -webkit-backdrop-filter calc(var(--peer-motion-duration, 0.5s) * 0.65) ease;
     width: 300px;
+    z-index: 0;
+}
+
+/* Left edge stroke with a notch for the toggle — no line through the tab. */
+#page-chat .peer-panel:not(.is-collapsed)::before {
+    background: linear-gradient(
+        to bottom,
+        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 0,
+        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% - var(--peer-toggle-h) / 2),
+        transparent calc(50% - var(--peer-toggle-h) / 2),
+        transparent calc(50% + var(--peer-toggle-h) / 2),
+        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% + var(--peer-toggle-h) / 2),
+        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 100%
+    );
+    content: "";
+    inset: 0 auto 0 0;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+    z-index: 2;
 }
 
 #page-chat .peer-panel.is-collapsed {
-    border-left-color: transparent;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: transparent;
+    box-shadow: none;
     min-width: 0;
+    overflow: visible;
     width: 0;
+}
+
+#page-chat .peer-panel.is-collapsed::before {
+    content: none;
 }
 
 #page-chat .peer-panel-shelf {
@@ -37,66 +84,80 @@
     position: absolute;
     right: 0;
     top: 0;
-    transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateX(0);
+    transition:
+        transform var(--peer-motion-duration, 0.5s) var(--peer-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+        visibility 0s linear 0s;
+    visibility: visible;
     width: 300px;
 }
 
 #page-chat .peer-panel.is-collapsed .peer-panel-shelf {
     pointer-events: none;
     transform: translateX(100%);
+    transition:
+        transform var(--peer-motion-duration, 0.52s) var(--peer-motion-ease, cubic-bezier(0.4, 0, 0.2, 1)),
+        visibility 0s linear var(--peer-motion-duration, 0.52s);
     visibility: hidden;
 }
 
 #page-chat .peer-panel-toggle {
     align-items: center;
-    background: rgba(12, 12, 12, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 999px;
-    color: #8a8a8a;
+    background: var(--peer-panel-glass, var(--panel-glass));
+    backdrop-filter: blur(36px) saturate(180%);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    border: 1px solid var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke)));
+    border-radius: 10px 0 0 10px;
+    border-right: 0;
+    box-shadow: var(--glass-inset-highlight);
+    color: #d4d4d8;
     cursor: pointer;
     display: inline-flex;
-    height: 92px;
+    height: var(--peer-toggle-h, 88px);
     justify-content: center;
     padding: 0;
     position: absolute;
-    right: 100%;
+    /* Tuck 1px into the panel fill; left stroke is notched so no seam line. */
+    right: calc(100% - 1px);
     top: 50%;
     transform: translateY(-50%);
     transition:
         opacity 0.22s ease,
-        background 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease,
-        right 0.48s cubic-bezier(0.22, 1, 0.36, 1),
-        border-radius 0.28s ease;
+        color 0.15s ease;
     width: 16px;
-    z-index: 28;
+    z-index: 30;
 }
 
 #page-chat .peer-panel-toggle:hover,
 #page-chat .peer-panel-toggle:focus-visible {
-    background: rgba(18, 18, 18, 0.88);
-    border-color: rgba(255, 255, 255, 0.14);
-    color: #d4d4d8;
+    color: #f4f4f5;
+    outline: none;
 }
 
 #page-chat .peer-panel-toggle .ui-icon {
     height: 13px;
     width: 13px;
+    transition: transform 0.22s var(--peer-motion-ease, ease);
+}
+
+#page-chat .peer-panel-toggle:hover .ui-icon,
+#page-chat .peer-panel-toggle:focus-visible .ui-icon {
+    transform: translateX(2px);
 }
 
 #page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle {
-    background: rgba(12, 12, 12, 0.9);
-    border-color: rgba(255, 255, 255, 0.1);
-    border-radius: 10px 0 0 10px;
-    height: 96px;
+    height: var(--peer-toggle-h, 88px);
     opacity: 1;
-    right: 0;
     width: 16px;
 }
 
 #page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle .ui-icon {
     transform: rotate(180deg);
+}
+
+#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle:hover .ui-icon,
+#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle:focus-visible .ui-icon {
+    transform: rotate(180deg) translateX(2px);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -211,6 +272,7 @@
 
 #page-chat .peer-panel.no-motion,
 #page-chat .peer-panel.no-motion .peer-panel-shelf,
+#page-chat .peer-panel-dock:has(.peer-panel.no-motion),
 #page-chat .peer-panel-dock:has(.peer-panel.no-motion) .peer-panel-toggle {
     transition: none;
 }
@@ -221,9 +283,9 @@
     flex: 1;
     flex-direction: column;
     font-family: var(--f-ui);
-    justify-content: space-between;
     min-height: 0;
-    padding: 48px 22px 36px;
+    padding: 0;
+    position: relative;
     text-align: center;
 }
 
@@ -233,45 +295,91 @@
 
 .peer-empty-hero {
     align-items: center;
+    box-sizing: border-box;
     display: flex;
-    flex: 1;
     flex-direction: column;
+    inset: 0;
     justify-content: center;
     min-height: 0;
+    padding: 36px 22px;
+    position: absolute;
+    width: 100%;
+}
+
+.peer-empty-hero--compose {
+    display: none;
+}
+
+#page-chat.is-compose-search .peer-empty-hero--welcome {
+    display: none;
+}
+
+#page-chat.is-compose-search .peer-empty-hero--compose {
+    display: flex;
+}
+
+.peer-empty-core {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 100%;
 }
 
 .peer-empty-art {
-    height: 168px;
-    margin: 0 0 22px;
+    align-items: center;
+    color: #d4d4d8;
+    display: flex;
+    flex-shrink: 0;
+    height: 96px;
+    justify-content: center;
+    margin: 0 0 14px;
     position: relative;
-    width: 168px;
+    width: 96px;
 }
 
-.peer-empty-art img {
+.peer-empty-icon {
     display: block;
-    height: 100%;
-    mix-blend-mode: lighten;
-    object-fit: contain;
-    position: relative;
-    width: 100%;
+    fill: none;
+    flex-shrink: 0;
+    height: 56px;
+    opacity: 0.72;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+    width: 56px;
 }
 
 .peer-empty-title {
     color: #f4f4f5;
+    flex-shrink: 0;
     font-size: 18px;
     font-weight: 600;
     letter-spacing: -0.03em;
     line-height: 1.25;
     margin: 0 0 10px;
+    min-height: 1.25em;
 }
 
 .peer-empty-copy {
     color: #8a8a8a;
+    flex-shrink: 0;
     font-size: 13px;
     font-weight: 400;
     line-height: 1.5;
     margin: 0 0 18px;
     max-width: 230px;
+    min-height: calc(1.5em * 3);
+}
+
+/* Same reserved height in both modes so centering keeps icons locked. */
+.peer-empty-cta {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    min-height: 36px;
 }
 
 .peer-empty-btn {
@@ -282,6 +390,7 @@
     color: #d4d4d8;
     cursor: pointer;
     display: inline-flex;
+    flex-shrink: 0;
     font-family: var(--f-ui);
     font-size: 12px;
     font-weight: 500;
@@ -301,38 +410,17 @@
     width: 14px;
 }
 
-.peer-empty-hint {
-    padding-top: 28px;
-}
-
-.peer-empty-hint-title {
-    color: #d4d4d8;
-    font-size: 14px;
-    font-weight: 500;
-    margin: 0 0 6px;
-}
-
-.peer-empty-hint-copy {
-    color: #6e6e6e;
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.45;
-    margin: 0;
-}
-
 .peer-panel-empty:not(.is-entering) .peer-empty-art,
 .peer-panel-empty:not(.is-entering) .peer-empty-title,
 .peer-panel-empty:not(.is-entering) .peer-empty-copy,
-.peer-panel-empty:not(.is-entering) .peer-empty-btn,
-.peer-panel-empty:not(.is-entering) .peer-empty-hint {
-    opacity: 0;
+.peer-panel-empty:not(.is-entering) .peer-empty-btn {
+    opacity: 1;
 }
 
 .peer-panel-empty.is-entering .peer-empty-art,
 .peer-panel-empty.is-entering .peer-empty-title,
 .peer-panel-empty.is-entering .peer-empty-copy,
-.peer-panel-empty.is-entering .peer-empty-btn,
-.peer-panel-empty.is-entering .peer-empty-hint {
+.peer-panel-empty.is-entering .peer-empty-btn {
     animation: nexa-empty-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -340,19 +428,16 @@
 .peer-panel-empty.is-entering .peer-empty-title { animation-delay: 0.16s; }
 .peer-panel-empty.is-entering .peer-empty-copy { animation-delay: 0.24s; }
 .peer-panel-empty.is-entering .peer-empty-btn { animation-delay: 0.32s; }
-.peer-panel-empty.is-entering .peer-empty-hint { animation-delay: 0.42s; }
 
 @media (prefers-reduced-motion: reduce) {
     .peer-panel-empty.is-entering .peer-empty-art,
     .peer-panel-empty.is-entering .peer-empty-title,
     .peer-panel-empty.is-entering .peer-empty-copy,
     .peer-panel-empty.is-entering .peer-empty-btn,
-    .peer-panel-empty.is-entering .peer-empty-hint,
     .peer-panel-empty:not(.is-entering) .peer-empty-art,
     .peer-panel-empty:not(.is-entering) .peer-empty-title,
     .peer-panel-empty:not(.is-entering) .peer-empty-copy,
-    .peer-panel-empty:not(.is-entering) .peer-empty-btn,
-    .peer-panel-empty:not(.is-entering) .peer-empty-hint {
+    .peer-panel-empty:not(.is-entering) .peer-empty-btn {
         animation: none;
         opacity: 1;
         transform: none;
@@ -646,6 +731,10 @@
 
 @media (prefers-reduced-motion: reduce) {
     #page-chat .peer-panel,
+    #page-chat .peer-panel.is-collapsed,
+    #page-chat .peer-panel-shelf,
+    #page-chat .peer-panel.is-collapsed .peer-panel-shelf,
+    #page-chat .peer-panel-dock,
     #page-chat .peer-panel-toggle,
     #page-chat .peer-panel-toggle .ui-icon,
     .peer-panel-scrim {

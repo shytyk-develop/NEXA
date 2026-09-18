@@ -8,12 +8,12 @@ import {
     openModalOverlay,
     openPopoverOverlay,
 } from '../ui/overlays/overlayManager.js';
-import { getMyReaction, getReactionCounts, QUICK_REACTIONS } from './messageReactions.js';
+import { DEFAULT_QUICK_REACTION, getMyReaction, getReactionCounts } from './messageReactions.js';
 import {
     appendLinkedTextContent,
     handleExternalLinkClick,
 } from './messageLinks.js';
-import { hydrateProfilePrivacy, onProfilePanelClose, queueProfilePanelRefresh } from './profileSettings.js';
+import { hydrateAppearanceControls, hydrateProfilePrivacy, onProfilePanelClose, queueProfilePanelRefresh } from './profileSettings.js';
 import { getPrivacyFlags, isChatMuted } from './privacy.js';
 import {
     applyContactAvatar,
@@ -55,14 +55,9 @@ export const DOM = {
     focusContactsBtn: document.getElementById('uiFocusContactsBtn'),
     focusComposerBtn: document.getElementById('uiFocusComposerBtn'),
     shortcutsBtn: document.getElementById('uiShortcutsBtn'),
-    profileBtn: document.getElementById('uiProfileBtn'),
+    profileBtn: document.getElementById('uiRailProfile'),
     settingsBtn: document.getElementById('uiSettingsBtn'),
     refreshUsersBtn: document.getElementById('uiRefreshUsersBtn'),
-    contactSearchInput: document.getElementById('uiContactSearch'),
-    contactSearchOpenBtn: document.getElementById('uiContactSearchOpenBtn'),
-    contactSearchTrigger: document.getElementById('uiContactSearchTrigger'),
-    contactSearchBackBtn: document.getElementById('uiContactSearchBackBtn'),
-    sidebarLabel: document.getElementById('uiSidebarLabel'),
     copyUsernameBtn: document.getElementById('uiCopyUsernameBtn'),
 
     chatSearchBtn: document.getElementById('uiChatSearchBtn'),
@@ -102,7 +97,8 @@ export const DOM = {
     prefMessageNotifications: document.getElementById('uiPrefMessageNotifications'),
     prefMessagePreview: document.getElementById('uiPrefMessagePreview'),
     prefMessageSound: document.getElementById('uiPrefMessageSound'),
-    glassPicker: document.getElementById('uiGlassPicker'),
+    glassSlider: document.getElementById('uiGlassSlider'),
+    settingsGlassValue: document.getElementById('uiSettingsGlassValue'),
 
     profilePanel: document.getElementById('uiProfilePanel'),
     profileNav: document.getElementById('uiProfileNav'),
@@ -125,6 +121,8 @@ export const DOM = {
     railSidebarToggle: document.getElementById('uiRailSidebarToggle'),
     railChats: document.getElementById('uiRailChats'),
     railProfile: document.getElementById('uiRailProfile'),
+    dockSettings: document.getElementById('uiDockSettings'),
+    dockNewChat: document.getElementById('uiDockNewChat'),
 
     peerPanel: document.getElementById('uiPeerPanel'),
     peerPanelToggle: document.getElementById('uiPeerPanelToggle'),
@@ -151,6 +149,8 @@ if (missingDomKeys.length) {
     throw new Error(`Missing required UI elements: ${missingDomKeys.join(', ')}`);
 }
 
+ensureChromeFrost();
+
 initSmartPasteUi({
     listEl: DOM.pasteAttachments,
     dialogEl: DOM.pasteEditor,
@@ -163,9 +163,10 @@ initSmartPasteUi({
     isDisabled: () => Boolean(DOM.messageInput?.disabled),
 });
 
-const PEER_PANEL_COLLAPSED_KEY = 'nexa_peer_panel_collapsed';
-const PEER_NARROW_MQ = '(max-width: 1280px)';
-const SIDEBAR_NARROW_MQ = '(max-width: 1100px)';
+const PEER_PANEL_COLLAPSED_KEY = 'nexa_peer_panel_collapsed_v3';
+const PEER_NARROW_MQ = '(max-width: 760px)';
+const PEER_COLLAPSE_MQ = '(max-width: 1120px)';
+const SIDEBAR_NARROW_MQ = '(max-width: 1320px)';
 const PROFILE_STACK_MQ = '(max-width: 760px)';
 const APP_STACK_MQ = PROFILE_STACK_MQ;
 
@@ -175,6 +176,14 @@ function isAppStackViewport() {
 
 function isProfileStackViewport() {
     return isAppStackViewport();
+}
+
+function isPeerCollapseViewport() {
+    return window.matchMedia(PEER_COLLAPSE_MQ).matches;
+}
+
+function isSidebarNarrowViewport() {
+    return window.matchMedia(SIDEBAR_NARROW_MQ).matches;
 }
 
 function readPeerPanelCollapsed() {
@@ -221,11 +230,12 @@ function syncPeerPanelScrim() {
 export function openPeerProfileSheet() {
     if (!DOM.peerPanel) return;
     peerViewportForced = false;
-    peerNarrowUserExpand = window.matchMedia(PEER_NARROW_MQ).matches || isAppStackViewport();
+    peerNarrowUserExpand = isPeerCollapseViewport() || isAppStackViewport();
     setPeerPanelCollapsed(false);
 }
 
 export function closePeerProfileSheet() {
+    if (!isAppStackViewport()) return;
     peerNarrowUserExpand = false;
     setPeerPanelCollapsed(true);
 }
@@ -243,21 +253,16 @@ function initPeerPanelCollapse() {
     const panel = DOM.peerPanel;
     const btn = DOM.peerPanelToggle;
     if (!panel) return;
-    const collapsed = readPeerPanelCollapsed();
-    if (collapsed) {
-        panel.classList.add('no-motion');
-        setPeerPanelCollapsed(true, false);
-        requestAnimationFrame(() => panel.classList.remove('no-motion'));
-    } else if (isAppStackViewport()) {
-        setPeerPanelCollapsed(true, false);
-    } else {
-        DOM.pageChat?.classList.toggle('is-peer-collapsed', false);
-        syncPeerPanelScrim();
-    }
+    panel.classList.add('no-motion');
+    setPeerPanelCollapsed(
+        isAppStackViewport() || isPeerCollapseViewport() || readPeerPanelCollapsed(),
+        false,
+    );
+    requestAnimationFrame(() => panel.classList.remove('no-motion'));
     btn?.addEventListener('click', () => {
         const next = !panel.classList.contains('is-collapsed');
         peerViewportForced = false;
-        peerNarrowUserExpand = window.matchMedia(PEER_NARROW_MQ).matches && !next;
+        peerNarrowUserExpand = isPeerCollapseViewport() && !next;
         setPeerPanelCollapsed(next);
     });
     DOM.peerPanelScrim?.addEventListener('click', () => {
@@ -307,11 +312,9 @@ function chatsViewActive() {
 function syncRailCollapsedTools() {
     const tools = DOM.railCollapsedTools;
     if (!tools) return;
-    const show = chatsViewActive()
-        && Boolean(DOM.sidebar?.classList.contains('is-collapsed'))
-        && !isAppStackViewport();
-    tools.hidden = !show;
-    tools.setAttribute('aria-hidden', show ? 'false' : 'true');
+    // Desktop uses the edge capsule toggle (peer-panel style); keep rail tools hidden.
+    tools.hidden = true;
+    tools.setAttribute('aria-hidden', 'true');
 }
 
 function setSidebarCollapsed(collapsed, persist = true) {
@@ -395,6 +398,11 @@ export function handleProfileBack() {
         && DOM.profilePanel
         && !DOM.profilePanel.classList.contains('hidden')
     ) {
+        // Identity is a single page (no settings nav) — back returns to chats.
+        if (DOM.pageChat.classList.contains('is-app-view-identity')) {
+            showChatsView();
+            return;
+        }
         setProfileDrillLevel('nav');
         return;
     }
@@ -414,7 +422,7 @@ function setChatDrillLevel(level) {
         back.hidden = level !== 'chat';
         back.setAttribute('aria-hidden', level === 'chat' ? 'false' : 'true');
     }
-    if (level !== 'chat') closePeerProfileSheet();
+    if (level !== 'chat' && isAppStackViewport()) closePeerProfileSheet();
 }
 
 export function handleChatBack() {
@@ -442,7 +450,8 @@ function syncChatStackLevel() {
 
 function syncViewportPanels() {
     const peerNarrow = window.matchMedia(PEER_NARROW_MQ).matches;
-    const sidebarNarrow = window.matchMedia(SIDEBAR_NARROW_MQ).matches;
+    const peerCollapse = isPeerCollapseViewport();
+    const sidebarNarrow = isSidebarNarrowViewport();
     const appStack = isAppStackViewport();
     DOM.pageChat?.classList.toggle('is-viewport-peer-narrow', peerNarrow);
     DOM.pageChat?.classList.toggle('is-viewport-sidebar-narrow', sidebarNarrow);
@@ -450,7 +459,7 @@ function syncViewportPanels() {
     DOM.pageChat?.classList.toggle('is-viewport-app-stack', appStack);
 
     if (DOM.peerPanel) {
-        if (peerNarrow) {
+        if (appStack || peerCollapse) {
             if (!peerNarrowUserExpand && !DOM.peerPanel.classList.contains('is-collapsed')) {
                 peerViewportForced = true;
                 DOM.peerPanel.classList.add('no-motion');
@@ -522,25 +531,30 @@ function syncViewportPanels() {
 
 function initSidebarCollapse() {
     const sidebar = DOM.sidebar;
+    const capsule = document.getElementById('uiLeftCapsule');
     const btn = DOM.sidebarToggle;
     if (!sidebar || !btn) return;
     const collapsed = readSidebarCollapsed();
     if (collapsed) {
         sidebar.classList.add('no-motion');
+        capsule?.classList.add('no-motion');
         setSidebarCollapsed(true, false);
-        requestAnimationFrame(() => sidebar.classList.remove('no-motion'));
+        requestAnimationFrame(() => {
+            sidebar.classList.remove('no-motion');
+            capsule?.classList.remove('no-motion');
+        });
     } else {
         syncRailCollapsedTools();
     }
     btn.addEventListener('click', () => {
         const next = !sidebar.classList.contains('is-collapsed');
         sidebarViewportForced = false;
-        sidebarNarrowUserExpand = window.matchMedia(SIDEBAR_NARROW_MQ).matches && !next;
+        sidebarNarrowUserExpand = isSidebarNarrowViewport() && !next;
         setSidebarCollapsed(next);
     });
     const expand = () => {
         sidebarViewportForced = false;
-        sidebarNarrowUserExpand = window.matchMedia(SIDEBAR_NARROW_MQ).matches;
+        sidebarNarrowUserExpand = isSidebarNarrowViewport();
         setSidebarCollapsed(false);
     };
     DOM.railMark?.addEventListener('click', expand);
@@ -593,16 +607,15 @@ const contactsState = {
 
 function initViewportPanels() {
     const peerMq = window.matchMedia(PEER_NARROW_MQ);
+    const peerCollapseMq = window.matchMedia(PEER_COLLAPSE_MQ);
     const sidebarMq = window.matchMedia(SIDEBAR_NARROW_MQ);
     const stackMq = window.matchMedia(APP_STACK_MQ);
     const run = () => syncViewportPanels();
     run();
-    if (peerMq.addEventListener) peerMq.addEventListener('change', run);
-    else peerMq.addListener?.(run);
-    if (sidebarMq.addEventListener) sidebarMq.addEventListener('change', run);
-    else sidebarMq.addListener?.(run);
-    if (stackMq.addEventListener) stackMq.addEventListener('change', run);
-    else stackMq.addListener?.(run);
+    for (const mq of [peerMq, peerCollapseMq, sidebarMq, stackMq]) {
+        if (mq.addEventListener) mq.addEventListener('change', run);
+        else mq.addListener?.(run);
+    }
 }
 
 initViewportPanels();
@@ -674,13 +687,13 @@ export function updateStatus(status, colorClass) {
     DOM.statusSpan.style.color = '';
 
     if (isReconnecting) {
-        DOM.statusSpan.className = 'rail-presence status-offline';
+        DOM.statusSpan.className = 'sidebar-dock__status rail-presence status-offline';
         return;
     }
 
     DOM.statusSpan.className = isOnline
-        ? 'rail-presence status-online'
-        : 'rail-presence status-offline';
+        ? 'sidebar-dock__status rail-presence status-online'
+        : 'sidebar-dock__status rail-presence status-offline';
 }
 
 export function setSidebarChats(chats, myUsername, onUserSelect, activeUsername = contactsState.activeUsername) {
@@ -741,13 +754,28 @@ export function showContactsLoading(count = 6) {
     syncWelcomeBanner(true);
 }
 
-export function showChatWelcome() {
+export function showChatWelcome({ animate = true } = {}) {
     if (!DOM.chatWelcome) return;
+
+    // Spotlight owns the stage — keep welcome in the tree (for CSS fade) but dormant.
+    if (document.getElementById('page-chat')?.classList.contains('is-compose-search')) {
+        DOM.chatWelcome.classList.remove('hidden');
+        return;
+    }
+
     DOM.chatWelcome.classList.remove('hidden');
-    DOM.chatWelcome.classList.remove('is-entering');
-    void DOM.chatWelcome.offsetWidth;
-    DOM.chatWelcome.classList.add('is-entering');
-    playEmptyStateIntros();
+    if (animate) playEmptyStateIntros();
+}
+
+/** Park welcome under Spotlight without display:none so it can fade back with the composer. */
+export function hideChatWelcome() {
+    if (!DOM.chatWelcome) return;
+    // Prefer CSS hide via is-compose-search; only hard-hide when a chat is active.
+    if (document.getElementById('page-chat')?.classList.contains('is-compose-search')) {
+        DOM.chatWelcome.classList.remove('hidden');
+        return;
+    }
+    DOM.chatWelcome.classList.add('hidden');
 }
 
 export function activateChatPanel(username) {
@@ -795,9 +823,14 @@ export function resetChatPanel() {
     updateComposerMeta('');
     setDraftStatus(COMPOSER_DEFAULT_META);
     closeMessageSearch();
+    showPeerEmpty();
+    if (isAppStackViewport() && chatsViewActive()) setChatDrillLevel('list');
+}
+
+/** Swap the right rail to empty immediately (e.g. under Spotlight) without waiting on chat teardown. */
+export function showPeerEmpty() {
     setActiveContact(null);
     refreshPeerPanel(null);
-    if (isAppStackViewport() && chatsViewActive()) setChatDrillLevel('list');
 }
 
 export function renderMessagesList(messages) {
@@ -807,22 +840,119 @@ export function renderMessagesList(messages) {
 
     messages.forEach((message, index) => {
         const prev = index > 0 ? messages[index - 1] : null;
-        DOM.messagesDiv.appendChild(buildMessageElement(message, prev));
+        const next = index < messages.length - 1 ? messages[index + 1] : null;
+        DOM.messagesDiv.appendChild(buildMessageElement(message, prev, next));
     });
+    ensureChromeFrost();
     reconcileMessageRowsWithHistory(messages);
     scrollMessagesToBottom({ force: true });
 }
 
 export function clearMessageView() {
     DOM.messagesDiv.innerHTML = '';
+    ensureChromeFrost();
+}
+
+function ensureChromeFrost() {
+    const root = DOM.messagesDiv;
+    if (!root) return;
+
+    const makeFrost = (side) => {
+        const el = document.createElement('div');
+        el.className = `chat-chrome-frost chat-chrome-frost--${side}`;
+        el.setAttribute('aria-hidden', 'true');
+        for (let i = 0; i < 4; i += 1) {
+            el.append(document.createElement('span'));
+        }
+        return el;
+    };
+
+    const makePad = (side) => {
+        const el = document.createElement('div');
+        el.className = `chat-chrome-pad chat-chrome-pad--${side}`;
+        el.setAttribute('aria-hidden', 'true');
+        return el;
+    };
+
+    const syncLayers = (el) => {
+        while (el.childElementCount < 4) el.append(document.createElement('span'));
+        while (el.childElementCount > 4) el.lastElementChild.remove();
+    };
+
+    let top = root.querySelector(':scope > .chat-chrome-frost--top');
+    let bottom = root.querySelector(':scope > .chat-chrome-frost--bottom');
+    let padTop = root.querySelector(':scope > .chat-chrome-pad--top');
+    let padBottom = root.querySelector(':scope > .chat-chrome-pad--bottom');
+    if (!top) top = makeFrost('top');
+    if (!bottom) bottom = makeFrost('bottom');
+    if (!padTop) padTop = makePad('top');
+    if (!padBottom) padBottom = makePad('bottom');
+    syncLayers(top);
+    syncLayers(bottom);
+
+    // Order: frost-top, pad-top, messages..., pad-bottom, frost-bottom
+    if (root.firstElementChild !== top) root.insertBefore(top, root.firstChild);
+    if (top.nextElementSibling !== padTop) root.insertBefore(padTop, top.nextSibling);
+    if (root.lastElementChild !== bottom) root.appendChild(bottom);
+    if (bottom.previousElementSibling !== padBottom) root.insertBefore(padBottom, bottom);
 }
 
 const SCROLL_NEAR_BOTTOM_PX = 96;
+const JUMP_SHOW_PX = 56;
+const JUMP_SCROLL_MS = 90;
+
+let jumpToBottomInit = false;
+let jumpScrollFrame = 0;
 
 export function isMessagesNearBottom(threshold = SCROLL_NEAR_BOTTOM_PX) {
     const el = DOM.messagesDiv;
     if (!el) return true;
     return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+}
+
+export function syncJumpToBottomButton() {
+    const btn = DOM.scrollBottomBtn;
+    if (!btn) return;
+
+    const chatOn = !btn.disabled;
+    const show = chatOn && Boolean(DOM.messagesDiv) && !isMessagesNearBottom(JUMP_SHOW_PX);
+    btn.classList.toggle('is-visible', show);
+    btn.setAttribute('aria-hidden', show ? 'false' : 'true');
+    btn.tabIndex = show ? 0 : -1;
+}
+
+function setMessagesScrollBehavior(value) {
+    if (DOM.messagesDiv) DOM.messagesDiv.style.scrollBehavior = value;
+}
+
+function animateMessagesToBottom(duration = JUMP_SCROLL_MS) {
+    const el = DOM.messagesDiv;
+    if (!el) return;
+
+    const from = el.scrollTop;
+    const maxTop = () => Math.max(0, el.scrollHeight - el.clientHeight);
+    if (maxTop() - from <= 1) {
+        el.scrollTop = maxTop();
+        syncJumpToBottomButton();
+        return;
+    }
+
+    setMessagesScrollBehavior('auto');
+    const started = performance.now();
+    const token = ++jumpScrollFrame;
+    const tick = (now) => {
+        if (token !== jumpScrollFrame) return;
+        const t = Math.min(1, (now - started) / duration);
+        el.scrollTop = from + (maxTop() - from) * t;
+        if (t < 1) {
+            window.requestAnimationFrame(tick);
+            return;
+        }
+        el.scrollTop = maxTop();
+        setMessagesScrollBehavior('');
+        syncJumpToBottomButton();
+    };
+    tick(started);
 }
 
 export function scrollMessagesToBottom(options = {}) {
@@ -831,14 +961,27 @@ export function scrollMessagesToBottom(options = {}) {
         : options;
     if (!force && !isMessagesNearBottom()) return;
 
-    if (smooth) {
-        DOM.messagesDiv.scrollTo({
-            top: DOM.messagesDiv.scrollHeight,
-            behavior: 'smooth',
-        });
-    } else {
-        DOM.messagesDiv.scrollTop = DOM.messagesDiv.scrollHeight;
+    jumpScrollFrame += 1;
+    DOM.scrollBottomBtn?.classList.remove('is-visible');
+    DOM.scrollBottomBtn?.setAttribute('aria-hidden', 'true');
+    if (DOM.scrollBottomBtn) DOM.scrollBottomBtn.tabIndex = -1;
+
+    if (smooth && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        animateMessagesToBottom();
+        return;
     }
+
+    setMessagesScrollBehavior('auto');
+    DOM.messagesDiv.scrollTop = DOM.messagesDiv.scrollHeight;
+    setMessagesScrollBehavior('');
+    syncJumpToBottomButton();
+}
+
+export function initJumpToBottom() {
+    if (jumpToBottomInit || !DOM.messagesDiv) return;
+    jumpToBottomInit = true;
+    DOM.messagesDiv.addEventListener('scroll', syncJumpToBottomButton, { passive: true });
+    syncJumpToBottomButton();
 }
 
 export function findMessageElement({ messageId, clientMessageId } = {}) {
@@ -901,10 +1044,9 @@ export function patchGroupingFromState(messages) {
         if (!row) return;
 
         const prev = index > 0 ? messages[index - 1] : null;
-        const isGrouped = isGroupedWithPrevious(message, prev);
+        const next = index < messages.length - 1 ? messages[index + 1] : null;
         const showSenderName = shouldShowSenderName(message, prev);
-
-        row.classList.toggle('message-row--grouped', isGrouped);
+        applyMessageCluster(row, clusterPosition(message, prev, next));
 
         let nameEl = row.querySelector('.message-sender-label');
         if (showSenderName && message.type !== 'outgoing') {
@@ -963,8 +1105,10 @@ export function appendMessage(messageOrSender, text, type, timestamp = Date.now(
         }
     }
 
-    const row = buildMessageElement(message, previousMessage);
+    const row = buildMessageElement(message, previousMessage, null);
     DOM.messagesDiv.appendChild(row);
+    ensureChromeFrost();
+    refreshVisibleMessageClusters();
     reconcileMessageRowsWithHistory([message]);
     scrollMessagesToBottom();
 }
@@ -1034,17 +1178,16 @@ function buildReactionsEl(message) {
     return wrap;
 }
 
-function buildMessageElement(message, previousMessage = null) {
+function buildMessageElement(message, previousMessage = null, nextMessage = null) {
     const isOutgoing = message.type === 'outgoing';
     const showSenderName = shouldShowSenderName(message, previousMessage);
-    const isGrouped = isGroupedWithPrevious(message, previousMessage);
+    const cluster = clusterPosition(message, previousMessage, nextMessage);
 
     const row = document.createElement('div');
     row.className = [
         'message-row group',
         isOutgoing ? 'message-row--own' : 'message-row--other',
-        isGrouped ? 'message-row--grouped' : '',
-    ].join(' ').trim();
+    ].join(' ');
     row.dataset.messageType = message.type;
     row.dataset.messageSender = message.sender || '';
 
@@ -1116,7 +1259,7 @@ function buildMessageElement(message, previousMessage = null) {
     const hoverActions = document.createElement('div');
     hoverActions.className = 'message-hover-actions';
     hoverActions.setAttribute('role', 'group');
-    hoverActions.setAttribute('aria-label', 'Message actions');
+    hoverActions.setAttribute('aria-label', 'Quick reply');
 
     const replyBtn = document.createElement('button');
     replyBtn.type = 'button';
@@ -1124,34 +1267,24 @@ function buildMessageElement(message, previousMessage = null) {
     replyBtn.dataset.action = 'reply';
     replyBtn.title = 'Reply';
     replyBtn.textContent = '↩';
+    hoverActions.append(replyBtn);
 
     const reactBtn = document.createElement('button');
     reactBtn.type = 'button';
-    reactBtn.className = 'message-quick-btn';
+    reactBtn.className = 'message-react-fab';
     reactBtn.dataset.action = 'react';
-    reactBtn.title = 'React';
-    reactBtn.textContent = '☺';
+    reactBtn.dataset.emoji = DEFAULT_QUICK_REACTION;
+    reactBtn.textContent = DEFAULT_QUICK_REACTION;
+    syncMessageReactFab(reactBtn, message.reactions);
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'message-action-btn message-action-btn--delete';
-    deleteBtn.dataset.action = 'delete';
-    deleteBtn.textContent = '×';
-    deleteBtn.title = message.id ? 'Delete message' : 'Waiting for sync';
-
-    if (isOutgoing) {
-        hoverActions.append(deleteBtn, reactBtn, replyBtn);
-    } else {
-        hoverActions.append(replyBtn, reactBtn, deleteBtn);
-    }
-
-    shell.append(bubble, hoverActions);
+    shell.append(bubble, hoverActions, reactBtn);
     contentWrap.append(shell);
 
     const reactionsEl = buildReactionsEl(message);
     if (reactionsEl) contentWrap.append(reactionsEl);
 
     row.append(contentWrap);
+    applyMessageCluster(row, cluster);
     syncMessageRowActions(row);
 
     return row;
@@ -1180,7 +1313,9 @@ export function syncMessageRowActions(row) {
         if (action === 'reply') {
             btn.title = hasId ? 'Reply' : 'Waiting for sync';
         } else if (action === 'react') {
-            btn.title = hasId ? 'React' : 'Waiting for sync';
+            btn.title = hasId
+                ? (btn.classList.contains('is-active') ? 'Remove reaction' : 'React')
+                : 'Waiting for sync';
         } else if (action === 'delete') {
             btn.title = hasId ? 'Delete message' : 'Waiting for sync';
         }
@@ -1238,7 +1373,17 @@ function handleMessageActionsEvent(event) {
             return;
         }
 
-        messageActionHandlers.onReact?.(messageId, null, bubble);
+        const payload = messageContextPayloadGetter?.(row);
+        if (!payload) return;
+
+        const rect = bubble.getBoundingClientRect();
+        const own = row.classList.contains('message-row--own');
+        openContextMenu({
+            x: own ? rect.left : rect.right,
+            y: rect.bottom,
+            payload: { ...payload, messageId },
+            targetId: messageId,
+        });
         return;
     }
 
@@ -1265,7 +1410,13 @@ function handleMessageActionsEvent(event) {
             return;
         }
         const btn = event.target.closest('[data-action="react"]');
-        messageActionHandlers.onReact?.(messageId, null, btn);
+        const emoji = btn?.dataset.emoji || DEFAULT_QUICK_REACTION;
+        if (btn && emoji === DEFAULT_QUICK_REACTION) {
+            btn.classList.add('is-active');
+            row.classList.add('has-quick-reaction');
+        }
+        btn?.blur();
+        messageActionHandlers.onReact?.(messageId, emoji);
         return;
     }
 
@@ -1370,7 +1521,8 @@ export function patchMessageReactionsDom(messageId, reactions, myUsername) {
     if (!row) return;
 
     const host = row.querySelector('.message-content-wrap') || row;
-    let wrap = host.querySelector('.message-reactions');
+    const wrap = host.querySelector('.message-reactions');
+    syncMessageReactFab(row, reactions, myUsername);
     if (!reactions?.length) {
         wrap?.remove();
         return;
@@ -1406,12 +1558,33 @@ export function hideComposerReplyBar() {
     DOM.replyBar?.classList.add('hidden');
 }
 
-export function openReactionPicker(anchor, messageId) {
+function syncMessageReactFab(fabOrRow, reactions, myUsername = '') {
+    const fab = fabOrRow?.classList?.contains('message-react-fab')
+        ? fabOrRow
+        : fabOrRow?.querySelector?.('.message-react-fab');
+    if (!fab) return;
+
+    const mine = getMyReaction(reactions, myUsername || messageActionHandlers.getMyUsername?.() || '');
+    const active = mine === DEFAULT_QUICK_REACTION;
+    fab.classList.toggle('is-active', active);
+    fab.closest('.message-row')?.classList.toggle('has-quick-reaction', active);
+    fab.title = active ? 'Remove reaction' : 'React';
+    fab.setAttribute('aria-label', active ? 'Remove reaction' : 'Add reaction');
+}
+
+export function openReactionPicker(anchor, messageId, currentEmoji = null) {
+    const targetId = `reactions-${messageId}`;
+    const current = getOverlayState();
+    if (current?.type === 'popover' && current.targetId === targetId) {
+        closeOverlay({ reason: 'toggle' });
+        return;
+    }
+
     openPopoverOverlay({
         popoverId: 'reactions',
         anchor,
-        targetId: `reactions-${messageId}`,
-        payload: { messageId },
+        targetId,
+        payload: { messageId, currentEmoji },
     });
 }
 
@@ -1422,11 +1595,57 @@ function shouldShowSenderName(message, previousMessage) {
     return previousMessage.sender !== message.sender;
 }
 
-function isGroupedWithPrevious(message, previousMessage) {
-    if (!previousMessage) return false;
-    if (message.type !== previousMessage.type) return false;
+function isSameSenderCluster(message, neighbor) {
+    if (!message || !neighbor) return false;
+    if (message.type !== neighbor.type) return false;
     if (message.type === 'outgoing') return true;
-    return previousMessage.sender === message.sender;
+    return (neighbor.sender || '') === (message.sender || '');
+}
+
+function clusterPosition(message, previousMessage, nextMessage = null) {
+    const withPrev = isSameSenderCluster(message, previousMessage);
+    const withNext = isSameSenderCluster(message, nextMessage);
+    if (!withPrev && !withNext) return 'single';
+    if (!withPrev && withNext) return 'first';
+    if (withPrev && withNext) return 'middle';
+    return 'last';
+}
+
+const MESSAGE_CLUSTER_POSITIONS = ['single', 'first', 'middle', 'last'];
+
+function applyMessageCluster(row, position) {
+    if (!row) return;
+    const cluster = MESSAGE_CLUSTER_POSITIONS.includes(position) ? position : 'single';
+    const grouped = cluster === 'middle' || cluster === 'last';
+
+    row.classList.toggle('message-row--grouped', grouped);
+    row.classList.toggle('message-row--new-group', !grouped);
+    row.dataset.cluster = cluster;
+    MESSAGE_CLUSTER_POSITIONS.forEach((name) => {
+        row.classList.toggle(`message-row--cluster-${name}`, name === cluster);
+    });
+
+    const bubble = row.querySelector('.message-bubble');
+    if (!bubble) return;
+    MESSAGE_CLUSTER_POSITIONS.forEach((name) => {
+        bubble.classList.toggle(`message-bubble--cluster-${name}`, name === cluster);
+    });
+}
+
+function rowAsClusterMessage(row) {
+    return {
+        type: row.dataset.messageType,
+        sender: row.dataset.messageSender || '',
+    };
+}
+
+function refreshVisibleMessageClusters() {
+    const rows = [...(DOM.messagesDiv?.querySelectorAll('.message-row') || [])];
+    rows.forEach((row, index) => {
+        const prev = index > 0 ? rowAsClusterMessage(rows[index - 1]) : null;
+        const next = index < rows.length - 1 ? rowAsClusterMessage(rows[index + 1]) : null;
+        applyMessageCluster(row, clusterPosition(rowAsClusterMessage(row), prev, next));
+    });
 }
 
 export function updateMessageIdentity(clientMessageId, id, timestamp, status = 'sent') {
@@ -1524,55 +1743,29 @@ export function focusComposer() {
 }
 
 export function isContactSearchOpen() {
-    return Boolean(DOM.pageChat?.classList.contains('is-contact-search-open'));
+    return false;
 }
 
 export function openContactSearch() {
-    if (!DOM.pageChat || !DOM.contactSearchInput) return;
-    DOM.pageChat.classList.add('is-contact-search-open');
-    if (DOM.sidebarLabel) DOM.sidebarLabel.textContent = 'Find contacts';
-    DOM.contactSearchInput.value = '';
-    contactsState.query = '';
-    contactsState.searchMode = true;
-    contactsState.users = [];
-    renderFilteredUsers();
-    requestAnimationFrame(() => {
-        DOM.contactSearchInput?.focus();
-    });
+    /* Contact search UI removed. */
 }
 
 export function closeContactSearch() {
-    if (!DOM.pageChat) return;
-    const wasOpen = isContactSearchOpen();
-    DOM.pageChat.classList.remove('is-contact-search-open');
-    if (DOM.sidebarLabel) DOM.sidebarLabel.textContent = 'Contacts';
-    if (!wasOpen) return;
-    if (DOM.contactSearchInput) DOM.contactSearchInput.value = '';
-    contactsState.query = '';
-    contactsState.searchMode = false;
-    contactsState.users = [];
-    renderFilteredUsers();
+    DOM.pageChat?.classList.remove('is-contact-search-open');
 }
 
 export function focusContactSearch() {
-    if (isAppStackViewport()) {
-        openContactSearch();
-        return;
-    }
-    DOM.contactSearchInput?.focus();
-    DOM.contactSearchInput?.select();
+    /* Contact search UI removed — keep shortcut as a no-op. */
 }
 
 function initContactSearchSheet() {
-    DOM.contactSearchOpenBtn?.addEventListener('click', () => openContactSearch());
-    DOM.contactSearchTrigger?.addEventListener('click', () => openContactSearch());
-    DOM.contactSearchBackBtn?.addEventListener('click', () => closeContactSearch());
+    /* Contact search UI removed. */
 }
 
 initContactSearchSheet();
 
 export function autoResizeComposer() {
-    const minHeight = 44;
+    const minHeight = 40;
     const maxHeight = 200;
     const input = DOM.messageInput;
     input.style.height = 'auto';
@@ -1691,8 +1884,11 @@ export function openMessageSearch() {
         btn.setAttribute('title', 'Close search');
     }
     input.tabIndex = 0;
-    window.setTimeout(() => input.focus(), 120);
-    searchMessages(input.value);
+    // Focus mid-expand so the caret doesn't fight the open animation.
+    window.setTimeout(() => {
+        if (!root.classList.contains('is-open')) return;
+        input.focus({ preventScroll: true });
+    }, 160);
 }
 
 export function closeMessageSearch() {
@@ -1775,6 +1971,16 @@ export function openSettings() {
     openModalOverlay('settings', 'settings');
 }
 
+/** Open the in-app settings surface (Appearance / Security / …), not the interface modal. */
+export function openAppSettings(section = 'appearance') {
+    closeOverlay();
+    setAppView('settings');
+    queueProfilePanelRefresh(section);
+    if (isProfileStackViewport()) {
+        setProfileDrillLevel('nav');
+    }
+}
+
 export function showChatsView() {
     setAppView('chats');
     if (isAppStackViewport()) setChatDrillLevel('list');
@@ -1782,32 +1988,52 @@ export function showChatsView() {
 
 export function openProfile(section = 'identity') {
     closeOverlay();
+    // Non-identity sections live under Settings, not the Profile page.
+    if (section && section !== 'identity') {
+        openAppSettings(section);
+        return;
+    }
     setAppView('identity');
-    queueProfilePanelRefresh(section);
+    queueProfilePanelRefresh('identity');
     if (isProfileStackViewport()) {
-        setProfileDrillLevel('nav');
+        // Profile is a single page — jump straight into the section.
+        setProfileDrillLevel('section');
     }
 }
 
 function setAppView(view) {
     const isChats = view === 'chats';
     const isIdentity = view === 'identity';
+    const isSettings = view === 'settings';
+    const isProfileSurface = isIdentity || isSettings;
 
     if (DOM.chatWorkspace) {
         DOM.chatWorkspace.hidden = !isChats;
         DOM.chatWorkspace.setAttribute('aria-hidden', isChats ? 'false' : 'true');
     }
-    if (DOM.profilePanel) {
-        DOM.profilePanel.classList.toggle('hidden', !isIdentity);
-        DOM.profilePanel.setAttribute('aria-hidden', isIdentity ? 'false' : 'true');
+    if (DOM.sidebar) {
+        // Settings replaces the contacts list with the settings nav; Profile keeps contacts.
+        DOM.sidebar.hidden = isSettings;
+        DOM.sidebar.setAttribute('aria-hidden', isSettings ? 'true' : 'false');
     }
-    if (!isIdentity) onProfilePanelClose();
+    if (DOM.profileNav) {
+        DOM.profileNav.hidden = !isSettings;
+        DOM.profileNav.setAttribute('aria-hidden', isSettings ? 'false' : 'true');
+    }
+    DOM.pageChat?.classList.toggle('is-app-view-identity', isIdentity);
+    DOM.pageChat?.classList.toggle('is-app-view-settings', isSettings);
+    if (DOM.profilePanel) {
+        DOM.profilePanel.classList.toggle('hidden', !isProfileSurface);
+        DOM.profilePanel.setAttribute('aria-hidden', isProfileSurface ? 'false' : 'true');
+    }
+    if (!isProfileSurface) onProfilePanelClose();
 
     const railMap = {
         chats: DOM.railChats,
         identity: DOM.railProfile,
+        settings: DOM.dockSettings,
     };
-    [DOM.railChats, DOM.railProfile].forEach((btn) => {
+    [DOM.railChats, DOM.railProfile, DOM.dockSettings].forEach((btn) => {
         if (!btn) return;
         const on = btn === railMap[view];
         btn.classList.toggle('is-active', on);
@@ -1817,7 +2043,7 @@ function setAppView(view) {
 
     syncRailCollapsedTools();
 
-    if (!isIdentity) {
+    if (!isProfileSurface) {
         setProfileDrillLevel(null);
         syncProfileNavScrim();
         if (isChats && isAppStackViewport()) {
@@ -1834,15 +2060,19 @@ function setAppView(view) {
         profileNavUserExpand = false;
         setProfileNavOpen(false);
         setChatDrillLevel(null);
-        if (
-            !DOM.pageChat?.classList.contains('is-profile-level-nav')
-            && !DOM.pageChat?.classList.contains('is-profile-level-section')
-        ) {
-            setProfileDrillLevel('nav');
+        if (isSettings) {
+            if (
+                !DOM.pageChat?.classList.contains('is-profile-level-nav')
+                && !DOM.pageChat?.classList.contains('is-profile-level-section')
+            ) {
+                setProfileDrillLevel('nav');
+            }
+        } else {
+            setProfileDrillLevel('section');
         }
     } else if (window.matchMedia(SIDEBAR_NARROW_MQ).matches) {
         profileNavUserExpand = false;
-        setProfileNavOpen(false);
+        setProfileNavOpen(isSettings);
         setProfileDrillLevel(null);
         setChatDrillLevel(null);
     } else {
@@ -1936,8 +2166,16 @@ export function setPreferenceControls(preferences) {
         DOM.prefMessageSound.checked = preferences.messageNotificationSound !== false;
     }
 
-    syncPickerActive(DOM.glassPicker, 'data-glass-value', preferences.glassIntensity || 'medium');
+    const glass = Number(preferences.glassIntensity);
+    const glassValue = Number.isFinite(glass) ? glass : 50;
+    if (DOM.glassSlider) {
+        DOM.glassSlider.value = String(glassValue);
+        DOM.glassSlider.setAttribute('aria-valuenow', String(glassValue));
+        DOM.glassSlider.setAttribute('aria-valuetext', `${glassValue} percent`);
+    }
+    if (DOM.settingsGlassValue) DOM.settingsGlassValue.textContent = `${glassValue}%`;
     setUiPreferences(preferences);
+    hydrateAppearanceControls(preferences);
 }
 
 function syncPickerActive(container, attr, value) {
@@ -1949,16 +2187,16 @@ function syncPickerActive(container, attr, value) {
 
 /** Single entry point for profile: nav rail profile button. */
 export function updateProfileRailButton(username) {
-    if (!DOM.profileBtn) return;
+    if (!DOM.railProfile) return;
     if (!username) {
-        DOM.profileBtn.title = 'Profile settings';
-        DOM.profileBtn.setAttribute('aria-label', 'Profile settings');
+        DOM.railProfile.title = 'Profile settings';
+        DOM.railProfile.setAttribute('aria-label', 'Profile settings');
         return;
     }
     const profile = loadProfile(username);
     const label = getDisplayLabel(username, profile);
-    DOM.profileBtn.title = `${label} (@${username})`;
-    DOM.profileBtn.setAttribute('aria-label', `Profile: ${label}`);
+    DOM.railProfile.title = `${label} (@${username})`;
+    DOM.railProfile.setAttribute('aria-label', `Profile: ${label}`);
 }
 
 export function setChatToolsEnabled(isEnabled) {
@@ -1980,6 +2218,7 @@ export function setChatToolsEnabled(isEnabled) {
             btn.disabled = !isEnabled;
         });
     }
+    syncJumpToBottomButton();
 }
 
 export function closeEmojiPicker() {
@@ -2009,7 +2248,9 @@ function restartEntering(el) {
 function playEmptyStateIntros() {
     const banner = document.getElementById('uiWelcomeBanner');
     if (banner && !banner.classList.contains('hidden')) restartEntering(banner);
-    if (DOM.peerPanel?.classList.contains('is-empty')) restartEntering(DOM.peerEmpty);
+    // Peer empty intro is handled only when the panel newly becomes empty
+    // (see refreshPeerPanel). Replaying it on every welcome restore feels like
+    // the sidebar reloads — especially after closing Spotlight.
 }
 
 function syncWelcomeBanner(forceHide = false) {
@@ -2264,7 +2505,13 @@ function refreshPeerPanel(username = contactsState.activeUsername) {
     panel.classList.toggle('is-empty', empty);
     if (DOM.peerBody) DOM.peerBody.hidden = empty;
     if (DOM.peerEmpty) DOM.peerEmpty.hidden = !empty;
-    if (becameEmpty) restartEntering(DOM.peerEmpty);
+    const composeOpen = document.getElementById('page-chat')?.classList.contains('is-compose-search');
+    if (becameEmpty && !composeOpen) {
+        restartEntering(DOM.peerEmpty);
+    } else if (empty && composeOpen && DOM.peerEmpty) {
+        // Keep the panel steady under Spotlight; compose copy swaps in via CSS.
+        DOM.peerEmpty.classList.remove('is-entering');
+    }
 
     [DOM.peerMuteBtn, DOM.peerClearBtn, DOM.peerDeleteBtn, DOM.peerSecurityBtn].forEach((btn) => {
         if (btn) btn.disabled = empty;
