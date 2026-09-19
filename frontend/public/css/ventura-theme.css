@@ -19,9 +19,9 @@
     --accent-strong: #ffffff;
     --accent-muted: rgba(244, 244, 245, 0.28);
     --glass-intensity: 50;
-    --bubble-own: color-mix(in srgb, #3f3f46 calc(25% + var(--glass-intensity) * 0.55%), transparent);
+    --bubble-own: color-mix(in srgb, #3f3f46 calc(58% + var(--glass-intensity) * 0.32%), transparent);
     --bubble-own-text: #f4f4f5;
-    --bubble-other: color-mix(in srgb, #1a1a1a calc(20% + var(--glass-intensity) * 0.55%), transparent);
+    --bubble-other: color-mix(in srgb, #1c1c1c calc(52% + var(--glass-intensity) * 0.34%), transparent);
     --bubble-other-border: color-mix(in srgb, #fff 5%, transparent);
     --bubble-other-text: #f4f4f5;
     --border: rgba(255, 255, 255, 0.035);
@@ -261,8 +261,11 @@ body {
 }
 
 .message-bubble {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
     border-radius: var(--radius-bubble);
     box-shadow: var(--shadow-bubble);
+    contain: paint;
     display: block;
     font-size: 14px;
     line-height: 1.42;
@@ -270,22 +273,19 @@ body {
     overflow: hidden;
     padding: 8px 12px 11px;
     position: relative;
+    transform: translate3d(0, 0, 0);
     transition: border-radius 160ms var(--ease-out);
     width: max-content;
 }
 
 .message-bubble--own {
     background: var(--bubble-own);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid color-mix(in srgb, #fff 5%, transparent);
     color: var(--bubble-own-text);
 }
 
 .message-bubble--other {
     background: var(--bubble-other);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid var(--bubble-other-border);
     color: var(--bubble-other-text);
 }

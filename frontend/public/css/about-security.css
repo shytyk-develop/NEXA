@@ -83,6 +83,7 @@
 }
 
 .about-security__title {
+    font-family: var(--f-display);
     font-size: clamp(32px, 5vw, 48px);
     font-weight: 600;
     letter-spacing: -0.04em;

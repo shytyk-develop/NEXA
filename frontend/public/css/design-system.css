@@ -69,7 +69,7 @@
     --r3: var(--radius-xl);
     --r4: var(--radius-2xl);
 
-    /* Typography — Borna */
+    /* Typography — Inter primary, Borna display */
     --text-caption: 11px;
     --text-meta: 12px;
     --text-label: 13px;

@@ -47,7 +47,7 @@
                 else if (glass === 'medium') glass = 50;
                 else if (glass === 'high') glass = 80;
                 glass = Number(glass);
-                if (!isFinite(glass)) glass = 50;
+                if (!isFinite(glass)) glass = 0;
                 glass = Math.round(Math.min(100, Math.max(0, glass)) / 10) * 10;
                 document.documentElement.style.setProperty('--glass-intensity', String(glass));
                 document.documentElement.dataset.glass = glass <= 30 ? 'low' : glass >= 70 ? 'high' : 'medium';
@@ -56,13 +56,13 @@
                 else if (dim === 'medium') dim = 60;
                 else if (dim === 'high') dim = 80;
                 dim = Number(dim);
-                if (!isFinite(dim)) dim = 80;
+                if (!isFinite(dim)) dim = 0;
                 dim = Math.round(Math.min(100, Math.max(0, dim)) / 10) * 10;
                 document.documentElement.style.setProperty('--dim-intensity', String(dim));
             } catch (e) {
-                document.documentElement.style.setProperty('--glass-intensity', '50');
-                document.documentElement.style.setProperty('--dim-intensity', '80');
-                document.documentElement.dataset.glass = 'medium';
+                document.documentElement.style.setProperty('--glass-intensity', '0');
+                document.documentElement.style.setProperty('--dim-intensity', '0');
+                document.documentElement.dataset.glass = 'low';
             }
         })();
     </script>
@@ -73,7 +73,8 @@
 
         :root {
             /* Color tokens live in ventura-theme.css (dark monochrome, start-site aligned) */
-            --f-ui: "Borna", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+            --f-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+            --f-display: "Borna", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
             --r1: 8px;
             --r2: 12px;
@@ -92,12 +93,17 @@
             background: var(--bg);
             color: var(--text);
             font-family: var(--f-ui);
+            font-feature-settings: "cv11", "ss01";
             -webkit-font-smoothing: antialiased;
         }
 
         button,
-        input {
+        input,
+        textarea,
+        select {
             font: inherit;
+            letter-spacing: inherit;
+            word-spacing: normal;
         }
 
         button {
@@ -2144,7 +2150,6 @@
                                     <button type="button" class="composer-emoji-item" data-emoji="🎉" aria-label="Party">🎉</button>
                                 </div>
                             </div>
-                            <button id="uiClearComposerBtn" class="btn-attach" type="button" title="Clear message" aria-label="Clear message" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-trash"/></svg></button>
                             <button id="uiComposerMenuBtn" class="hidden" type="button" tabindex="-1" title="Message tools" aria-haspopup="menu" aria-label="Message tools"></button>
                             <button id="sendBtn" type="button" title="Send message" aria-label="Send message" disabled><svg class="ui-icon" aria-hidden="true"><use href="#icon-send"/></svg></button>
                         </div>
@@ -2475,7 +2480,7 @@
                                             axis-start="Clearer"
                                             axis-end="Deeper"
                                             hint="Higher glass makes panels, bubbles, and the composer more frosted and opaque. Ultracode is the densest glass."
-                                            value="2"
+                                            value="0"
                                         ></nexa-level-slider>
                                     </div>
                                     <div class="appearance-option-card appearance-option-card--level" role="group" aria-label="Wallpaper dim">
@@ -2487,7 +2492,7 @@
                                             axis-start="Softer"
                                             axis-end="Stronger"
                                             hint="Higher dim pushes the wallpaper into the background so messages stay readable. Ultracode is the darkest veil."
-                                            value="4"
+                                            value="0"
                                         ></nexa-level-slider>
                                     </div>
                                 </div>

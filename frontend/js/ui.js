@@ -73,7 +73,6 @@ export const DOM = {
     composerMenuBtn: document.getElementById('uiComposerMenuBtn'),
     emojiBtn: document.getElementById('uiEmojiBtn'),
     emojiPicker: document.getElementById('uiEmojiPicker'),
-    clearComposerBtn: document.getElementById('uiClearComposerBtn'),
     pasteAttachments: document.getElementById('uiPasteAttachments'),
     pasteEditor: document.getElementById('uiPasteEditor'),
     pasteEditorTitle: document.getElementById('uiPasteEditorTitle'),
@@ -2167,7 +2166,7 @@ export function setPreferenceControls(preferences) {
     }
 
     const glass = Number(preferences.glassIntensity);
-    const glassValue = Number.isFinite(glass) ? glass : 50;
+    const glassValue = Number.isFinite(glass) ? glass : 0;
     if (DOM.glassSlider) {
         DOM.glassSlider.value = String(glassValue);
         DOM.glassSlider.setAttribute('aria-valuenow', String(glassValue));
@@ -2207,7 +2206,6 @@ export function setChatToolsEnabled(isEnabled) {
         DOM.composerMenuBtn,
         DOM.attachBtn,
         DOM.emojiBtn,
-        DOM.clearComposerBtn,
     ].forEach((control) => {
         if (control) control.disabled = !isEnabled;
     });

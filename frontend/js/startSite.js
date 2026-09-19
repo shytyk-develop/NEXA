@@ -1197,6 +1197,8 @@ function bindFooterMagnetic(pageStart) {
                 duration: 0.35,
                 ease: 'power2.out',
                 overwrite: 'auto',
+                autoRound: true,
+                force3D: false,
             });
         };
 
@@ -1208,6 +1210,8 @@ function bindFooterMagnetic(pageStart) {
                 duration: 1.1,
                 ease: 'elastic.out(1, 0.35)',
                 overwrite: 'auto',
+                autoRound: true,
+                force3D: false,
             });
         };
 
@@ -1289,6 +1293,8 @@ function startMotion(pageStart) {
         if (productStage) {
             gsap.fromTo(productStage, { y: 36 }, {
                 y: -16,
+                autoRound: true,
+                force3D: false,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: productStage,
@@ -1305,6 +1311,8 @@ function startMotion(pageStart) {
         pageStart.querySelectorAll('.start-split__visual > .start-card').forEach((card) => {
             gsap.fromTo(card, { y: 34 }, {
                 y: -34,
+                autoRound: true,
+                force3D: false,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: card,
@@ -1321,6 +1329,8 @@ function startMotion(pageStart) {
         if (mobilePhone && window.matchMedia('(min-width: 1024px)').matches) {
             gsap.fromTo(mobilePhone, { y: 40 }, {
                 y: -28,
+                autoRound: true,
+                force3D: false,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: mobilePhone.closest('.start-mobile__panel') || mobilePhone,

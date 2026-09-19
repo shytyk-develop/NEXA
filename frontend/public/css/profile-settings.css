@@ -285,6 +285,7 @@
 }
 
 #page-chat .profile-workspace .profile-head h2 {
+    font-family: var(--f-display);
     font-size: 15px;
     font-weight: 500;
     letter-spacing: -0.015em;
@@ -1432,7 +1433,7 @@
 
 #page-chat .profile-workspace .profile-sec-kicker {
     color: #7a7a7a;
-    font-family: var(--f-ui);
+    font-family: var(--f-display);
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.08em;
@@ -2312,7 +2313,7 @@
 
 .profile-head h2 {
     color: var(--text);
-    font-family: var(--f-ui);
+    font-family: var(--f-display);
     font-size: var(--text-body);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--track-snug);

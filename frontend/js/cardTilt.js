@@ -30,8 +30,17 @@ function createState(stage, card) {
 
 function applyTransform() {
     if (!state?.card) return;
+    const { x, y, hovering } = state;
+    if (!hovering && Math.abs(x) < 0.02 && Math.abs(y) < 0.02) {
+        state.card.style.transform = 'translate3d(0, 0, 0)';
+        state.card.style.willChange = 'auto';
+        return;
+    }
+    state.card.style.willChange = 'transform';
+    const rx = Math.round(x * 10) / 10;
+    const ry = Math.round(y * 10) / 10;
     state.card.style.transform =
-        `translateZ(28px) rotateX(${state.x.toFixed(3)}deg) rotateY(${state.y.toFixed(3)}deg)`;
+        `translate3d(0, 0, 0) rotateX(${rx}deg) rotateY(${ry}deg)`;
 }
 
 function tick() {
@@ -104,6 +113,9 @@ export function stopPreviewTilt() {
     state.stage.removeEventListener('mousemove', state.onMove);
     state.stage.removeEventListener('mouseleave', state.onLeave);
     if (state.raf) cancelAnimationFrame(state.raf);
-    if (state.card) state.card.style.transform = '';
+    if (state.card) {
+        state.card.style.transform = 'translate3d(0, 0, 0)';
+        state.card.style.willChange = 'auto';
+    }
     state = null;
 }

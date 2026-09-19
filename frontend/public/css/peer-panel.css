@@ -37,26 +37,48 @@
         backdrop-filter calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
         -webkit-backdrop-filter calc(var(--peer-motion-duration, 0.5s) * 0.65) ease;
     width: 300px;
-    z-index: 0;
+    /* Cover the tucked toggle so it slides out from under the panel. */
+    z-index: 2;
 }
 
-/* Left edge stroke with a notch for the toggle — no line through the tab. */
+/* Left edge stroke — solid at rest; notched only while the toggle is visible. */
 #page-chat .peer-panel:not(.is-collapsed)::before {
-    background: linear-gradient(
-        to bottom,
-        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 0,
-        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% - var(--peer-toggle-h) / 2),
-        transparent calc(50% - var(--peer-toggle-h) / 2),
-        transparent calc(50% + var(--peer-toggle-h) / 2),
-        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% + var(--peer-toggle-h) / 2),
-        var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 100%
-    );
+    background: var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke)));
     content: "";
     inset: 0 auto 0 0;
     pointer-events: none;
     position: absolute;
     width: 1px;
     z-index: 2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .peer-panel::before,
+    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):has(.peer-panel-toggle:focus-visible) .peer-panel::before {
+        background: linear-gradient(
+            to bottom,
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 0,
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% - var(--peer-toggle-h) / 2),
+            transparent calc(50% - var(--peer-toggle-h) / 2),
+            transparent calc(50% + var(--peer-toggle-h) / 2),
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% + var(--peer-toggle-h) / 2),
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 100%
+        );
+    }
+}
+
+@media (hover: none) {
+    #page-chat .peer-panel:not(.is-collapsed)::before {
+        background: linear-gradient(
+            to bottom,
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 0,
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% - var(--peer-toggle-h) / 2),
+            transparent calc(50% - var(--peer-toggle-h) / 2),
+            transparent calc(50% + var(--peer-toggle-h) / 2),
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% + var(--peer-toggle-h) / 2),
+            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 100%
+        );
+    }
 }
 
 #page-chat .peer-panel.is-collapsed {
@@ -115,17 +137,20 @@
     display: inline-flex;
     height: var(--peer-toggle-h, 88px);
     justify-content: center;
+    opacity: 1;
     padding: 0;
     position: absolute;
-    /* Tuck 1px into the panel fill; left stroke is notched so no seam line. */
-    right: calc(100% - 1px);
+    /* Fully outside the glass panel so the tab never bleeds through. */
+    right: 100%;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translate(0, -50%);
     transition:
+        transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
         opacity 0.22s ease,
-        color 0.15s ease;
+        color 0.15s ease,
+        right 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     width: 16px;
-    z-index: 30;
+    z-index: 1;
 }
 
 #page-chat .peer-panel-toggle:hover,
@@ -148,7 +173,9 @@
 #page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle {
     height: var(--peer-toggle-h, 88px);
     opacity: 1;
+    transform: translate(0, -50%);
     width: 16px;
+    z-index: 30;
 }
 
 #page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle .ui-icon {
@@ -161,19 +188,24 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .peer-panel-toggle {
+    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .peer-panel-toggle {
         opacity: 0;
+        pointer-events: none;
+        transform: translate(100%, -50%);
     }
 
-    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .peer-panel-toggle,
-    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .peer-panel-toggle:focus-visible {
+    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .peer-panel-toggle,
+    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .peer-panel-toggle:focus-visible {
         opacity: 1;
+        pointer-events: auto;
+        transform: translate(0, -50%);
     }
 }
 
 @media (hover: none) {
     #page-chat .peer-panel-toggle {
         opacity: 1;
+        transform: translate(0, -50%);
     }
 }
 
@@ -261,13 +293,13 @@
 }
 
 #page-chat.is-viewport-peer-narrow .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle {
-    opacity: 1;
     right: 0;
+    transform: translate(0, -50%);
 }
 
 #page-chat.is-viewport-peer-narrow.is-peer-overlay-open .peer-panel-toggle {
-    opacity: 1;
     right: 100%;
+    transform: translate(0, -50%);
 }
 
 #page-chat .peer-panel.no-motion,
@@ -514,7 +546,7 @@
 
 .peer-name {
     color: var(--text, #f4f4f5);
-    font-family: var(--f-ui);
+    font-family: var(--f-display);
     font-size: 22px;
     font-weight: 650;
     letter-spacing: -0.03em;

@@ -15,8 +15,8 @@
         radial-gradient(ellipse 70% 60% at 20% 30%, rgba(120, 130, 150, 0.28), transparent 60%),
         radial-gradient(ellipse 55% 50% at 80% 70%, rgba(90, 100, 120, 0.22), transparent 55%),
         linear-gradient(160deg, #12141a, #07080b 70%);
-    --glass-intensity: 50;
-    --dim-intensity: 80;
+    --glass-intensity: 0;
+    --dim-intensity: 0;
     --composer-glass: color-mix(in srgb, var(--bg) calc(12% + var(--glass-intensity) * 0.48%), transparent);
     --panel-glass: color-mix(in srgb, var(--bg) calc(4% + var(--glass-intensity) * 0.28%), transparent);
     --peer-panel-glass: color-mix(in srgb, var(--bg) calc(2% + var(--glass-intensity) * 0.24%), transparent);
@@ -883,24 +883,48 @@
         box-shadow calc(var(--sidebar-motion-duration) * 0.65) ease;
     visibility: visible;
     width: 288px;
+    /* Cover the tucked toggle so it slides out from under the shelf. */
+    z-index: 2;
 }
 
+/* Right edge stroke — solid at rest; notched only while the toggle is visible. */
 #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule-shelf::after {
-    background: linear-gradient(
-        to bottom,
-        var(--capsule-stroke) 0,
-        var(--capsule-stroke) calc(50% - var(--sidebar-toggle-h) / 2),
-        transparent calc(50% - var(--sidebar-toggle-h) / 2),
-        transparent calc(50% + var(--sidebar-toggle-h) / 2),
-        var(--capsule-stroke) calc(50% + var(--sidebar-toggle-h) / 2),
-        var(--capsule-stroke) 100%
-    );
+    background: var(--capsule-stroke);
     content: "";
     inset: 0 0 0 auto;
     pointer-events: none;
     position: absolute;
     width: 1px;
     z-index: 2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:hover .left-capsule-shelf::after,
+    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:has(.sidebar-capsule-toggle:focus-visible) .left-capsule-shelf::after {
+        background: linear-gradient(
+            to bottom,
+            var(--capsule-stroke) 0,
+            var(--capsule-stroke) calc(50% - var(--sidebar-toggle-h) / 2),
+            transparent calc(50% - var(--sidebar-toggle-h) / 2),
+            transparent calc(50% + var(--sidebar-toggle-h) / 2),
+            var(--capsule-stroke) calc(50% + var(--sidebar-toggle-h) / 2),
+            var(--capsule-stroke) 100%
+        );
+    }
+}
+
+@media (hover: none) {
+    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule-shelf::after {
+        background: linear-gradient(
+            to bottom,
+            var(--capsule-stroke) 0,
+            var(--capsule-stroke) calc(50% - var(--sidebar-toggle-h) / 2),
+            transparent calc(50% - var(--sidebar-toggle-h) / 2),
+            transparent calc(50% + var(--sidebar-toggle-h) / 2),
+            var(--capsule-stroke) calc(50% + var(--sidebar-toggle-h) / 2),
+            var(--capsule-stroke) 100%
+        );
+    }
 }
 
 #page-chat:not(.is-viewport-app-stack).is-sidebar-collapsed .left-capsule {
@@ -952,18 +976,20 @@
     display: none;
     height: var(--sidebar-toggle-h, 88px);
     justify-content: center;
-    /* Flush to shelf face — right stroke is notched so no seam line through the tab. */
-    left: calc(100% - 1px);
+    /* Fully outside the glass shelf so the tab never bleeds through. */
+    left: 100%;
+    opacity: 1;
     padding: 0;
     pointer-events: auto;
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translate(0, -50%);
     transition:
+        transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
         opacity 0.22s ease,
         color 0.15s ease;
     width: 16px;
-    z-index: 30;
+    z-index: 1;
 }
 
 #page-chat:not(.is-viewport-app-stack) .sidebar-capsule-toggle {
@@ -991,7 +1017,9 @@
 #page-chat.is-sidebar-collapsed .sidebar-capsule-toggle {
     height: var(--sidebar-toggle-h, 88px);
     opacity: 1;
+    transform: translate(0, -50%);
     width: 16px;
+    z-index: 30;
 }
 
 #page-chat.is-sidebar-collapsed .sidebar-capsule-toggle .ui-icon {
@@ -1006,17 +1034,22 @@
 @media (hover: hover) and (pointer: fine) {
     #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .sidebar-capsule-toggle {
         opacity: 0;
+        pointer-events: none;
+        transform: translate(-100%, -50%);
     }
 
     #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:hover .sidebar-capsule-toggle,
     #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .sidebar-capsule-toggle:focus-visible {
         opacity: 1;
+        pointer-events: auto;
+        transform: translate(0, -50%);
     }
 }
 
 @media (hover: none) {
     #page-chat:not(.is-viewport-app-stack) .sidebar-capsule-toggle {
         opacity: 1;
+        transform: translate(0, -50%);
     }
 }
 
@@ -1384,10 +1417,14 @@
     border-radius: 0 !important;
     box-shadow: none !important;
     display: block;
+    font-family: var(--f-ui);
+    font-feature-settings: "cv11", "ss01";
     font-size: 15px;
+    letter-spacing: -0.011em;
     line-height: 20px;
     min-height: 40px;
     padding: 10px 12px !important;
+    word-spacing: normal;
 }
 
 #page-chat .chat-main > .input-bar .input-row .btn-attach,
@@ -1583,6 +1620,7 @@
 
 #page-chat .header-left #chatWithTitle {
     color: var(--text);
+    font-family: var(--f-display);
     font-size: var(--text-title);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--track-snug);
@@ -2848,9 +2886,15 @@
 }
 
 #page-chat .nexa-welcome-banner {
-    background: var(--nexa-surface-elevated, #111);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: var(--control-glass);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--capsule-stroke);
     border-radius: 18px;
+    box-shadow: var(--glass-inset-highlight);
+    contain: paint;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -2858,6 +2902,7 @@
     margin: 8px 10px 14px;
     overflow: hidden;
     padding: 16px 14px 14px;
+    transform: translate3d(0, 0, 0);
 }
 
 #page-chat .nexa-welcome-banner.hidden {
@@ -2880,7 +2925,7 @@
 
 #page-chat .nexa-welcome-banner__title {
     color: #f4f4f5;
-    font-family: var(--f-ui);
+    font-family: var(--f-display);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.02em;

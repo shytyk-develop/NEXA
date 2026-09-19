@@ -1028,8 +1028,8 @@ function applyAppearancePreference(key, value, opts = {}) {
 
 export function hydrateAppearanceControls(preferences = {}) {
     const prefs = preferences || ctx?.getPreferences?.() || {};
-    const glass = levelIndexToPercent(percentToLevelIndex(prefs.glassIntensity ?? 50));
-    const dim = levelIndexToPercent(percentToLevelIndex(prefs.wallpaperDim ?? 80));
+    const glass = levelIndexToPercent(percentToLevelIndex(prefs.glassIntensity ?? 0));
+    const dim = levelIndexToPercent(percentToLevelIndex(prefs.wallpaperDim ?? 0));
     const wallpaper = prefs.wallpaper || 'mist';
     const density = prefs.compactMode ? 'compact' : 'comfortable';
 
@@ -1075,10 +1075,10 @@ function syncAppearancePreview(partial = {}) {
         || preview.dataset.appearanceWallpaper
         || 'mist';
     const glass = levelIndexToPercent(
-        percentToLevelIndex(partial.appearanceGlass ?? preview.dataset.appearanceGlass ?? 50)
+        percentToLevelIndex(partial.appearanceGlass ?? preview.dataset.appearanceGlass ?? 0)
     );
     const dim = levelIndexToPercent(
-        percentToLevelIndex(partial.appearanceDim ?? preview.dataset.appearanceDim ?? 80)
+        percentToLevelIndex(partial.appearanceDim ?? preview.dataset.appearanceDim ?? 0)
     );
     const density = partial.appearanceDensity
         || preview.dataset.appearanceDensity

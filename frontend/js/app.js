@@ -1719,12 +1719,6 @@ document.addEventListener('click', (event) => {
     if (event.target.closest('.composer-emoji-wrap')) return;
     closeEmojiPicker();
 });
-DOM.clearComposerBtn?.addEventListener('click', () => {
-    clearComposer();
-    clearDraft(state.myUsername, state.currentTargetUser);
-    setDraftStatus('Draft cleared.');
-    closeEmojiPicker();
-});
 DOM.chatSearchBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     toggleMessageSearch();

@@ -431,10 +431,6 @@
     align-self: flex-end;
 }
 
-#page-chat.is-viewport-app-stack #uiClearComposerBtn {
-    display: none;
-}
-
 #page-chat.is-viewport-app-stack #uiEmojiBtn,
 #page-chat.is-viewport-app-stack .composer-emoji-wrap {
     display: none;

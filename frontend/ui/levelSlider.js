@@ -9,7 +9,7 @@ export const LEVEL_PERCENTS = [0, 20, 40, 60, 80, 100];
 
 export function percentToLevelIndex(percent) {
     const n = Number(percent);
-    if (!Number.isFinite(n)) return 2;
+    if (!Number.isFinite(n)) return 0;
     let best = 0;
     let bestDist = Infinity;
     LEVEL_PERCENTS.forEach((pct, i) => {

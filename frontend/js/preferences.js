@@ -27,9 +27,9 @@ export const DEFAULT_PREFERENCES = {
     compactMode: false,
     showTimestamps: true,
     theme: 'dark', // locked — messenger matches start-site dark monochrome
-    glassIntensity: 40, // 0–100 → Low/Med/High/Extra/Max/Ultracode
-    wallpaper: 'mist', // gradient pack id
-    wallpaperDim: 80, // 0–100 → maps to Max
+    glassIntensity: 0, // Clearer (min) — first visit / new user default
+    wallpaper: 'mist', // first wallpaper pack
+    wallpaperDim: 0, // Softer (min) — first visit / new user default
     showOnlineStatus: true,
     readReceipts: true,
     typingIndicators: true,
@@ -44,7 +44,7 @@ export function applyTheme() {
     document.documentElement.setAttribute('data-theme', 'dark');
 }
 
-export function snapIntensity(value, fallback = 50) {
+export function snapIntensity(value, fallback = 0) {
     const n = Number(value);
     if (!Number.isFinite(n)) return fallback;
     const clamped = Math.min(INTENSITY_MAX, Math.max(INTENSITY_MIN, n));
