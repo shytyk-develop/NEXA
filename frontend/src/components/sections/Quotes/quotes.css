@@ -1,0 +1,93 @@
+/* ─── Testimonials ─── */
+.start-quotes__stage {
+    display: grid;
+    margin: clamp(40px, 6vw, 64px) auto 0;
+    max-width: 760px;
+}
+
+.start-quote {
+    grid-area: 1 / 1;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+    text-align: center;
+    transform: translateY(14px);
+    transition:
+        opacity 0.5s ease,
+        transform 0.5s ease;
+}
+
+.start-quote.is-active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.start-quote blockquote {
+    color: var(--txt);
+    font-size: clamp(1.2rem, 2.4vw, 1.65rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.start-quote figcaption {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 30px;
+    text-align: left;
+}
+
+.start-quote__avatar {
+    background: linear-gradient(145deg, #3f3f46, #18181b);
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    height: 44px;
+    width: 44px;
+}
+
+.start-quote figcaption strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.start-quote figcaption span:not(.start-quote__avatar) {
+    color: var(--txt-3);
+    display: block;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.start-quotes__dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 36px;
+}
+
+.start-quotes__dots button {
+    background: #333;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    height: 8px;
+    padding: 0;
+    transition:
+        background 0.3s ease,
+        width 0.3s ease;
+    width: 8px;
+}
+
+.start-quotes__dots button:hover {
+    background: #555;
+}
+
+.start-quotes__dots button.is-active {
+    background: #fff;
+    width: 26px;
+}
+

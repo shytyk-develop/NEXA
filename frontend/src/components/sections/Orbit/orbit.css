@@ -1,0 +1,376 @@
+/* ─── Orbit (security) — radial interactive timeline ─── */
+.start-orbit__intro {
+    color: var(--txt-2);
+    font-size: 15px;
+    line-height: 1.65;
+    margin: clamp(28px, 4vw, 40px) auto 0;
+    max-width: 52ch;
+    text-align: center;
+}
+
+.start-orbit__stage {
+    --orbit-r: 200px;
+
+    height: 560px;
+    margin: clamp(28px, 4vw, 48px) auto 0;
+    max-width: 720px;
+    overflow: visible;
+    perspective: 1000px;
+    position: relative;
+    user-select: none;
+    width: 100%;
+}
+
+.start-orbit__glow {
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.09), transparent 70%);
+    border-radius: 50%;
+    height: 480px;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 480px;
+}
+
+.start-orbit__ring {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.start-orbit__ring--outer {
+    height: calc(var(--orbit-r) * 2);
+    width: calc(var(--orbit-r) * 2);
+}
+
+.start-orbit__ring--dash {
+    display: none;
+}
+
+/* Centre core — NEXA mark with soft pulse rings */
+.start-orbit__center {
+    align-items: center;
+    background: transparent;
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 0 40px rgba(243, 244, 246, 0.14);
+    display: flex;
+    height: 72px;
+    justify-content: center;
+    left: 50%;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 72px;
+    z-index: 10;
+}
+
+.start-orbit__center-mark {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    width: 100%;
+    z-index: 1;
+}
+
+.start-orbit__center-ping {
+    animation: start-orbit-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    height: 92px;
+    left: 50%;
+    opacity: 0.7;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 92px;
+}
+
+.start-orbit__center-ping--late {
+    animation-delay: 0.5s;
+    height: 110px;
+    opacity: 0.5;
+    width: 110px;
+}
+
+.start-orbit__field {
+    align-items: center;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: absolute;
+}
+
+/*
+ * Node origin sits at the stage centre. JS writes
+ * translate(calc(-50% + x), calc(-50% + y)) so the tile centre sits on the ring.
+ * Transition is applied inline only when snapping to a clicked node — during
+ * auto-rotate it stays off so nodes don’t lag off the orbit.
+ */
+.start-orbit__node {
+    color: inherit;
+    cursor: pointer;
+    height: 40px;
+    left: 50%;
+    outline: none;
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    will-change: transform, opacity;
+    z-index: 10;
+}
+
+.start-orbit__node:focus-visible .start-orbit__tile {
+    box-shadow: 0 0 0 2px #000, 0 0 0 4px rgba(243, 244, 246, 0.7);
+}
+
+.start-orbit__pulse {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    height: calc(var(--orbit-energy, 60) * 0.5px + 40px);
+    left: 50%;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+    width: calc(var(--orbit-energy, 60) * 0.5px + 40px);
+}
+
+.start-orbit__node.is-pulsing .start-orbit__pulse {
+    animation: start-orbit-glow 1s ease-in-out infinite;
+    opacity: 1;
+}
+
+.start-orbit__tile {
+    align-items: center;
+    background: #000;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    height: 40px;
+    justify-content: center;
+    position: relative;
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+    width: 40px;
+    z-index: 1;
+}
+
+.start-orbit__node.is-related .start-orbit__tile {
+    animation: start-orbit-pulse 1s ease-in-out infinite;
+    background: rgba(255, 255, 255, 0.5);
+    border-color: #fff;
+    color: #000;
+}
+
+.start-orbit__node.is-expanded .start-orbit__tile {
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 10px 28px rgba(255, 255, 255, 0.3);
+    color: #000;
+    transform: scale(1.5);
+}
+
+.start-orbit__tile svg {
+    height: 16px;
+    width: 16px;
+}
+
+.start-orbit__label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    left: 50%;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    position: absolute;
+    top: 3rem;
+    transform: translateX(-50%);
+    transition: color 0.3s ease, transform 0.3s ease;
+    white-space: nowrap;
+}
+
+.start-orbit__node.is-expanded .start-orbit__label {
+    color: #fff;
+    transform: translateX(-50%) scale(1.25);
+}
+
+.start-orbit__card {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 30px rgba(255, 255, 255, 0.08);
+    display: none;
+    left: 50%;
+    padding: 16px;
+    position: absolute;
+    text-align: left;
+    top: 5rem;
+    transform: translateX(-50%);
+    width: min(256px, 72vw);
+    z-index: 2;
+}
+
+.start-orbit__node.is-expanded .start-orbit__card {
+    display: block;
+}
+
+.start-orbit__card-stem {
+    background: rgba(255, 255, 255, 0.5);
+    height: 12px;
+    left: 50%;
+    position: absolute;
+    top: -12px;
+    transform: translateX(-50%);
+    width: 1px;
+}
+
+.start-orbit__card-head {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.start-orbit__badge {
+    background: #000;
+    border: 1px solid #fff;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    text-transform: uppercase;
+}
+
+.start-orbit__badge--soft {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.start-orbit__badge--invert {
+    background: #fff;
+    border-color: #000;
+    color: #000;
+}
+
+.start-orbit__meta {
+    color: rgba(255, 255, 255, 0.5);
+    font-family: var(--f-mono);
+    font-size: 11px;
+}
+
+.start-orbit__card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 8px 0;
+}
+
+.start-orbit__card p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    line-height: 1.55;
+    margin: 0 0 12px;
+}
+
+.start-orbit__detail {
+    color: rgba(255, 255, 255, 0.45);
+    display: block;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+}
+
+.start-orbit__links {
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+}
+
+.start-orbit__links-label {
+    color: rgba(255, 255, 255, 0.7);
+    flex: 1 0 100%;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.start-orbit__chip {
+    align-items: center;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    font-size: 11px;
+    gap: 4px;
+    height: 24px;
+    padding: 0 8px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.start-orbit__chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+@keyframes start-orbit-ping {
+    0% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(0.92);
+    }
+    75%,
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.18);
+    }
+}
+
+@keyframes start-orbit-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+    }
+}
+
+@keyframes start-orbit-glow {
+    0%,
+    100% {
+        opacity: 0.45;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+

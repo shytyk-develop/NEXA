@@ -154,6 +154,25 @@
     z-index: 1;
 }
 
+/* React mount host — must be the flex row that #page-chat used to own directly */
+#page-chat #chat-root {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+#page-chat:has(#uiChatWorkspace[hidden]) #chat-root {
+    flex: 0 0 auto;
+}
+
+#page-chat.is-viewport-app-stack #chat-root {
+    display: contents;
+}
+
 #page-chat:not(.is-viewport-app-stack) {
     padding: 0;
 }
@@ -564,9 +583,7 @@
     -webkit-backdrop-filter: blur(36px) saturate(180%);
     border: 1px solid var(--panel-glass-stroke);
     border-right: none;
-    box-shadow:
-        var(--glass-inset-highlight),
-        var(--nexa-surface-shadow);
+    box-shadow: var(--glass-inset-highlight);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -863,9 +880,7 @@
     border: 1px solid var(--capsule-stroke);
     border-right-color: transparent;
     border-radius: var(--nexa-surface-radius, 22px);
-    box-shadow:
-        var(--glass-inset-highlight),
-        var(--nexa-surface-shadow);
+    box-shadow: var(--glass-inset-highlight);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -1135,9 +1150,7 @@
     border: 1px solid var(--capsule-stroke);
     border-left-color: transparent;
     border-radius: var(--nexa-surface-radius, 22px);
-    box-shadow:
-        var(--glass-inset-highlight),
-        var(--nexa-surface-shadow);
+    box-shadow: var(--glass-inset-highlight);
     height: 100%;
 }
 
@@ -1200,9 +1213,7 @@
     -webkit-backdrop-filter: blur(36px) saturate(180%);
     border: 1px solid var(--capsule-stroke);
     border-radius: 999px;
-    box-shadow:
-        var(--glass-inset-highlight),
-        0 10px 28px rgba(0, 0, 0, 0.16);
+    box-shadow: var(--glass-inset-highlight);
     display: flex;
     height: var(--layout-header-h);
     justify-content: center;
@@ -1378,9 +1389,7 @@
     -webkit-backdrop-filter: blur(36px) saturate(180%);
     border: 1px solid var(--capsule-stroke);
     border-radius: 999px;
-    box-shadow:
-        var(--glass-inset-highlight),
-        0 10px 28px rgba(0, 0, 0, 0.16);
+    box-shadow: var(--glass-inset-highlight);
     gap: 2px;
     min-height: 48px;
     padding: 4px;

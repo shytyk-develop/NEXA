@@ -73,7 +73,11 @@ import {
     MAX_MESSAGE_LENGTH,
     showComposerLimitError,
     clearComposerLimitError,
+    bindChatChrome,
+    resetChatChromeBind,
+    setSidebarRenderer,
 } from './ui.js';
+import { createChatEngine } from '../src/chat/engine/chatEngine.ts';
 import {
     attachReplyToMessage,
     buildPendingReplyFromMessage,
@@ -131,7 +135,6 @@ import {
     isComposeSearchOpen,
 } from './composeSearch.js';
 import { initLoginPage, teardownLoginPage } from './loginPage.js';
-import { initStartSite, teardownStartSite } from './startSite.js';
 import { initAboutSecurity, teardownAboutSecurity } from './aboutSecurity.js';
 import {
     addPasteAttachment,
@@ -209,6 +212,7 @@ function syncRealtimeUi() {
         unreadCounts: state.unreadCounts,
         typingUsers: state.typingUsers,
     });
+    engine.notifyUiSync();
 }
 
 function syncUiPreferences() {
@@ -230,8 +234,101 @@ function getSocket() {
     return socketConnection?.current || null;
 }
 
+const engine = createChatEngine(state, {
+    getSocket,
+    getRealtime: () => ensureRealtime(),
+    maxMessageLength: MAX_MESSAGE_LENGTH,
+    onToast: (message, type) => showToast(message, type),
+    onNotifyIncoming: (from, text, isActive) => maybeNotifyIncomingMessage(from, text, isActive),
+    onMessageDeleted: (data) => handleMessageDeletedEvent(data),
+    onConversationDeleted: (data) => handleConversationDeletedEvent(data),
+    onReactionSync: (data) => handleReactionSyncEvent(data),
+    onProfileUpdated: (data) => handleProfileUpdated(data),
+    onUsersList: () => refreshContactList(),
+    onPresence: (data) => {
+        if (data.type === 'presence_sync') {
+            if (getPrivacyFlags(state.preferences).showOnlineStatus) {
+                ensureRealtime().setOnlineUsers(data.online || []);
+            } else {
+                ensureRealtime().setOnlineUsers([]);
+            }
+            return;
+        }
+        if (!getPrivacyFlags(state.preferences).showOnlineStatus) return;
+        ensureRealtime().setPresence(data.username, Boolean(data.online));
+    },
+    onTyping: (data) => {
+        if (getPrivacyFlags(state.preferences).typingIndicators) {
+            ensureRealtime().setTyping(data.from, Boolean(data.is_typing));
+        }
+    },
+});
+
+function wireEngineUi() {
+    engine.on('chatsChanged', () => {
+        setSidebarChats(
+            state.sidebarChats,
+            state.myUsername,
+            onContactSelected,
+            state.currentTargetUser
+        );
+        syncRealtimeUi();
+    });
+    engine.on('activeChatChanged', ({ username }) => {
+        if (username) {
+            activateChatPanel(username);
+            DOM.chatWelcome?.classList.add('hidden');
+            clearMessageView();
+        }
+    });
+    engine.on('historyReplaced', ({ messages }) => {
+        if (messages?.length) renderMessagesList(messages);
+    });
+    engine.on('messageAppended', ({ message, previous }) => {
+        appendMessage(message, null, null, null, previous);
+    });
+    engine.on('messagePatched', (payload) => {
+        const existing = payload?.message;
+        const sync = payload?.sync;
+        if (existing && sync) {
+            if (existing.replyTo && existing.id) {
+                patchMessageReplyPreview(existing.id, existing.replyTo);
+            }
+            if (sync.client_message_id) {
+                updateMessageIdentity(
+                    sync.client_message_id,
+                    sync.id,
+                    sync.timestamp,
+                    existing.status || 'sent'
+                );
+                reconcileMessageRowsWithHistory([existing]);
+            }
+            return;
+        }
+        if (!existing) return;
+        if (existing.clientMessageId) {
+            if (existing.id) {
+                updateMessageIdentity(
+                    existing.clientMessageId,
+                    existing.id,
+                    existing.timestamp,
+                    existing.status || MESSAGE_STATUS.SENT
+                );
+                if (existing.replyTo) {
+                    patchMessageReplyPreview(existing.id, existing.replyTo);
+                }
+            } else if (existing.status) {
+                updateMessageStatus(existing.clientMessageId, null, existing.status);
+            }
+        }
+        reconcileMessageRowsWithHistory([existing]);
+    });
+    engine.on('pendingReplyChanged', ({ pendingReply }) => {
+        if (!pendingReply) hideComposerReplyBar();
+    });
+}
+
 let pendingMessageJump = null;
-let switchChatEpoch = 0;
 
 function consumePendingMessageJump(username) {
     const pending = pendingMessageJump;
@@ -293,7 +390,7 @@ function openNewChatCompose() {
 }
 
 function leaveActiveChatForCompose() {
-    switchChatEpoch += 1;
+    engine.switchChatEpoch += 1;
     pendingMessageJump = null;
     persistCurrentDraft();
     flushChatHistorySave();
@@ -333,29 +430,12 @@ function renderSidebar() {
         onContactSelected,
         state.currentTargetUser
     );
+    engine.notifyChatsChanged();
     syncRealtimeUi();
 }
 
 function upsertSidebarChat(partner, extras = {}) {
-    if (!partner || partner === state.myUsername) return;
-
-    const username = normalizeUsername(partner);
-    const existingIndex = state.sidebarChats.findIndex(chat => chat.username === username);
-    const merged = {
-        ...(existingIndex >= 0 ? state.sidebarChats[existingIndex] : { username }),
-        ...extras,
-        username,
-    };
-
-    if (existingIndex >= 0) {
-        state.sidebarChats.splice(existingIndex, 1);
-    }
-    state.sidebarChats.unshift(merged);
-
-    if (merged.public_key) {
-        state.usersDirectory[username] = merged.public_key;
-    }
-    renderSidebar();
+    engine.upsertSidebarChat(partner, extras);
 }
 
 function handleNewChatEvent(data) {
@@ -372,7 +452,7 @@ function saveChatHistory() {
     if (!state.myUsername) return;
     window.clearTimeout(saveChatHistoryTimer);
     saveChatHistoryTimer = window.setTimeout(() => {
-        saveHistory(state.myUsername, state.chatHistory);
+        saveHistory(state.myUsername, engine.persistableHistory());
         saveChatHistoryTimer = null;
     }, 120);
 }
@@ -383,7 +463,7 @@ function flushChatHistorySave() {
         saveChatHistoryTimer = null;
     }
     if (state.myUsername) {
-        saveHistory(state.myUsername, state.chatHistory);
+        saveHistory(state.myUsername, engine.persistableHistory());
     }
 }
 
@@ -720,6 +800,7 @@ initProfileSettings({
     showToast,
 });
 
+function initComposeSearchRuntime() {
 initComposeSearch({
     getToken: () => state.token || localStorage.getItem('auth_token') || '',
     getMyUsername: () => state.myUsername || '',
@@ -755,6 +836,7 @@ initComposeSearch({
         showToast(err?.message || 'User search failed.', 'error');
     },
 });
+}
 
 registerOverlayActions({
     'chat.search': () => openMessageSearch(),
@@ -838,6 +920,7 @@ setMessageActionHandlers({
     },
 });
 
+function initMessageRuntime() {
 initMessageContextMenu((row) => {
     const message = resolveMessageForRow(row);
     const text = row.querySelector('.message-text')?.textContent || '';
@@ -852,10 +935,64 @@ initMessageContextMenu((row) => {
 });
 initMessageActions();
 initJumpToBottom();
+}
 
 let loginUiMounted = false;
 let startUiMounted = false;
 let aboutSecurityMounted = false;
+let startMountMod = null;
+let chatMountMod = null;
+let chatUiMounted = false;
+let chatRuntimeAttached = false;
+
+async function getStartMount() {
+    if (!startMountMod) {
+        startMountMod = await import('../src/start/mountStartSite.tsx');
+    }
+    return startMountMod;
+}
+
+async function mountStartPage() {
+    const mod = await getStartMount();
+    await mod.mountStartSite(DOM.pageStart);
+    startUiMounted = true;
+}
+
+async function unmountStartPage() {
+    if (!startUiMounted) return;
+    const mod = await getStartMount();
+    mod.unmountStartSite();
+    startUiMounted = false;
+}
+
+async function getChatMount() {
+    if (!chatMountMod) {
+        chatMountMod = await import('../src/chat/mountChat.tsx');
+    }
+    return chatMountMod;
+}
+
+async function mountChatPage() {
+    const mod = await getChatMount();
+    await mod.mountChat(DOM.pageChat, {
+        onSelectChat: onContactSelected,
+        onSend: () => { void handleSendMessage(); },
+        onOpenSpotlight: openNewChatCompose,
+    });
+    bindChatChrome(DOM.pageChat);
+    setSidebarRenderer('react');
+    attachChatRuntime();
+    chatUiMounted = true;
+}
+
+async function unmountChatPage() {
+    if (!chatUiMounted) return;
+    const mod = await getChatMount();
+    mod.unmountChat();
+    resetChatChromeBind();
+    chatRuntimeAttached = false;
+    chatUiMounted = false;
+}
 
 function setAuthPending(isPending) {
     DOM.pageLogin?.classList.toggle('is-loading', isPending);
@@ -887,8 +1024,7 @@ async function handleNavigation(view, param) {
         }
         DOM.pageStart?.classList.remove('hidden');
         if (!startUiMounted) {
-            initStartSite(DOM.pageStart);
-            startUiMounted = true;
+            await mountStartPage();
         }
     }
     else if (view === 'login') {
@@ -897,8 +1033,7 @@ async function handleNavigation(view, param) {
             return;
         }
         if (startUiMounted) {
-            teardownStartSite();
-            startUiMounted = false;
+            await unmountStartPage();
         }
         DOM.pageLogin.classList.remove('hidden');
         setAuthPending(false);
@@ -911,8 +1046,7 @@ async function handleNavigation(view, param) {
     }
     else if (view === 'about-security') {
         if (startUiMounted) {
-            teardownStartSite();
-            startUiMounted = false;
+            await unmountStartPage();
         }
         if (loginUiMounted) {
             teardownLoginPage();
@@ -924,8 +1058,7 @@ async function handleNavigation(view, param) {
     }
     else {
         if (startUiMounted) {
-            teardownStartSite();
-            startUiMounted = false;
+            await unmountStartPage();
         }
 
         if (loginUiMounted) {
@@ -940,6 +1073,7 @@ async function handleNavigation(view, param) {
             }
 
             DOM.pageChat.classList.remove('hidden');
+            await mountChatPage();
 
             if (view === 'chat-user' && param) {
                 const targetUser = param;
@@ -947,11 +1081,8 @@ async function handleNavigation(view, param) {
                 switchChat(targetUser);
             } else {
                 closeComposeSearch();
-                switchChatEpoch += 1;
                 pendingMessageJump = null;
-                state.currentTargetUser = null;
-                sendChatFocus(null);
-                cancelReadReceipt();
+                engine.clearActiveChat();
                 resetChatPanel();
                 showChatWelcome();
             }
@@ -1056,11 +1187,27 @@ async function loadSidebarChats() {
                 state.unreadCounts[chat.username] = chat.unread_count;
             }
         });
+        engine.setSidebarLoading(false);
+        await maybeSeedMockChats();
         renderSidebar();
     } catch (err) {
         console.error("Sidebar sync failed:", err);
+        engine.setSidebarLoading(false);
+        await maybeSeedMockChats();
         renderSidebar();
     }
+}
+
+async function maybeSeedMockChats() {
+    if (!import.meta.env.DEV) return;
+    try {
+        if (localStorage.getItem('nexa_mock_chats') === '0') return;
+    } catch {
+        /* ignore quota / private mode */
+    }
+    if (state.sidebarChats.length) return;
+    const { seedMockChats } = await import('../src/chat/engine/mockChats.ts');
+    seedMockChats(engine);
 }
 
 async function registerCurrentDevice(info = detectDeviceInfo()) {
@@ -1124,6 +1271,7 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
 
     ensureRouter();
     navigateTo(targetPath, handleNavigation);
+    engine.setSidebarLoading(true);
     showContactsLoading();
     loadSidebarChats();
     ensureRealtime();
@@ -1153,135 +1301,17 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
         },
         async (event) => {
             const data = JSON.parse(event.data);
-
-            if (data.type === "users_list") {
-                ingestUserRecords(data.users);
-                data.users.forEach(u => {
-                    state.usersDirectory[u.username] = u.public_key;
-                });
-                refreshContactList();
-            }
-            else if (data.type === "profile_updated") {
-                handleProfileUpdated(data);
-            }
-            else if (data.type === "presence_sync") {
-                if (getPrivacyFlags(state.preferences).showOnlineStatus) {
-                    ensureRealtime().setOnlineUsers(data.online || []);
-                } else {
-                    ensureRealtime().setOnlineUsers([]);
-                }
-                syncRealtimeUi();
-            }
-            else if (data.type === "presence") {
-                if (!getPrivacyFlags(state.preferences).showOnlineStatus) return;
-                ensureRealtime().setPresence(data.username, Boolean(data.online));
-                syncRealtimeUi();
-            }
-            else if (data.type === "typing") {
-                if (getPrivacyFlags(state.preferences).typingIndicators) {
-                    ensureRealtime().setTyping(data.from, Boolean(data.is_typing));
-                }
-            }
-            else if (data.type === "new_chat") {
-                handleNewChatEvent(data);
-            }
-            else if (data.type === "message") {
-                const encryptedBytes = new Uint8Array(data.content);
-                const decryptedText = await decryptMessage(state.myKeys.privateKey, encryptedBytes);
-                upsertSidebarChat(data.from, {
-                    last_message_at: data.timestamp || new Date().toISOString(),
-                    last_message_preview: decryptedText,
-                });
-
-                const isActiveChat = state.currentTargetUser === data.from;
-                if (!isActiveChat && !isChatMuted(state.myUsername, data.from)) {
-                    ensureRealtime().incrementUnread(data.from);
-                }
-                maybeNotifyIncomingMessage(data.from, decryptedText, isActiveChat);
-
-                const incoming = {
-                    id: data.id,
-                    clientMessageId: data.client_message_id,
-                    sender: data.from,
-                    text: decryptedText,
-                    type: "incoming",
-                    timestamp: data.timestamp || Date.now(),
-                    reactions: [],
-                };
-                attachReplyToMessage(
-                    incoming,
-                    state.chatHistory,
-                    data.from,
-                    data.reply_to_message_id,
-                    state.myUsername
-                );
-                processMessage(data.from, incoming);
-
-                if (data.id) {
+            const result = await engine.ingestPacket(data);
+            if (
+                (data.type === 'message' || data.type === 'message_sync')
+                && data.id
+                && state.currentTargetUser
+                && (state.currentTargetUser === data.from || result?.isActiveChat)
+            ) {
+                if (data.type === 'message_sync') {
                     ensureRealtime().sendDeliveryAck(data.from, data.id, data.client_message_id);
-                    if (isActiveChat) {
-                        markActiveChatRead();
-                    }
                 }
-            }
-            else if (data.type === "message_sync") {
-                const partner = data.from;
-                const messages = state.chatHistory[partner] || [];
-                const target = messages.find(m => m.clientMessageId === data.client_message_id);
-
-                if (target && data.id) {
-                    target.id = data.id;
-                    if (data.timestamp) target.timestamp = data.timestamp;
-                    if (data.reply_to_message_id) {
-                        attachReplyToMessage(
-                            target,
-                            state.chatHistory,
-                            partner,
-                            data.reply_to_message_id,
-                            state.myUsername
-                        );
-                        if (state.currentTargetUser === partner && target.id && target.replyTo) {
-                            patchMessageReplyPreview(target.id, target.replyTo);
-                        }
-                    }
-                    saveChatHistory();
-                    if (
-                        state.currentTargetUser === partner &&
-                        data.client_message_id
-                    ) {
-                        updateMessageIdentity(
-                            data.client_message_id,
-                            data.id,
-                            data.timestamp,
-                            target.status || 'sent'
-                        );
-                        reconcileMessageRowsWithHistory([target]);
-                    }
-                }
-
-                if (state.currentTargetUser === partner && data.id) {
-                    ensureRealtime().sendDeliveryAck(partner, data.id, data.client_message_id);
-                    markActiveChatRead();
-                }
-            }
-            else if (data.type === "message_ack") {
-                onMessageAck(state.chatHistory, data, saveChatHistory);
-            }
-            else if (data.type === "message_status") {
-                applyStatusEvent(state.chatHistory, data, saveChatHistory);
-            }
-            else if (data.type === "unread_sync") {
-                ensureRealtime().setUnread(data.partner, data.unread_count);
-            }
-            else if (data.type === "message_deleted") {
-                console.log('[WS RECEIVED] message_deleted', data);
-                handleMessageDeletedEvent(data);
-            }
-            else if (data.type === "conversation_deleted") {
-                handleConversationDeletedEvent(data);
-            }
-            else if (data.type === "reaction_sync") {
-                handleReactionSyncEvent(data);
+                markActiveChatRead();
             }
         },
         (event, closedByUser) => {
@@ -1324,72 +1354,7 @@ function findHistoryMessage(history, message) {
 }
 
 function processMessage(chatPartner, messageInput) {
-    if (!state.chatHistory[chatPartner]) {
-        state.chatHistory[chatPartner] = [];
-    }
-
-    const message = {
-        id: messageInput.id || null,
-        clientMessageId: messageInput.clientMessageId || null,
-        sender: messageInput.sender,
-        text: messageInput.text,
-        type: messageInput.type,
-        timestamp: messageInput.timestamp || Date.now(),
-        status: messageInput.status || (messageInput.type === 'outgoing' ? MESSAGE_STATUS.SENT : undefined),
-        pending: messageInput.status === MESSAGE_STATUS.PENDING || messageInput.status === MESSAGE_STATUS.SENDING,
-        replyTo: messageInput.replyTo || null,
-        reactions: normalizeReactionsList(messageInput.reactions),
-    };
-
-    if (!message.replyTo && messageInput.replyToMessageId) {
-        attachReplyToMessage(
-            message,
-            state.chatHistory,
-            chatPartner,
-            messageInput.replyToMessageId,
-            state.myUsername
-        );
-    }
-
-    const history = state.chatHistory[chatPartner];
-    const existing = findHistoryMessage(history, message);
-    if (existing) {
-        if (message.status) existing.status = message.status;
-        if (message.text) existing.text = message.text;
-        if (message.timestamp) existing.timestamp = message.timestamp;
-        if (message.id) existing.id = message.id;
-        if (message.replyTo) existing.replyTo = message.replyTo;
-        if (message.reactions?.length) existing.reactions = message.reactions;
-
-        if (state.currentTargetUser === chatPartner && existing.clientMessageId) {
-            if (existing.id) {
-                updateMessageIdentity(
-                    existing.clientMessageId,
-                    existing.id,
-                    existing.timestamp,
-                    existing.status || MESSAGE_STATUS.SENT
-                );
-                if (existing.replyTo) {
-                    patchMessageReplyPreview(existing.id, existing.replyTo);
-                }
-            } else if (existing.status) {
-                updateMessageStatus(existing.clientMessageId, null, existing.status);
-            }
-        }
-        saveChatHistory();
-        if (state.currentTargetUser === chatPartner) {
-            reconcileMessageRowsWithHistory([existing]);
-        }
-        return;
-    }
-
-    history.push(message);
-
-    if (state.currentTargetUser === chatPartner) {
-        const prev = history.length > 1 ? history[history.length - 2] : null;
-        appendMessage(message, null, null, null, prev);
-    }
-    saveChatHistory();
+    return engine.processMessage(chatPartner, messageInput);
 }
 
 async function ensureUserKey(username) {
@@ -1408,164 +1373,41 @@ async function ensureUserKey(username) {
 
 // Switches active chat with cloud-history parsing layer integration
 async function switchChat(username) {
-    const epoch = ++switchChatEpoch;
     closeComposeSearch();
-    username = normalizeUsername(username);
-    if (!isValidUsername(username)) {
-        pendingMessageJump = null;
-        showToast(usernamePolicyText(), "error");
-        navigateTo('/chat', handleNavigation);
-        return;
-    }
-
-    const userReady = await ensureUserKey(username);
-    if (epoch !== switchChatEpoch) return;
-    if (!userReady) {
-        pendingMessageJump = null;
-        navigateTo('/chat', handleNavigation);
-        return;
-    }
-
     persistCurrentDraft();
-    flushChatHistorySave();
-    cancelReadReceipt();
-    clearPendingReply();
-    state.currentTargetUser = username;
-    sendChatFocus(username);
-    activateChatPanel(username);
-    DOM.chatWelcome.classList.add('hidden');
-    clearMessageView();
-
-    // --- SECURE LAZY CLOUD SYNCHRONIZATION ---
-    // Fetch latest 50 messages slice. Server doesn't know plain text content!
-    try {
-        const cloudHistory = await getHistory(state.token, state.myUsername, username, 50, 0);
-        if (epoch !== switchChatEpoch) return;
-        state.chatHistory[username] = [];
-
-        for (const msg of cloudHistory) {
-            const isMe = (msg.sender === state.myUsername);
-            const rawBytes = isMe ? msg.content_sender : msg.content_recipient;
-            const encryptedBytes = new Uint8Array(rawBytes);
-
-            try {
-                const decryptedText = await decryptMessage(state.myKeys.privateKey, encryptedBytes);
-                const record = mapDbMessageToLocal(msg, username);
-                record.text = decryptedText;
-                state.chatHistory[username].push(record);
-            } catch (cryptoErr) {
-                console.error("🔒 Crypto payload corruption block dropped:", cryptoErr);
-            }
+    const result = await engine.selectChat(username);
+    if (!result.ok) {
+        pendingMessageJump = null;
+        if (result.reason !== 'stale') {
+            navigateTo('/chat', handleNavigation);
         }
-    } catch (err) {
-        console.warn("Database sync unreachable, using browser cache storage fallback:", err);
+        return;
     }
-
-    if (epoch !== switchChatEpoch) return;
-
-    if (state.chatHistory[username]?.length) {
-        renderMessagesList(state.chatHistory[username]);
-    }
-    consumePendingMessageJump(username);
+    consumePendingMessageJump(result.username);
     clearPasteAttachments();
-    setComposerValue(loadDraft(state.myUsername, username));
-    setDraftStatus(getComposerValue() ? "Draft restored locally" : "End-to-end encrypted");
-    flushChatHistorySave();
+    setComposerValue(result.draft || '');
+    setDraftStatus(getComposerValue() ? 'Draft restored locally' : 'End-to-end encrypted');
     markActiveChatRead();
     syncRealtimeUi();
 }
 
 async function handleSendMessage() {
-    const text = composeMessageText(getComposerValue());
-
-    if (!state.currentTargetUser) {
-        showToast("Select a chat first.", "error");
-        return;
-    }
-
-    if (!text) {
+    const result = await engine.sendText(getComposerValue());
+    if (result?.reason === 'empty') {
         focusComposer();
         return;
     }
-
-    if (text.length > MAX_MESSAGE_LENGTH) {
-        showComposerLimitError(
-            `Message exceeds ${MAX_MESSAGE_LENGTH} characters and was not sent.`
-        );
+    if (result?.reason === 'limit') {
+        showComposerLimitError(result.message || `Message exceeds ${MAX_MESSAGE_LENGTH} characters and was not sent.`);
         focusComposer();
         return;
     }
-    clearComposerLimitError();
-
-    const targetPublicKeyJWK = state.usersDirectory[state.currentTargetUser];
-    if (!targetPublicKeyJWK) {
-        showToast("Recipient key is not available yet. Refresh contacts.", "error");
-        focusComposer();
-        return;
-    }
-
-    try {
-        const targetCryptoKey = await importPublicKey(targetPublicKeyJWK);
-        const encryptedBufferRecipient = await encryptMessage(targetCryptoKey, text);
-        const encryptedArrayRecipient = Array.from(new Uint8Array(encryptedBufferRecipient));
-
-        const encryptedBufferSelf = await encryptMessage(state.myKeys.publicKey, text);
-        const encryptedArraySender = Array.from(new Uint8Array(encryptedBufferSelf));
-        const clientMessageId = crypto.randomUUID();
-        const replyToId = state.pendingReply?.messageId ?? null;
-        const replyMeta = state.pendingReply
-            ? {
-                messageId: state.pendingReply.messageId,
-                unavailable: false,
-                author: state.pendingReply.author,
-                preview: state.pendingReply.preview,
-            }
-            : null;
-
-        const sent = sendPacket(getSocket(), "message", {
-            to: state.currentTargetUser,
-            content_recipient: encryptedArrayRecipient,
-            content_sender: encryptedArraySender,
-            client_message_id: clientMessageId,
-            reply_to_message_id: replyToId,
-        });
-
-        if (!sent) {
-            const failed = createOutgoingMessage({
-                clientMessageId,
-                text,
-                status: MESSAGE_STATUS.FAILED,
-            });
-            processMessage(state.currentTargetUser, failed);
-            throw new Error("WebSocket is not connected");
-        }
-
-        upsertSidebarChat(state.currentTargetUser, {
-            public_key: targetPublicKeyJWK,
-            last_message_at: new Date().toISOString(),
-            last_message_preview: text,
-        });
-
-        processMessage(state.currentTargetUser, createOutgoingMessage({
-            clientMessageId,
-            text,
-            status: MESSAGE_STATUS.SENDING,
-            replyTo: replyMeta,
-        }));
-        clearPendingReply();
-        clearDraft(state.myUsername, state.currentTargetUser);
+    if (result?.ok) {
+        clearComposerLimitError();
         clearComposer();
-        setDraftStatus("Message queued. Waiting for database sync.");
-    } catch (err) {
-        console.error("Message send failed:", err);
-        if (err instanceof RangeError) {
-            showComposerLimitError(err.message);
-        } else {
-            showToast("Message send failed. Check connection and keys.", "error");
-        }
-    } finally {
-        focusComposer();
+        setDraftStatus('Message queued. Waiting for database sync.');
     }
+    focusComposer();
 }
 
 window.handleSendMessage = handleSendMessage;
@@ -1594,9 +1436,14 @@ DOM.usernameInput.addEventListener('input', () => {
 });
 DOM.usernameInput.addEventListener('keydown', handleAuthKeyboard);
 DOM.passwordInput.addEventListener('keydown', handleAuthKeyboard);
-DOM.sendBtn.addEventListener('click', handleSendMessage);
 
-DOM.messageInput.addEventListener('input', () => {
+function attachChatRuntime() {
+    if (chatRuntimeAttached || !DOM.messageInput || !DOM.sendBtn) return;
+    chatRuntimeAttached = true;
+    initComposeSearchRuntime();
+    initMessageRuntime();
+
+    DOM.messageInput.addEventListener('input', () => {
     autoResizeComposer();
     clearComposerLimitError();
     updateComposerMeta(getComposerValue());
@@ -1608,9 +1455,9 @@ DOM.messageInput.addEventListener('input', () => {
     ) {
         ensureRealtime().notifyTyping(state.currentTargetUser);
     }
-});
+    });
 
-DOM.messageInput.addEventListener('paste', (event) => {
+    DOM.messageInput.addEventListener('paste', (event) => {
     if (DOM.messageInput.disabled) return;
     const pasted = event.clipboardData?.getData('text/plain') ?? '';
     if (!shouldCapturePaste(pasted)) return;
@@ -1626,25 +1473,17 @@ DOM.messageInput.addEventListener('paste', (event) => {
     ) {
         ensureRealtime().notifyTyping(state.currentTargetUser);
     }
-});
+    });
 
-DOM.messageInput.addEventListener('keydown', (event) => {
-    const primary = event.metaKey || event.ctrlKey;
-    if (event.key === 'Enter' && !event.shiftKey && (state.preferences.enterToSend || primary)) {
-        event.preventDefault();
-        handleSendMessage();
-    }
-});
+    setPasteAttachmentsChangeHandler(() => {
+        clearComposerLimitError();
+        updateComposerMeta(getComposerValue());
+    });
 
-setPasteAttachmentsChangeHandler(() => {
-    clearComposerLimitError();
-    updateComposerMeta(getComposerValue());
-});
-
-DOM.refreshUsersBtn?.addEventListener('click', refreshUsersDirectory);
-DOM.focusContactsBtn?.addEventListener('click', focusContactSearch);
-DOM.focusComposerBtn.addEventListener('click', focusComposer);
-DOM.railChats?.addEventListener('click', (event) => {
+    DOM.refreshUsersBtn?.addEventListener('click', refreshUsersDirectory);
+    DOM.focusContactsBtn?.addEventListener('click', focusContactSearch);
+    DOM.focusComposerBtn?.addEventListener('click', focusComposer);
+    DOM.railChats?.addEventListener('click', (event) => {
     event.preventDefault();
     if (isComposeSearchOpen()) {
         closeComposeSearch({ restoreWelcome: !state.currentTargetUser });
@@ -1666,10 +1505,84 @@ DOM.dockSettings?.addEventListener('click', (event) => {
     closeComposeSearch({ immediate: true });
     openAppSettings('appearance');
 });
-DOM.dockNewChat?.addEventListener('click', (event) => {
-    event.preventDefault();
-    openNewChatCompose();
+    DOM.dockNewChat?.addEventListener('click', (event) => {
+        event.preventDefault();
+        openNewChatCompose();
+    });
+
+    document.getElementById('uiProfileNavBackBtn')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        handleProfileBack();
+    });
+    document.getElementById('uiChatBackBtn')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (/^\/chat\/@/.test(window.location.pathname)) {
+            replaceTo('/chat', handleNavigation);
+            return;
+        }
+        handleChatBack();
+    });
+    DOM.settingsBtn?.addEventListener('click', (event) => openSettingsMenu(event));
+    DOM.shortcutsBtn?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openShortcuts();
+    });
+    DOM.copyUsernameBtn?.addEventListener('click', copyCurrentUsername);
+    document.getElementById('uiProfileLogoutBtn')?.addEventListener('click', handleLogout);
+    DOM.chatMenuBtn?.addEventListener('click', (event) => openChatMenu(event));
+    DOM.composerMenuBtn?.addEventListener('click', (event) => openComposerMenu(event));
+    DOM.emojiBtn?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleEmojiPicker();
+    });
+    DOM.emojiPicker?.addEventListener('click', (event) => {
+        const item = event.target.closest('[data-emoji]');
+        if (!item) return;
+        insertAtCursor(item.dataset.emoji);
+        persistCurrentDraft();
+        closeEmojiPicker();
+    });
+    DOM.chatSearchBtn?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleMessageSearch();
+    });
+    DOM.messageSearchInput?.addEventListener('input', () => {
+        const value = DOM.messageSearchInput.value;
+        window.clearTimeout(messageSearchTimer);
+        messageSearchTimer = window.setTimeout(() => {
+            searchMessages(value);
+        }, 80);
+    });
+    DOM.scrollBottomBtn?.addEventListener('click', () => scrollMessagesToBottom({ force: true, smooth: true }));
+    DOM.attachBtn?.addEventListener('click', () => DOM.fileInput?.click());
+    DOM.fileInput?.addEventListener('change', () => {
+        if (!DOM.fileInput.files.length) return;
+        insertAtCursor(createFileMarkers(DOM.fileInput.files));
+        persistCurrentDraft();
+        DOM.fileInput.value = '';
+    });
+    DOM.replyCloseBtn?.addEventListener('click', clearPendingReply);
+    DOM.peerMuteBtn?.addEventListener('click', () => {
+        if (!state.currentTargetUser) return;
+        showToast('Mute is coming soon.', 'info');
+    });
+    DOM.peerClearBtn?.addEventListener('click', () => {
+        clearCurrentChatHistory();
+    });
+    DOM.peerDeleteBtn?.addEventListener('click', () => {
+        deleteCurrentChat();
+    });
+    DOM.peerSecurityBtn?.addEventListener('click', () => {
+        openCurrentChatInfo();
+    });
+}
+
+document.addEventListener('click', (event) => {
+    if (!DOM.emojiPicker || DOM.emojiPicker.classList.contains('hidden')) return;
+    if (event.target.closest('.composer-emoji-wrap')) return;
+    closeEmojiPicker();
 });
+
 DOM.closeProfileBtn?.addEventListener('click', (event) => {
     event.preventDefault();
     showChatsView();
@@ -1678,67 +1591,8 @@ document.getElementById('uiProfileBackBtn')?.addEventListener('click', (event) =
     event.preventDefault();
     handleProfileBack();
 });
-document.getElementById('uiProfileNavBackBtn')?.addEventListener('click', (event) => {
-    event.preventDefault();
-    handleProfileBack();
-});
-document.getElementById('uiChatBackBtn')?.addEventListener('click', (event) => {
-    event.preventDefault();
-    if (/^\/chat\/@/.test(window.location.pathname)) {
-        replaceTo('/chat', handleNavigation);
-        return;
-    }
-    handleChatBack();
-});
-DOM.settingsBtn.addEventListener('click', (event) => openSettingsMenu(event));
-DOM.shortcutsBtn.addEventListener('click', (event) => {
-    event.stopPropagation();
-    openShortcuts();
-});
-DOM.closeSettingsBtn.addEventListener('click', closeModals);
-DOM.closeShortcutsBtn.addEventListener('click', closeModals);
-
-DOM.copyUsernameBtn.addEventListener('click', copyCurrentUsername);
-document.getElementById('uiProfileLogoutBtn')?.addEventListener('click', handleLogout);
-
-DOM.chatMenuBtn.addEventListener('click', (event) => openChatMenu(event));
-DOM.composerMenuBtn?.addEventListener('click', (event) => openComposerMenu(event));
-DOM.emojiBtn?.addEventListener('click', (event) => {
-    event.stopPropagation();
-    toggleEmojiPicker();
-});
-DOM.emojiPicker?.addEventListener('click', (event) => {
-    const item = event.target.closest('[data-emoji]');
-    if (!item) return;
-    insertAtCursor(item.dataset.emoji);
-    persistCurrentDraft();
-    closeEmojiPicker();
-});
-document.addEventListener('click', (event) => {
-    if (!DOM.emojiPicker || DOM.emojiPicker.classList.contains('hidden')) return;
-    if (event.target.closest('.composer-emoji-wrap')) return;
-    closeEmojiPicker();
-});
-DOM.chatSearchBtn.addEventListener('click', (event) => {
-    event.stopPropagation();
-    toggleMessageSearch();
-});
-DOM.messageSearchInput.addEventListener('input', () => {
-    const value = DOM.messageSearchInput.value;
-    window.clearTimeout(messageSearchTimer);
-    messageSearchTimer = window.setTimeout(() => {
-        searchMessages(value);
-    }, 80);
-});
-DOM.scrollBottomBtn.addEventListener('click', () => scrollMessagesToBottom({ force: true, smooth: true }));
-
-DOM.attachBtn.addEventListener('click', () => DOM.fileInput.click());
-DOM.fileInput.addEventListener('change', () => {
-    if (!DOM.fileInput.files.length) return;
-    insertAtCursor(createFileMarkers(DOM.fileInput.files));
-    persistCurrentDraft();
-    DOM.fileInput.value = '';
-});
+DOM.closeSettingsBtn?.addEventListener('click', closeModals);
+DOM.closeShortcutsBtn?.addEventListener('click', closeModals);
 
 bindPreferenceToggle(DOM.prefEnterSend, 'enterToSend');
 bindPreferenceToggle(DOM.prefCompactMode, 'compactMode');
@@ -1778,24 +1632,6 @@ if (DOM.glassSlider) {
     DOM.glassSlider.addEventListener('input', () => commitGlass(true));
     DOM.glassSlider.addEventListener('change', () => commitGlass(false));
 }
-
-if (DOM.replyCloseBtn) {
-    DOM.replyCloseBtn.addEventListener('click', clearPendingReply);
-}
-
-DOM.peerMuteBtn?.addEventListener('click', () => {
-    if (!state.currentTargetUser) return;
-    showToast('Mute is coming soon.', 'info');
-});
-DOM.peerClearBtn?.addEventListener('click', () => {
-    clearCurrentChatHistory();
-});
-DOM.peerDeleteBtn?.addEventListener('click', () => {
-    deleteCurrentChat();
-});
-DOM.peerSecurityBtn?.addEventListener('click', () => {
-    openCurrentChatInfo();
-});
 
 registerShortcuts({
     closeTransientUi: () => {
@@ -2046,6 +1882,7 @@ function handleLogout() {
     flushChatHistorySave();
     closeOverlaysForRouteChange();
     showChatsView();
+    void unmountChatPage();
 
     if (socketConnection) {
         socketConnection.close();
@@ -2120,4 +1957,5 @@ async function initializeApp() {
 }
 
 // Trigger the application boot sequence
+wireEngineUi();
 initializeApp();

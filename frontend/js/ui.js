@@ -27,140 +27,203 @@ import {
     initSmartPasteUi,
 } from './smartPaste.js';
 
-export const DOM = {
-    pageStart: document.getElementById('page-start'),
-    pageLogin: document.getElementById('page-login'),
-    pageChat: document.getElementById('page-chat'),
-    pageAboutSecurity: document.getElementById('page-about-security'),
+const DOM_IDS = {
+    pageStart: 'page-start',
+    pageLogin: 'page-login',
+    pageChat: 'page-chat',
+    pageAboutSecurity: 'page-about-security',
 
-    usernameInput: document.getElementById('usernameInput'),
-    passwordInput: document.getElementById('passwordInput'),
-    btnLogin: document.getElementById('btnLogin'),
-    btnRegister: document.getElementById('btnRegister'),
-    btnForgotPassword: document.getElementById('btnForgotPassword'),
-    btnAuthApple: document.getElementById('btnAuthApple'),
-    btnAuthGoogle: document.getElementById('btnAuthGoogle'),
-    authError: document.getElementById('authError'),
+    usernameInput: 'usernameInput',
+    passwordInput: 'passwordInput',
+    btnLogin: 'btnLogin',
+    btnRegister: 'btnRegister',
+    btnForgotPassword: 'btnForgotPassword',
+    btnAuthApple: 'btnAuthApple',
+    btnAuthGoogle: 'btnAuthGoogle',
+    authError: 'authError',
 
-    statusSpan: document.getElementById('status'),
-    messagesDiv: document.getElementById('messages'),
-    messageInput: document.getElementById('messageInput'),
-    sendBtn: document.getElementById('sendBtn'),
-    usersListDiv: document.getElementById('usersList'),
-    chatWithTitle: document.getElementById('chatWithTitle'),
-    chatSubtitle: document.getElementById('chatSubtitle'),
-    chatHeaderAvatar: document.getElementById('chatHeaderAvatar'),
-    chatWelcome: document.getElementById('chat-welcome'),
+    statusSpan: 'status',
+    messagesDiv: 'messages',
+    messageInput: 'messageInput',
+    sendBtn: 'sendBtn',
+    usersListDiv: 'usersList',
+    chatWithTitle: 'chatWithTitle',
+    chatSubtitle: 'chatSubtitle',
+    chatHeaderAvatar: 'chatHeaderAvatar',
+    chatWelcome: 'chat-welcome',
 
-    focusContactsBtn: document.getElementById('uiFocusContactsBtn'),
-    focusComposerBtn: document.getElementById('uiFocusComposerBtn'),
-    shortcutsBtn: document.getElementById('uiShortcutsBtn'),
-    profileBtn: document.getElementById('uiRailProfile'),
-    settingsBtn: document.getElementById('uiSettingsBtn'),
-    refreshUsersBtn: document.getElementById('uiRefreshUsersBtn'),
-    copyUsernameBtn: document.getElementById('uiCopyUsernameBtn'),
+    focusContactsBtn: 'uiFocusContactsBtn',
+    focusComposerBtn: 'uiFocusComposerBtn',
+    shortcutsBtn: 'uiShortcutsBtn',
+    profileBtn: 'uiRailProfile',
+    settingsBtn: 'uiSettingsBtn',
+    refreshUsersBtn: 'uiRefreshUsersBtn',
+    copyUsernameBtn: 'uiCopyUsernameBtn',
 
-    chatSearchBtn: document.getElementById('uiChatSearchBtn'),
-    scrollBottomBtn: document.getElementById('uiScrollBottomBtn'),
-    chatMenuBtn: document.getElementById('uiChatMenuBtn'),
+    chatSearchBtn: 'uiChatSearchBtn',
+    scrollBottomBtn: 'uiScrollBottomBtn',
+    chatMenuBtn: 'uiChatMenuBtn',
 
-    messageSearch: document.getElementById('uiMessageSearch'),
-    messageSearchInput: document.getElementById('uiMessageSearchInput'),
-    messageSearchCount: document.getElementById('uiMessageSearchCount'),
+    messageSearch: 'uiMessageSearch',
+    messageSearchInput: 'uiMessageSearchInput',
+    messageSearchCount: 'uiMessageSearchCount',
 
-    attachBtn: document.getElementById('uiAttachBtn'),
-    fileInput: document.getElementById('uiFileInput'),
-    composerMenuBtn: document.getElementById('uiComposerMenuBtn'),
-    emojiBtn: document.getElementById('uiEmojiBtn'),
-    emojiPicker: document.getElementById('uiEmojiPicker'),
-    pasteAttachments: document.getElementById('uiPasteAttachments'),
-    pasteEditor: document.getElementById('uiPasteEditor'),
-    pasteEditorTitle: document.getElementById('uiPasteEditorTitle'),
-    pasteEditorCount: document.getElementById('uiPasteEditorCount'),
-    pasteEditorText: document.getElementById('uiPasteEditorText'),
-    pasteEditorSave: document.getElementById('uiPasteEditorSave'),
-    pasteEditorRemove: document.getElementById('uiPasteEditorRemove'),
-    pasteEditorClose: document.getElementById('uiPasteEditorClose'),
-    replyBar: document.getElementById('uiReplyBar'),
-    replyLabel: document.getElementById('uiReplyLabel'),
-    replyPreview: document.getElementById('uiReplyPreview'),
-    replyCloseBtn: document.getElementById('uiReplyCloseBtn'),
-    draftStatus: document.getElementById('uiDraftStatus'),
-    charCounter: document.getElementById('uiCharCounter'),
+    attachBtn: 'uiAttachBtn',
+    fileInput: 'uiFileInput',
+    composerMenuBtn: 'uiComposerMenuBtn',
+    emojiBtn: 'uiEmojiBtn',
+    emojiPicker: 'uiEmojiPicker',
+    pasteAttachments: 'uiPasteAttachments',
+    pasteEditor: 'uiPasteEditor',
+    pasteEditorTitle: 'uiPasteEditorTitle',
+    pasteEditorCount: 'uiPasteEditorCount',
+    pasteEditorText: 'uiPasteEditorText',
+    pasteEditorSave: 'uiPasteEditorSave',
+    pasteEditorRemove: 'uiPasteEditorRemove',
+    pasteEditorClose: 'uiPasteEditorClose',
+    replyBar: 'uiReplyBar',
+    replyLabel: 'uiReplyLabel',
+    replyPreview: 'uiReplyPreview',
+    replyCloseBtn: 'uiReplyCloseBtn',
+    draftStatus: 'uiDraftStatus',
+    charCounter: 'uiCharCounter',
 
-    settingsPanel: document.getElementById('uiSettingsPanel'),
-    closeSettingsBtn: document.getElementById('uiCloseSettingsBtn'),
-    prefEnterSend: document.getElementById('uiPrefEnterSend'),
-    prefCompactMode: document.getElementById('uiPrefCompactMode'),
-    prefShowTimestamps: document.getElementById('uiPrefShowTimestamps'),
-    prefMessageNotifications: document.getElementById('uiPrefMessageNotifications'),
-    prefMessagePreview: document.getElementById('uiPrefMessagePreview'),
-    prefMessageSound: document.getElementById('uiPrefMessageSound'),
-    glassSlider: document.getElementById('uiGlassSlider'),
-    settingsGlassValue: document.getElementById('uiSettingsGlassValue'),
+    settingsPanel: 'uiSettingsPanel',
+    closeSettingsBtn: 'uiCloseSettingsBtn',
+    prefEnterSend: 'uiPrefEnterSend',
+    prefCompactMode: 'uiPrefCompactMode',
+    prefShowTimestamps: 'uiPrefShowTimestamps',
+    prefMessageNotifications: 'uiPrefMessageNotifications',
+    prefMessagePreview: 'uiPrefMessagePreview',
+    prefMessageSound: 'uiPrefMessageSound',
+    glassSlider: 'uiGlassSlider',
+    settingsGlassValue: 'uiSettingsGlassValue',
 
-    profilePanel: document.getElementById('uiProfilePanel'),
-    profileNav: document.getElementById('uiProfileNav'),
-    profileNavToggle: document.getElementById('uiProfileNavToggle'),
-    profileNavScrim: document.getElementById('uiProfileNavScrim'),
-    profileNavBackBtn: document.getElementById('uiProfileNavBackBtn'),
-    profileBackBtn: document.getElementById('uiProfileBackBtn'),
-    closeProfileBtn: document.getElementById('uiCloseProfileBtn'),
+    profilePanel: 'uiProfilePanel',
+    profileNav: 'uiProfileNav',
+    profileNavToggle: 'uiProfileNavToggle',
+    profileNavScrim: 'uiProfileNavScrim',
+    profileNavBackBtn: 'uiProfileNavBackBtn',
+    profileBackBtn: 'uiProfileBackBtn',
+    closeProfileBtn: 'uiCloseProfileBtn',
 
-    shortcutsPanel: document.getElementById('uiShortcutsPanel'),
-    closeShortcutsBtn: document.getElementById('uiCloseShortcutsBtn'),
-    toastRegion: document.getElementById('uiToastRegion'),
+    shortcutsPanel: 'uiShortcutsPanel',
+    closeShortcutsBtn: 'uiCloseShortcutsBtn',
+    toastRegion: 'uiToastRegion',
 
-    chatWorkspace: document.getElementById('uiChatWorkspace'),
-    chatBackBtn: document.getElementById('uiChatBackBtn'),
-    sidebar: document.getElementById('uiSidebar'),
-    sidebarToggle: document.getElementById('uiSidebarToggle'),
-    railCollapsedTools: document.getElementById('uiRailCollapsedTools'),
-    railMark: document.getElementById('uiRailMark'),
-    railSidebarToggle: document.getElementById('uiRailSidebarToggle'),
-    railChats: document.getElementById('uiRailChats'),
-    railProfile: document.getElementById('uiRailProfile'),
-    dockSettings: document.getElementById('uiDockSettings'),
-    dockNewChat: document.getElementById('uiDockNewChat'),
+    chatWorkspace: 'uiChatWorkspace',
+    chatBackBtn: 'uiChatBackBtn',
+    sidebar: 'uiSidebar',
+    sidebarToggle: 'uiSidebarToggle',
+    railCollapsedTools: 'uiRailCollapsedTools',
+    railMark: 'uiRailMark',
+    railSidebarToggle: 'uiRailSidebarToggle',
+    railChats: 'uiRailChats',
+    railProfile: 'uiRailProfile',
+    dockSettings: 'uiDockSettings',
+    dockNewChat: 'uiDockNewChat',
 
-    peerPanel: document.getElementById('uiPeerPanel'),
-    peerPanelToggle: document.getElementById('uiPeerPanelToggle'),
-    peerPanelScrim: document.getElementById('uiPeerPanelScrim'),
-    peerEmpty: document.getElementById('uiPeerEmpty'),
-    peerBody: document.getElementById('uiPeerBody'),
-    peerAvatar: document.getElementById('uiPeerAvatar'),
-    peerName: document.getElementById('uiPeerName'),
-    peerHandle: document.getElementById('uiPeerHandle'),
-    peerStatus: document.getElementById('uiPeerStatus'),
-    peerBio: document.getElementById('uiPeerBio'),
-    peerEncryptCopy: document.getElementById('uiPeerEncryptCopy'),
-    peerSecurityBtn: document.getElementById('uiPeerSecurityBtn'),
-    peerMuteBtn: document.getElementById('uiPeerMuteBtn'),
-    peerClearBtn: document.getElementById('uiPeerClearBtn'),
-    peerDeleteBtn: document.getElementById('uiPeerDeleteBtn'),
+    peerPanel: 'uiPeerPanel',
+    peerPanelToggle: 'uiPeerPanelToggle',
+    peerPanelScrim: 'uiPeerPanelScrim',
+    peerEmpty: 'uiPeerEmpty',
+    peerBody: 'uiPeerBody',
+    peerAvatar: 'uiPeerAvatar',
+    peerName: 'uiPeerName',
+    peerHandle: 'uiPeerHandle',
+    peerStatus: 'uiPeerStatus',
+    peerBio: 'uiPeerBio',
+    peerEncryptCopy: 'uiPeerEncryptCopy',
+    peerSecurityBtn: 'uiPeerSecurityBtn',
+    peerMuteBtn: 'uiPeerMuteBtn',
+    peerClearBtn: 'uiPeerClearBtn',
+    peerDeleteBtn: 'uiPeerDeleteBtn',
 };
 
-const missingDomKeys = Object.entries(DOM)
-    .filter(([, element]) => !element)
-    .map(([key]) => key);
+const CHAT_DOM_KEYS = new Set([
+    'statusSpan', 'messagesDiv', 'messageInput', 'sendBtn', 'usersListDiv',
+    'chatWithTitle', 'chatSubtitle', 'chatHeaderAvatar', 'chatWelcome',
+    'focusContactsBtn', 'focusComposerBtn', 'shortcutsBtn', 'profileBtn',
+    'settingsBtn', 'refreshUsersBtn', 'copyUsernameBtn',
+    'chatSearchBtn', 'scrollBottomBtn', 'chatMenuBtn',
+    'messageSearch', 'messageSearchInput', 'messageSearchCount',
+    'attachBtn', 'fileInput', 'composerMenuBtn', 'emojiBtn', 'emojiPicker',
+    'pasteAttachments', 'replyBar', 'replyLabel', 'replyPreview', 'replyCloseBtn',
+    'draftStatus', 'charCounter',
+    'profileNav', 'profileNavBackBtn',
+    'chatWorkspace', 'chatBackBtn', 'sidebar', 'sidebarToggle',
+    'railCollapsedTools', 'railMark', 'railSidebarToggle', 'railChats',
+    'railProfile', 'dockSettings', 'dockNewChat',
+    'peerPanel', 'peerPanelToggle', 'peerPanelScrim', 'peerEmpty', 'peerBody',
+    'peerAvatar', 'peerName', 'peerHandle', 'peerStatus', 'peerBio',
+    'peerEncryptCopy', 'peerSecurityBtn', 'peerMuteBtn', 'peerClearBtn', 'peerDeleteBtn',
+]);
 
-if (missingDomKeys.length) {
-    throw new Error(`Missing required UI elements: ${missingDomKeys.join(', ')}`);
+export const DOM = {};
+
+let sidebarRenderer = 'dom';
+let chatChromeBound = false;
+
+export function setSidebarRenderer(mode) {
+    sidebarRenderer = mode === 'react' ? 'react' : 'dom';
 }
 
-ensureChromeFrost();
+export function bindChatDom(root = document, { requireChat = false } = {}) {
+    const scope = root && typeof root.getElementById === 'function' ? root : document;
+    const lookup = (id) => document.getElementById(id) || (scope !== document ? scope.querySelector?.(`#${id}`) : null);
+    const missing = [];
+    for (const [key, id] of Object.entries(DOM_IDS)) {
+        const el = lookup(id);
+        DOM[key] = el;
+        const optional = key.startsWith('btn') || key.startsWith('pref') || key === 'glassSlider' || key === 'settingsGlassValue';
+        if (!el && !optional && (requireChat || !CHAT_DOM_KEYS.has(key))) {
+            missing.push(key);
+        }
+    }
+    if (missing.length && (requireChat || missing.some((key) => !CHAT_DOM_KEYS.has(key)))) {
+        const fatal = missing.filter((key) => requireChat || !CHAT_DOM_KEYS.has(key));
+        if (fatal.length) throw new Error(`Missing required UI elements: ${fatal.join(', ')}`);
+    }
+    return DOM;
+}
 
-initSmartPasteUi({
-    listEl: DOM.pasteAttachments,
-    dialogEl: DOM.pasteEditor,
-    textareaEl: DOM.pasteEditorText,
-    countEl: DOM.pasteEditorCount,
-    titleEl: DOM.pasteEditorTitle,
-    saveBtn: DOM.pasteEditorSave,
-    removeBtn: DOM.pasteEditorRemove,
-    closeBtn: DOM.pasteEditorClose,
-    isDisabled: () => Boolean(DOM.messageInput?.disabled),
-});
+export function rebindChatDom(root = document) {
+    return bindChatDom(root, { requireChat: true });
+}
+
+function initChatChromeOnce() {
+    if (chatChromeBound) return;
+    if (!DOM.messagesDiv || !DOM.sidebar) return;
+    chatChromeBound = true;
+    ensureChromeFrost();
+    initSmartPasteUi({
+        listEl: DOM.pasteAttachments,
+        dialogEl: DOM.pasteEditor,
+        textareaEl: DOM.pasteEditorText,
+        countEl: DOM.pasteEditorCount,
+        titleEl: DOM.pasteEditorTitle,
+        saveBtn: DOM.pasteEditorSave,
+        removeBtn: DOM.pasteEditorRemove,
+        closeBtn: DOM.pasteEditorClose,
+        isDisabled: () => Boolean(DOM.messageInput?.disabled),
+    });
+    initPeerPanelCollapse();
+    initSidebarCollapse();
+    initProfileNavCollapse();
+    initViewportPanels();
+    initContactSearchSheet();
+}
+
+export function bindChatChrome(root = document) {
+    rebindChatDom(root);
+    initChatChromeOnce();
+}
+
+export function resetChatChromeBind() {
+    chatChromeBound = false;
+}
+
+bindChatDom(document, { requireChat: false });
 
 const PEER_PANEL_COLLAPSED_KEY = 'nexa_peer_panel_collapsed_v3';
 const PEER_NARROW_MQ = '(max-width: 760px)';
@@ -291,8 +354,6 @@ function initPeerPanelCollapse() {
         });
     }
 }
-
-initPeerPanelCollapse();
 
 const SIDEBAR_COLLAPSED_KEY = 'nexa_sidebar_collapsed';
 
@@ -560,8 +621,6 @@ function initSidebarCollapse() {
     DOM.railSidebarToggle?.addEventListener('click', expand);
 }
 
-initSidebarCollapse();
-
 function initProfileNavCollapse() {
     const btn = DOM.profileNavToggle;
     const scrim = DOM.profileNavScrim;
@@ -592,8 +651,6 @@ function initProfileNavCollapse() {
     });
 }
 
-initProfileNavCollapse();
-
 const contactsState = {
     users: [],
     sidebarChats: [],
@@ -616,8 +673,6 @@ function initViewportPanels() {
         else mq.addListener?.(run);
     }
 }
-
-initViewportPanels();
 
 const realtimeContext = {
     onlineUsers: new Set(),
@@ -721,6 +776,10 @@ export function filterUsers(query) {
 export function clearUsersList(message = 'No conversations yet') {
     contactsState.users = [];
     contactsState.searchMode = false;
+    if (sidebarRenderer === 'react' || !DOM.usersListDiv) {
+        syncWelcomeBanner(message !== 'No conversations yet');
+        return;
+    }
     if (!contactsState.sidebarChats.length) {
         DOM.usersListDiv.innerHTML = '';
         const empty = document.createElement('div');
@@ -734,7 +793,7 @@ export function clearUsersList(message = 'No conversations yet') {
 }
 
 export function showContactsLoading(count = 6) {
-    if (!DOM.usersListDiv) return;
+    if (sidebarRenderer === 'react' || !DOM.usersListDiv) return;
     DOM.usersListDiv.innerHTML = '';
     const fragment = document.createDocumentFragment();
     for (let i = 0; i < count; i += 1) {
@@ -799,6 +858,7 @@ export function activateChatPanel(username) {
 
 export function resetChatPanel() {
     closeOverlaysForChatChange();
+    if (!DOM.chatWithTitle || !DOM.messageInput) return;
     DOM.chatWithTitle.textContent = '';
     if (DOM.chatSubtitle) {
         DOM.chatSubtitle.textContent = '';
@@ -834,6 +894,7 @@ export function showPeerEmpty() {
 
 export function renderMessagesList(messages) {
     /** Full hydrate — use only on chat switch / initial load. */
+    if (!DOM.messagesDiv) return;
     clearMessageView();
     if (!Array.isArray(messages) || !messages.length) return;
 
@@ -848,6 +909,7 @@ export function renderMessagesList(messages) {
 }
 
 export function clearMessageView() {
+    if (!DOM.messagesDiv) return;
     DOM.messagesDiv.innerHTML = '';
     ensureChromeFrost();
 }
@@ -1719,13 +1781,14 @@ export function setMessageActionHandlers(handlers) {
 }
 
 export function setComposerValue(text) {
+    if (!DOM.messageInput) return;
     DOM.messageInput.value = text;
     updateComposerMeta(text);
     autoResizeComposer();
 }
 
 export function getComposerValue() {
-    return DOM.messageInput.value;
+    return DOM.messageInput?.value || '';
 }
 
 export function clearComposer() {
@@ -1761,12 +1824,11 @@ function initContactSearchSheet() {
     /* Contact search UI removed. */
 }
 
-initContactSearchSheet();
-
 export function autoResizeComposer() {
     const minHeight = 40;
     const maxHeight = 200;
     const input = DOM.messageInput;
+    if (!input) return;
     input.style.height = 'auto';
     const scrollH = input.scrollHeight;
     const nextHeight = Math.min(Math.max(scrollH, minHeight), maxHeight);
@@ -1780,6 +1842,7 @@ export function autoResizeComposer() {
 }
 
 export function updateComposerMeta(text) {
+    if (!DOM.charCounter) return;
     const length = (text?.length ?? 0) + getPasteAttachmentsLength();
     const over = length > MAX_MESSAGE_LENGTH;
     DOM.charCounter.textContent = over
@@ -2265,6 +2328,10 @@ function syncWelcomeBanner(forceHide = false) {
 }
 
 function renderFilteredUsers() {
+    if (sidebarRenderer === 'react' || !DOM.usersListDiv) {
+        syncWelcomeBanner();
+        return;
+    }
     DOM.usersListDiv.innerHTML = '';
 
     const sourceUsers = contactsState.searchMode
@@ -2415,6 +2482,7 @@ function applyContactSubtitle(subtitleEl, username, userHint = null) {
 
 function setActiveContact(username) {
     contactsState.activeUsername = username;
+    if (sidebarRenderer === 'react' || !DOM.usersListDiv) return;
 
     DOM.usersListDiv.querySelectorAll('.contact-row').forEach(button => {
         const isActive = button.dataset.username === username;
@@ -2445,6 +2513,7 @@ function buildTypingDotsHtml() {
 }
 
 function refreshContactIndicators() {
+    if (sidebarRenderer === 'react' || !DOM.usersListDiv) return;
     DOM.usersListDiv.querySelectorAll('.contact-row').forEach(row => {
         const username = row.dataset.username;
         if (!username) return;

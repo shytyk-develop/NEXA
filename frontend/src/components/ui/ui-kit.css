@@ -1,0 +1,105 @@
+/* Shared UI kit — wraps existing NEXA glass tokens. No Tailwind. */
+
+.nexa-ui-btn {
+    align-items: center;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--f-ui);
+    gap: 8px;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.nexa-ui-btn--glass {
+    background: var(--control-glass);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--capsule-stroke, var(--control-glass-stroke));
+    border-radius: 12px;
+    box-shadow: var(--glass-inset-highlight);
+    color: var(--txt, #f4f4f5);
+    padding: 10px 16px;
+}
+
+.nexa-ui-input {
+    background: var(--control-glass, var(--input-fill));
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid var(--capsule-stroke, var(--input-border));
+    border-radius: 12px;
+    box-shadow: var(--glass-inset-highlight);
+    color: var(--txt, #f4f4f5);
+    font-family: var(--f-ui);
+    font-size: 14px;
+    padding: 10px 14px;
+    width: 100%;
+}
+
+.nexa-ui-input::placeholder {
+    color: var(--txt-3, #9ca3af);
+}
+
+.nexa-ui-avatar {
+    align-items: center;
+    background: var(--control-glass);
+    border: 1px solid var(--capsule-stroke, var(--control-glass-stroke));
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.nexa-ui-avatar img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.nexa-ui-avatar--sm { height: 32px; width: 32px; font-size: 12px; }
+.nexa-ui-avatar--md { height: 48px; width: 48px; font-size: 16px; }
+.nexa-ui-avatar--lg { height: 88px; width: 88px; font-size: 28px; }
+
+.nexa-glass-card {
+    background: var(--control-glass);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--capsule-stroke, var(--control-glass-stroke));
+    border-radius: 18px;
+    box-shadow: var(--glass-inset-highlight);
+}
+
+.nexa-grid-container {
+    margin: 0 auto;
+    max-width: 1120px;
+    padding: clamp(80px, 10vw, 130px) 24px;
+    width: 100%;
+}
+
+.nexa-grid {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.nexa-col-1 { grid-column: span 1; }
+.nexa-col-2 { grid-column: span 2; }
+.nexa-col-3 { grid-column: span 3; }
+.nexa-col-4 { grid-column: span 4; }
+.nexa-col-5 { grid-column: span 5; }
+.nexa-col-6 { grid-column: span 6; }
+.nexa-col-7 { grid-column: span 7; }
+.nexa-col-8 { grid-column: span 8; }
+.nexa-col-9 { grid-column: span 9; }
+.nexa-col-10 { grid-column: span 10; }
+.nexa-col-11 { grid-column: span 11; }
+.nexa-col-12 { grid-column: span 12; }
+
+@media (max-width: 767px) {
+    .nexa-col-md-6,
+    .nexa-col-md-4,
+    .nexa-col-md-3 {
+        grid-column: span 12;
+    }
+}

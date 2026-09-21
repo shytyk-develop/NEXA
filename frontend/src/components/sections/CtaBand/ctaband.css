@@ -1,0 +1,280 @@
+/* ─── CTA band ─── */
+.start-cta-band {
+    margin: 0 auto;
+    max-width: 1120px;
+    padding: 0 24px clamp(80px, 10vw, 120px);
+}
+
+.start-cta-band__group {
+    height: 100%;
+}
+
+.start-cta-band__item {
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+    border-radius: 32px;
+    overflow: hidden;
+    padding: 1px;
+    position: relative;
+}
+
+.start-cta-band__item::before {
+    background: rgba(228, 228, 231, 0.5);
+    border-radius: 50%;
+    content: "";
+    filter: blur(110px);
+    height: 22rem;
+    left: -11rem;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: -11rem;
+    transform: translate(var(--mouse-x), var(--mouse-y));
+    transition: opacity 0.55s ease;
+    width: 22rem;
+    z-index: 30;
+}
+
+.start-cta-band__group:hover .start-cta-band__item::before {
+    opacity: 0.16;
+}
+
+.start-cta-band__inner {
+    background:
+        radial-gradient(90% 80% at 8% 0%, rgba(255, 255, 255, 0.07), transparent 50%),
+        radial-gradient(70% 90% at 100% 100%, rgba(255, 255, 255, 0.05), transparent 45%),
+        linear-gradient(165deg, #161616 0%, #090909 58%, #050505 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 31px;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.05) inset,
+        0 40px 100px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+    position: relative;
+    z-index: 20;
+}
+
+.start-cta-band__particles {
+    inset: 0;
+    opacity: 0.1;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity 1s ease;
+    z-index: 0;
+}
+
+.start-cta-band__particles canvas {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.start-cta-band__group:hover .start-cta-band__particles {
+    opacity: 0.85;
+}
+
+.start-cta-band__watermark {
+    display: block;
+    height: auto;
+    left: 50%;
+    max-width: none;
+    opacity: 0.035;
+    pointer-events: none;
+    position: absolute;
+    top: 54%;
+    transform: translate(-50%, -50%);
+    width: min(92%, 920px);
+    z-index: 0;
+}
+
+.start-cta-band__layout {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(36px, 5vw, 52px);
+    padding: clamp(40px, 6vw, 64px) clamp(24px, 4vw, 48px) clamp(28px, 4vw, 40px);
+    position: relative;
+    z-index: 1;
+}
+
+.start-cta-band__copy {
+    display: flex;
+    flex-direction: column;
+    max-width: 760px;
+}
+
+.start-cta-band__eyebrow {
+    color: var(--txt-3);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    margin: 0 0 18px;
+    text-transform: uppercase;
+}
+
+.start-cta-band__headline {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+@media (min-width: 760px) {
+    .start-cta-band__headline {
+        align-items: flex-end;
+        flex-direction: row;
+        gap: 28px;
+        justify-content: space-between;
+    }
+}
+
+.start-cta-band__title {
+    font-family: var(--f-display);
+    font-size: clamp(2.35rem, 5.5vw, 3.75rem);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 0.98;
+    margin: 0;
+}
+
+.start-cta-band__text {
+    color: var(--txt-2);
+    font-size: 15px;
+    line-height: 1.65;
+    margin: 18px 0 0;
+    max-width: 46ch;
+}
+
+.start-cta-band__actions {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.start-cta-band__stage {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    height: 168px;
+    margin-top: 4px;
+    position: relative;
+    width: 100%;
+}
+
+@media (min-width: 760px) {
+    .start-cta-band__stage {
+        height: 148px;
+    }
+}
+
+.start-cta-band__rail {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.12) 18%,
+        rgba(255, 255, 255, 0.12) 82%,
+        transparent
+    );
+    height: 1px;
+    left: 4%;
+    opacity: 0.55;
+    position: absolute;
+    right: 4%;
+    top: 46%;
+}
+
+.start-cta-band__chip {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(18, 18, 18, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: var(--txt-3);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 500;
+    left: var(--x);
+    letter-spacing: 0.04em;
+    opacity: 0.42;
+    padding: 8px 14px;
+    position: absolute;
+    top: var(--y);
+    transform: translate(-50%, -50%);
+    transition:
+        opacity 0.28s ease,
+        border-color 0.28s ease,
+        color 0.28s ease,
+        background 0.28s ease,
+        transform 0.28s ease;
+    white-space: nowrap;
+}
+
+/* Chip constellation — positions live here (not inline) so breakpoints can
+   re-arrange them. */
+.start-cta-band__chip:nth-of-type(1) { --x: 12%; --y: 28%; }
+.start-cta-band__chip:nth-of-type(2) { --x: 38%; --y: 68%; }
+.start-cta-band__chip:nth-of-type(3) { --x: 64%; --y: 24%; }
+.start-cta-band__chip:nth-of-type(4) { --x: 88%; --y: 62%; }
+
+.start-cta-band__chip.is-active {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.32);
+    color: var(--txt);
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+}
+
+.start-cta-band__pointer {
+    color: #e4e4e7;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+}
+
+.start-cta-band__pointer svg {
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.start-cta-band__pointer-label {
+    background: #f4f4f5;
+    border-radius: 999px;
+    color: #111;
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    left: 14px;
+    letter-spacing: 0.02em;
+    padding: 3px 9px;
+    position: relative;
+    top: -4px;
+    white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+    .start-cta-band__chip {
+        font-size: 10px;
+        padding: 7px 10px;
+    }
+
+    .start-cta-band__chip:nth-of-type(1) { --x: 18%; --y: 26%; }
+    .start-cta-band__chip:nth-of-type(2) { --x: 42%; --y: 72%; }
+    .start-cta-band__chip:nth-of-type(3) { --x: 68%; --y: 28%; }
+    .start-cta-band__chip:nth-of-type(4) { --x: 82%; --y: 70%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .start-cta-band__item::before,
+    .start-cta-band__particles {
+        display: none;
+    }
+
+    .start-cta-band__chip {
+        opacity: 0.7;
+    }
+
+    .start-cta-band__pointer {
+        display: none;
+    }
+}
+

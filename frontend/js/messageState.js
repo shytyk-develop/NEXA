@@ -45,6 +45,16 @@ export function deriveOutgoingStatusFromDb(row, myUsername) {
     return MESSAGE_STATUS.SENT;
 }
 
+/**
+ * @param {{
+ *   clientMessageId?: string | null,
+ *   text?: string,
+ *   timestamp?: number,
+ *   status?: string,
+ *   replyTo?: { messageId?: any, unavailable?: boolean, author?: any, preview?: any } | null,
+ *   reactions?: any[],
+ * }} options
+ */
 export function createOutgoingMessage({
     clientMessageId,
     text,

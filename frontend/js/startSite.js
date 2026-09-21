@@ -5,8 +5,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Listeners are bound once (the markup never rebuilds), but GSAP state and the
-// vortex are created on every visit and torn down on every leave.
+// Bindings re-attach after React remounts the start-site island.
 let bound = false;
 let motionCtx = null;
 let quotesTimer = 0;
@@ -14,15 +13,10 @@ let armProductAutoplay = null;
 let clearProductProgress = null;
 let orbitCtl = null;
 let startGen = 0;
-let destroyVortexFn = () => {};
 let destroyFeatureCarouselFn = () => {};
 let destroyCtaBandFn = () => {};
 /** @type {IntersectionObserver[]} */
 let lazyObservers = [];
-
-function afterPaint(fn) {
-    requestAnimationFrame(() => requestAnimationFrame(fn));
-}
 
 function whenVisible(el, fn, { root = null, rootMargin = '240px 0px' } = {}) {
     if (!el) return;
@@ -51,16 +45,6 @@ export function initStartSite(pageStart) {
     startMotion(pageStart);
     startQuotesRotation(pageStart);
     armProductAutoplay?.();
-
-    // THREE vortex is the heaviest hero cost — wait for first paint, then load.
-    afterPaint(() => {
-        if (gen !== startGen) return;
-        import('./vortex.js').then((mod) => {
-            if (gen !== startGen) return;
-            destroyVortexFn = mod.destroyVortex;
-            mod.mountVortex(pageStart.querySelector('#startHeroVortex'));
-        }).catch(() => {});
-    });
 
     // Below-the-fold widgets: fetch only when they approach the viewport.
     whenVisible(pageStart.querySelector('[data-feature-carousel]'), () => {
@@ -93,10 +77,9 @@ export function teardownStartSite() {
     stopOrbit();
     destroyFeatureCarouselFn();
     destroyCtaBandFn();
-    destroyVortexFn();
     destroyFeatureCarouselFn = () => {};
     destroyCtaBandFn = () => {};
-    destroyVortexFn = () => {};
+    bound = false;
     // Re-arm the intro so the next visit plays it from the top.
     document.querySelector('.start-hero')?.classList.remove('is-ready');
 }

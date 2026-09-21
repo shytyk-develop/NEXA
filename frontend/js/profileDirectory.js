@@ -38,6 +38,11 @@ export function ingestUserRecords(users) {
     });
 }
 
+/**
+ * @param {string | null | undefined} username
+ * @param {Record<string, any> | null | undefined} [userHint]
+ * @param {string | null | undefined} [myUsername]
+ */
 export function resolveContactProfile(username, userHint = null, myUsername = null) {
     if (!username) return { ...DEFAULT_PROFILE };
     if (myUsername && username === myUsername) {

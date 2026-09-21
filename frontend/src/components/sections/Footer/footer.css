@@ -1,0 +1,240 @@
+/* ─── Footer curtain reveal ───
+   The wrapper reserves one viewport of scroll and clips its subtree; the stage
+   is fixed to the viewport bottom, so scrolling the wrapper into view "lifts
+   the curtain" off the footer. Falls back to a normal in-flow footer on small
+   screens and for reduced motion. */
+.start-footer-curtain {
+    clip-path: polygon(0% 0, 100% 0%, 100% 100%, 0 100%);
+    height: 100vh;
+    height: 100svh;
+    position: relative;
+    z-index: 1;
+}
+
+.start-footer-curtain__stage {
+    background: #000;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100svh;
+    justify-content: flex-end;
+    left: 0;
+    overflow: hidden;
+    /* Let wheel/touch scroll pass through the empty viewport area to
+       .start-site — otherwise the fixed stage traps the scroll at the bottom. */
+    pointer-events: none;
+    position: fixed;
+    right: 0;
+}
+
+.start-footer-curtain__aurora {
+    animation: start-footer-breathe 8s ease-in-out infinite alternate;
+    background: radial-gradient(
+        circle at 50% 55%,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(154, 165, 133, 0.08) 38%,
+        transparent 70%
+    );
+    border-radius: 50%;
+    filter: blur(80px);
+    height: 60vh;
+    left: 50%;
+    opacity: 0.7;
+    pointer-events: none;
+    position: absolute;
+    top: 42%;
+    transform: translate(-50%, -50%);
+    width: min(80vw, 960px);
+    z-index: 0;
+}
+
+.start-footer-curtain__grid {
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 60px 60px;
+    inset: 0;
+    mask-image: linear-gradient(to bottom, transparent, #000 28%, #000 72%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 28%, #000 72%, transparent);
+    opacity: 0.9;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
+@keyframes start-footer-breathe {
+    0% {
+        opacity: 0.55;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* ─── Footer ─── */
+.start-footer {
+    border-top: 1px solid transparent;
+    margin: 0 auto;
+    max-width: 1120px;
+    padding: clamp(56px, 7vw, 80px) 24px 36px;
+    /* Same as the stage: don't trap wheel/touch. Re-enable on anchors below. */
+    pointer-events: none;
+    position: relative;
+    width: 100%;
+    z-index: 1;
+}
+
+.start-footer a {
+    pointer-events: auto;
+}
+
+.start-footer__top {
+    display: grid;
+    gap: clamp(40px, 5vw, 64px);
+    grid-template-columns: 1.2fr 2fr;
+}
+
+.start-footer__mark {
+    display: block;
+    height: 16px;
+    width: auto;
+}
+
+.start-footer__brand p {
+    color: var(--txt-3);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 18px 0 22px;
+    max-width: 280px;
+}
+
+.start-footer__social {
+    display: flex;
+    gap: 10px;
+}
+
+.start-footer__social a {
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--txt-3);
+    display: inline-flex;
+    height: 36px;
+    justify-content: center;
+    will-change: transform;
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease;
+    width: 36px;
+}
+
+.start-footer__social a:hover {
+    border-color: var(--line-strong);
+    color: #fff;
+}
+
+.start-footer__social svg {
+    height: 16px;
+    width: 16px;
+}
+
+.start-footer__cols {
+    display: grid;
+    gap: 32px;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.start-footer__col h4 {
+    color: var(--txt-3);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+}
+
+.start-footer__col a {
+    color: var(--txt-2);
+    display: block;
+    font-size: 14px;
+    margin-bottom: 11px;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.start-footer__col a:hover {
+    color: #fff;
+}
+
+.start-footer__wordmark {
+    margin-top: clamp(48px, 7vw, 88px);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 92%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 92%);
+    will-change: transform, opacity;
+}
+
+.start-footer__wordmark img {
+    display: block;
+    filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.08));
+    height: auto;
+    opacity: 0.16;
+    width: 100%;
+}
+
+.start-footer__bottom {
+    border-top: 1px solid var(--line);
+    color: var(--txt-3);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 13px;
+    gap: 12px;
+    justify-content: space-between;
+    margin-top: 28px;
+    padding-top: 24px;
+}
+
+@media (max-width: 860px), (max-height: 700px) {
+    .start-footer-curtain {
+        clip-path: none;
+        height: auto;
+    }
+
+    .start-footer-curtain__stage {
+        height: auto;
+        inset: auto;
+        position: relative;
+    }
+
+    .start-site__main {
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .start-footer-curtain {
+        clip-path: none;
+        height: auto;
+    }
+
+    .start-footer-curtain__stage {
+        height: auto;
+        inset: auto;
+        position: relative;
+    }
+
+    .start-footer-curtain__aurora,
+    .start-footer-curtain__grid {
+        display: none;
+    }
+
+    .start-site__main {
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+

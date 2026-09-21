@@ -1,0 +1,54 @@
+/* ─── Claims marquee ─── */
+.start-marquee {
+    border-bottom: 1px solid var(--line);
+    padding: 40px 0;
+}
+
+.start-marquee__viewport {
+    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    overflow: hidden;
+}
+
+.start-marquee__track {
+    animation: start-marquee 34s linear infinite;
+    display: flex;
+    gap: 56px;
+    width: max-content;
+}
+
+.start-marquee__viewport:hover .start-marquee__track {
+    animation-play-state: paused;
+}
+
+.start-marquee__group {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    gap: 56px;
+}
+
+.start-marquee__item {
+    align-items: center;
+    color: var(--txt-3);
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 500;
+    gap: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.start-marquee__item svg {
+    height: 14px;
+    opacity: 0.55;
+    width: 14px;
+}
+
+@keyframes start-marquee {
+    to {
+        transform: translateX(calc(-50% - 28px));
+    }
+}
+
