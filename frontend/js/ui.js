@@ -48,7 +48,6 @@ const DOM_IDS = {
     sendBtn: 'sendBtn',
     usersListDiv: 'usersList',
     chatWithTitle: 'chatWithTitle',
-    chatSubtitle: 'chatSubtitle',
     chatHeaderAvatar: 'chatHeaderAvatar',
     chatWelcome: 'chat-welcome',
 
@@ -142,7 +141,7 @@ const DOM_IDS = {
 
 const CHAT_DOM_KEYS = new Set([
     'statusSpan', 'messagesDiv', 'messageInput', 'sendBtn', 'usersListDiv',
-    'chatWithTitle', 'chatSubtitle', 'chatHeaderAvatar', 'chatWelcome',
+    'chatWithTitle', 'chatHeaderAvatar', 'chatWelcome',
     'focusContactsBtn', 'focusComposerBtn', 'shortcutsBtn', 'profileBtn',
     'settingsBtn', 'refreshUsersBtn', 'copyUsernameBtn',
     'chatSearchBtn', 'scrollBottomBtn', 'chatMenuBtn',
@@ -859,11 +858,6 @@ export function activateChatPanel(username) {
 export function resetChatPanel() {
     closeOverlaysForChatChange();
     if (!DOM.chatWithTitle || !DOM.messageInput) return;
-    DOM.chatWithTitle.textContent = '';
-    if (DOM.chatSubtitle) {
-        DOM.chatSubtitle.textContent = '';
-        DOM.chatSubtitle.className = 'header-sub';
-    }
     if (DOM.chatHeaderAvatar) {
         DOM.chatHeaderAvatar.replaceChildren();
         DOM.chatHeaderAvatar.classList.remove('has-photo');
@@ -2555,8 +2549,6 @@ function refreshChatHeaderIdentity(username) {
     if (!username) return;
     const sidebarUser = contactsState.sidebarChats.find((u) => u.username === username);
     const profile = resolveContactProfile(username, sidebarUser, contactsState.myUsername);
-    const label = getDisplayLabel(username, profile);
-    DOM.chatWithTitle.textContent = label;
     if (DOM.chatHeaderAvatar) {
         applyContactAvatar(DOM.chatHeaderAvatar, username, profile);
     }
@@ -2641,34 +2633,7 @@ function refreshPeerPanel(username = contactsState.activeUsername) {
 }
 
 function refreshChatHeaderSubtitle() {
-    if (!DOM.chatSubtitle) return;
-
-    const partner = contactsState.activeUsername;
-    if (!partner) {
-        DOM.chatSubtitle.textContent = '';
-        DOM.chatSubtitle.className = 'header-sub';
-        return;
-    }
-
-    if (uiPreferences.typingIndicators && realtimeContext.typingUsers.has(partner)) {
-        DOM.chatSubtitle.innerHTML = `<span class="presence-badge presence-badge--typing">
-            <span>typing</span>${buildTypingDotsHtml()}
-        </span>`;
-        DOM.chatSubtitle.className = 'header-sub';
-        return;
-    }
-
-    if (!uiPreferences.showOnlineStatus) {
-        DOM.chatSubtitle.textContent = 'End-to-end encrypted';
-        DOM.chatSubtitle.className = 'header-sub';
-        return;
-    }
-
-    const online = realtimeContext.onlineUsers.has(partner);
-    DOM.chatSubtitle.innerHTML = online
-        ? '<span class="presence-badge presence-badge--online">Online</span>'
-        : '<span class="presence-badge presence-badge--offline">Offline</span>';
-    DOM.chatSubtitle.className = 'header-sub';
+    // Header presence + typing are owned by ChatHeader (React).
 }
 
 function formatMessageStatusIcon(status) {

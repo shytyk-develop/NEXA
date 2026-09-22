@@ -127,12 +127,21 @@ export class ChatEngine {
         return Boolean(username && this.mockPartners.has(normalizeUsername(username)));
     }
 
+    setPeerTyping(username: string, isTyping: boolean) {
+        const name = normalizeUsername(username);
+        if (!name) return;
+        if (isTyping) this.state.typingUsers.add(name);
+        else this.state.typingUsers.delete(name);
+        this.notifyUiSync();
+    }
+
     seedMockChats(fixtures: Array<{
         username: string;
         display_name?: string;
         last_message_at?: string;
         last_message_preview?: string;
         unread_count?: number;
+        online?: boolean;
         messages?: any[];
     }>) {
         if (!Array.isArray(fixtures) || !fixtures.length) return;
@@ -145,6 +154,7 @@ export class ChatEngine {
             if (fixture.unread_count != null) {
                 this.state.unreadCounts[username] = fixture.unread_count;
             }
+            if (fixture.online) this.state.onlineUsers.add(username);
             this.upsertSidebarChat(username, {
                 display_name: fixture.display_name,
                 public_key: 'mock',
@@ -154,6 +164,7 @@ export class ChatEngine {
             });
         }
         this.notifyChatsChanged();
+        this.notifyUiSync();
     }
 
     persistableHistory() {

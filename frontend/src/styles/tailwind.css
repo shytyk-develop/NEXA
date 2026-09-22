@@ -1,0 +1,32 @@
+/* Utilities only — do not ship Tailwind preflight (would fight existing CSS). */
+@layer theme, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme {
+    --color-background: #0b0c10;
+    --color-foreground: #f4f4f5;
+    --color-border: color-mix(in srgb, #fff 12%, transparent);
+    --color-accent: color-mix(in srgb, #fff 8%, transparent);
+    --color-muted-foreground: #71717a;
+    --color-ring: color-mix(in srgb, #fff 28%, transparent);
+    --color-brand: #afb9cd;
+}
+
+#page-chat {
+    --color-background: var(--nexa-aside-fill, #161920);
+    --color-foreground: #f4f4f5;
+    --color-border: color-mix(in srgb, #fff 12%, transparent);
+    --color-accent: color-mix(in srgb, #fff 8%, transparent);
+    --color-muted-foreground: #71717a;
+    --color-ring: color-mix(in srgb, #fff 28%, transparent);
+    --color-brand: #afb9cd;
+}
+
+@utility scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

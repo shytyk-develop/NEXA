@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { ChatApp, type ChatAppHandlers } from './ChatApp';
+import '../styles/tailwind.css';
 
 let root: Root | null = null;
 let lastHandlers: ChatAppHandlers = {};

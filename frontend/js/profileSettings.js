@@ -96,8 +96,18 @@ function bindShell() {
     if (panel.dataset.profileBound) return;
     panel.dataset.profileBound = '1';
 
-    document.querySelectorAll('[data-profile-nav]').forEach((btn) => {
-        btn.addEventListener('click', () => setSection(btn.dataset.profileNav, { fromUser: true }));
+    // Nav buttons live in the React sidebar and are mounted after this bind.
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const navBtn = target.closest('[data-profile-nav]');
+        if (navBtn) {
+            setSection(navBtn.dataset.profileNav, { fromUser: true });
+            return;
+        }
+        if (target.closest('#uiProfileViewSecurity')) {
+            setSection('security', { fromUser: true });
+        }
     });
 
     $p('uiProfileDisplayName')?.addEventListener('input', onIdentityInput);
@@ -221,7 +231,8 @@ function setSection(id, { fromUser = false } = {}) {
     document.querySelectorAll('[data-profile-nav]').forEach((btn) => {
         const on = btn.dataset.profileNav === id;
         btn.classList.toggle('is-active', on);
-        btn.setAttribute('aria-current', on ? 'page' : 'false');
+        if (on) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
     });
 
     panel.querySelectorAll('[data-profile-section]').forEach((section) => {

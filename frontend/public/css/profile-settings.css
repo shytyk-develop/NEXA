@@ -268,7 +268,7 @@
     backdrop-filter: blur(36px) saturate(180%);
     -webkit-backdrop-filter: blur(36px) saturate(180%);
     border: 1px solid var(--capsule-stroke, var(--composer-glass-stroke, var(--panel-glass-stroke)));
-    border-radius: 999px;
+    border-radius: var(--nexa-chrome-radius, 24px);
     box-shadow:
         var(--glass-inset-highlight),
         0 10px 28px rgba(0, 0, 0, 0.16);

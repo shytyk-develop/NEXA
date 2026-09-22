@@ -1,3 +1,4 @@
+import { AsideToggle } from '../../components/AsideToggle';
 import { Icon } from '../../components/Icon';
 
 export function PeerPanel() {
@@ -5,17 +6,13 @@ export function PeerPanel() {
         <>
             <div id="uiPeerPanelScrim" className="peer-panel-scrim" hidden aria-hidden="true" />
             <div className="peer-panel-dock">
-                <button
+                <AsideToggle
                     id="uiPeerPanelToggle"
-                    className="peer-panel-toggle"
-                    type="button"
+                    side="end"
+                    controls="uiPeerPanel"
+                    label="Hide conversation panel"
                     title="Hide panel"
-                    aria-expanded="true"
-                    aria-controls="uiPeerPanel"
-                    aria-label="Hide conversation panel"
-                >
-                    <Icon href="#icon-chevron-right" />
-                </button>
+                />
                 <aside id="uiPeerPanel" className="peer-panel is-empty" aria-label="Conversation profile">
                     <div className="peer-panel-shelf">
                         <div className="peer-sheet-bar">

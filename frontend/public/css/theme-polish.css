@@ -20,7 +20,7 @@
 }
 
 #page-chat .sidebar {
-    /* Glass fill lives in app-layout / left-capsule — don't force solid shell-bg. */
+    /* Aside fill lives on the capsule shelf — keep inner sidebar clear. */
     box-shadow: none;
 }
 
@@ -42,19 +42,16 @@
     border-bottom-color: var(--shell-border);
 }
 
-.contact-row:hover {
-    background: var(--row-hover);
-    border-color: var(--border-subtle);
+#page-chat .contact-row:hover {
+    background: transparent;
+    border-color: transparent;
 }
 
-.contact-row.is-active {
-    background: var(--row-active);
-    border-color: var(--row-active-border);
-    box-shadow: var(--row-active-shadow);
+#page-chat .contact-row.is-active {
     color: var(--text);
 }
 
-.contact-row.is-active .contact-name {
+#page-chat .contact-row.is-active .contact-name {
     color: var(--text);
     font-weight: 600;
 }

@@ -1,9 +1,9 @@
 /* Right-hand conversation profile — chat shell only */
 
 #page-chat .peer-panel-dock {
-    --peer-motion-duration: 0.5s;
-    --peer-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --peer-toggle-h: 88px;
+    --peer-motion-duration: var(--nexa-aside-motion-duration, 0.5s);
+    --peer-motion-ease: var(--nexa-aside-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+    --peer-toggle-h: var(--nexa-aside-toggle-h, 88px);
     flex-shrink: 0;
     height: 100%;
     overflow: visible;
@@ -12,17 +12,12 @@
 }
 
 #page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) {
-    --peer-motion-duration: 0.52s;
-    --peer-motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --peer-motion-duration: var(--nexa-aside-motion-duration-out, 0.52s);
+    --peer-motion-ease: var(--nexa-aside-motion-ease-out, cubic-bezier(0.4, 0, 0.2, 1));
 }
 
 #page-chat .peer-panel {
-    background: var(--peer-panel-glass, var(--panel-glass));
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke)));
-    border-left-color: transparent;
-    border-radius: var(--nexa-surface-radius, 22px);
+    background: transparent;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -30,20 +25,15 @@
     overflow: hidden;
     position: relative;
     transition:
-        width var(--peer-motion-duration, 0.5s) var(--peer-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
-        border-color calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
-        background calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
-        box-shadow calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
-        backdrop-filter calc(var(--peer-motion-duration, 0.5s) * 0.65) ease,
-        -webkit-backdrop-filter calc(var(--peer-motion-duration, 0.5s) * 0.65) ease;
+        width var(--peer-motion-duration, 0.5s) var(--peer-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
     width: 300px;
-    /* Cover the tucked toggle so it slides out from under the panel. */
+    /* Cover the tucked toggle so it slides out from under the shelf. */
     z-index: 2;
 }
 
 /* Left edge stroke — solid at rest; notched only while the toggle is visible. */
-#page-chat .peer-panel:not(.is-collapsed)::before {
-    background: var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke)));
+#page-chat .peer-panel:not(.is-collapsed) .peer-panel-shelf::before {
+    background: var(--nexa-aside-stroke, var(--capsule-stroke));
     content: "";
     inset: 0 auto 0 0;
     pointer-events: none;
@@ -53,50 +43,50 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .peer-panel::before,
-    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):has(.peer-panel-toggle:focus-visible) .peer-panel::before {
+    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .peer-panel-shelf::before,
+    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):has(.aside-toggle--end:focus-visible) .peer-panel-shelf::before {
         background: linear-gradient(
             to bottom,
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 0,
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% - var(--peer-toggle-h) / 2),
-            transparent calc(50% - var(--peer-toggle-h) / 2),
-            transparent calc(50% + var(--peer-toggle-h) / 2),
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% + var(--peer-toggle-h) / 2),
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 100%
+            var(--nexa-aside-stroke, var(--capsule-stroke)) 0,
+            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke, var(--capsule-stroke)) 100%
         );
     }
 }
 
 @media (hover: none) {
-    #page-chat .peer-panel:not(.is-collapsed)::before {
+    #page-chat .peer-panel:not(.is-collapsed) .peer-panel-shelf::before {
         background: linear-gradient(
             to bottom,
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 0,
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% - var(--peer-toggle-h) / 2),
-            transparent calc(50% - var(--peer-toggle-h) / 2),
-            transparent calc(50% + var(--peer-toggle-h) / 2),
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) calc(50% + var(--peer-toggle-h) / 2),
-            var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke))) 100%
+            var(--nexa-aside-stroke, var(--capsule-stroke)) 0,
+            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke, var(--capsule-stroke)) 100%
         );
     }
 }
 
 #page-chat .peer-panel.is-collapsed {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-color: transparent;
-    box-shadow: none;
+    /* Slide the plate off-canvas to the right; never paint over the toggle
+       on the inner edge (left). Matches the left capsule, which overflows
+       away from its toggle. */
+    clip-path: inset(0 -100% 0 0);
     min-width: 0;
     overflow: visible;
     width: 0;
 }
 
-#page-chat .peer-panel.is-collapsed::before {
+#page-chat .peer-panel.is-collapsed .peer-panel-shelf::before {
     content: none;
 }
 
 #page-chat .peer-panel-shelf {
+    border-left-color: transparent;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -121,92 +111,6 @@
         transform var(--peer-motion-duration, 0.52s) var(--peer-motion-ease, cubic-bezier(0.4, 0, 0.2, 1)),
         visibility 0s linear var(--peer-motion-duration, 0.52s);
     visibility: hidden;
-}
-
-#page-chat .peer-panel-toggle {
-    align-items: center;
-    background: var(--peer-panel-glass, var(--panel-glass));
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--capsule-stroke, var(--peer-panel-glass-stroke, var(--panel-glass-stroke)));
-    border-radius: 10px 0 0 10px;
-    border-right: 0;
-    box-shadow: var(--glass-inset-highlight);
-    color: #d4d4d8;
-    cursor: pointer;
-    display: inline-flex;
-    height: var(--peer-toggle-h, 88px);
-    justify-content: center;
-    opacity: 1;
-    padding: 0;
-    position: absolute;
-    /* Fully outside the glass panel so the tab never bleeds through. */
-    right: 100%;
-    top: 50%;
-    transform: translate(0, -50%);
-    transition:
-        transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.22s ease,
-        color 0.15s ease,
-        right 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-    width: 16px;
-    z-index: 1;
-}
-
-#page-chat .peer-panel-toggle:hover,
-#page-chat .peer-panel-toggle:focus-visible {
-    color: #f4f4f5;
-    outline: none;
-}
-
-#page-chat .peer-panel-toggle .ui-icon {
-    height: 13px;
-    width: 13px;
-    transition: transform 0.22s var(--peer-motion-ease, ease);
-}
-
-#page-chat .peer-panel-toggle:hover .ui-icon,
-#page-chat .peer-panel-toggle:focus-visible .ui-icon {
-    transform: translateX(2px);
-}
-
-#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle {
-    height: var(--peer-toggle-h, 88px);
-    opacity: 1;
-    transform: translate(0, -50%);
-    width: 16px;
-    z-index: 30;
-}
-
-#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle .ui-icon {
-    transform: rotate(180deg);
-}
-
-#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle:hover .ui-icon,
-#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle:focus-visible .ui-icon {
-    transform: rotate(180deg) translateX(2px);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .peer-panel-toggle {
-        opacity: 0;
-        pointer-events: none;
-        transform: translate(100%, -50%);
-    }
-
-    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .peer-panel-toggle,
-    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .peer-panel-toggle:focus-visible {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translate(0, -50%);
-    }
-}
-
-@media (hover: none) {
-    #page-chat .peer-panel-toggle {
-        opacity: 1;
-        transform: translate(0, -50%);
-    }
 }
 
 .peer-panel-scrim {
@@ -247,7 +151,7 @@
 }
 
 #page-chat.is-viewport-peer-narrow .peer-panel,
-#page-chat.is-viewport-peer-narrow .peer-panel-toggle {
+#page-chat.is-viewport-peer-narrow .aside-toggle--end {
     pointer-events: auto;
 }
 
@@ -271,12 +175,14 @@
 #page-chat.is-viewport-peer-narrow .peer-panel.is-collapsed {
     border-left-color: transparent;
     box-shadow: none;
+    clip-path: none;
     pointer-events: none;
     transform: translateX(100%);
     width: var(--peer-overlay-w);
 }
 
 #page-chat.is-viewport-peer-narrow .peer-panel-shelf {
+    border-left-color: #1a1a1a;
     position: absolute;
     right: 0;
     top: 0;
@@ -292,12 +198,12 @@
     visibility: visible;
 }
 
-#page-chat.is-viewport-peer-narrow .peer-panel-dock:has(.peer-panel.is-collapsed) .peer-panel-toggle {
+#page-chat.is-viewport-peer-narrow .peer-panel-dock:has(.peer-panel.is-collapsed) .aside-toggle--end {
     right: 0;
     transform: translate(0, -50%);
 }
 
-#page-chat.is-viewport-peer-narrow.is-peer-overlay-open .peer-panel-toggle {
+#page-chat.is-viewport-peer-narrow.is-peer-overlay-open .aside-toggle--end {
     right: 100%;
     transform: translate(0, -50%);
 }
@@ -305,7 +211,7 @@
 #page-chat .peer-panel.no-motion,
 #page-chat .peer-panel.no-motion .peer-panel-shelf,
 #page-chat .peer-panel-dock:has(.peer-panel.no-motion),
-#page-chat .peer-panel-dock:has(.peer-panel.no-motion) .peer-panel-toggle {
+#page-chat .peer-panel-dock:has(.peer-panel.no-motion) .aside-toggle {
     transition: none;
 }
 
@@ -767,8 +673,8 @@
     #page-chat .peer-panel-shelf,
     #page-chat .peer-panel.is-collapsed .peer-panel-shelf,
     #page-chat .peer-panel-dock,
-    #page-chat .peer-panel-toggle,
-    #page-chat .peer-panel-toggle .ui-icon,
+    #page-chat .aside-toggle--end,
+    #page-chat .aside-toggle--end .ui-icon,
     .peer-panel-scrim {
         transition: none;
     }

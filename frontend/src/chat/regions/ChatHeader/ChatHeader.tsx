@@ -1,6 +1,23 @@
+import { useMemo } from 'react';
+import { getDisplayLabel } from '../../../../js/profile.js';
+import { resolveContactProfile } from '../../../../js/profileDirectory.js';
+import { getPrivacyFlags } from '../../../../js/privacy.js';
+import { GooeyText, GOOEY_DOTS } from '../../../components/ui/gooey-text-morphing';
+import { useChatSnapshot } from '../../hooks/useChatEngine';
 import { Icon } from '../../components/Icon';
 
 export function ChatHeader() {
+    const snap = useChatSnapshot();
+    const active = snap.activeUsername;
+    const sidebarUser = (snap.chats || []).find((user: { username?: string }) => user.username === active);
+    const profile = active ? resolveContactProfile(active, sidebarUser, snap.myUsername) : null;
+    const label = active ? getDisplayLabel(active, profile) : '';
+    const privacy = getPrivacyFlags(snap.preferences || {});
+    const isTyping = Boolean(active && privacy.typingIndicators && snap.typingUsers.has(active));
+    const showPresence = Boolean(active && privacy.showOnlineStatus);
+    const online = Boolean(active && snap.onlineUsers.has(active));
+    const gooeyTexts = useMemo(() => [label, GOOEY_DOTS], [label]);
+
     return (
         <header className="chat-header">
             <div className="chat-header-stack">
@@ -8,11 +25,33 @@ export function ChatHeader() {
                     <button id="uiChatBackBtn" className="mini-icon-btn chat-back-btn" type="button" title="Back to chats" aria-label="Back to chats" hidden aria-hidden="true">
                         <Icon href="#icon-arrow-left" />
                     </button>
-                    <div className="header-left hidden" aria-hidden="true">
-                        <div id="chatHeaderAvatar" className="chat-header-avatar contact-avatar" aria-hidden="true" />
+                    <div className={`header-left${active ? '' : ' hidden'}`} aria-hidden={active ? 'false' : 'true'}>
+                        <div className="chat-header-avatar-wrap">
+                            <div id="chatHeaderAvatar" className="chat-header-avatar contact-avatar" aria-hidden="true" />
+                            <span
+                                className={`chat-header-presence ${online ? 'is-online' : 'is-offline'}`}
+                                hidden={!showPresence}
+                                aria-hidden="true"
+                            />
+                        </div>
                         <div className="header-left__meta">
-                            <span id="chatWithTitle" />
-                            <span id="chatSubtitle" className="header-sub" />
+                            <span
+                                id="chatWithTitle"
+                                aria-live="polite"
+                                aria-label={isTyping ? `${label} is typing` : label}
+                            >
+                                {label ? (
+                                    <GooeyText
+                                        key={active}
+                                        texts={gooeyTexts}
+                                        activeIndex={isTyping ? 1 : 0}
+                                        morphTime={1}
+                                        cooldownTime={0.25}
+                                        className="header-gooey"
+                                        textClassName="header-gooey__text"
+                                    />
+                                ) : null}
+                            </span>
                         </div>
                     </div>
                     <div className="chat-header-tools">

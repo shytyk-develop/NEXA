@@ -19,7 +19,28 @@
     --dim-intensity: 0;
     --composer-glass: color-mix(in srgb, var(--bg) calc(12% + var(--glass-intensity) * 0.48%), transparent);
     --panel-glass: color-mix(in srgb, var(--bg) calc(4% + var(--glass-intensity) * 0.28%), transparent);
-    --peer-panel-glass: color-mix(in srgb, var(--bg) calc(2% + var(--glass-intensity) * 0.24%), transparent);
+    /* Solid aside fill — opaque so edge fades match; tinted per wallpaper below */
+    --nexa-aside-fill: #161920;
+    --nexa-aside-glass: var(--nexa-aside-fill);
+    --nexa-aside-stroke: var(--capsule-stroke);
+    --nexa-aside-blur: 0px;
+    --nexa-aside-saturate: 100%;
+    --nexa-aside-radius: 32px;
+    --nexa-aside-shadow: var(--glass-inset-highlight);
+    --nexa-aside-toggle-blur: 0px;
+    --nexa-aside-toggle-h: 88px;
+    --nexa-aside-toggle-w: 16px;
+    --nexa-aside-toggle-radius: 10px;
+    --nexa-aside-toggle-icon: 13px;
+    --nexa-aside-toggle-nudge: 2px;
+    --nexa-aside-toggle-duration: 0.3s;
+    --nexa-aside-toggle-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --nexa-aside-motion-duration: 0.5s;
+    --nexa-aside-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --nexa-aside-motion-duration-out: 0.52s;
+    --nexa-aside-motion-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --nexa-aside-start-w: 328px;
+    --peer-panel-glass: var(--nexa-aside-fill);
     --control-glass: color-mix(in srgb, #1a1a1a calc(22% + var(--glass-intensity) * 0.56%), transparent);
     --wallpaper-dim: calc(var(--dim-intensity) * 1%);
     --wallpaper-vignette-core: calc(40% + var(--dim-intensity) * 0.5%);
@@ -54,9 +75,10 @@
     z-index: 0;
 }
 
-/* Wallpaper packs — atmospheric gradients + dock accent from the same palette */
+/* Wallpaper packs — atmospheric gradients + dock accent + solid aside fill */
 #page-chat[data-wallpaper="mist"] {
     --dock-accent: #afb9cd;
+    --nexa-aside-fill: #161920;
     --chat-wallpaper:
         radial-gradient(ellipse 70% 60% at 20% 30%, rgba(120, 130, 150, 0.28), transparent 60%),
         radial-gradient(ellipse 55% 50% at 80% 70%, rgba(90, 100, 120, 0.22), transparent 55%),
@@ -65,6 +87,7 @@
 
 #page-chat[data-wallpaper="ember"] {
     --dock-accent: #e6a56e;
+    --nexa-aside-fill: #1a1412;
     --chat-wallpaper:
         radial-gradient(ellipse 65% 55% at 70% 25%, rgba(160, 90, 50, 0.3), transparent 58%),
         radial-gradient(ellipse 50% 45% at 20% 80%, rgba(90, 40, 30, 0.25), transparent 50%),
@@ -73,6 +96,7 @@
 
 #page-chat[data-wallpaper="aurora"] {
     --dock-accent: #aa9beb;
+    --nexa-aside-fill: #10161c;
     --chat-wallpaper:
         radial-gradient(ellipse 60% 50% at 25% 20%, rgba(56, 189, 248, 0.22), transparent 55%),
         radial-gradient(ellipse 55% 45% at 80% 75%, rgba(167, 139, 250, 0.2), transparent 52%),
@@ -81,6 +105,7 @@
 
 #page-chat[data-wallpaper="tide"] {
     --dock-accent: #64c3f0;
+    --nexa-aside-fill: #0a141c;
     --chat-wallpaper:
         radial-gradient(ellipse 70% 55% at 15% 70%, rgba(37, 99, 235, 0.28), transparent 58%),
         radial-gradient(ellipse 50% 40% at 85% 20%, rgba(14, 165, 233, 0.18), transparent 50%),
@@ -89,6 +114,7 @@
 
 #page-chat[data-wallpaper="sage"] {
     --dock-accent: #8cb996;
+    --nexa-aside-fill: #101612;
     --chat-wallpaper:
         radial-gradient(ellipse 65% 55% at 30% 25%, rgba(74, 122, 90, 0.26), transparent 58%),
         radial-gradient(ellipse 50% 45% at 75% 80%, rgba(45, 80, 60, 0.22), transparent 52%),
@@ -97,6 +123,7 @@
 
 #page-chat[data-wallpaper="cobalt"] {
     --dock-accent: #789be6;
+    --nexa-aside-fill: #0c101a;
     --chat-wallpaper:
         radial-gradient(ellipse 55% 50% at 80% 30%, rgba(59, 90, 180, 0.3), transparent 55%),
         radial-gradient(ellipse 60% 45% at 15% 85%, rgba(30, 50, 110, 0.24), transparent 50%),
@@ -105,6 +132,7 @@
 
 #page-chat[data-wallpaper="rose"] {
     --dock-accent: #eba0b4;
+    --nexa-aside-fill: #181014;
     --chat-wallpaper:
         radial-gradient(ellipse 60% 50% at 70% 20%, rgba(190, 90, 120, 0.24), transparent 55%),
         radial-gradient(ellipse 55% 45% at 20% 80%, rgba(120, 50, 70, 0.2), transparent 52%),
@@ -113,6 +141,7 @@
 
 #page-chat[data-wallpaper="dusk"] {
     --dock-accent: #b9a0e6;
+    --nexa-aside-fill: #14101c;
     --chat-wallpaper:
         radial-gradient(ellipse 65% 55% at 25% 35%, rgba(120, 80, 180, 0.26), transparent 58%),
         radial-gradient(ellipse 50% 40% at 85% 70%, rgba(80, 50, 140, 0.22), transparent 50%),
@@ -121,6 +150,7 @@
 
 #page-chat[data-wallpaper="graphite"] {
     --dock-accent: #b9bec8;
+    --nexa-aside-fill: #16171a;
     --chat-wallpaper:
         radial-gradient(ellipse 70% 60% at 40% 20%, rgba(140, 145, 155, 0.18), transparent 55%),
         radial-gradient(ellipse 55% 50% at 70% 80%, rgba(90, 95, 105, 0.16), transparent 52%),
@@ -129,6 +159,7 @@
 
 #page-chat[data-wallpaper="void"] {
     --dock-accent: #9196a5;
+    --nexa-aside-fill: #0c0c0e;
     --chat-wallpaper: none;
 }
 
@@ -139,13 +170,12 @@
     --wallpaper-vignette-mid: calc(15% + var(--dim-intensity) * 0.4%);
 }
 
-/* Glass intensity — driven by --glass-intensity (0–100); discrete buckets kept for legacy hooks */
+/* Glass intensity — composer/controls only; asides stay solid */
 #page-chat[data-glass="low"],
 #page-chat[data-glass="medium"],
 #page-chat[data-glass="high"] {
     --composer-glass: color-mix(in srgb, var(--bg) calc(12% + var(--glass-intensity) * 0.48%), transparent);
     --panel-glass: color-mix(in srgb, var(--bg) calc(4% + var(--glass-intensity) * 0.28%), transparent);
-    --peer-panel-glass: color-mix(in srgb, var(--bg) calc(2% + var(--glass-intensity) * 0.24%), transparent);
     --control-glass: color-mix(in srgb, #1a1a1a calc(22% + var(--glass-intensity) * 0.56%), transparent);
 }
 
@@ -395,107 +425,139 @@
 #page-chat .sidebar-dock-bar {
     --dock-surface: color-mix(in srgb, #0a0a0a 78%, #1a1a1a);
     --dock-stroke: color-mix(in srgb, #fff 8%, transparent);
+    --expandable-tabs-radius: 18px;
+    --expandable-tabs-btn-radius: 13px;
     align-items: center;
     display: flex;
     flex-shrink: 0;
-    gap: 8px;
+    justify-content: center;
     padding: 10px 12px 12px;
     width: 100%;
 }
 
 #page-chat .sidebar-dock {
-    align-items: stretch;
-    background: var(--dock-surface);
-    border: 1px solid var(--dock-stroke);
-    border-radius: 999px;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent),
-        0 8px 20px rgba(0, 0, 0, 0.22);
+    align-items: center;
+    align-self: center;
+    background: color-mix(in srgb, var(--nexa-aside-fill, var(--dock-surface)) 88%, #111);
+    border: 1px solid var(--nexa-aside-stroke, var(--dock-stroke));
+    border-radius: var(--expandable-tabs-radius);
+    box-shadow: var(--nexa-aside-shadow, inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent));
     box-sizing: border-box;
     display: flex;
-    flex: 1;
-    gap: 2px;
-    height: var(--layout-header-h);
-    justify-content: space-between;
-    min-width: 0;
-    padding: 4px;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 4px;
+    justify-content: flex-start;
+    max-width: 100%;
+    padding: 5px;
     position: relative;
+    width: max-content;
 }
 
 #page-chat .sidebar-dock::before {
-    background: color-mix(in srgb, var(--dock-accent) 12%, transparent);
-    border: 1px solid var(--dock-accent);
-    border-radius: 999px;
-    bottom: 4px;
-    content: "";
-    left: 4px;
-    pointer-events: none;
-    position: absolute;
-    top: 4px;
-    transform: translateX(0);
-    transition:
-        transform 0.34s cubic-bezier(0.32, 0.72, 0, 1),
-        border-color 0.28s ease,
-        background 0.28s ease;
-    width: calc((100% - 8px - 4px) / 3);
-    will-change: transform;
-    z-index: 0;
+    content: none;
 }
 
-#page-chat .sidebar-dock:has(#uiRailProfile.is-active)::before,
-#page-chat .sidebar-dock:has(#uiRailProfile[aria-current="page"])::before {
-    transform: translateX(calc(100% + 2px));
-}
-
-#page-chat .sidebar-dock:has(#uiDockSettings.is-active)::before,
-#page-chat .sidebar-dock:has(#uiDockSettings[aria-current="page"])::before {
-    transform: translateX(calc(200% + 4px));
-}
-
-#page-chat .sidebar-dock__item {
+#page-chat .expandable-tabs__btn {
     align-items: center;
     background: transparent;
     border: 0;
-    border-radius: 999px;
-    color: #c4c4c4;
+    border-radius: var(--expandable-tabs-btn-radius);
+    color: #a1a1aa;
     cursor: pointer;
     display: inline-flex;
-    flex: 1;
-    flex-direction: column;
+    flex: 0 0 auto;
+    flex-direction: row;
+    font-family: var(--f-ui, inherit);
+    font-size: 13px;
+    font-weight: 500;
     gap: 0;
-    height: 100%;
+    height: auto;
     justify-content: center;
-    min-height: 0;
-    min-width: 0;
-    padding: 0 6px;
+    min-height: 38px;
+    min-width: 38px;
+    padding: 8px;
     position: relative;
     text-decoration: none;
-    transition: color 0.22s ease;
+    transition: background 0.3s ease, color 0.3s ease;
+    width: 38px;
     z-index: 1;
 }
 
-#page-chat .sidebar-dock__item:hover,
-#page-chat .sidebar-dock__item:focus-visible {
+#page-chat .expandable-tabs__btn:hover,
+#page-chat .expandable-tabs__btn:focus-visible {
+    background: color-mix(in srgb, #fff 5%, transparent);
     color: #f4f4f5;
     outline: none;
 }
 
-#page-chat .sidebar-dock__item.is-active,
-#page-chat .sidebar-dock__item[aria-current="page"] {
-    background: transparent;
-    color: var(--dock-accent);
+#page-chat .expandable-tabs__btn.is-active,
+#page-chat .expandable-tabs__btn[aria-current="page"] {
+    color: var(--dock-accent, #afb9cd);
+}
+
+#page-chat .expandable-tabs__btn.is-selected {
+    background: color-mix(in srgb, #fff 7%, transparent);
+    color: #f4f4f5;
+}
+
+#page-chat .expandable-tabs__btn svg {
+    flex-shrink: 0;
+    height: 20px;
+    width: 20px;
+}
+
+#page-chat .expandable-tabs__caption {
+    --caption-pad: 14px;
+    align-items: center;
+    box-sizing: content-box;
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: center;
+    min-height: 38px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 var(--caption-pad);
+    pointer-events: none;
+    position: relative;
+}
+
+#page-chat .expandable-tabs__caption-sizer {
+    font-family: var(--f-ui, inherit);
+    font-size: 13px;
+    font-weight: 500;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    visibility: hidden;
+    white-space: nowrap;
+}
+
+#page-chat .expandable-tabs__caption-text {
+    color: #f4f4f5;
+    display: block;
+    flex: 0 0 auto;
+    font-family: var(--f-ui, inherit);
+    font-size: 13px;
+    font-weight: 500;
+    position: relative;
+    white-space: nowrap;
+    width: max-content;
+}
+
+#page-chat .expandable-tabs__sep {
+    align-self: center;
+    background: color-mix(in srgb, #fff 10%, transparent);
+    flex-shrink: 0;
+    height: 26px;
+    margin: 0 1px 0 6px;
+    width: 1.2px;
 }
 
 #page-chat .sidebar-dock__item .ui-icon {
-    height: 22px;
+    height: 20px;
     stroke-width: 1.75;
-    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-    width: 22px;
-}
-
-#page-chat .sidebar-dock__item.is-active .ui-icon,
-#page-chat .sidebar-dock__item[aria-current="page"] .ui-icon {
-    transform: scale(1.06);
+    width: 20px;
 }
 
 #page-chat .sidebar-dock__label {
@@ -506,40 +568,13 @@
     display: none;
 }
 
-#page-chat .sidebar-dock-compose {
-    align-items: center;
-    align-self: center;
-    aspect-ratio: 1;
-    background: var(--dock-surface);
-    border: 1px solid var(--dock-stroke);
-    border-radius: 999px;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent),
-        0 8px 20px rgba(0, 0, 0, 0.22);
-    box-sizing: border-box;
-    color: var(--dock-accent);
-    cursor: pointer;
-    display: inline-flex;
-    flex-shrink: 0;
-    height: var(--layout-header-h);
-    justify-content: center;
-    padding: 0;
-    transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        transform 0.16s ease;
-    width: var(--layout-header-h);
-}
-
-#page-chat .sidebar-dock-compose:hover,
-#page-chat .sidebar-dock-compose:focus-visible {
-    background: color-mix(in srgb, var(--dock-accent) 10%, var(--dock-surface));
-    border-color: color-mix(in srgb, var(--dock-accent) 45%, var(--dock-stroke));
-    outline: none;
-}
-
-#page-chat .sidebar-dock-compose:active {
-    transform: scale(0.96);
+#page-chat .expandable-tabs .sidebar-dock-compose {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    min-height: 38px;
+    min-width: 38px;
+    width: auto;
 }
 
 #page-chat.is-app-view-identity .profile-nav-toggle {
@@ -547,14 +582,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #page-chat .sidebar-dock::before,
-    #page-chat .sidebar-dock__item .ui-icon {
+    #page-chat .expandable-tabs__btn,
+    #page-chat .expandable-tabs__caption,
+    #page-chat .sidebar-dock-compose {
         transition: none;
-    }
-
-    #page-chat .sidebar-dock__item.is-active .ui-icon,
-    #page-chat .sidebar-dock__item[aria-current="page"] .ui-icon {
-        transform: none;
     }
 }
 
@@ -596,7 +627,7 @@
         border-radius 0.32s ease,
         box-shadow 0.32s ease,
         padding 0.32s ease;
-    width: 288px;
+    width: var(--nexa-aside-start-w, 328px);
 }
 
 #page-chat .sidebar.is-collapsed {
@@ -608,7 +639,7 @@
 }
 
 #page-chat .sidebar > * {
-    min-width: 288px;
+    min-width: var(--nexa-aside-start-w, 328px);
 }
 
 #page-chat .sidebar.no-motion {
@@ -685,7 +716,7 @@
     flex-shrink: 0;
     gap: 8px;
     height: calc(var(--mobile-rail-h) + 12px + env(safe-area-inset-bottom, 0px));
-    justify-content: center;
+    justify-content: flex-start;
     order: 3;
     padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
     width: 100%;
@@ -697,27 +728,16 @@
 }
 
 #page-chat.is-viewport-app-stack .sidebar-dock {
-    background: var(--dock-surface);
-    border: 1px solid var(--dock-stroke);
     box-shadow: none;
     height: auto;
-    max-width: none;
 }
 
-#page-chat.is-viewport-app-stack .sidebar-dock__item {
-    height: auto;
-    min-height: 48px;
-    padding: 6px 4px;
+#page-chat.is-viewport-app-stack .expandable-tabs__btn {
+    min-height: 40px;
 }
 
 #page-chat.is-viewport-app-stack .sidebar-dock__label {
     display: none;
-}
-
-#page-chat.is-viewport-app-stack .sidebar-dock-compose {
-    align-self: stretch;
-    height: auto;
-    width: auto;
 }
 
 #page-chat.is-viewport-app-stack .chat-workspace,
@@ -768,7 +788,7 @@
     width: 100%;
 }
 
-#page-chat.is-viewport-app-stack .sidebar-capsule-toggle {
+#page-chat.is-viewport-app-stack .aside-toggle {
     display: none !important;
 }
 
@@ -786,6 +806,15 @@
     width: 100%;
     will-change: transform;
     z-index: 3;
+}
+
+#page-chat.is-viewport-app-stack .sidebar {
+    background: var(--nexa-aside-fill);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 #page-chat.is-viewport-app-stack.is-chat-level-list .sidebar {
@@ -853,11 +882,147 @@
     display: none;
 }
 
+/* Shared aside plate — left shelf + right shelf. Solid fill (no glass) so
+   scroll-edge fades can match the panel color against the wallpaper. */
+#page-chat:not(.is-viewport-app-stack) .left-capsule-shelf,
+#page-chat:not(.is-viewport-app-stack) .peer-panel-shelf {
+    background: var(--nexa-aside-fill);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--nexa-aside-stroke);
+    border-radius: var(--nexa-aside-radius);
+    box-shadow: var(--nexa-aside-shadow);
+    isolation: isolate;
+    z-index: 2;
+}
+
+#page-chat .aside-toggle {
+    --aside-toggle-icon-rot: var(--aside-toggle-icon-open);
+    --aside-toggle-tuck: 0%;
+    align-items: center;
+    background: var(--nexa-aside-fill);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--nexa-aside-stroke);
+    box-shadow: var(--nexa-aside-shadow);
+    color: #d4d4d8;
+    cursor: pointer;
+    display: none;
+    height: var(--nexa-aside-toggle-h);
+    justify-content: center;
+    opacity: 1;
+    padding: 0;
+    pointer-events: auto;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    transition:
+        transform var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        opacity 0.22s ease,
+        color 0.15s ease,
+        left var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        right var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease);
+    width: var(--nexa-aside-toggle-w);
+    z-index: 1;
+}
+
+#page-chat:not(.is-viewport-app-stack) .aside-toggle {
+    display: inline-flex;
+}
+
+#page-chat .aside-toggle--start {
+    --aside-toggle-icon-open: 180deg;
+    --aside-toggle-icon-shut: 0deg;
+    --aside-toggle-tuck: -100%;
+    border-left: 0;
+    border-radius: 0 var(--nexa-aside-toggle-radius) var(--nexa-aside-toggle-radius) 0;
+    left: 100%;
+}
+
+#page-chat .aside-toggle--end {
+    --aside-toggle-icon-open: 0deg;
+    --aside-toggle-icon-shut: 180deg;
+    --aside-toggle-tuck: 100%;
+    border-radius: var(--nexa-aside-toggle-radius) 0 0 var(--nexa-aside-toggle-radius);
+    border-right: 0;
+    right: 100%;
+}
+
+#page-chat .aside-toggle:hover,
+#page-chat .aside-toggle:focus-visible {
+    color: #f4f4f5;
+    outline: none;
+}
+
+#page-chat .aside-toggle .ui-icon {
+    height: var(--nexa-aside-toggle-icon);
+    transform: rotate(var(--aside-toggle-icon-rot));
+    transition: transform 0.22s var(--nexa-aside-motion-ease, ease);
+    width: var(--nexa-aside-toggle-icon);
+}
+
+#page-chat .aside-toggle:hover .ui-icon,
+#page-chat .aside-toggle:focus-visible .ui-icon {
+    transform: rotate(var(--aside-toggle-icon-rot)) translateX(var(--nexa-aside-toggle-nudge));
+}
+
+#page-chat.is-sidebar-collapsed .aside-toggle--start,
+#page-chat .peer-panel-dock:has(.peer-panel.is-collapsed) .aside-toggle--end {
+    --aside-toggle-icon-rot: var(--aside-toggle-icon-shut);
+    opacity: 1;
+    transform: translate(0, -50%);
+    transition:
+        transform var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        opacity 0.18s ease var(--nexa-aside-motion-duration-out),
+        color 0.15s ease,
+        left var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        right var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        z-index 0s linear var(--nexa-aside-motion-duration-out);
+    z-index: 30;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .aside-toggle--start,
+    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .aside-toggle--end {
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(var(--aside-toggle-tuck), -50%);
+        transition:
+            transform var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+            opacity 0s,
+            color 0.15s ease,
+            left var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+            right var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease);
+    }
+
+    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:hover .aside-toggle--start,
+    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .aside-toggle--start:focus-visible,
+    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .aside-toggle--end,
+    #page-chat:not(.is-viewport-peer-narrow) .peer-panel-dock:not(:has(.peer-panel.is-collapsed)) .aside-toggle--end:focus-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(0, -50%);
+        transition:
+            transform var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+            opacity 0.18s ease 0.06s,
+            color 0.15s ease,
+            left var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+            right var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease);
+    }
+}
+
+@media (hover: none) {
+    #page-chat:not(.is-viewport-app-stack) .aside-toggle {
+        opacity: 1;
+        transform: translate(0, -50%);
+    }
+}
+
 /* Desktop: left capsule = contacts + bottom dock (mirrors peer-panel-dock) */
 #page-chat:not(.is-viewport-app-stack) .left-capsule {
-    --sidebar-motion-duration: 0.5s;
-    --sidebar-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --sidebar-toggle-h: 88px;
+    --sidebar-motion-duration: var(--nexa-aside-motion-duration);
+    --sidebar-motion-ease: var(--nexa-aside-motion-ease);
+    --sidebar-toggle-h: var(--nexa-aside-toggle-h);
     align-self: center;
     flex-shrink: 0;
     height: calc(100% - (var(--nexa-surface-inset, 10px) * 2));
@@ -870,17 +1035,11 @@
         width var(--sidebar-motion-duration) var(--sidebar-motion-ease),
         margin-left var(--sidebar-motion-duration) var(--sidebar-motion-ease),
         margin-right var(--sidebar-motion-duration) var(--sidebar-motion-ease);
-    width: 288px;
+    width: var(--nexa-aside-start-w, 328px);
 }
 
 #page-chat:not(.is-viewport-app-stack) .left-capsule-shelf {
-    background: var(--panel-glass);
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--capsule-stroke);
     border-right-color: transparent;
-    border-radius: var(--nexa-surface-radius, 22px);
-    box-shadow: var(--glass-inset-highlight);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -892,19 +1051,16 @@
     transform: translateX(0);
     transition:
         transform var(--sidebar-motion-duration) var(--sidebar-motion-ease),
-        visibility 0s linear 0s,
-        border-color calc(var(--sidebar-motion-duration) * 0.65) ease,
-        background calc(var(--sidebar-motion-duration) * 0.65) ease,
-        box-shadow calc(var(--sidebar-motion-duration) * 0.65) ease;
+        visibility 0s linear 0s;
     visibility: visible;
-    width: 288px;
+    width: var(--nexa-aside-start-w, 328px);
     /* Cover the tucked toggle so it slides out from under the shelf. */
     z-index: 2;
 }
 
 /* Right edge stroke — solid at rest; notched only while the toggle is visible. */
 #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule-shelf::after {
-    background: var(--capsule-stroke);
+    background: var(--nexa-aside-stroke);
     content: "";
     inset: 0 0 0 auto;
     pointer-events: none;
@@ -915,15 +1071,15 @@
 
 @media (hover: hover) and (pointer: fine) {
     #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:hover .left-capsule-shelf::after,
-    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:has(.sidebar-capsule-toggle:focus-visible) .left-capsule-shelf::after {
+    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:has(.aside-toggle--start:focus-visible) .left-capsule-shelf::after {
         background: linear-gradient(
             to bottom,
-            var(--capsule-stroke) 0,
-            var(--capsule-stroke) calc(50% - var(--sidebar-toggle-h) / 2),
-            transparent calc(50% - var(--sidebar-toggle-h) / 2),
-            transparent calc(50% + var(--sidebar-toggle-h) / 2),
-            var(--capsule-stroke) calc(50% + var(--sidebar-toggle-h) / 2),
-            var(--capsule-stroke) 100%
+            var(--nexa-aside-stroke) 0,
+            var(--nexa-aside-stroke) calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke) calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke) 100%
         );
     }
 }
@@ -932,19 +1088,19 @@
     #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule-shelf::after {
         background: linear-gradient(
             to bottom,
-            var(--capsule-stroke) 0,
-            var(--capsule-stroke) calc(50% - var(--sidebar-toggle-h) / 2),
-            transparent calc(50% - var(--sidebar-toggle-h) / 2),
-            transparent calc(50% + var(--sidebar-toggle-h) / 2),
-            var(--capsule-stroke) calc(50% + var(--sidebar-toggle-h) / 2),
-            var(--capsule-stroke) 100%
+            var(--nexa-aside-stroke) 0,
+            var(--nexa-aside-stroke) calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% - var(--nexa-aside-toggle-h) / 2),
+            transparent calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke) calc(50% + var(--nexa-aside-toggle-h) / 2),
+            var(--nexa-aside-stroke) 100%
         );
     }
 }
 
 #page-chat:not(.is-viewport-app-stack).is-sidebar-collapsed .left-capsule {
-    --sidebar-motion-duration: 0.52s;
-    --sidebar-motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --sidebar-motion-duration: var(--nexa-aside-motion-duration-out);
+    --sidebar-motion-ease: var(--nexa-aside-motion-ease-out);
     /* Ride to the viewport edge with the panel — same as peer margin-right → 0 */
     margin-left: 0;
     margin-right: 0;
@@ -955,117 +1111,18 @@
 }
 
 #page-chat:not(.is-viewport-app-stack).is-sidebar-collapsed .left-capsule-shelf {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-color: transparent;
-    box-shadow: none;
     pointer-events: none;
     transform: translateX(-100%);
     transition:
         transform var(--sidebar-motion-duration) var(--sidebar-motion-ease),
-        visibility 0s linear var(--sidebar-motion-duration),
-        border-color calc(var(--sidebar-motion-duration) * 0.65) ease,
-        background calc(var(--sidebar-motion-duration) * 0.65) ease,
-        box-shadow calc(var(--sidebar-motion-duration) * 0.65) ease;
+        visibility 0s linear var(--sidebar-motion-duration);
     visibility: hidden;
 }
 
 #page-chat:not(.is-viewport-app-stack) .left-capsule.no-motion,
 #page-chat:not(.is-viewport-app-stack) .left-capsule.no-motion .left-capsule-shelf,
-#page-chat:not(.is-viewport-app-stack) .left-capsule.no-motion .sidebar-capsule-toggle {
+#page-chat:not(.is-viewport-app-stack) .left-capsule.no-motion .aside-toggle {
     transition: none !important;
-}
-
-#page-chat .sidebar-capsule-toggle {
-    align-items: center;
-    background: var(--panel-glass);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border: 1px solid var(--capsule-stroke, var(--panel-glass-stroke));
-    border-left: 0;
-    border-radius: 0 10px 10px 0;
-    box-shadow: var(--glass-inset-highlight);
-    color: #d4d4d8;
-    cursor: pointer;
-    display: none;
-    height: var(--sidebar-toggle-h, 88px);
-    justify-content: center;
-    /* Fully outside the glass shelf so the tab never bleeds through. */
-    left: 100%;
-    opacity: 1;
-    padding: 0;
-    pointer-events: auto;
-    position: absolute;
-    top: 50%;
-    transform: translate(0, -50%);
-    transition:
-        transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.22s ease,
-        color 0.15s ease;
-    width: 16px;
-    z-index: 1;
-}
-
-#page-chat:not(.is-viewport-app-stack) .sidebar-capsule-toggle {
-    display: inline-flex;
-}
-
-#page-chat .sidebar-capsule-toggle:hover,
-#page-chat .sidebar-capsule-toggle:focus-visible {
-    color: #f4f4f5;
-    outline: none;
-}
-
-#page-chat .sidebar-capsule-toggle .ui-icon {
-    height: 13px;
-    transform: rotate(180deg);
-    transition: transform 0.22s var(--sidebar-motion-ease, ease);
-    width: 13px;
-}
-
-#page-chat .sidebar-capsule-toggle:hover .ui-icon,
-#page-chat .sidebar-capsule-toggle:focus-visible .ui-icon {
-    transform: rotate(180deg) translateX(2px);
-}
-
-#page-chat.is-sidebar-collapsed .sidebar-capsule-toggle {
-    height: var(--sidebar-toggle-h, 88px);
-    opacity: 1;
-    transform: translate(0, -50%);
-    width: 16px;
-    z-index: 30;
-}
-
-#page-chat.is-sidebar-collapsed .sidebar-capsule-toggle .ui-icon {
-    transform: rotate(0deg);
-}
-
-#page-chat.is-sidebar-collapsed .sidebar-capsule-toggle:hover .ui-icon,
-#page-chat.is-sidebar-collapsed .sidebar-capsule-toggle:focus-visible .ui-icon {
-    transform: translateX(2px);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .sidebar-capsule-toggle {
-        opacity: 0;
-        pointer-events: none;
-        transform: translate(-100%, -50%);
-    }
-
-    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:hover .sidebar-capsule-toggle,
-    #page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .sidebar-capsule-toggle:focus-visible {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translate(0, -50%);
-    }
-}
-
-@media (hover: none) {
-    #page-chat:not(.is-viewport-app-stack) .sidebar-capsule-toggle {
-        opacity: 1;
-        transform: translate(0, -50%);
-    }
 }
 
 #page-chat:not(.is-viewport-app-stack) .left-capsule .sidebar {
@@ -1143,23 +1200,6 @@
     margin-right: 0;
 }
 
-#page-chat:not(.is-viewport-app-stack):not(.is-viewport-peer-narrow) .peer-panel {
-    background: var(--peer-panel-glass);
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--capsule-stroke);
-    border-left-color: transparent;
-    border-radius: var(--nexa-surface-radius, 22px);
-    box-shadow: var(--glass-inset-highlight);
-    height: 100%;
-}
-
-#page-chat:not(.is-viewport-app-stack):not(.is-viewport-peer-narrow) .peer-panel.is-collapsed {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-}
-
 #page-chat:not(.is-viewport-app-stack) .contact-search-input {
     background: color-mix(in srgb, #1a1a1a 28%, transparent) !important;
     backdrop-filter: blur(28px) saturate(170%);
@@ -1212,7 +1252,7 @@
     backdrop-filter: blur(36px) saturate(180%);
     -webkit-backdrop-filter: blur(36px) saturate(180%);
     border: 1px solid var(--capsule-stroke);
-    border-radius: 999px;
+    border-radius: var(--nexa-chrome-radius, 24px);
     box-shadow: var(--glass-inset-highlight);
     display: flex;
     height: var(--layout-header-h);
@@ -1388,7 +1428,7 @@
     backdrop-filter: blur(36px) saturate(180%);
     -webkit-backdrop-filter: blur(36px) saturate(180%);
     border: 1px solid var(--capsule-stroke);
-    border-radius: 999px;
+    border-radius: var(--nexa-chrome-radius, 24px);
     box-shadow: var(--glass-inset-highlight);
     gap: 2px;
     min-height: 48px;
@@ -1397,7 +1437,7 @@
 
 #page-chat .chat-main > .input-bar .input-row.is-composer-multiline {
     align-items: flex-end;
-    border-radius: 24px;
+    border-radius: var(--nexa-chrome-radius, 24px);
 }
 
 #page-chat .chat-main > .input-bar .composer-field,
@@ -1474,7 +1514,6 @@
     #page-chat {
         --composer-glass: color-mix(in srgb, var(--bg) 88%, transparent);
         --panel-glass: color-mix(in srgb, var(--bg) 88%, transparent);
-        --peer-panel-glass: color-mix(in srgb, var(--bg) 88%, transparent);
         --control-glass: color-mix(in srgb, var(--bg) 88%, transparent);
         --bubble-own: color-mix(in srgb, #3f3f46 88%, transparent);
         --bubble-other: color-mix(in srgb, #1a1a1a 88%, transparent);
@@ -1607,16 +1646,22 @@
 #page-chat .header-left__meta {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    justify-content: center;
     min-width: 0;
+}
+
+#page-chat .chat-header-avatar-wrap {
+    flex-shrink: 0;
+    height: 36px;
+    position: relative;
+    width: 36px;
 }
 
 #page-chat .chat-header-avatar {
     border-radius: var(--radius-pill);
-    flex-shrink: 0;
     font-size: var(--text-meta);
-    height: 36px;
-    width: 36px;
+    height: 100%;
+    width: 100%;
 }
 
 #page-chat .chat-header-avatar .contact-avatar-img {
@@ -1627,15 +1672,39 @@
     width: 100%;
 }
 
+#page-chat .chat-header-presence {
+    border: 2px solid var(--glass);
+    border-radius: 50%;
+    bottom: -1px;
+    box-sizing: border-box;
+    height: 11px;
+    pointer-events: none;
+    position: absolute;
+    right: -1px;
+    width: 11px;
+    z-index: 1;
+}
+
+#page-chat .chat-header-presence.is-online {
+    background: var(--green);
+    box-shadow: 0 0 0 2px var(--green-20);
+}
+
+#page-chat .chat-header-presence.is-offline {
+    background: var(--red);
+    box-shadow: 0 0 0 2px var(--red-20);
+}
+
 #page-chat .header-left #chatWithTitle {
     color: var(--text);
+    display: block;
     font-family: var(--f-display);
     font-size: var(--text-title);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--track-snug);
     line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    overflow: visible;
     white-space: nowrap;
 }
 
@@ -1651,6 +1720,90 @@
 #page-chat .header-left .presence-dot {
     height: 6px;
     width: 6px;
+}
+
+.gooey-text {
+    display: block;
+    min-width: 0;
+    position: relative;
+}
+
+.gooey-text__svg {
+    height: 0;
+    overflow: hidden;
+    position: absolute;
+    width: 0;
+}
+
+.gooey-text__sizer {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    visibility: hidden;
+    white-space: nowrap;
+}
+
+.gooey-text__morph {
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+    position: absolute;
+}
+
+.gooey-text__layer {
+    left: 0;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    will-change: filter, opacity;
+}
+
+#page-chat .header-gooey__text {
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    user-select: none;
+}
+
+.gooey-typing-dots {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+    height: 1em;
+    padding-left: 1px;
+}
+
+.gooey-typing-dots span {
+    animation: headerGooeyDot 1.1s ease-in-out infinite;
+    background: currentColor;
+    border-radius: 50%;
+    display: block;
+    height: 6px;
+    width: 6px;
+}
+
+.gooey-typing-dots span:nth-child(2) {
+    animation-delay: 0.16s;
+}
+
+.gooey-typing-dots span:nth-child(3) {
+    animation-delay: 0.32s;
+}
+
+@keyframes headerGooeyDot {
+    0%,
+    70%,
+    100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+
+    35% {
+        opacity: 1;
+        transform: translateY(-4px);
+    }
 }
 
 .chat-header-tools {
@@ -1873,9 +2026,8 @@
 }
 
 #page-chat.is-compose-search .sidebar-dock-compose {
-    background: color-mix(in srgb, var(--dock-accent) 14%, var(--dock-surface));
-    border-color: color-mix(in srgb, var(--dock-accent) 55%, var(--dock-stroke));
-    color: var(--dock-accent);
+    background: color-mix(in srgb, #fff 7%, transparent);
+    color: #f4f4f5;
 }
 
 #page-chat.is-compose-search:not(.is-viewport-app-stack) .chat-header {
@@ -2892,6 +3044,681 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+    padding: 0;
+}
+
+#page-chat .sidebar-library {
+
+    /* =========================================================
+       LIBRARY TREE GEOMETRY
+       ========================================================= */
+
+    /* Sidebar background — used to hide the parent stem */
+    --library-background: #202633;
+
+    /* Tree connector color */
+    --library-tree: #565a63;
+
+    /* Distance from branch line to row content */
+    --library-tree-gutter: 20px;
+
+    /* Internal offset before the icon */
+    --library-row-icon-offset: 6px;
+
+    /* Always use an even integer width */
+    --library-tree-width: 2px;
+
+    /* Rounded elbow radius */
+    --library-tree-radius: 8px;
+
+    /* Row geometry */
+    --library-row-height: 32px;
+    --library-row-mid: 16px;
+
+    /* Distance between nesting levels */
+    --library-branch-indent: 20px;
+
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 2px;
+    padding: 0 10px 10px;
+}
+
+/* FileTree (Folders) — capped height + ScrollBlur edges */
+#page-chat .sidebar-folder-scroll {
+    --sidebar-folder-tree-max-h: 320px;
+    max-height: var(--sidebar-folder-tree-max-h);
+    min-height: 0;
+    width: 100%;
+}
+
+#page-chat .sidebar-folder-scroll__viewport {
+    height: auto !important;
+    max-height: var(--sidebar-folder-tree-max-h);
+}
+
+#page-chat .sidebar-folder-scroll__content {
+    min-height: min-content;
+}
+
+/* FileTree (Folders) — blend into sidebar, match Inbox row colors */
+#page-chat .sidebar-file-tree {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #a1a1aa;
+    font-family: var(--f-ui, inherit);
+    overflow: visible;
+    width: 100%;
+}
+
+#page-chat .sidebar-file-tree > div {
+    overflow: visible;
+    padding: 0;
+}
+
+#page-chat .sidebar-file-tree > div > div[class*="rounded-lg"] {
+    border-radius: 4px;
+}
+
+#page-chat .sidebar-file-tree [role="treeitem"] {
+    background: transparent !important;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25;
+    outline: none;
+    box-shadow: none !important;
+    z-index: 0;
+}
+
+/* Selected: white text only — no fill rectangle */
+#page-chat .sidebar-file-tree [role="treeitem"][aria-selected="true"] {
+    background: transparent !important;
+    color: #f4f4f5;
+}
+
+#page-chat .sidebar-file-tree [role="treeitem"]:focus,
+#page-chat .sidebar-file-tree [role="treeitem"]:focus-visible {
+    outline: none;
+    box-shadow: none !important;
+}
+
+#page-chat .sidebar-file-tree [role="treeitem"] svg {
+    color: inherit;
+}
+
+#page-chat .sidebar-file-tree .file-tree-item-trailing {
+    align-items: center;
+    display: flex;
+    position: absolute;
+    right: 2px;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    pointer-events: auto;
+}
+
+#page-chat .sidebar-file-tree .file-tree-item-trailing:has(.folder-name-draft--overlay) {
+    inset: 0;
+    right: 0;
+}
+
+#page-chat .sidebar-file-tree .folder-name-draft {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    min-height: 32px;
+    min-width: 0;
+    padding: 4px 8px;
+    width: 100%;
+}
+
+#page-chat .sidebar-file-tree .folder-name-draft--overlay {
+    background: var(--library-background, #202633);
+    inset: 0;
+    padding: 4px 8px;
+    position: absolute;
+    z-index: 1;
+}
+
+#page-chat .sidebar-file-tree .folder-name-draft__icon {
+    color: #71717a;
+    flex-shrink: 0;
+    height: 16px;
+    width: 16px;
+}
+
+#page-chat .sidebar-file-tree .folder-name-draft__input {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    color: #e4e4e7;
+    flex: 1;
+    font-family: var(--f-ui, inherit);
+    font-size: 13px;
+    font-weight: 500;
+    height: 22px;
+    line-height: 22px;
+    min-width: 0;
+    outline: none;
+    padding: 0;
+}
+
+#page-chat .sidebar-file-tree .folder-name-draft__input::placeholder {
+    color: #71717a;
+    font-weight: 500;
+}
+
+#page-chat .sidebar-file-tree .folder-name-draft__input:focus {
+    color: #f4f4f5;
+}
+
+#page-chat .sidebar-file-tree .folder-item-actions {
+    align-items: center;
+    display: flex;
+    height: 24px;
+    justify-content: flex-end;
+    min-width: 49px;
+    opacity: 0;
+    pointer-events: auto;
+    position: relative;
+    transition: opacity 0.12s ease;
+    width: 49px;
+}
+
+#page-chat .sidebar-file-tree .file-tree-item-row:hover .folder-item-actions,
+#page-chat .sidebar-file-tree .file-tree-item-row:focus-within .folder-item-actions,
+#page-chat .sidebar-file-tree .folder-item-actions.is-confirming {
+    opacity: 1;
+}
+
+#page-chat .sidebar-file-tree .folder-item-actions__idle {
+    align-items: center;
+    display: flex;
+    gap: 1px;
+    justify-content: flex-end;
+    transition:
+        opacity 0.16s ease,
+        transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 100%;
+}
+
+#page-chat .sidebar-file-tree .folder-item-actions.is-confirming .folder-item-actions__idle {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.88);
+}
+
+#page-chat .sidebar-file-tree .folder-item-action {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    color: #a1a1aa;
+    cursor: pointer;
+    display: inline-flex;
+    height: 24px;
+    justify-content: center;
+    padding: 0;
+    pointer-events: auto;
+    position: relative;
+    width: 24px;
+    z-index: 1;
+}
+
+#page-chat .sidebar-file-tree .folder-item-action:hover {
+    background: transparent;
+    color: #f4f4f5;
+}
+
+#page-chat .sidebar-file-tree .folder-item-action--danger:hover {
+    background: transparent;
+    color: #f87171;
+}
+
+#page-chat .sidebar-file-tree .folder-item-action--confirm {
+    background: color-mix(in srgb, #ef4444 18%, transparent);
+    border-radius: 999px;
+    color: #f87171;
+    height: 24px;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: scale(0.72);
+    transform-origin: right center;
+    transition:
+        width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.16s ease,
+        transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+        background 0.16s ease,
+        color 0.16s ease,
+        padding 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 24px;
+    z-index: 2;
+}
+
+#page-chat .sidebar-file-tree .folder-item-action--confirm .folder-item-action__check {
+    opacity: 0;
+    transform: scale(0.6);
+    transition:
+        opacity 0.14s ease 0.06s,
+        transform 0.2s cubic-bezier(0.22, 1, 0.36, 1) 0.06s;
+}
+
+#page-chat .sidebar-file-tree .folder-item-actions.is-confirming .folder-item-action--confirm {
+    opacity: 1;
+    padding: 0 10px;
+    pointer-events: auto;
+    transform: scale(1);
+    width: 49px;
+}
+
+#page-chat .sidebar-file-tree .folder-item-actions.is-confirming .folder-item-action--confirm .folder-item-action__check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+#page-chat .sidebar-file-tree .folder-item-action--confirm:hover {
+    background: color-mix(in srgb, #ef4444 28%, transparent);
+    color: #fecaca;
+}
+
+#page-chat .sidebar-file-tree [role="treeitem"].is-folder-renaming {
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+/* =============================================================
+   SECTION TITLE
+   ============================================================= */
+
+#page-chat .sidebar-library__kicker {
+    color: #71717a;
+    font-family: var(--f-ui, inherit);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin: 10px 8px 6px;
+    text-transform: uppercase;
+}
+
+#page-chat .sidebar-library__kicker:first-child {
+    margin-top: 0;
+}
+
+
+/* =============================================================
+   NODE
+   ============================================================= */
+
+#page-chat .library-node {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+
+/* =============================================================
+   ROW
+   ============================================================= */
+
+#page-chat .library-row {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    color: #a1a1aa;
+    cursor: pointer;
+    display: flex;
+    font-family: var(--f-ui, inherit);
+    font-size: 13px;
+    font-weight: 500;
+    min-height: var(--library-row-height);
+    padding: 0;
+    position: relative;
+    text-align: left;
+    width: 100%;
+    z-index: 1;
+}
+
+
+/* =============================================================
+   HOVER / ACTIVE
+   ============================================================= */
+
+/*
+ * No background highlight.
+ * State is communicated only through text/icon color.
+ */
+
+#page-chat .library-row:hover,
+#page-chat .library-row.is-active {
+    background: transparent;
+    color: #f4f4f5;
+}
+
+
+/* =============================================================
+   ROW BODY
+   ============================================================= */
+
+#page-chat .library-row__body {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    gap: 8px;
+    min-height: var(--library-row-height);
+    min-width: 0;
+
+    /*
+     * This is the only internal offset before the icon.
+     */
+    padding: 4px 8px 4px var(--library-row-icon-offset);
+
+    position: relative;
+    z-index: 4;
+}
+
+
+/* Icons inherit row state color */
+
+#page-chat .library-row__body svg {
+    color: inherit;
+    flex-shrink: 0;
+}
+
+
+/* =============================================================
+   LABEL
+   ============================================================= */
+
+#page-chat .library-row__label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =============================================================
+   COUNT
+   ============================================================= */
+
+#page-chat .library-row__count {
+    color: #71717a;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+
+/* =============================================================
+   BRANCH
+   ============================================================= */
+
+/*
+ * Every nesting level moves exactly 20px.
+ *
+ * level 0 → base
+ * level 1 → +20px
+ * level 2 → +40px
+ *
+ * No transforms.
+ * No fractional coordinates.
+ */
+
+#page-chat .library-branch {
+    margin: 0 0 0 var(--library-branch-indent);
+    padding: 0;
+    position: relative;
+}
+
+
+/* =============================================================
+   DIRECT CHILDREN OF BRANCH
+   ============================================================= */
+
+/*
+ * The connector occupies exactly 20px before the row body.
+ */
+
+#page-chat .library-branch > .library-node,
+#page-chat .library-branch > .library-row {
+    padding-left: var(--library-tree-gutter);
+    position: relative;
+}
+
+
+/* =============================================================
+   VERTICAL BRANCH LINE
+   ============================================================= */
+
+/*
+ * Continuous vertical line for this nesting level.
+ *
+ * It is intentionally allowed to follow the complete branch.
+ * The last-child mask below hides the part that would otherwise
+ * continue underneath an expanded last node.
+ */
+
+#page-chat .library-branch::before {
+    background: var(--library-tree);
+    content: '';
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
+    bottom: calc(
+        var(--library-row-mid) +
+        var(--library-tree-radius)
+    );
+
+    width: var(--library-tree-width);
+
+    pointer-events: none;
+    z-index: 2;
+}
+
+
+/* =============================================================
+   ELBOW
+   ============================================================= */
+
+/*
+ * Geometry:
+ *
+ *     │
+ *     │
+ *     └──────── 📁
+ *
+ * The horizontal segment reaches the row content boundary.
+ */
+
+#page-chat .library-branch > .library-node::before,
+#page-chat .library-branch > .library-row::before {
+
+    box-sizing: border-box;
+    content: '';
+
+    position: absolute;
+
+    left: 0;
+
+    top: calc(
+        var(--library-row-mid) -
+        var(--library-tree-radius)
+    );
+
+    width: var(--library-tree-gutter);
+    height: var(--library-tree-radius);
+
+    border-left:
+        var(--library-tree-width)
+        solid
+        var(--library-tree);
+
+    border-bottom:
+        var(--library-tree-width)
+        solid
+        var(--library-tree);
+
+    border-bottom-left-radius:
+        var(--library-tree-radius);
+
+    pointer-events: none;
+    z-index: 3;
+}
+
+
+/* =============================================================
+   STOP PARENT STEM AFTER LAST DIRECT CHILD
+   ============================================================= */
+
+/*
+ * IMPORTANT:
+ *
+ * When the last folder is opened, its .library-node becomes
+ * taller because it contains another .library-branch.
+ *
+ * The parent's ::before would therefore continue downward.
+ *
+ * This mask hides only the parent's vertical line below the
+ * last direct row, while leaving the nested branch untouched.
+ */
+
+#page-chat .library-branch
+    > .library-node:last-child::after,
+
+#page-chat .library-branch
+    > .library-row:last-child::after {
+
+    background: var(--library-background);
+    content: '';
+
+    position: absolute;
+
+    left: 0;
+    top: var(--library-row-height);
+    bottom: 0;
+
+    width: var(--library-tree-width);
+
+    pointer-events: none;
+    z-index: 3;
+}
+
+
+/* =============================================================
+   NEW FOLDER
+   ============================================================= */
+
+/*
+ * New Folder is intentionally quieter than normal folders.
+ * No block highlight.
+ */
+
+#page-chat .library-row--new {
+    background: transparent;
+    color: #5f636c;
+    width: fit-content;
+    max-width: 100%;
+}
+
+#page-chat .library-row--new:hover {
+    background: transparent;
+    color: #6b7079;
+}
+
+
+/*
+ * New Folder body should not stretch across the sidebar.
+ */
+
+#page-chat .library-row--new .library-row__body {
+    flex: 0 0 auto;
+    width: fit-content;
+    min-width: 0;
+    background: transparent;
+}
+
+
+/*
+ * Never restore a background on active New Folder.
+ */
+
+#page-chat .library-row--new.is-active {
+    background: transparent;
+    color: #6b7079;
+}
+
+#page-chat .library-row--new.is-active .library-row__body {
+    background: transparent;
+}
+
+
+/* =============================================================
+   DRAFT
+   ============================================================= */
+
+#page-chat .library-row--draft {
+    cursor: default;
+}
+
+#page-chat .library-row--draft:hover {
+    background: transparent;
+    color: #a1a1aa;
+}
+
+
+/* =============================================================
+   INPUT
+   ============================================================= */
+
+#page-chat .library-row__input {
+    background: color-mix(
+        in srgb,
+        #fff 6%,
+        transparent
+    );
+
+    border:
+        1px solid
+        color-mix(
+            in srgb,
+            #fff 10%,
+            transparent
+        );
+
+    border-radius: 8px;
+    color: #f4f4f5;
+    flex: 1;
+    font: inherit;
+    min-width: 0;
+    outline: none;
+    padding: 4px 8px;
+}
+
+#page-chat .library-row__input::placeholder {
+    color: #71717a;
+}
+
+#page-chat .library-row__input:focus {
+    border-color:
+        color-mix(
+            in srgb,
+            #fff 18%,
+            transparent
+        );
 }
 
 #page-chat .nexa-welcome-banner {
@@ -3150,48 +3977,148 @@
 
 /* ─── Contact rows ─── */
 #usersList {
-    border-top: none;
+    --users-list-gutter: 10px;
+    border-top: 1px solid color-mix(in srgb, #fff 6%, transparent);
+    display: flex;
     flex: 1;
+    flex-direction: column;
     margin-top: 0;
     min-height: 0;
-    overflow-y: auto;
-    padding: 0 var(--space-2) var(--space-2);
+    overflow: hidden;
+    padding: 8px var(--users-list-gutter);
 }
 
 #page-chat #usersList {
-    padding: 0 10px 12px;
+    padding: 4px var(--users-list-gutter) 8px;
+}
+
+#page-chat #usersList .sidebar-scroll-blur {
+    /* Bleed into #usersList horizontal padding so the active rail can sit on the edge */
+    box-sizing: border-box;
+    flex: 1;
+    margin-left: calc(-1 * var(--users-list-gutter));
+    margin-right: calc(-1 * var(--users-list-gutter));
+    min-height: 0;
+    width: calc(100% + 2 * var(--users-list-gutter));
+}
+
+#page-chat #usersList .sidebar-scroll-blur__content {
+    display: flex;
+    flex-direction: column;
+    min-height: min-content;
+}
+
+#page-chat #usersList .contact-list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: min-content;
+    width: 100%;
+}
+
+#page-chat #usersList .contact-list-highlight {
+    background: color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 55%,
+        transparent
+    );
+    border: 1px solid color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 45%,
+        transparent
+    );
+    border-radius: 4px;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
 }
 
 #page-chat #usersList .contact-row {
+    --contact-active-inset: 0px;
     margin-bottom: 4px;
+    margin-left: calc(var(--users-list-gutter) + var(--contact-active-inset));
+    margin-right: var(--users-list-gutter);
     padding: 9px 10px;
+    position: relative;
+    transition:
+        margin-left 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    width: calc(100% - 2 * var(--users-list-gutter) - var(--contact-active-inset));
+    z-index: 1;
+}
+
+#page-chat #usersList .contact-skeleton,
+#page-chat #usersList .empty-state {
+    margin-left: var(--users-list-gutter);
+    margin-right: var(--users-list-gutter);
 }
 
 #usersList .contact-row {
     background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: 4px;
     box-shadow: none;
     gap: var(--space-2);
     margin-bottom: 2px;
+    overflow: visible;
     padding: 7px 8px;
-    transition:
-        background var(--duration-normal) var(--ease-out),
-        box-shadow var(--duration-normal) var(--ease-out),
-        color var(--duration-normal) var(--ease-out);
+    position: relative;
 }
 
 #usersList .contact-row:hover {
-    background: var(--row-hover);
+    background: transparent;
     border-color: transparent;
     box-shadow: none;
-    transform: none;
+}
+
+/* Active — shrink toward the right; right edge stays put */
+#page-chat #usersList .contact-row.is-active {
+    --contact-active-inset: 8px;
 }
 
 #usersList .contact-row.is-active {
-    background: var(--row-active);
+    background: transparent;
     border-color: transparent;
     box-shadow: none;
+    color: var(--text);
+}
+
+#usersList .contact-row.is-active:hover {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+#usersList .contact-row__rail {
+    background: color-mix(in srgb, var(--dock-accent, #afb9cd) 52%, transparent);
+    border-radius: 0 5px 5px 0;
+    box-shadow:
+        0 0 10px color-mix(in srgb, var(--dock-accent, #afb9cd) 28%, transparent),
+        0 0 16px color-mix(in srgb, var(--dock-accent, #afb9cd) 12%, transparent);
+    height: 58%;
+    /* Track the row’s left inset so the rail stays on the list edge */
+    left: calc(-1 * var(--users-list-gutter, 10px) - var(--contact-active-inset, 0px));
+    max-height: 28px;
+    min-height: 18px;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform-origin: center center;
+    transition: left 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 5px;
+    z-index: 2;
+}
+
+#usersList .contact-row.is-active .contact-name {
+    color: #f4f4f5;
+    font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat #usersList .contact-row,
+    #usersList .contact-row__rail {
+        transition: none;
+    }
 }
 
 #usersList .contact-avatar {
@@ -3570,7 +4497,7 @@
     }
 
     #page-chat .sidebar > * {
-        min-width: 288px;
+        min-width: var(--nexa-aside-start-w, 328px);
     }
 
     .sidebar-brand .e2e-chip {

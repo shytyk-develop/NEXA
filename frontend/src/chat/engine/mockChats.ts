@@ -17,6 +17,7 @@ export type MockChatFixture = {
     last_message_at: string;
     last_message_preview: string;
     unread_count?: number;
+    online?: boolean;
     messages: MockMessage[];
 };
 
@@ -57,6 +58,7 @@ export const MOCK_CHATS: MockChatFixture[] = [
         last_message_at: new Date(ago(8 * MINUTE)).toISOString(),
         last_message_preview: 'Keys stay on the device. That’s the whole point.',
         unread_count: 2,
+        online: true,
         messages: [
             incoming('mira', 'mira-1', 'Did the React shell land without touching crypto?', ago(3 * HOUR)),
             outgoing('mira-2', 'Yes. Engine still owns keys and the wire.', ago(3 * HOUR - 4 * MINUTE)),
@@ -82,6 +84,7 @@ export const MOCK_CHATS: MockChatFixture[] = [
         display_name: 'NEXA Lab',
         last_message_at: new Date(ago(26 * HOUR)).toISOString(),
         last_message_preview: 'Mock thread for the hybrid bridge test.',
+        online: true,
         messages: [
             incoming('nexa_lab', 'lab-1', 'This conversation is local-only. Nothing is sent.', ago(28 * HOUR)),
             outgoing('lab-2', 'Understood. Selecting this chat should paint bubbles in #messages.', ago(27 * HOUR)),

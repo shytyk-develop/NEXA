@@ -36,7 +36,8 @@
     --nexa-surface-chat: #0d0d0d;
     --nexa-surface-elevated: #111111;
     --nexa-surface-interactive: #181818;
-    --nexa-surface-radius: 32px;
+    --nexa-surface-radius: 20px;
+    --nexa-chrome-radius: 24px;
     --nexa-surface-gap: 16px;
     --nexa-surface-inset: 20px;
     --nexa-surface-shadow:
