@@ -1660,19 +1660,34 @@ export function showComposerReplyBar(pendingReply) {
     if (!DOM.replyBar) return;
     if (!pendingReply) {
         DOM.replyBar.classList.add('hidden');
+        DOM.replyBar.dataset.active = 'false';
+        DOM.replyBar.dispatchEvent(
+            new CustomEvent('nexa:composer-reply', { bubbles: true, detail: { active: false } }),
+        );
         return;
     }
     DOM.replyBar.classList.remove('hidden');
+    DOM.replyBar.dataset.active = 'true';
     if (DOM.replyLabel) {
         DOM.replyLabel.textContent = `Reply to ${pendingReply.author}`;
     }
     if (DOM.replyPreview) {
         DOM.replyPreview.textContent = pendingReply.preview;
     }
+    DOM.replyBar.dispatchEvent(
+        new CustomEvent('nexa:composer-reply', { bubbles: true, detail: { active: true } }),
+    );
+    // Open the composer capsule if it was collapsed.
+    DOM.messageInput?.dispatchEvent(new CustomEvent('nexa:composer-open', { bubbles: true }));
 }
 
 export function hideComposerReplyBar() {
-    DOM.replyBar?.classList.add('hidden');
+    if (!DOM.replyBar) return;
+    DOM.replyBar.classList.add('hidden');
+    DOM.replyBar.dataset.active = 'false';
+    DOM.replyBar.dispatchEvent(
+        new CustomEvent('nexa:composer-reply', { bubbles: true, detail: { active: false } }),
+    );
 }
 
 function syncMessageReactFab(fabOrRow, reactions, myUsername = '') {

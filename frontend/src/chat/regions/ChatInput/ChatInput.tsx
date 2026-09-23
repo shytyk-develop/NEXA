@@ -38,7 +38,7 @@ function readComposerFlags(input: HTMLTextAreaElement | null) {
     const paste = document.getElementById('uiPasteAttachments');
     const reply = document.getElementById('uiReplyBar');
     const hasPaste = Boolean(paste && !paste.classList.contains('hidden') && paste.childElementCount > 0);
-    const hasReply = Boolean(reply && !reply.classList.contains('hidden'));
+    const hasReply = Boolean(reply?.dataset.active === 'true');
     const hasText = Boolean(input?.value.trim());
     const disabled = Boolean(input?.disabled);
     return { hasPaste, hasReply, hasText, disabled, hasContent: hasText || hasPaste };
@@ -55,6 +55,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
     const [isSmoothResize, setIsSmoothResize] = useState(false);
     const [hasContent, setHasContent] = useState(false);
     const [hasShelf, setHasShelf] = useState(false);
+    const [hasReply, setHasReply] = useState(false);
     const [disabled, setDisabled] = useState(true);
     const [textareaHeight, setTextareaHeight] = useState(TEXTAREA_MIN);
     const [scrolling, setScrolling] = useState(false);
@@ -71,6 +72,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
         const flags = readComposerFlags(inputRef.current);
         setHasContent(flags.hasContent);
         setHasShelf(flags.hasPaste);
+        setHasReply(flags.hasReply);
         setDisabled(flags.disabled);
         return flags;
     }, []);
@@ -292,13 +294,27 @@ export function ChatInput({ onSend }: ChatInputProps) {
             measureTextarea();
         });
         if (paste) shelfObserver.observe(paste, { attributes: true, childList: true, subtree: true });
-        if (reply) shelfObserver.observe(reply, { attributes: true, attributeFilter: ['class'] });
+
+        const onReplyEvent = (event: Event) => {
+            const active = Boolean((event as CustomEvent<{ active?: boolean }>).detail?.active);
+            setHasReply(active);
+            if (active && !input.disabled) {
+                setIsSmoothResize(false);
+                setExpanded(true);
+                requestAnimationFrame(() => {
+                    input.focus({ preventScroll: true });
+                });
+            }
+            syncMeta();
+        };
+        reply?.addEventListener('nexa:composer-reply', onReplyEvent);
 
         return () => {
             input.removeEventListener('input', onInput);
             input.removeEventListener('focus', onFocus);
             input.removeEventListener('nexa:composer-resize', onResizeEvent);
             input.removeEventListener('nexa:composer-open', onOpenEvent);
+            reply?.removeEventListener('nexa:composer-reply', onReplyEvent);
             attrObserver.disconnect();
             shelfObserver.disconnect();
         };
@@ -349,16 +365,6 @@ export function ChatInput({ onSend }: ChatInputProps) {
                 aria-hidden={hasShelf ? 'false' : 'true'}
                 aria-label="Pasted text"
             />
-            <div id="uiReplyBar" className="composer-reply-bar hidden" aria-live="polite">
-                <div className="composer-reply-accent" aria-hidden="true" />
-                <div className="composer-reply-body">
-                    <p id="uiReplyLabel" className="composer-reply-label">Reply</p>
-                    <p id="uiReplyPreview" className="composer-reply-preview" />
-                </div>
-                <button id="uiReplyCloseBtn" type="button" className="composer-reply-close" title="Cancel reply" aria-label="Cancel reply">
-                    <Icon href="#icon-x" />
-                </button>
-            </div>
             <span id="uiDraftStatus" className="composer-status hidden" aria-live="polite" />
 
             <div className="composer-input-dock" ref={dockRef} onBlur={onBlurCapture}>
@@ -370,12 +376,38 @@ export function ChatInput({ onSend }: ChatInputProps) {
                     }}
                 >
                     <div
+                        id="uiReplyBar"
+                        className={cn(
+                            'composer-reply-bar',
+                            (!hasReply || !expanded) && 'hidden',
+                        )}
+                        aria-live="polite"
+                        aria-hidden={!hasReply || !expanded}
+                    >
+                        <div className="composer-reply-accent" aria-hidden="true" />
+                        <div className="composer-reply-body">
+                            <p id="uiReplyLabel" className="composer-reply-label">Reply</p>
+                            <p id="uiReplyPreview" className="composer-reply-preview" />
+                        </div>
+                        <button
+                            id="uiReplyCloseBtn"
+                            type="button"
+                            className="composer-reply-close"
+                            title="Cancel reply"
+                            aria-label="Cancel reply"
+                        >
+                            <Icon href="#icon-x" />
+                        </button>
+                    </div>
+
+                    <div
                         ref={shellRef}
                         className={cn(
                             'composer-shell input-row',
                             expanded && 'is-expanded',
                             disabled && 'is-disabled',
                             hasShelf && 'has-shelf',
+                            hasReply && expanded && 'has-reply',
                         )}
                         style={{
                             height: expanded ? shellHeight : COLLAPSED_HEIGHT,
