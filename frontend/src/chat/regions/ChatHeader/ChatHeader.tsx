@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
 import { getDisplayLabel } from '../../../../js/profile.js';
 import { resolveContactProfile } from '../../../../js/profileDirectory.js';
 import { getPrivacyFlags } from '../../../../js/privacy.js';
-import { GooeyText, GOOEY_DOTS } from '../../../components/ui/gooey-text-morphing';
+import { GooeyText, GOOEY_DOTS } from '../../../components/ui/GooeyText';
 import { useChatSnapshot } from '../../hooks/useChatEngine';
 import { Icon } from '../../components/Icon';
 
@@ -16,7 +15,6 @@ export function ChatHeader() {
     const isTyping = Boolean(active && privacy.typingIndicators && snap.typingUsers.has(active));
     const showPresence = Boolean(active && privacy.showOnlineStatus);
     const online = Boolean(active && snap.onlineUsers.has(active));
-    const gooeyTexts = useMemo(() => [label, GOOEY_DOTS], [label]);
 
     return (
         <header className="chat-header">
@@ -48,11 +46,7 @@ export function ChatHeader() {
                                     {label ? (
                                         <GooeyText
                                             key={active}
-                                            texts={gooeyTexts}
-                                            activeIndex={isTyping ? 1 : 0}
-                                            morphTime={1}
-                                            cooldownTime={0.25}
-                                            threshold={false}
+                                            text={isTyping ? GOOEY_DOTS : label}
                                             className="header-gooey"
                                             textClassName="header-gooey__text"
                                         />
