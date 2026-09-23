@@ -1744,8 +1744,12 @@
             </div>
             <div class="paste-editor-body">
                 <textarea id="uiPasteEditorText" class="paste-editor-textarea" spellcheck="false" aria-label="Pasted text content"></textarea>
-                <div class="paste-editor-fade paste-editor-fade--top" aria-hidden="true"></div>
-                <div class="paste-editor-fade paste-editor-fade--bottom" aria-hidden="true"></div>
+                <div class="paste-editor-fade paste-editor-fade--top" aria-hidden="true">
+                    <div class="paste-editor-fade__tint"></div>
+                </div>
+                <div class="paste-editor-fade paste-editor-fade--bottom" aria-hidden="true">
+                    <div class="paste-editor-fade__tint"></div>
+                </div>
             </div>
             <div class="paste-editor-foot">
                 <button id="uiPasteEditorRemove" type="button" class="paste-editor-remove">Remove</button>

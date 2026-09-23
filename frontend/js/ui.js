@@ -56,7 +56,6 @@ const DOM_IDS = {
     shortcutsBtn: 'uiShortcutsBtn',
     profileBtn: 'uiRailProfile',
     settingsBtn: 'uiSettingsBtn',
-    refreshUsersBtn: 'uiRefreshUsersBtn',
     copyUsernameBtn: 'uiCopyUsernameBtn',
 
     chatSearchBtn: 'uiChatSearchBtn',
@@ -143,7 +142,7 @@ const CHAT_DOM_KEYS = new Set([
     'statusSpan', 'messagesDiv', 'messageInput', 'sendBtn', 'usersListDiv',
     'chatWithTitle', 'chatHeaderAvatar', 'chatWelcome',
     'focusContactsBtn', 'focusComposerBtn', 'shortcutsBtn', 'profileBtn',
-    'settingsBtn', 'refreshUsersBtn', 'copyUsernameBtn',
+    'settingsBtn', 'copyUsernameBtn',
     'chatSearchBtn', 'scrollBottomBtn',
     'messageSearch', 'messageSearchInput', 'messageSearchCount',
     'attachBtn', 'fileInput', 'composerMenuBtn', 'emojiBtn', 'emojiPicker',
@@ -1007,9 +1006,47 @@ function ensureChromeFrost() {
 const SCROLL_NEAR_BOTTOM_PX = 96;
 const JUMP_SHOW_PX = 56;
 const JUMP_SCROLL_MS = 90;
+/** Extra air between the last message and the floating composer top edge */
+const COMPOSER_CLEARANCE_GAP = 10;
 
 let jumpToBottomInit = false;
 let jumpScrollFrame = 0;
+
+/**
+ * Keep message list padding clear of the floating composer shell.
+ * Measure the dock/shell only — paste-folder peek must not inflate clearance.
+ */
+export function syncComposerClearance(options = {}) {
+    const { followBottom = true } = options;
+    const page = document.getElementById('page-chat');
+    const bar = page?.querySelector('.chat-main > .input-bar');
+    const stage = page?.querySelector('.chat-main > .chat-stage') || page?.querySelector('.chat-main');
+    if (!page || !bar) return 0;
+
+    const nearBottom = followBottom && isMessagesNearBottom();
+    const shell =
+        bar.querySelector('.composer-scale-wrap') ||
+        bar.querySelector('.composer-input-dock') ||
+        bar;
+    const shellRect = shell.getBoundingClientRect();
+    const stageBottom = stage
+        ? stage.getBoundingClientRect().bottom
+        : window.innerHeight;
+    // Distance from composer top edge down to the stage floor (+ small gap)
+    const offset = Math.max(
+        88,
+        Math.ceil(stageBottom - shellRect.top + COMPOSER_CLEARANCE_GAP),
+    );
+    page.style.setProperty('--composer-float-offset', `${offset}px`);
+
+    const blurH = Math.max(64, Math.round(shellRect.height * 0.85 + 20));
+    page.style.setProperty('--messages-composer-blur-h', `${blurH}px`);
+
+    if (nearBottom) {
+        requestAnimationFrame(() => scrollMessagesToBottom({ force: true }));
+    }
+    return offset;
+}
 
 /** Scroll port for #messages — ScrollBlur viewport when present. */
 export function getMessagesScrollEl(root = DOM.messagesDiv) {
@@ -1227,7 +1264,7 @@ export function appendMessage(messageOrSender, text, type, timestamp = Date.now(
     ensureChromeFrost();
     refreshVisibleMessageClusters();
     reconcileMessageRowsWithHistory([message]);
-    scrollMessagesToBottom();
+    scrollMessagesToBottom({ force: true, smooth: true });
 }
 
 function buildReplyPreviewEl(replyTo) {

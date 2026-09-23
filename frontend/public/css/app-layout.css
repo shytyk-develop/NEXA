@@ -73,70 +73,80 @@
 }
 
 /* Wallpaper packs — solid stage fills + dock accent + aside fill */
-#page-chat[data-wallpaper="mist"] {
+#page-chat[data-wallpaper="mist"],
+html[data-wallpaper="mist"] {
     --dock-accent: #afb9cd;
     --nexa-aside-fill: #161920;
     --chat-stage-fill: #10131a;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="ember"] {
+#page-chat[data-wallpaper="ember"],
+html[data-wallpaper="ember"] {
     --dock-accent: #e6a56e;
     --nexa-aside-fill: #1a1412;
     --chat-stage-fill: #120e0c;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="aurora"] {
+#page-chat[data-wallpaper="aurora"],
+html[data-wallpaper="aurora"] {
     --dock-accent: #aa9beb;
     --nexa-aside-fill: #10161c;
     --chat-stage-fill: #0b1118;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="tide"] {
+#page-chat[data-wallpaper="tide"],
+html[data-wallpaper="tide"] {
     --dock-accent: #64c3f0;
     --nexa-aside-fill: #0a141c;
     --chat-stage-fill: #071018;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="sage"] {
+#page-chat[data-wallpaper="sage"],
+html[data-wallpaper="sage"] {
     --dock-accent: #8cb996;
     --nexa-aside-fill: #101612;
     --chat-stage-fill: #0c1210;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="cobalt"] {
+#page-chat[data-wallpaper="cobalt"],
+html[data-wallpaper="cobalt"] {
     --dock-accent: #789be6;
     --nexa-aside-fill: #0c101a;
     --chat-stage-fill: #080c16;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="rose"] {
+#page-chat[data-wallpaper="rose"],
+html[data-wallpaper="rose"] {
     --dock-accent: #eba0b4;
     --nexa-aside-fill: #181014;
     --chat-stage-fill: #120c10;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="dusk"] {
+#page-chat[data-wallpaper="dusk"],
+html[data-wallpaper="dusk"] {
     --dock-accent: #b9a0e6;
     --nexa-aside-fill: #14101c;
     --chat-stage-fill: #0e0c16;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="graphite"] {
+#page-chat[data-wallpaper="graphite"],
+html[data-wallpaper="graphite"] {
     --dock-accent: #b9bec8;
     --nexa-aside-fill: #16171a;
     --chat-stage-fill: #101114;
     --chat-wallpaper: var(--chat-stage-fill);
 }
 
-#page-chat[data-wallpaper="void"] {
+#page-chat[data-wallpaper="void"],
+html[data-wallpaper="void"] {
     --dock-accent: #9196a5;
     --nexa-aside-fill: #0c0c0e;
     --chat-stage-fill: #000000;
@@ -144,7 +154,8 @@
 }
 
 /* Wallpaper dim — driven by --dim-intensity (0–100) */
-#page-chat[data-wallpaper-dim] {
+#page-chat[data-wallpaper-dim],
+html[data-wallpaper-dim] {
     --wallpaper-dim: calc(var(--dim-intensity) * 1%);
     --wallpaper-vignette-core: calc(40% + var(--dim-intensity) * 0.5%);
     --wallpaper-vignette-mid: calc(15% + var(--dim-intensity) * 0.4%);
@@ -1357,6 +1368,7 @@
     min-width: 0;
     position: relative;
     width: 100%;
+    z-index: 10;
 }
 
 #page-chat .chat-main > .input-bar .composer-input-dock .composer-scale-wrap {
@@ -1391,6 +1403,59 @@
         padding 0.4s var(--composer-spring),
         margin 0.4s var(--composer-spring);
     z-index: 0;
+}
+
+/* Folder paste shelf — left peek under composer (transform scale keeps layout box large;
+   tuck via negative margin into the folder visual at bottom-left of that box) */
+#page-chat .chat-main > .input-bar .paste-attachments--folder {
+    align-items: flex-end;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    justify-content: flex-start;
+    margin: 0 auto -58px;
+    max-height: none;
+    max-width: 560px;
+    overflow: visible;
+    padding: 44px 0 0 16px;
+    pointer-events: none;
+    transition:
+        padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    z-index: 1;
+}
+
+#page-chat .chat-main > .input-bar .paste-attachments--folder.is-empty:not(:has(.paste-folder)) {
+    margin-bottom: 0;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+#page-chat .chat-main > .input-bar .paste-folder {
+    margin: 0;
+    pointer-events: auto;
+    position: relative;
+    transform-origin: bottom left;
+    z-index: 1;
+    will-change: transform, opacity;
+}
+
+#page-chat .chat-main > .input-bar .paste-folder.is-disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+/* Composer must paint above the folder so the tuck is visible */
+#page-chat .chat-main > .input-bar .composer-input-dock,
+#page-chat .chat-main > .input-bar .composer-scale-wrap,
+#page-chat .chat-main > .input-bar .composer-shell {
+    position: relative;
+    z-index: 10;
 }
 
 #page-chat .chat-main > .input-bar .paste-attachments.hidden {
@@ -1594,26 +1659,25 @@
 #page-chat .composer-shell #messageInput.is-ghost {
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-4px) scale(0.95);
+    transform: none;
 }
 
 #page-chat .composer-shell #messageInput.is-visible {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
 }
 
 #page-chat .composer-shell #messageInput::placeholder {
-    color: color-mix(in srgb, #fff 42%, transparent);
-    font-weight: 500;
-    opacity: 1;
+    color: transparent;
+    opacity: 0;
 }
 
 #page-chat .composer-shell #messageInput.is-scrolling {
     overflow-y: auto;
 }
 
-/* PromptInput-style: pinned to top so crossfade stays in place while shell grows */
-#page-chat .composer-collapsed-label {
+/* Single placeholder — travels between collapsed row and expanded field baseline */
+#page-chat .composer-placeholder {
     align-items: center;
     background: transparent;
     border: 0;
@@ -1635,20 +1699,31 @@
     right: 0;
     text-align: left;
     top: 0;
-    transform: translateY(0) scale(1);
-    transform-origin: left center;
+    transform: none;
+    transform-origin: left top;
     z-index: 2;
 }
 
-#page-chat .composer-collapsed-label.is-hidden {
-    opacity: 0;
+/* Match #messageInput first-line padding so open/close is one continuous move */
+#page-chat .composer-placeholder.is-expanded {
+    align-items: flex-start;
+    height: 50px;
+    padding: 12px 48px 0 16px;
     pointer-events: none;
-    transform: translateY(4px) scale(1.05);
 }
 
-#page-chat .composer-collapsed-label:disabled {
+#page-chat .composer-placeholder.is-occupied {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#page-chat .composer-placeholder:disabled {
     cursor: default;
     opacity: 0.45;
+}
+
+#page-chat .composer-placeholder.is-occupied:disabled {
+    opacity: 0;
 }
 
 #page-chat .composer-field__fade {
@@ -1782,9 +1857,9 @@
     position: absolute;
     right: 44px;
     transition:
-        opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        filter 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
 }
 
@@ -1857,9 +1932,9 @@
     transition:
         background 0.28s ease,
         color 0.28s ease,
-        bottom 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 28px !important;
     z-index: 10;
 }
@@ -1894,7 +1969,7 @@
     height: 14px;
     transform: rotate(40deg);
     transform-origin: center;
-    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 14px;
 }
 
@@ -1924,7 +1999,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     #page-chat .composer-shell,
-    #page-chat .composer-collapsed-label,
+    #page-chat .composer-placeholder,
     #page-chat .composer-shell #messageInput,
     #page-chat .composer-actions,
     #page-chat .composer-send-btn,
@@ -3328,6 +3403,7 @@
     padding: var(--space-5) var(--layout-gutter-x)
         calc(var(--composer-float-offset, 96px) + var(--space-6));
     position: relative;
+    /* No padding-bottom transition — clearance tracks the shell every frame */
     transition:
         opacity 0.2s ease,
         transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
@@ -3341,8 +3417,11 @@
     --messages-blur-top-h: calc(
         var(--nexa-surface-inset, 20px) + var(--layout-header-h, 58px) + var(--messages-blur-fade)
     );
-    /* Start a bit above the floating input-row (bar bottom + row + gap + fade) */
-    --messages-blur-bottom-h: calc(18px + 52px + 14px + var(--messages-blur-fade));
+    /* Tracks floating composer via --messages-composer-blur-h (synced from JS) */
+    --messages-blur-bottom-h: var(
+        --messages-composer-blur-h,
+        calc(18px + 52px + 14px + var(--messages-blur-fade))
+    );
     flex: 1;
     min-height: 0;
     width: 100%;
@@ -3525,7 +3604,7 @@
     gap: 12px;
     height: auto !important;
     justify-content: space-between;
-    margin-bottom: 18px;
+    margin-bottom: 28px;
     padding: 0 16px;
 }
 
@@ -3559,11 +3638,6 @@
 #page-chat .sidebar-brand__mark {
     flex-shrink: 0;
     height: 26px;
-}
-
-#page-chat .sidebar-brand__reload {
-    flex-shrink: 0;
-    margin-left: auto;
 }
 
 #page-chat .contact-search-wrap {
@@ -3927,7 +4001,7 @@
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.08em;
-    margin: 10px 8px 6px;
+    margin: 14px 8px 6px;
     text-transform: uppercase;
 }
 
@@ -4622,8 +4696,16 @@
 }
 
 #page-chat #usersList .contact-list-highlight {
-    background: var(--selection-pill-fill);
-    border: 1px solid var(--selection-pill-stroke);
+    background: color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 55%,
+        transparent
+    );
+    border: 1px solid color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 45%,
+        transparent
+    );
     border-radius: 4px;
     pointer-events: none;
     position: absolute;

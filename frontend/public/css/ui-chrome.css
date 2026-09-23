@@ -414,9 +414,7 @@
 
 .paste-editor-overlay {
     align-items: center;
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    background: rgba(0, 0, 0, 0.58);
+    background: transparent;
     bottom: 0;
     display: flex;
     justify-content: center;
@@ -428,36 +426,62 @@
     z-index: 80;
 }
 
+/* Scrim fades in — keeps blur compiled while opacity animates (no pop/flicker) */
+.paste-editor-overlay::before {
+    backdrop-filter: blur(13px) saturate(135%);
+    -webkit-backdrop-filter: blur(13px) saturate(135%);
+    background: rgba(0, 0, 0, 0.44);
+    content: '';
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 0;
+}
+
+.paste-editor-overlay.is-open::before {
+    opacity: 1;
+}
+
 .paste-editor-overlay.hidden {
     display: none;
 }
 
 .paste-editor-panel {
-    background: color-mix(in srgb, #0c0c0c 92%, transparent);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--nexa-aside-fill, #161920);
+    border: 1px solid color-mix(in srgb, #fff 6%, transparent);
     border-radius: 24px;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        0 1px 0 rgba(255, 255, 255, 0.03),
-        0 28px 80px rgba(0, 0, 0, 0.55);
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 28px 80px rgba(0, 0, 0, 0.35);
     display: flex;
     flex-direction: column;
-    max-height: min(720px, calc(100vh - 56px));
-    max-width: 560px;
-    padding: 22px 22px 18px;
-    width: min(560px, 100%);
+    max-height: min(920px, calc(100vh - 28px));
+    max-width: 640px;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+    transform: translateY(8px);
+    transition:
+        opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    width: min(640px, 100%);
+    z-index: 1;
 }
 
-.paste-editor-overlay:not(.hidden) .paste-editor-panel {
-    animation: paste-editor-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+.paste-editor-overlay.is-open .paste-editor-panel {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .paste-editor-head {
     align-items: flex-start;
     display: flex;
-    gap: 16px;
+    gap: 12px;
     justify-content: space-between;
-    padding: 2px 4px 16px;
+    padding: 14px 16px 10px;
 }
 
 .paste-editor-head-copy {
@@ -501,28 +525,32 @@
 }
 
 .paste-editor-body {
-    background: #080808;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    flex: 1 1 auto;
     min-height: 0;
     position: relative;
+    width: 100%;
 }
 
 .paste-editor-textarea {
     background: transparent;
     border: none;
     box-shadow: none;
+    box-sizing: border-box;
     color: #e4e4e7;
+    display: block;
     font-family: var(--f-ui);
     font-size: 15px;
     font-weight: 400;
-    height: 320px;
+    height: 520px;
     letter-spacing: -0.011em;
     line-height: 1.7;
-    max-height: 46vh;
+    max-height: 68vh;
     outline: none;
-    padding: 18px 18px 28px;
+    padding: 18px 20px 24px;
     resize: none;
     scrollbar-width: thin;
     width: 100%;
@@ -536,30 +564,60 @@
 }
 
 .paste-editor-fade {
+    left: 0;
+    opacity: 0;
+    overflow: hidden;
     pointer-events: none;
     position: absolute;
-    left: 0;
     right: 0;
-    transition: opacity 0.2s ease;
-    opacity: 0;
+    transition: opacity 0.18s ease;
+    z-index: 2;
+}
+
+/* Hide fades while the panel entrance animates — avoids compositor freeze/banding */
+.paste-editor-overlay.is-entering .paste-editor-fade {
+    opacity: 0 !important;
+    transition: none;
 }
 
 .paste-editor-fade--top {
-    background: linear-gradient(to bottom, #080808, transparent);
-    border-radius: 16px 16px 0 0;
-    height: 28px;
+    height: 52px;
     top: 0;
 }
 
 .paste-editor-fade--bottom {
-    background: linear-gradient(to top, #080808 18%, transparent);
-    border-radius: 0 0 16px 16px;
     bottom: 0;
-    height: 56px;
+    height: 64px;
 }
 
-.paste-editor-overlay.has-overflow-top .paste-editor-fade--top,
-.paste-editor-overlay.has-overflow-bottom .paste-editor-fade--bottom {
+.paste-editor-fade__tint {
+    inset: 0;
+    position: absolute;
+}
+
+/* Seamless ease into solid panel color */
+.paste-editor-fade--top .paste-editor-fade__tint {
+    background: linear-gradient(
+        to bottom,
+        var(--nexa-aside-fill, #161920) 0%,
+        color-mix(in srgb, var(--nexa-aside-fill, #161920) 72%, transparent) 42%,
+        color-mix(in srgb, var(--nexa-aside-fill, #161920) 28%, transparent) 78%,
+        transparent 100%
+    );
+}
+
+.paste-editor-fade--bottom .paste-editor-fade__tint {
+    background: linear-gradient(
+        to top,
+        var(--nexa-aside-fill, #161920) 0%,
+        color-mix(in srgb, var(--nexa-aside-fill, #161920) 72%, transparent) 42%,
+        color-mix(in srgb, var(--nexa-aside-fill, #161920) 28%, transparent) 78%,
+        transparent 100%
+    );
+}
+
+.paste-editor-overlay.has-overflow-top:not(.is-entering) .paste-editor-fade--top,
+.paste-editor-overlay.has-overflow-bottom:not(.is-entering) .paste-editor-fade--bottom {
     opacity: 1;
 }
 
@@ -567,7 +625,7 @@
     align-items: center;
     display: flex;
     justify-content: space-between;
-    padding: 16px 4px 2px;
+    padding: 12px 16px 14px;
 }
 
 .paste-editor-remove {
@@ -616,20 +674,10 @@
     opacity: 0.4;
 }
 
-@keyframes paste-editor-in {
-    from {
-        opacity: 0;
-        transform: translateY(8px) scale(0.985);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .paste-editor-overlay:not(.hidden) .paste-editor-panel {
-        animation: none;
+    .paste-editor-overlay::before,
+    .paste-editor-panel {
+        transition: none !important;
     }
 }
 
@@ -645,7 +693,7 @@
         max-height: none;
         max-width: none;
         min-height: min(780px, calc(100dvh - 32px));
-        padding: 18px 16px 14px;
+        padding: 0;
         width: 100%;
     }
 

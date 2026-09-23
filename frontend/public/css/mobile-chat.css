@@ -119,10 +119,6 @@
     width: 100%;
 }
 
-#page-chat.is-viewport-app-stack #uiRefreshUsersBtn {
-    display: none;
-}
-
 #page-chat.is-viewport-app-stack.is-contact-search-open .contact-search-trigger {
     display: none;
 }

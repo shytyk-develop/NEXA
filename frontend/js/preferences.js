@@ -121,6 +121,9 @@ export function applyPreferences(preferences) {
         pageChat.dataset.wallpaper = prefs.wallpaper;
         pageChat.dataset.wallpaperDim = String(prefs.wallpaperDim);
     }
+    // Overlays (paste editor, etc.) live outside #page-chat — mirror theme tokens on <html>
+    document.documentElement.dataset.wallpaper = prefs.wallpaper;
+    document.documentElement.dataset.wallpaperDim = String(prefs.wallpaperDim);
 }
 
 export function updatePreference(preferences, key, value) {

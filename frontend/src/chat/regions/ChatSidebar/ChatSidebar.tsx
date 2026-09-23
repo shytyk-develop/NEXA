@@ -180,9 +180,6 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
                 <aside id="uiSidebar" className="sidebar" aria-label="Navigation and contacts">
                     <header className="sidebar-brand">
                         <img src="/brand/nexa-logo.svg" alt="NEXA" className="sidebar-brand__mark" width={1007} height={176} decoding="async" />
-                        <button id="uiRefreshUsersBtn" className="mini-icon-btn sidebar-brand__reload" type="button" title="Refresh contacts" aria-label="Refresh contacts">
-                            <Icon href="#icon-refresh" />
-                        </button>
                     </header>
 
                     <section className="sidebar-chats" aria-label="Chats">
@@ -890,7 +887,7 @@ function ContactList({ children }: { children: ReactNode }) {
                     {highlightBounds ? (
                         <motion.div
                             key="contact-highlight"
-                            className="contact-list-highlight z-0 rounded-[4px] border border-accent/45 bg-accent/55"
+                            className="contact-list-highlight"
                             aria-hidden="true"
                             style={{ position: 'absolute', pointerEvents: 'none', zIndex: 0 }}
                             initial={{

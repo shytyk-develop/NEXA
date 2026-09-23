@@ -3,20 +3,36 @@ import {
     type KeyboardEvent,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { peekChatEngine } from '../../engine/chatEngine';
 import { Icon } from '../../components/Icon';
+import { PasteFolder } from '@/components/ui/paste-folder';
 import { cn } from '@/lib/utils';
+import {
+    derivePasteTitle,
+    openPasteAttachment,
+    subscribePasteAttachments,
+} from '../../../../js/smartPaste.js';
+import { syncComposerClearance } from '../../../../js/ui.js';
+
+type PasteAttachment = {
+    id: string;
+    content: string;
+    title?: string;
+    label?: string;
+};
 
 const EMOJIS = ['😀', '🚀', '🔥', '✨', '❤️', '👍', '🤔', '🎉'] as const;
 
-/** Smooth open/close — no bounce/overshoot */
-const OPEN_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
-const OPEN_TRANSITION = `max-width 0.35s ${OPEN_EASING}, height 0.35s ${OPEN_EASING}`;
-const SMOOTH_HEIGHT_TRANSITION = `max-width 0.35s ${OPEN_EASING}, height 0.15s ease-out`;
+/** One shared open path — width + height lockstep (no up-then-out) */
+const OPEN_DURATION = '0.32s';
+const OPEN_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+const OPEN_TRANSITION = `max-width ${OPEN_DURATION} ${OPEN_EASING}, height ${OPEN_DURATION} ${OPEN_EASING}`;
+const SMOOTH_HEIGHT_TRANSITION = `height 0.16s ${OPEN_EASING}`;
 const SPRING_SOFT = { type: 'spring' as const, stiffness: 380, damping: 40, mass: 0.9 };
 
 const COLLAPSED_MAX_WIDTH = 320;
@@ -34,10 +50,12 @@ type ChatInputProps = {
     onSend?: () => void;
 };
 
-function readComposerFlags(input: HTMLTextAreaElement | null) {
-    const paste = document.getElementById('uiPasteAttachments');
+function readComposerFlags(
+    input: HTMLTextAreaElement | null,
+    pasteCount = 0,
+) {
     const reply = document.getElementById('uiReplyBar');
-    const hasPaste = Boolean(paste && !paste.classList.contains('hidden') && paste.childElementCount > 0);
+    const hasPaste = pasteCount > 0;
     const hasReply = Boolean(reply?.dataset.active === 'true');
     const hasText = Boolean(input?.value.trim());
     const disabled = Boolean(input?.disabled);
@@ -54,12 +72,24 @@ export function ChatInput({ onSend }: ChatInputProps) {
     const [expanded, setExpanded] = useState(false);
     const [isSmoothResize, setIsSmoothResize] = useState(false);
     const [hasContent, setHasContent] = useState(false);
+    const [hasText, setHasText] = useState(false);
     const [hasShelf, setHasShelf] = useState(false);
     const [hasReply, setHasReply] = useState(false);
     const [disabled, setDisabled] = useState(true);
     const [textareaHeight, setTextareaHeight] = useState(TEXTAREA_MIN);
     const [scrolling, setScrolling] = useState(false);
     const [editorTall, setEditorTall] = useState(false);
+    const [pasteAttachments, setPasteAttachments] = useState<PasteAttachment[]>([]);
+
+    const pasteDocs = useMemo(
+        () =>
+            pasteAttachments.map((item) => ({
+                id: item.id,
+                title: item.title ?? derivePasteTitle(item.content),
+                text: item.content.trim(),
+            })),
+        [pasteAttachments],
+    );
 
     const textareaMax = editorTall ? TEXTAREA_MAX_TALL : TEXTAREA_MAX;
     // Derive shell from textarea in the same render — never grow the shell alone.
@@ -69,13 +99,14 @@ export function ChatInput({ onSend }: ChatInputProps) {
     const showTallToggle = expanded && (scrolling || editorTall || textareaHeight >= TEXTAREA_MAX - 2);
 
     const syncMeta = useCallback(() => {
-        const flags = readComposerFlags(inputRef.current);
+        const flags = readComposerFlags(inputRef.current, pasteAttachments.length);
         setHasContent(flags.hasContent);
+        setHasText(flags.hasText);
         setHasShelf(flags.hasPaste);
         setHasReply(flags.hasReply);
         setDisabled(flags.disabled);
         return flags;
-    }, []);
+    }, [pasteAttachments.length]);
 
     const updateFades = useCallback(() => {
         const el = inputRef.current;
@@ -206,6 +237,34 @@ export function ChatInput({ onSend }: ChatInputProps) {
         syncMeta();
     }, [syncMeta]);
 
+    // Keep thread padding clear of the floating composer as it opens/grows.
+    useEffect(() => {
+        const bar = document.querySelector('#page-chat .chat-main > .input-bar');
+        if (!bar) {
+            syncComposerClearance({ followBottom: false });
+            return;
+        }
+        let raf = 0;
+        const sync = () => {
+            if (raf) return;
+            raf = window.requestAnimationFrame(() => {
+                raf = 0;
+                syncComposerClearance({ followBottom: true });
+            });
+        };
+        sync();
+        const ro = new ResizeObserver(sync);
+        ro.observe(bar);
+        const dock = bar.querySelector('.composer-input-dock');
+        if (dock) ro.observe(dock);
+        window.addEventListener('resize', sync);
+        return () => {
+            if (raf) window.cancelAnimationFrame(raf);
+            ro.disconnect();
+            window.removeEventListener('resize', sync);
+        };
+    }, [expanded, shellHeight, hasShelf, hasReply]);
+
     // Fade overlays track the textarea viewport; clear when collapsed.
     useEffect(() => {
         if (!expanded) {
@@ -240,6 +299,22 @@ export function ChatInput({ onSend }: ChatInputProps) {
     }, [expanded]);
 
     useEffect(() => {
+        return subscribePasteAttachments((items) => {
+            setPasteAttachments(items as PasteAttachment[]);
+            const has = items.length > 0;
+            setHasShelf(has);
+            if (has) {
+                setIsSmoothResize(false);
+                setExpanded(true);
+            }
+            const flags = readComposerFlags(inputRef.current, items.length);
+            setHasContent(flags.hasContent);
+            setHasText(flags.hasText);
+            setDisabled(flags.disabled);
+        });
+    }, []);
+
+    useEffect(() => {
         const input = inputRef.current;
         if (!input) return;
 
@@ -247,7 +322,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
             setIsSmoothResize(true);
             syncMeta();
             measureTextarea();
-            if (!input.disabled && (input.value.trim() || readComposerFlags(input).hasPaste)) {
+            if (!input.disabled && (input.value.trim() || readComposerFlags(input, pasteAttachments.length).hasPaste)) {
                 setIsSmoothResize(false);
                 setExpanded(true);
             }
@@ -283,18 +358,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
         });
         attrObserver.observe(input, { attributes: true, attributeFilter: ['disabled'] });
 
-        const paste = document.getElementById('uiPasteAttachments');
         const reply = document.getElementById('uiReplyBar');
-        const shelfObserver = new MutationObserver(() => {
-            const flags = syncMeta();
-            if (flags.hasPaste || flags.hasReply) {
-                setIsSmoothResize(false);
-                setExpanded(true);
-            }
-            measureTextarea();
-        });
-        if (paste) shelfObserver.observe(paste, { attributes: true, childList: true, subtree: true });
-
         const onReplyEvent = (event: Event) => {
             const active = Boolean((event as CustomEvent<{ active?: boolean }>).detail?.active);
             setHasReply(active);
@@ -316,9 +380,8 @@ export function ChatInput({ onSend }: ChatInputProps) {
             input.removeEventListener('nexa:composer-open', onOpenEvent);
             reply?.removeEventListener('nexa:composer-reply', onReplyEvent);
             attrObserver.disconnect();
-            shelfObserver.disconnect();
         };
-    }, [syncMeta, measureTextarea, openComposer]);
+    }, [syncMeta, measureTextarea, openComposer, pasteAttachments.length]);
 
     const onBlurCapture = (event: FocusEvent<HTMLDivElement>) => {
         if (dockRef.current?.contains(event.relatedTarget as Node)) return;
@@ -345,26 +408,42 @@ export function ChatInput({ onSend }: ChatInputProps) {
     };
 
     const canSend = hasContent && !disabled;
+    const showPasteFolder = hasShelf && expanded;
     const dockMaxWidth = expanded ? EXPANDED_MAX_WIDTH : COLLAPSED_MAX_WIDTH;
     const dockTransition = isSmoothResize
-        ? 'max-width 0.15s ease-out'
-        : `max-width 0.35s ${OPEN_EASING}`;
+        ? 'none'
+        : `max-width ${OPEN_DURATION} ${OPEN_EASING}`;
     const shellTransition = isSmoothResize ? SMOOTH_HEIGHT_TRANSITION : OPEN_TRANSITION;
     const fieldTransition = isSmoothResize
-        ? 'height 0.15s ease-out'
-        : `opacity 0.3s ease-out, transform 0.3s ease-out, height 0.35s ${OPEN_EASING}`;
+        ? `height 0.14s ${OPEN_EASING}`
+        : `opacity ${OPEN_DURATION} ${OPEN_EASING}, height ${OPEN_DURATION} ${OPEN_EASING}`;
     const labelTransition = isSmoothResize
-        ? 'none'
-        : `opacity 0.3s ease-out, transform 0.35s ${OPEN_EASING}`;
+        ? 'opacity 0.12s ease-out'
+        : `opacity ${OPEN_DURATION} ${OPEN_EASING}, padding ${OPEN_DURATION} ${OPEN_EASING}, height ${OPEN_DURATION} ${OPEN_EASING}`;
 
     return (
         <div className="input-bar">
             <div
                 id="uiPasteAttachments"
-                className={cn('paste-attachments', !hasShelf && 'hidden')}
-                aria-hidden={hasShelf ? 'false' : 'true'}
+                className={cn(
+                    'paste-attachments paste-attachments--folder',
+                    !showPasteFolder && 'is-empty',
+                )}
+                data-paste-host="react"
+                aria-hidden={showPasteFolder ? 'false' : 'true'}
                 aria-label="Pasted text"
-            />
+            >
+                <AnimatePresence mode="sync" initial={false}>
+                    {showPasteFolder ? (
+                        <PasteFolder
+                            key="paste-folder"
+                            documents={pasteDocs}
+                            disabled={disabled}
+                            onOpenDocument={(id) => openPasteAttachment(id)}
+                        />
+                    ) : null}
+                </AnimatePresence>
+            </div>
             <span id="uiDraftStatus" className="composer-status hidden" aria-live="polite" />
 
             <div className="composer-input-dock" ref={dockRef} onBlur={onBlurCapture}>
@@ -425,7 +504,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
                         <textarea
                             ref={inputRef}
                             id="messageInput"
-                            placeholder="Type a message…"
+                            placeholder=""
                             rows={1}
                             maxLength={2000}
                             disabled
@@ -459,7 +538,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
                                 height: BOTTOM_FADE_H,
                                 transition: isSmoothResize
                                     ? 'top 0.15s ease-out, opacity 0.15s ease'
-                                    : `top 0.35s ${OPEN_EASING}, opacity 0.15s ease`,
+                                    : `top ${OPEN_DURATION} ${OPEN_EASING}, opacity 0.15s ease`,
                             }}
                         />
 
@@ -500,14 +579,23 @@ export function ChatInput({ onSend }: ChatInputProps) {
 
                         <button
                             type="button"
-                            className={cn('composer-collapsed-label', expanded && 'is-hidden')}
+                            className={cn(
+                                'composer-placeholder',
+                                expanded && 'is-expanded',
+                                expanded && hasText && 'is-occupied',
+                            )}
                             style={{ transition: labelTransition }}
                             onClick={(event) => {
                                 event.stopPropagation();
+                                if (expanded) {
+                                    inputRef.current?.focus({ preventScroll: true });
+                                    return;
+                                }
                                 openComposer();
                             }}
                             disabled={disabled}
-                            aria-label="Open message composer"
+                            aria-hidden={expanded && hasText ? true : undefined}
+                            aria-label={expanded ? undefined : 'Open message composer'}
                             tabIndex={expanded ? -1 : 0}
                         >
                             Type a message…

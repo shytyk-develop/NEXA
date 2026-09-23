@@ -15,6 +15,10 @@ let openId = null;
 let onChange = null;
 /** @type {(() => void) | null} */
 let onUiRefresh = null;
+/** @type {((id: string) => void) | null} */
+let openEditorFn = null;
+/** @type {Set<(items: PasteAttachment[]) => void>} */
+const subscribers = new Set();
 
 /**
  * @param {string} content
@@ -37,7 +41,7 @@ export function derivePasteTitle(content, fallback = 'Pasted text') {
 /**
  * @param {string} content
  */
-function derivePastePreview(content) {
+export function derivePastePreview(content) {
     const lines = content.split('\n');
     let i = 0;
     while (i < lines.length && !lines[i].trim()) i += 1;
@@ -77,6 +81,25 @@ export function getPasteAttachmentsLength() {
 }
 
 /**
+ * @param {(items: PasteAttachment[]) => void} listener
+ */
+export function subscribePasteAttachments(listener) {
+    subscribers.add(listener);
+    listener(getPasteAttachments());
+    return () => {
+        subscribers.delete(listener);
+    };
+}
+
+/**
+ * Open the paste editor dialog for an attachment id.
+ * @param {string} id
+ */
+export function openPasteAttachment(id) {
+    openEditorFn?.(id);
+}
+
+/**
  * Merge inline composer text with paste attachments for send.
  * @param {string} text
  */
@@ -98,6 +121,14 @@ export function setPasteAttachmentsChangeHandler(handler) {
 function notifyChange() {
     onUiRefresh?.();
     onChange?.();
+    const snapshot = getPasteAttachments();
+    subscribers.forEach((fn) => {
+        try {
+            fn(snapshot);
+        } catch (err) {
+            console.warn('paste subscriber failed:', err);
+        }
+    });
 }
 
 /**
@@ -153,7 +184,17 @@ function escapeHtml(value) {
 export function renderPasteAttachmentCards(listEl, opts = {}) {
     if (!listEl) return;
     const disabled = Boolean(opts.disabled);
-    if (!attachments.length) {
+    const has = attachments.length > 0;
+
+    // React host owns the shelf UI — only sync visibility attrs.
+    if (listEl.dataset.pasteHost === 'react') {
+        listEl.classList.toggle('is-empty', !has);
+        listEl.classList.remove('hidden');
+        listEl.setAttribute('aria-hidden', has ? 'false' : 'true');
+        return;
+    }
+
+    if (!has) {
         listEl.innerHTML = '';
         listEl.classList.add('hidden');
         listEl.setAttribute('aria-hidden', 'true');
@@ -217,32 +258,57 @@ export function initSmartPasteUi(els) {
         dialogEl.classList.toggle('has-overflow-bottom', bottom);
     };
 
+    let closeTimer = 0;
+
     const closeEditor = () => {
         openId = null;
-        if (dialogEl) {
+        if (!dialogEl) return;
+        window.clearTimeout(closeTimer);
+        dialogEl.classList.remove('is-open', 'is-entering', 'has-overflow-top', 'has-overflow-bottom');
+        const finish = () => {
             dialogEl.classList.add('hidden');
             dialogEl.setAttribute('aria-hidden', 'true');
+        };
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            finish();
+            return;
         }
+        closeTimer = window.setTimeout(finish, 320);
     };
 
     const openEditor = (id) => {
         const item = attachments.find((a) => a.id === id);
         if (!item || !dialogEl || !textareaEl) return;
         openId = id;
+        window.clearTimeout(closeTimer);
         if (titleEl) titleEl.textContent = item.label ?? 'Pasted text';
         textareaEl.value = item.content;
         textareaEl.readOnly = false;
         if (countEl) countEl.textContent = formatCount(item.content.length);
         if (saveBtn) saveBtn.disabled = !item.content.trim();
+        dialogEl.classList.remove('has-overflow-top', 'has-overflow-bottom', 'is-open');
+        dialogEl.classList.add('is-entering');
         dialogEl.classList.remove('hidden');
         dialogEl.setAttribute('aria-hidden', 'false');
-        requestAnimationFrame(() => {
-            textareaEl.focus();
-            textareaEl.setSelectionRange(0, 0);
-            textareaEl.scrollTop = 0;
+
+        const revealFades = () => {
+            dialogEl.classList.remove('is-entering');
             syncOverflow();
+        };
+
+        // Paint closed opacity first, then open — smooth scrim + panel
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                dialogEl.classList.add('is-open');
+                textareaEl.focus();
+                textareaEl.setSelectionRange(0, 0);
+                textareaEl.scrollTop = 0;
+                window.setTimeout(revealFades, 340);
+            });
         });
     };
+
+    openEditorFn = openEditor;
 
     const refresh = () => {
         renderPasteAttachmentCards(listEl, { disabled: isDisabled() });
@@ -308,7 +374,6 @@ export function initSmartPasteUi(els) {
         }
     });
 
-    // Expose refresh for host (disabled state / force re-render)
     return {
         refresh,
         closeEditor,

@@ -25,6 +25,7 @@ import {
     clearComposer,
     insertAtCursor,
     scrollMessagesToBottom,
+    syncComposerClearance,
     openChatMenu,
     openComposerMenu,
     openSettingsMenu,
@@ -190,6 +191,11 @@ let routerReady = false;
 let messageSearchTimer = null;
 let saveChatHistoryTimer = null;
 let realtime = null;
+/** Quiet sidebar chat list sync — backup to realtime, avoids hammering /api/chats */
+const SIDEBAR_CHATS_POLL_MS = 90_000;
+let sidebarChatsPollTimer = null;
+let sidebarChatsLoadPromise = null;
+let sidebarChatsLastFetchedAt = 0;
 let state = {
     myUsername: null,
     myKeys: null,
@@ -935,6 +941,7 @@ initMessageContextMenu((row) => {
 });
 initMessageActions();
 initJumpToBottom();
+syncComposerClearance({ followBottom: false });
 }
 
 let loginUiMounted = false;
@@ -1169,33 +1176,66 @@ function showAuthMessage(text, isError) {
 
 async function loadSidebarChats() {
     if (!state.token || !state.myUsername) return;
+    if (sidebarChatsLoadPromise) return sidebarChatsLoadPromise;
 
-    try {
-        const chats = await getChats(state.token, 50);
-        state.sidebarChats = chats.map((chat) => {
-            const history = state.chatHistory?.[chat.username] || [];
-            const last = [...history].reverse().find((m) => m?.text && !m.deleted);
-            return {
-                ...chat,
-                last_message_preview: last?.text || chat.last_message_preview || '',
-            };
-        });
-        ingestUserRecords(chats);
-        chats.forEach(chat => {
-            state.usersDirectory[chat.username] = chat.public_key;
-            if (chat.unread_count != null) {
-                state.unreadCounts[chat.username] = chat.unread_count;
-            }
-        });
-        engine.setSidebarLoading(false);
-        await maybeSeedMockChats();
-        renderSidebar();
-    } catch (err) {
-        console.error("Sidebar sync failed:", err);
-        engine.setSidebarLoading(false);
-        await maybeSeedMockChats();
-        renderSidebar();
+    sidebarChatsLoadPromise = (async () => {
+        try {
+            const chats = await getChats(state.token, 50);
+            state.sidebarChats = chats.map((chat) => {
+                const history = state.chatHistory?.[chat.username] || [];
+                const last = [...history].reverse().find((m) => m?.text && !m.deleted);
+                return {
+                    ...chat,
+                    last_message_preview: last?.text || chat.last_message_preview || '',
+                };
+            });
+            ingestUserRecords(chats);
+            chats.forEach(chat => {
+                state.usersDirectory[chat.username] = chat.public_key;
+                if (chat.unread_count != null) {
+                    state.unreadCounts[chat.username] = chat.unread_count;
+                }
+            });
+            engine.setSidebarLoading(false);
+            await maybeSeedMockChats();
+            renderSidebar();
+            sidebarChatsLastFetchedAt = Date.now();
+        } catch (err) {
+            console.error("Sidebar sync failed:", err);
+            engine.setSidebarLoading(false);
+            await maybeSeedMockChats();
+            renderSidebar();
+        } finally {
+            sidebarChatsLoadPromise = null;
+        }
+    })();
+
+    return sidebarChatsLoadPromise;
+}
+
+function onSidebarChatsVisibility() {
+    if (document.visibilityState !== 'visible') return;
+    if (!state.token || !state.myUsername) return;
+    if (Date.now() - sidebarChatsLastFetchedAt < SIDEBAR_CHATS_POLL_MS / 2) return;
+    void loadSidebarChats();
+}
+
+function startSidebarChatsPoll() {
+    stopSidebarChatsPoll();
+    sidebarChatsPollTimer = window.setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        if (!state.token || !state.myUsername) return;
+        void loadSidebarChats();
+    }, SIDEBAR_CHATS_POLL_MS);
+    document.addEventListener('visibilitychange', onSidebarChatsVisibility);
+}
+
+function stopSidebarChatsPoll() {
+    if (sidebarChatsPollTimer != null) {
+        window.clearInterval(sidebarChatsPollTimer);
+        sidebarChatsPollTimer = null;
     }
+    document.removeEventListener('visibilitychange', onSidebarChatsVisibility);
 }
 
 async function maybeSeedMockChats() {
@@ -1274,6 +1314,7 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
     engine.setSidebarLoading(true);
     showContactsLoading();
     loadSidebarChats();
+    startSidebarChatsPoll();
     ensureRealtime();
     void registerCurrentDevice();
     void ensureDesktopNotifications();
@@ -1479,7 +1520,6 @@ function attachChatRuntime() {
         updateComposerMeta(getComposerValue());
     });
 
-    DOM.refreshUsersBtn?.addEventListener('click', refreshUsersDirectory);
     DOM.focusContactsBtn?.addEventListener('click', focusContactSearch);
     DOM.focusComposerBtn?.addEventListener('click', focusComposer);
     DOM.railChats?.addEventListener('click', (event) => {
@@ -1665,11 +1705,6 @@ function bindPreferenceToggle(control, key) {
 function notificationPermissionDeniedMessage() {
     if (!('Notification' in window)) return 'This browser does not support desktop notifications.';
     return 'Notifications are blocked. Allow them in the browser settings, then try again.';
-}
-
-function refreshUsersDirectory() {
-    loadSidebarChats();
-    showToast("Conversations refreshed.", "success");
 }
 
 function persistCurrentDraft() {
@@ -1882,6 +1917,8 @@ function handleLogout() {
     closeOverlaysForRouteChange();
     showChatsView();
     void unmountChatPage();
+    stopSidebarChatsPoll();
+    sidebarChatsLastFetchedAt = 0;
 
     if (socketConnection) {
         socketConnection.close();
