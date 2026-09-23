@@ -1797,9 +1797,16 @@ html[data-wallpaper-dim] {
     transition:
         opacity 0.2s ease,
         transform 0.2s ease,
-        color 0.2s ease;
+        color 0.2s ease,
+        top 0.2s ease;
     width: 24px;
     z-index: 6;
+}
+
+/* When × is hidden (draft/paste present), tall toggle takes the top-right slot */
+#page-chat .composer-tall-toggle.is-top-slot {
+    top: 10px;
+    z-index: 7;
 }
 
 #page-chat .composer-tall-toggle.is-visible {

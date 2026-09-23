@@ -190,12 +190,14 @@ export function ChatInput({ onSend }: ChatInputProps) {
     }, []);
 
     const closeComposer = useCallback(() => {
-        // Only the explicit close control collapses the field (keeps draft text).
+        // Stay open while there's typed text or paste attachments.
+        const flags = readComposerFlags(inputRef.current, pasteAttachments.length);
+        if (flags.hasContent) return;
         setIsSmoothResize(false);
         setEditorTall(false);
         setExpanded(false);
         inputRef.current?.blur();
-    }, []);
+    }, [pasteAttachments.length]);
 
     const toggleEditorTall = useCallback(() => {
         setIsSmoothResize(false);
@@ -408,6 +410,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
     };
 
     const canSend = hasContent && !disabled;
+    const canCollapse = expanded && !hasContent;
     const showPasteFolder = hasShelf && expanded;
     const dockMaxWidth = expanded ? EXPANDED_MAX_WIDTH : COLLAPSED_MAX_WIDTH;
     const dockTransition = isSmoothResize
@@ -544,10 +547,10 @@ export function ChatInput({ onSend }: ChatInputProps) {
 
                         <button
                             type="button"
-                            className={cn('composer-close-btn', expanded && 'is-visible')}
+                            className={cn('composer-close-btn', canCollapse && 'is-visible')}
                             title="Close composer"
                             aria-label="Close message composer"
-                            tabIndex={expanded ? 0 : -1}
+                            tabIndex={canCollapse ? 0 : -1}
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -562,6 +565,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
                             className={cn(
                                 'composer-tall-toggle',
                                 showTallToggle && 'is-visible',
+                                !canCollapse && 'is-top-slot',
                                 editorTall && 'is-tall',
                             )}
                             title={editorTall ? 'Shrink editor' : 'Expand editor'}
