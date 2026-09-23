@@ -83,7 +83,7 @@ export function initProfileSettings(context) {
 }
 
 export function queueProfilePanelRefresh(section = 'identity') {
-    pendingProfileSection = section;
+    pendingProfileSection = section || 'identity';
     requestAnimationFrame(() => {
         requestAnimationFrame(() => onProfilePanelOpen());
     });
@@ -203,8 +203,8 @@ export function onProfilePanelOpen() {
     draftProfile = loadProfile(username);
     avatarPreviewUrl = draftProfile.avatarDataUrl;
     const section = pendingProfileSection || 'identity';
-    pendingProfileSection = 'identity';
     setSection(section);
+    pendingProfileSection = 'identity';
     hydrateIdentity(username);
     void hydrateSecurity();
     hydratePrivacy();

@@ -23,6 +23,12 @@ import { ExpandableTabs, type ExpandableTabItem } from '../../components/Expanda
 import { Icon } from '../../components/Icon';
 import { FileTree, FileTreeItem, FileTreeList } from '@/components/ui/file-tree';
 import { ScrollBlur } from '@/components/ui/scroll-blur';
+import {
+    openAppSettings,
+    openProfile,
+    showChatsView,
+} from '../../../../js/ui.js';
+import { closeComposeSearch } from '../../../../js/composeSearch.js';
 
 type HighlightBounds = {
     top: number;
@@ -1057,7 +1063,15 @@ const SidebarDock = memo(function SidebarDock({
                 onChange={(index) => {
                     if (index == null) return;
                     const tab = DOCK_TABS[index];
-                    if (tab && 'action' in tab && tab.action) onOpenSpotlight?.();
+                    if (!tab) return;
+                    if ('action' in tab && tab.action) {
+                        onOpenSpotlight?.();
+                        return;
+                    }
+                    closeComposeSearch({ immediate: true });
+                    if (tab.rail === 'chats') showChatsView();
+                    else if (tab.rail === 'identity') openProfile('identity');
+                    else if (tab.rail === 'settings') openAppSettings('appearance');
                 }}
             />
         </div>

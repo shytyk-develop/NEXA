@@ -2639,7 +2639,7 @@ html[data-wallpaper-dim] {
 
 /* Inner group: w-full flex items-center justify-end + blob */
 #page-chat .compose-spotlight__shell {
-    align-items: flex-start;
+    align-items: center;
     display: flex;
     gap: 0;
     justify-content: flex-end;
@@ -2996,6 +2996,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .compose-react-shortcut {
+    align-items: center;
     background: var(--spotlight-glass);
     backdrop-filter: blur(36px) saturate(180%);
     -webkit-backdrop-filter: blur(36px) saturate(180%);
@@ -3004,8 +3005,10 @@ html[data-wallpaper-dim] {
     box-shadow: var(--glass-inset-highlight);
     color: var(--spotlight-ink);
     cursor: pointer;
+    display: flex;
     flex: 0 0 auto;
     height: var(--spotlight-h);
+    justify-content: center;
     min-width: 0;
     overflow: hidden;
     position: relative;
@@ -3024,9 +3027,10 @@ html[data-wallpaper-dim] {
     border-radius: 999px;
     color: inherit;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     height: var(--spotlight-h);
     justify-content: center;
+    line-height: 0;
     opacity: 0.38;
     padding: 0;
     position: relative;
@@ -3040,32 +3044,43 @@ html[data-wallpaper-dim] {
     outline: none;
 }
 
+/* Soft active mark — quiet ring, no fill */
 #page-chat .compose-react-shortcut-active {
-    background: rgb(0 0 0 / 0.18);
+    background: transparent;
     border-radius: inherit;
-    box-shadow:
-        inset 0 0 0 1px rgb(255 255 255 / 0.12),
-        inset 0 1px 0 rgb(255 255 255 / 0.04);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #fff 28%, transparent);
     inset: 0;
     pointer-events: none;
     position: absolute;
 }
 
 #page-chat .compose-react-shortcut.is-active {
-    background: color-mix(in srgb, #000 12%, var(--spotlight-glass));
-    border-color: color-mix(in srgb, #fff 8%, var(--spotlight-glass-stroke));
+    background: var(--spotlight-glass);
+    border-color: color-mix(in srgb, #fff 22%, var(--spotlight-glass-stroke));
+    box-shadow: none;
 }
 
 #page-chat .compose-react-shortcut-button.is-active,
 #page-chat .compose-react-shortcut-button.is-active:hover,
 #page-chat .compose-react-shortcut-button.is-active:focus-visible {
-    color: #e4e4e7;
-    opacity: 0.9;
+    color: var(--spotlight-ink);
+    opacity: 0.88;
 }
 
 #page-chat .compose-react-shortcut-icon {
+    align-items: center;
+    display: inline-flex;
+    height: var(--spotlight-icon);
+    justify-content: center;
+    line-height: 0;
     position: relative;
+    width: var(--spotlight-icon);
     z-index: 1;
+}
+
+#page-chat .compose-react-shortcut-icon svg {
+    display: block;
+    flex-shrink: 0;
 }
 
 #page-chat .compose-react-shortcut-button.is-close {
