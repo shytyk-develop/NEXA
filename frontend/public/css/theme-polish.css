@@ -84,23 +84,20 @@
 
 /* ─── Inputs (composer, search) ─── */
 .contact-search-input,
-.message-search-panel input,
-#messageInput {
+.message-search-panel input {
     background: var(--input-fill);
     border-color: var(--input-border);
     box-shadow: var(--input-shadow);
 }
 
 .contact-search-input:hover,
-.message-search-panel input:hover,
-#messageInput:hover:not(:disabled) {
+.message-search-panel input:hover {
     background: var(--input-fill-hover);
     border-color: var(--input-border-hover);
 }
 
 .contact-search-input:focus,
-.message-search-panel input:focus,
-#messageInput:focus {
+.message-search-panel input:focus {
     background: var(--input-fill-focus);
     border-color: var(--accent);
     box-shadow: var(--input-shadow-focus);

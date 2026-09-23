@@ -144,7 +144,7 @@ const CHAT_DOM_KEYS = new Set([
     'chatWithTitle', 'chatHeaderAvatar', 'chatWelcome',
     'focusContactsBtn', 'focusComposerBtn', 'shortcutsBtn', 'profileBtn',
     'settingsBtn', 'refreshUsersBtn', 'copyUsernameBtn',
-    'chatSearchBtn', 'scrollBottomBtn', 'chatMenuBtn',
+    'chatSearchBtn', 'scrollBottomBtn',
     'messageSearch', 'messageSearchInput', 'messageSearchCount',
     'attachBtn', 'fileInput', 'composerMenuBtn', 'emojiBtn', 'emojiPicker',
     'pasteAttachments', 'replyBar', 'replyLabel', 'replyPreview', 'replyCloseBtn',
@@ -162,6 +162,7 @@ export const DOM = {};
 
 let sidebarRenderer = 'dom';
 let chatChromeBound = false;
+let asideChromeDelegated = false;
 
 export function setSidebarRenderer(mode) {
     sidebarRenderer = mode === 'react' ? 'react' : 'dom';
@@ -174,7 +175,11 @@ export function bindChatDom(root = document, { requireChat = false } = {}) {
     for (const [key, id] of Object.entries(DOM_IDS)) {
         const el = lookup(id);
         DOM[key] = el;
-        const optional = key.startsWith('btn') || key.startsWith('pref') || key === 'glassSlider' || key === 'settingsGlassValue';
+        const optional = key.startsWith('btn')
+            || key.startsWith('pref')
+            || key === 'glassSlider'
+            || key === 'settingsGlassValue'
+            || key === 'chatMenuBtn';
         if (!el && !optional && (requireChat || !CHAT_DOM_KEYS.has(key))) {
             missing.push(key);
         }
@@ -192,7 +197,14 @@ export function rebindChatDom(root = document) {
 
 function initChatChromeOnce() {
     if (chatChromeBound) return;
-    if (!DOM.messagesDiv || !DOM.sidebar) return;
+    // Soft-bind: rebind may miss optional chrome after remounts; still wire toggles.
+    try {
+        rebindChatDom(DOM.pageChat || document);
+    } catch (err) {
+        console.warn('bindChatDom soft failure:', err);
+    }
+    if (!DOM.messagesDiv && !document.getElementById('messages')) return;
+    if (!DOM.sidebar && !document.getElementById('uiSidebar')) return;
     chatChromeBound = true;
     ensureChromeFrost();
     initSmartPasteUi({
@@ -214,12 +226,18 @@ function initChatChromeOnce() {
 }
 
 export function bindChatChrome(root = document) {
-    rebindChatDom(root);
+    try {
+        rebindChatDom(root);
+    } catch (err) {
+        console.warn('rebindChatDom failed:', err);
+        bindChatDom(root, { requireChat: false });
+    }
     initChatChromeOnce();
 }
 
 export function resetChatChromeBind() {
     chatChromeBound = false;
+    asideChromeDelegated = false;
 }
 
 bindChatDom(document, { requireChat: false });
@@ -256,9 +274,11 @@ function readPeerPanelCollapsed() {
 }
 
 function setPeerPanelCollapsed(collapsed, persist = true) {
-    const panel = DOM.peerPanel;
-    const btn = DOM.peerPanelToggle;
+    const panel = document.getElementById('uiPeerPanel') || DOM.peerPanel;
+    const btn = document.getElementById('uiPeerPanelToggle') || DOM.peerPanelToggle;
     if (!panel) return;
+    DOM.peerPanel = panel;
+    DOM.peerPanelToggle = btn;
     panel.classList.toggle('is-collapsed', collapsed);
     DOM.pageChat?.classList.toggle('is-peer-collapsed', collapsed);
     if (btn) {
@@ -311,21 +331,63 @@ let sidebarViewportForced = false;
 let sidebarNarrowUserExpand = false;
 
 function initPeerPanelCollapse() {
-    const panel = DOM.peerPanel;
-    const btn = DOM.peerPanelToggle;
+    const panel = document.getElementById('uiPeerPanel') || DOM.peerPanel;
     if (!panel) return;
+    DOM.peerPanel = panel;
     panel.classList.add('no-motion');
     setPeerPanelCollapsed(
         isAppStackViewport() || isPeerCollapseViewport() || readPeerPanelCollapsed(),
         false,
     );
     requestAnimationFrame(() => panel.classList.remove('no-motion'));
-    btn?.addEventListener('click', () => {
-        const next = !panel.classList.contains('is-collapsed');
-        peerViewportForced = false;
-        peerNarrowUserExpand = isPeerCollapseViewport() && !next;
-        setPeerPanelCollapsed(next);
-    });
+
+    const page = DOM.pageChat || document.getElementById('page-chat');
+    if (page && !asideChromeDelegated) {
+        asideChromeDelegated = true;
+        page.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+
+            if (target.closest('#uiSidebarToggle')) {
+                const sidebar = document.getElementById('uiSidebar') || DOM.sidebar;
+                if (!sidebar) return;
+                const next = !sidebar.classList.contains('is-collapsed');
+                sidebarViewportForced = false;
+                sidebarNarrowUserExpand = isSidebarNarrowViewport() && !next;
+                setSidebarCollapsed(next);
+                return;
+            }
+
+            if (target.closest('#uiPeerPanelToggle')) {
+                const peer = document.getElementById('uiPeerPanel') || DOM.peerPanel;
+                if (!peer) return;
+                const next = !peer.classList.contains('is-collapsed');
+                peerViewportForced = false;
+                peerNarrowUserExpand = isPeerCollapseViewport() && !next;
+                setPeerPanelCollapsed(next);
+                return;
+            }
+
+            if (target.closest('#uiRailChats')) {
+                showChatsView();
+                return;
+            }
+            if (target.closest('#uiRailProfile')) {
+                openProfile('identity');
+                return;
+            }
+            if (target.closest('#uiDockSettings')) {
+                openAppSettings('appearance');
+                return;
+            }
+
+            if (target.closest('#uiChatSearchBtn')) {
+                event.stopPropagation();
+                toggleMessageSearch();
+            }
+        });
+    }
+
     DOM.peerPanelScrim?.addEventListener('click', () => {
         peerNarrowUserExpand = false;
         setPeerPanelCollapsed(true);
@@ -334,8 +396,9 @@ function initPeerPanelCollapse() {
         closePeerProfileSheet();
     });
 
-    const headerLeft = DOM.chatWithTitle?.closest('.header-left');
-    if (headerLeft) {
+    const headerLeft = document.getElementById('chatWithTitle')?.closest('.chat-header-peer__identity');
+    if (headerLeft && !headerLeft.dataset.peerSheetBound) {
+        headerLeft.dataset.peerSheetBound = '1';
         headerLeft.setAttribute('role', 'button');
         headerLeft.setAttribute('tabindex', '0');
         headerLeft.setAttribute('aria-label', 'Open contact profile');
@@ -377,9 +440,11 @@ function syncRailCollapsedTools() {
 }
 
 function setSidebarCollapsed(collapsed, persist = true) {
-    const sidebar = DOM.sidebar;
-    const btn = DOM.sidebarToggle;
+    const sidebar = document.getElementById('uiSidebar') || DOM.sidebar;
+    const btn = document.getElementById('uiSidebarToggle') || DOM.sidebarToggle;
     if (!sidebar) return;
+    DOM.sidebar = sidebar;
+    DOM.sidebarToggle = btn;
     sidebar.classList.toggle('is-collapsed', collapsed);
     DOM.pageChat?.classList.toggle('is-sidebar-collapsed', collapsed);
     if (btn) {
@@ -589,10 +654,10 @@ function syncViewportPanels() {
 }
 
 function initSidebarCollapse() {
-    const sidebar = DOM.sidebar;
+    const sidebar = document.getElementById('uiSidebar') || DOM.sidebar;
     const capsule = document.getElementById('uiLeftCapsule');
-    const btn = DOM.sidebarToggle;
-    if (!sidebar || !btn) return;
+    if (!sidebar) return;
+    DOM.sidebar = sidebar;
     const collapsed = readSidebarCollapsed();
     if (collapsed) {
         sidebar.classList.add('no-motion');
@@ -605,12 +670,6 @@ function initSidebarCollapse() {
     } else {
         syncRailCollapsedTools();
     }
-    btn.addEventListener('click', () => {
-        const next = !sidebar.classList.contains('is-collapsed');
-        sidebarViewportForced = false;
-        sidebarNarrowUserExpand = isSidebarNarrowViewport() && !next;
-        setSidebarCollapsed(next);
-    });
     const expand = () => {
         sidebarViewportForced = false;
         sidebarNarrowUserExpand = isSidebarNarrowViewport();
@@ -837,20 +896,34 @@ export function hideChatWelcome() {
 
 export function activateChatPanel(username) {
     closeOverlaysForChatChange();
+    try {
+        rebindChatDom(DOM.pageChat || document);
+    } catch (err) {
+        console.warn('activateChatPanel rebind failed:', err);
+        bindChatDom(DOM.pageChat || document, { requireChat: false });
+    }
     refreshChatHeaderIdentity(username);
-    const headerLeft = DOM.chatWithTitle?.closest('.header-left');
+    const headerLeft = document.getElementById('chatWithTitle')?.closest('.chat-header-peer__identity');
     if (headerLeft) {
         headerLeft.classList.remove('hidden');
         headerLeft.setAttribute('aria-hidden', 'false');
     }
-    DOM.messageInput.disabled = false;
-    DOM.sendBtn.disabled = false;
+    const input = document.getElementById('messageInput') || DOM.messageInput;
+    const send = document.getElementById('sendBtn') || DOM.sendBtn;
+    if (input) {
+        DOM.messageInput = input;
+        input.disabled = false;
+    }
+    if (send) {
+        DOM.sendBtn = send;
+        send.disabled = false;
+    }
     setChatToolsEnabled(true);
     setActiveContact(username);
     refreshChatHeaderSubtitle();
     refreshPeerPanel(username);
     autoResizeComposer();
-    focusComposer();
+    // Keep the capsule collapsed on chat enter — open only on explicit compose.
     if (isAppStackViewport()) setChatDrillLevel('chat');
     closeContactSearch();
 }
@@ -862,7 +935,7 @@ export function resetChatPanel() {
         DOM.chatHeaderAvatar.replaceChildren();
         DOM.chatHeaderAvatar.classList.remove('has-photo');
     }
-    const headerLeft = DOM.chatWithTitle?.closest('.header-left');
+    const headerLeft = DOM.chatWithTitle?.closest('.chat-header-peer__identity');
     if (headerLeft) {
         headerLeft.classList.add('hidden');
         headerLeft.setAttribute('aria-hidden', 'true');
@@ -912,16 +985,7 @@ function ensureChromeFrost() {
     const root = DOM.messagesDiv;
     if (!root) return;
 
-    const makeFrost = (side) => {
-        const el = document.createElement('div');
-        el.className = `chat-chrome-frost chat-chrome-frost--${side}`;
-        el.setAttribute('aria-hidden', 'true');
-        for (let i = 0; i < 4; i += 1) {
-            el.append(document.createElement('span'));
-        }
-        return el;
-    };
-
+    // Edge fade is owned by React ScrollBlur — only keep scroll pads here.
     const makePad = (side) => {
         const el = document.createElement('div');
         el.className = `chat-chrome-pad chat-chrome-pad--${side}`;
@@ -929,27 +993,15 @@ function ensureChromeFrost() {
         return el;
     };
 
-    const syncLayers = (el) => {
-        while (el.childElementCount < 4) el.append(document.createElement('span'));
-        while (el.childElementCount > 4) el.lastElementChild.remove();
-    };
+    root.querySelectorAll(':scope > .chat-chrome-frost').forEach((el) => el.remove());
 
-    let top = root.querySelector(':scope > .chat-chrome-frost--top');
-    let bottom = root.querySelector(':scope > .chat-chrome-frost--bottom');
     let padTop = root.querySelector(':scope > .chat-chrome-pad--top');
     let padBottom = root.querySelector(':scope > .chat-chrome-pad--bottom');
-    if (!top) top = makeFrost('top');
-    if (!bottom) bottom = makeFrost('bottom');
     if (!padTop) padTop = makePad('top');
     if (!padBottom) padBottom = makePad('bottom');
-    syncLayers(top);
-    syncLayers(bottom);
 
-    // Order: frost-top, pad-top, messages..., pad-bottom, frost-bottom
-    if (root.firstElementChild !== top) root.insertBefore(top, root.firstChild);
-    if (top.nextElementSibling !== padTop) root.insertBefore(padTop, top.nextSibling);
-    if (root.lastElementChild !== bottom) root.appendChild(bottom);
-    if (bottom.previousElementSibling !== padBottom) root.insertBefore(padBottom, bottom);
+    if (root.firstElementChild !== padTop) root.insertBefore(padTop, root.firstChild);
+    if (root.lastElementChild !== padBottom) root.appendChild(padBottom);
 }
 
 const SCROLL_NEAR_BOTTOM_PX = 96;
@@ -959,8 +1011,14 @@ const JUMP_SCROLL_MS = 90;
 let jumpToBottomInit = false;
 let jumpScrollFrame = 0;
 
+/** Scroll port for #messages — ScrollBlur viewport when present. */
+export function getMessagesScrollEl(root = DOM.messagesDiv) {
+    if (!root) return null;
+    return root.closest('[data-slot="scroll-blur-viewport"]') || root;
+}
+
 export function isMessagesNearBottom(threshold = SCROLL_NEAR_BOTTOM_PX) {
-    const el = DOM.messagesDiv;
+    const el = getMessagesScrollEl();
     if (!el) return true;
     return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
 }
@@ -977,11 +1035,12 @@ export function syncJumpToBottomButton() {
 }
 
 function setMessagesScrollBehavior(value) {
-    if (DOM.messagesDiv) DOM.messagesDiv.style.scrollBehavior = value;
+    const el = getMessagesScrollEl();
+    if (el) el.style.scrollBehavior = value;
 }
 
 function animateMessagesToBottom(duration = JUMP_SCROLL_MS) {
-    const el = DOM.messagesDiv;
+    const el = getMessagesScrollEl();
     if (!el) return;
 
     const from = el.scrollTop;
@@ -1026,8 +1085,10 @@ export function scrollMessagesToBottom(options = {}) {
         return;
     }
 
+    const el = getMessagesScrollEl();
+    if (!el) return;
     setMessagesScrollBehavior('auto');
-    DOM.messagesDiv.scrollTop = DOM.messagesDiv.scrollHeight;
+    el.scrollTop = el.scrollHeight;
     setMessagesScrollBehavior('');
     syncJumpToBottomButton();
 }
@@ -1035,7 +1096,8 @@ export function scrollMessagesToBottom(options = {}) {
 export function initJumpToBottom() {
     if (jumpToBottomInit || !DOM.messagesDiv) return;
     jumpToBottomInit = true;
-    DOM.messagesDiv.addEventListener('scroll', syncJumpToBottomButton, { passive: true });
+    const scrollEl = getMessagesScrollEl();
+    scrollEl?.addEventListener('scroll', syncJumpToBottomButton, { passive: true });
     syncJumpToBottomButton();
 }
 
@@ -1789,12 +1851,25 @@ export function clearComposer() {
     setComposerValue('');
     clearPasteAttachments();
     autoResizeComposer();
-    focusComposer();
 }
 
-export function focusComposer() {
-    if (!DOM.messageInput.disabled) {
-        DOM.messageInput.focus();
+export function focusComposer(options = {}) {
+    const open = options?.open !== false;
+    const input = DOM.messageInput;
+    if (!input || input.disabled) return;
+
+    if (open) {
+        // Ask React composer to expand, then focus the field.
+        input.dispatchEvent(new CustomEvent('nexa:composer-open', { bubbles: true }));
+        requestAnimationFrame(() => {
+            if (!input.disabled) input.focus({ preventScroll: true });
+        });
+        return;
+    }
+
+    // Soft focus: only if the capsule is already open.
+    if (input.closest('.composer-shell')?.classList.contains('is-expanded')) {
+        input.focus({ preventScroll: true });
     }
 }
 
@@ -1819,20 +1894,10 @@ function initContactSearchSheet() {
 }
 
 export function autoResizeComposer() {
-    const minHeight = 40;
-    const maxHeight = 200;
     const input = DOM.messageInput;
     if (!input) return;
-    input.style.height = 'auto';
-    const scrollH = input.scrollHeight;
-    const nextHeight = Math.min(Math.max(scrollH, minHeight), maxHeight);
-    input.style.height = `${nextHeight}px`;
-    input.style.overflowY = scrollH > maxHeight ? 'auto' : 'hidden';
-
-    const row = input.closest('.input-row');
-    if (row) {
-        row.classList.toggle('is-composer-multiline', nextHeight > minHeight + 2);
-    }
+    /* Height is owned by ChatInput (PromptInput physics). Only notify React. */
+    input.dispatchEvent(new CustomEvent('nexa:composer-resize', { bubbles: true }));
 }
 
 export function updateComposerMeta(text) {
@@ -1927,30 +1992,46 @@ export function closeAllPopovers() {
 }
 
 export function openMessageSearch() {
-    const root = DOM.messageSearch;
-    const input = DOM.messageSearchInput;
-    const btn = DOM.chatSearchBtn;
+    try {
+        rebindChatDom(DOM.pageChat || document);
+    } catch {
+        bindChatDom(DOM.pageChat || document, { requireChat: false });
+    }
+    const root = document.getElementById('uiMessageSearch') || DOM.messageSearch;
+    const input = document.getElementById('uiMessageSearchInput') || DOM.messageSearchInput;
+    const btn = document.getElementById('uiChatSearchBtn') || DOM.chatSearchBtn;
+    DOM.messageSearch = root;
+    DOM.messageSearchInput = input;
+    DOM.chatSearchBtn = btn;
     if (!root || !input || btn?.disabled) return;
     root.classList.add('is-open');
-    const bar = root.querySelector('.expand-search__bar');
-    if (bar) bar.setAttribute('aria-hidden', 'false');
+    const field = root.querySelector('.chat-header-peer__search');
+    if (field) field.setAttribute('aria-hidden', 'false');
     if (btn) {
         btn.setAttribute('aria-expanded', 'true');
         btn.setAttribute('aria-label', 'Close search');
         btn.setAttribute('title', 'Close search');
+        btn.classList.add('is-open');
     }
     input.tabIndex = 0;
-    // Focus mid-expand so the caret doesn't fight the open animation.
     window.setTimeout(() => {
         if (!root.classList.contains('is-open')) return;
         input.focus({ preventScroll: true });
-    }, 160);
+    }, 260);
 }
 
 export function closeMessageSearch() {
-    const root = DOM.messageSearch;
-    const input = DOM.messageSearchInput;
-    const btn = DOM.chatSearchBtn;
+    try {
+        rebindChatDom(DOM.pageChat || document);
+    } catch {
+        bindChatDom(DOM.pageChat || document, { requireChat: false });
+    }
+    const root = document.getElementById('uiMessageSearch') || DOM.messageSearch;
+    const input = document.getElementById('uiMessageSearchInput') || DOM.messageSearchInput;
+    const btn = document.getElementById('uiChatSearchBtn') || DOM.chatSearchBtn;
+    DOM.messageSearch = root;
+    DOM.messageSearchInput = input;
+    DOM.chatSearchBtn = btn;
     if (input) {
         input.value = '';
         input.tabIndex = -1;
@@ -1959,17 +2040,19 @@ export function closeMessageSearch() {
     searchMessages('');
     if (!root) return;
     root.classList.remove('is-open');
-    const bar = root.querySelector('.expand-search__bar');
-    if (bar) bar.setAttribute('aria-hidden', 'true');
+    const field = root.querySelector('.chat-header-peer__search');
+    if (field) field.setAttribute('aria-hidden', 'true');
     if (btn) {
         btn.setAttribute('aria-expanded', 'false');
         btn.setAttribute('aria-label', 'Search messages');
         btn.setAttribute('title', 'Search messages');
+        btn.classList.remove('is-open');
     }
 }
 
 export function toggleMessageSearch() {
-    if (DOM.messageSearch?.classList.contains('is-open')) closeMessageSearch();
+    const root = document.getElementById('uiMessageSearch') || DOM.messageSearch;
+    if (root?.classList.contains('is-open')) closeMessageSearch();
     else openMessageSearch();
 }
 
@@ -2016,10 +2099,15 @@ export function searchMessages(query) {
 }
 
 document.addEventListener('mousedown', (event) => {
-    const root = DOM.messageSearch;
+    const root = document.getElementById('uiMessageSearch') || DOM.messageSearch;
     if (!root?.classList.contains('is-open')) return;
-    if (root.contains(event.target)) return;
-    if (DOM.messageSearchInput?.value.trim()) return;
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    // Search toggle lives outside #uiMessageSearch — let its click handler own open/close.
+    if (target instanceof Element && target.closest('#uiChatSearchBtn')) return;
+    if (root.contains(target)) return;
+    const input = document.getElementById('uiMessageSearchInput') || DOM.messageSearchInput;
+    if (input?.value.trim()) return;
     closeMessageSearch();
 });
 
@@ -2062,6 +2150,14 @@ function setAppView(view) {
     const isIdentity = view === 'identity';
     const isSettings = view === 'settings';
     const isProfileSurface = isIdentity || isSettings;
+
+    DOM.chatWorkspace = document.getElementById('uiChatWorkspace') || DOM.chatWorkspace;
+    DOM.sidebar = document.getElementById('uiSidebar') || DOM.sidebar;
+    DOM.profileNav = document.getElementById('uiProfileNav') || DOM.profileNav;
+    DOM.profilePanel = document.getElementById('uiProfilePanel') || DOM.profilePanel;
+    DOM.railChats = document.getElementById('uiRailChats') || DOM.railChats;
+    DOM.railProfile = document.getElementById('uiRailProfile') || DOM.railProfile;
+    DOM.dockSettings = document.getElementById('uiDockSettings') || DOM.dockSettings;
 
     if (DOM.chatWorkspace) {
         DOM.chatWorkspace.hidden = !isChats;
@@ -2154,7 +2250,7 @@ export function closeTransientUi() {
 export function openChatInfoPopover(partner, online, publicKeyJwk = null, extra = {}) {
     openPopoverOverlay({
         popoverId: 'chat-info',
-        anchor: DOM.chatMenuBtn,
+        anchor: DOM.messageSearch || DOM.chatSearchBtn,
         targetId: 'chat-info',
         payload: { partner, online, publicKeyJwk, ...extra },
     });

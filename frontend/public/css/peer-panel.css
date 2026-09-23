@@ -31,43 +31,32 @@
     z-index: 2;
 }
 
-/* Left edge stroke — solid at rest; notched only while the toggle is visible. */
-#page-chat .peer-panel:not(.is-collapsed) .peer-panel-shelf::before {
-    background: var(--nexa-aside-stroke, var(--capsule-stroke));
+/* Left edge — native rounded border on the shelf; dock eraser notches
+   only the toggle segment (shelf overflow would clip a shelf ::before). */
+#page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed))::before {
+    background: var(--nexa-aside-fill);
     content: "";
-    inset: 0 auto 0 0;
+    height: var(--nexa-aside-toggle-h, 88px);
+    left: 0;
+    opacity: 0;
     pointer-events: none;
     position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     width: 1px;
-    z-index: 2;
+    z-index: 3;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover .peer-panel-shelf::before,
-    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):has(.aside-toggle--end:focus-visible) .peer-panel-shelf::before {
-        background: linear-gradient(
-            to bottom,
-            var(--nexa-aside-stroke, var(--capsule-stroke)) 0,
-            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% - var(--nexa-aside-toggle-h) / 2),
-            transparent calc(50% - var(--nexa-aside-toggle-h) / 2),
-            transparent calc(50% + var(--nexa-aside-toggle-h) / 2),
-            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% + var(--nexa-aside-toggle-h) / 2),
-            var(--nexa-aside-stroke, var(--capsule-stroke)) 100%
-        );
+    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):hover::before,
+    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed)):has(.aside-toggle--end:focus-visible)::before {
+        opacity: 1;
     }
 }
 
 @media (hover: none) {
-    #page-chat .peer-panel:not(.is-collapsed) .peer-panel-shelf::before {
-        background: linear-gradient(
-            to bottom,
-            var(--nexa-aside-stroke, var(--capsule-stroke)) 0,
-            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% - var(--nexa-aside-toggle-h) / 2),
-            transparent calc(50% - var(--nexa-aside-toggle-h) / 2),
-            transparent calc(50% + var(--nexa-aside-toggle-h) / 2),
-            var(--nexa-aside-stroke, var(--capsule-stroke)) calc(50% + var(--nexa-aside-toggle-h) / 2),
-            var(--nexa-aside-stroke, var(--capsule-stroke)) 100%
-        );
+    #page-chat .peer-panel-dock:not(:has(.peer-panel.is-collapsed))::before {
+        opacity: 1;
     }
 }
 
@@ -81,12 +70,7 @@
     width: 0;
 }
 
-#page-chat .peer-panel.is-collapsed .peer-panel-shelf::before {
-    content: none;
-}
-
 #page-chat .peer-panel-shelf {
-    border-left-color: transparent;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -621,13 +605,31 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    position: relative;
+}
+
+.peer-options-highlight {
+    background: color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 55%,
+        transparent
+    );
+    border: 1px solid color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 45%,
+        transparent
+    );
+    border-radius: 4px;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
 }
 
 .peer-option {
     align-items: center;
     background: transparent;
     border: none;
-    border-radius: 10px;
+    border-radius: 4px;
     color: var(--text-secondary, #9a9a9a);
     cursor: pointer;
     display: flex;
@@ -639,8 +641,10 @@
     letter-spacing: -0.01em;
     margin: 0 -8px;
     padding: 10px 8px;
+    position: relative;
     text-align: left;
     width: calc(100% + 16px);
+    z-index: 1;
 }
 
 .peer-option .ui-icon {
@@ -648,17 +652,20 @@
     width: 16px;
 }
 
-.peer-option:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.04);
+.peer-option:hover:not(:disabled),
+.peer-option:focus-visible:not(:disabled) {
+    background: transparent;
     color: var(--text, #f4f4f5);
+    outline: none;
 }
 
 .peer-option--danger {
     color: #e05d5d;
 }
 
-.peer-option--danger:hover:not(:disabled) {
-    background: rgba(224, 93, 93, 0.08);
+.peer-option--danger:hover:not(:disabled),
+.peer-option--danger:focus-visible:not(:disabled) {
+    background: transparent;
     color: #f07171;
 }
 

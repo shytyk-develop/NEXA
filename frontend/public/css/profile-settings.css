@@ -7,7 +7,7 @@
     --settings-capsule-stroke: var(--capsule-stroke, var(--panel-glass-stroke));
     --settings-capsule-radius: var(--nexa-surface-radius, 22px);
     --settings-inner-fill: color-mix(in srgb, #fff 4.5%, transparent);
-    --settings-inner-stroke: color-mix(in srgb, #fff 5.5%, transparent);
+    --settings-inner-stroke: color-mix(in srgb, #fff 7%, var(--nexa-aside-fill, #161920));
     --control-glass: var(--settings-inner-fill);
     --control-glass-stroke: var(--settings-inner-stroke);
     --settings-glass-blur: none;
@@ -34,7 +34,7 @@
 
 #page-chat .profile-nav {
     background: transparent;
-    border-right: 1px solid var(--panel-glass-stroke, color-mix(in srgb, #fff 2.5%, transparent));
+    border-right: 1px solid var(--panel-glass-stroke, var(--capsule-stroke));
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -3044,71 +3044,43 @@
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="mist"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 70% 60% at 20% 30%, rgba(120, 130, 150, 0.28), transparent 60%),
-        radial-gradient(ellipse 55% 50% at 80% 70%, rgba(90, 100, 120, 0.22), transparent 55%),
-        linear-gradient(160deg, #12141a, #07080b 70%);
+    background: #10131a;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="ember"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 65% 55% at 70% 25%, rgba(160, 90, 50, 0.3), transparent 58%),
-        radial-gradient(ellipse 50% 45% at 20% 80%, rgba(90, 40, 30, 0.25), transparent 50%),
-        linear-gradient(165deg, #140e0c, #070504 72%);
+    background: #120e0c;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="aurora"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 60% 50% at 25% 20%, rgba(56, 189, 248, 0.22), transparent 55%),
-        radial-gradient(ellipse 55% 45% at 80% 75%, rgba(167, 139, 250, 0.2), transparent 52%),
-        linear-gradient(165deg, #0c1218, #06080c 72%);
+    background: #0b1118;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="tide"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 70% 55% at 15% 70%, rgba(37, 99, 235, 0.28), transparent 58%),
-        radial-gradient(ellipse 50% 40% at 85% 20%, rgba(14, 165, 233, 0.18), transparent 50%),
-        linear-gradient(170deg, #071018, #03060a 75%);
+    background: #071018;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="sage"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 65% 55% at 30% 25%, rgba(74, 122, 90, 0.26), transparent 58%),
-        radial-gradient(ellipse 50% 45% at 75% 80%, rgba(45, 80, 60, 0.22), transparent 52%),
-        linear-gradient(160deg, #0c1210, #050806 72%);
+    background: #0c1210;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="cobalt"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 55% 50% at 80% 30%, rgba(59, 90, 180, 0.3), transparent 55%),
-        radial-gradient(ellipse 60% 45% at 15% 85%, rgba(30, 50, 110, 0.24), transparent 50%),
-        linear-gradient(155deg, #080c16, #04050a 70%);
+    background: #080c16;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="rose"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 60% 50% at 70% 20%, rgba(190, 90, 120, 0.24), transparent 55%),
-        radial-gradient(ellipse 55% 45% at 20% 80%, rgba(120, 50, 70, 0.2), transparent 52%),
-        linear-gradient(165deg, #140c10, #080406 72%);
+    background: #120c10;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="dusk"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 65% 55% at 25% 35%, rgba(120, 80, 180, 0.26), transparent 58%),
-        radial-gradient(ellipse 50% 40% at 85% 70%, rgba(80, 50, 140, 0.22), transparent 50%),
-        linear-gradient(160deg, #100c18, #06040a 72%);
+    background: #0e0c16;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="graphite"] .appearance-preview__wallpaper {
-    background-image:
-        radial-gradient(ellipse 70% 60% at 40% 20%, rgba(140, 145, 155, 0.18), transparent 55%),
-        radial-gradient(ellipse 55% 50% at 70% 80%, rgba(90, 95, 105, 0.16), transparent 52%),
-        linear-gradient(155deg, #121316, #070708 70%);
+    background: #101114;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="void"] .appearance-preview__wallpaper {
-    background-image: none;
-    background-color: #000;
+    background: #000;
 }
 
 #page-chat .profile-workspace .appearance-preview__dim {
@@ -3665,63 +3637,44 @@
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--void {
-    background: #050505;
+    background: #000000;
     box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 4%, transparent);
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--mist {
-    background-image:
-        radial-gradient(ellipse 70% 60% at 20% 30%, rgba(120, 130, 150, 0.35), transparent 60%),
-        linear-gradient(160deg, #1a1d24, #090a0d);
+    background: #10131a;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--ember {
-    background-image:
-        radial-gradient(ellipse 65% 55% at 70% 25%, rgba(160, 90, 50, 0.4), transparent 58%),
-        linear-gradient(165deg, #241612, #090605);
+    background: #120e0c;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--aurora {
-    background-image:
-        radial-gradient(ellipse 60% 50% at 25% 20%, rgba(56, 189, 248, 0.35), transparent 55%),
-        radial-gradient(ellipse 55% 45% at 80% 75%, rgba(167, 139, 250, 0.28), transparent 52%),
-        linear-gradient(165deg, #101820, #070a0e);
+    background: #0b1118;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--tide {
-    background-image:
-        radial-gradient(ellipse 70% 55% at 15% 70%, rgba(37, 99, 235, 0.4), transparent 58%),
-        linear-gradient(170deg, #0b1622, #04080e);
+    background: #071018;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--sage {
-    background-image:
-        radial-gradient(ellipse 65% 55% at 30% 25%, rgba(74, 122, 90, 0.38), transparent 58%),
-        linear-gradient(160deg, #121a14, #060a07);
+    background: #0c1210;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--cobalt {
-    background-image:
-        radial-gradient(ellipse 55% 50% at 80% 30%, rgba(59, 90, 180, 0.42), transparent 55%),
-        linear-gradient(155deg, #0c1220, #05070e);
+    background: #080c16;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--rose {
-    background-image:
-        radial-gradient(ellipse 60% 50% at 70% 20%, rgba(190, 90, 120, 0.36), transparent 55%),
-        linear-gradient(165deg, #1c1216, #0a0508);
+    background: #120c10;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--dusk {
-    background-image:
-        radial-gradient(ellipse 65% 55% at 25% 35%, rgba(120, 80, 180, 0.38), transparent 58%),
-        linear-gradient(160deg, #16101f, #08060e);
+    background: #0e0c16;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--graphite {
-    background-image:
-        radial-gradient(ellipse 70% 60% at 40% 20%, rgba(140, 145, 155, 0.28), transparent 55%),
-        linear-gradient(155deg, #18191c, #09090a);
+    background: #101114;
 }
 
 #page-chat .profile-workspace .appearance-wallpaper-card__swatch--upload {

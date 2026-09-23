@@ -548,16 +548,31 @@ function findHistoryMessage(history: any[], message: any) {
 
 let engineSingleton: ChatEngine | null = null;
 
+const ENGINE_GLOBAL_KEY = '__nexaChatEngine';
+
+function readGlobalEngine(): ChatEngine | null {
+    const g = globalThis as typeof globalThis & { [ENGINE_GLOBAL_KEY]?: ChatEngine | null };
+    return g[ENGINE_GLOBAL_KEY] ?? null;
+}
+
+function writeGlobalEngine(engine: ChatEngine | null) {
+    const g = globalThis as typeof globalThis & { [ENGINE_GLOBAL_KEY]?: ChatEngine | null };
+    g[ENGINE_GLOBAL_KEY] = engine;
+    engineSingleton = engine;
+}
+
 export function createChatEngine(state: ChatState, deps: ChatEngineDeps) {
-    engineSingleton = new ChatEngine(state, deps);
-    return engineSingleton;
+    const engine = new ChatEngine(state, deps);
+    writeGlobalEngine(engine);
+    return engine;
 }
 
 export function getChatEngine() {
-    if (!engineSingleton) throw new Error('ChatEngine is not created yet');
-    return engineSingleton;
+    const engine = peekChatEngine();
+    if (!engine) throw new Error('ChatEngine is not created yet');
+    return engine;
 }
 
 export function peekChatEngine() {
-    return engineSingleton;
+    return readGlobalEngine() || engineSingleton;
 }

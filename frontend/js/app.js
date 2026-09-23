@@ -1407,7 +1407,6 @@ async function handleSendMessage() {
         clearComposer();
         setDraftStatus('Message queued. Waiting for database sync.');
     }
-    focusComposer();
 }
 
 window.handleSendMessage = handleSendMessage;

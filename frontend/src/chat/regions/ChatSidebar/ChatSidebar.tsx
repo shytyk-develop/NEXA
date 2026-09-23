@@ -32,6 +32,7 @@ type HighlightBounds = {
 };
 
 const ContactHighlightContext = createContext<((element: HTMLElement | null) => void) | null>(null);
+const LibraryHighlightContext = createContext<((element: HTMLElement | null) => void) | null>(null);
 
 type ChatSidebarProps = {
     onSelectChat?: (username: string) => void;
@@ -401,26 +402,28 @@ function SidebarLibrary({
     return (
         <div id="uiSidebarLibrary" className="sidebar-library">
             <p className="sidebar-library__kicker">Inbox</p>
-            <LibraryRow
-                label="Unread"
-                count={unreadCount}
-                active={active === 'unread'}
-                Icon={Bell}
-                onClick={() => onSelect(active === 'unread' ? 'all' : 'unread')}
-            />
-            <LibraryRow
-                label="All chats"
-                active={active === 'all'}
-                Icon={Inbox}
-                onClick={() => onSelect('all')}
-            />
-            <LibraryRow
-                label="Muted"
-                count={mutedCount}
-                active={active === 'muted'}
-                Icon={VolumeX}
-                onClick={() => onSelect(active === 'muted' ? 'all' : 'muted')}
-            />
+            <LibraryList>
+                <LibraryRow
+                    label="Unread"
+                    count={unreadCount}
+                    active={active === 'unread'}
+                    Icon={Bell}
+                    onClick={() => onSelect(active === 'unread' ? 'all' : 'unread')}
+                />
+                <LibraryRow
+                    label="All chats"
+                    active={active === 'all'}
+                    Icon={Inbox}
+                    onClick={() => onSelect('all')}
+                />
+                <LibraryRow
+                    label="Muted"
+                    count={mutedCount}
+                    active={active === 'muted'}
+                    Icon={VolumeX}
+                    onClick={() => onSelect(active === 'muted' ? 'all' : 'muted')}
+                />
+            </LibraryList>
 
             <p className="sidebar-library__kicker">Folders</p>
             <ScrollBlur
@@ -748,6 +751,68 @@ function FolderNameDraft({
     );
 }
 
+function LibraryList({ children }: { children: ReactNode }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
+    const reduceMotion = useReducedMotion() === true;
+
+    const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
+        const container = containerRef.current;
+        if (!(element && container)) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+
+        setHighlightBounds({
+            top: elementRect.top - containerRect.top + container.scrollTop,
+            left: elementRect.left - containerRect.left + container.scrollLeft,
+            width: elementRect.width,
+            height: elementRect.height,
+        });
+    }, []);
+
+    return (
+        <LibraryHighlightContext.Provider value={setHighlightFromElement}>
+            <div
+                ref={containerRef}
+                className="library-list"
+                onMouseLeave={() => setHighlightBounds(null)}
+            >
+                <AnimatePresence>
+                    {highlightBounds ? (
+                        <motion.div
+                            key="library-highlight"
+                            className="library-list-highlight"
+                            aria-hidden="true"
+                            initial={{
+                                opacity: 0,
+                                top: highlightBounds.top,
+                                left: highlightBounds.left,
+                                width: highlightBounds.width,
+                                height: highlightBounds.height,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                top: highlightBounds.top,
+                                left: highlightBounds.left,
+                                width: highlightBounds.width,
+                                height: highlightBounds.height,
+                            }}
+                            exit={{ opacity: 0 }}
+                            transition={
+                                reduceMotion
+                                    ? { duration: 0 }
+                                    : { type: 'spring', stiffness: 500, damping: 40 }
+                            }
+                        />
+                    ) : null}
+                </AnimatePresence>
+                {children}
+            </div>
+        </LibraryHighlightContext.Provider>
+    );
+}
+
 function LibraryRow({
     label,
     count,
@@ -765,12 +830,16 @@ function LibraryRow({
     open?: boolean;
     onClick: () => void;
 }) {
+    const setHighlightFromElement = useContext(LibraryHighlightContext);
+
     return (
         <button
             type="button"
             className={['library-row', active ? 'is-active' : ''].filter(Boolean).join(' ')}
             aria-expanded={expandable ? open : undefined}
             onClick={onClick}
+            onMouseEnter={(event) => setHighlightFromElement?.(event.currentTarget)}
+            onFocus={(event) => setHighlightFromElement?.(event.currentTarget)}
         >
             <span className="library-row__body">
                 <Icon size={16} strokeWidth={1.6} />

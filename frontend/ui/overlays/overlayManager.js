@@ -15,6 +15,11 @@ const DRAWER_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const DRAWER_GAP_PX = 10;
 const OPEN_GUARD_MS = 160;
 
+function getMessagesScrollEl(messagesEl = document.getElementById('messages')) {
+    if (!messagesEl) return null;
+    return messagesEl.closest('[data-slot="scroll-blur-viewport"]') || messagesEl;
+}
+
 /** @type {import('./overlayManager.js').OverlayState | null} */
 let overlayState = null;
 let generation = 0;
@@ -750,7 +755,8 @@ function playMessagesDrawerLiftOpen() {
     }
 
     if (prefersReducedDrawerMotion()) {
-        messagesEl.scrollTop += plan.liftPx;
+        const scrollEl = getMessagesScrollEl(messagesEl);
+        if (scrollEl) scrollEl.scrollTop += plan.liftPx;
         messagesEl.dataset.drawerLiftCommitted = '1';
         return;
     }
@@ -785,7 +791,8 @@ function beginMessagesDrawerLiftClose() {
 
     if (prefersReducedDrawerMotion()) {
         if (committed && liftPx > 0) {
-            messagesEl.scrollTop = Math.max(0, messagesEl.scrollTop - liftPx);
+            const scrollEl = getMessagesScrollEl(messagesEl);
+            if (scrollEl) scrollEl.scrollTop = Math.max(0, scrollEl.scrollTop - liftPx);
             messagesEl.dataset.drawerLiftCommitted = '0';
         }
         return;
@@ -826,9 +833,12 @@ function clearMessagesDrawerLift(messagesEl = document.getElementById('messages'
     messagesEl.style.transition = '';
 
     if (committed && liftPx > 0) {
-        messagesEl.style.scrollBehavior = 'auto';
-        messagesEl.scrollTop = Math.max(0, messagesEl.scrollTop - liftPx);
-        messagesEl.style.scrollBehavior = '';
+        const scrollEl = getMessagesScrollEl(messagesEl);
+        if (scrollEl) {
+            scrollEl.style.scrollBehavior = 'auto';
+            scrollEl.scrollTop = Math.max(0, scrollEl.scrollTop - liftPx);
+            scrollEl.style.scrollBehavior = '';
+        }
     }
 }
 

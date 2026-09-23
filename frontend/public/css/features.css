@@ -241,8 +241,8 @@
 }
 
 #messageInput {
-    align-content: center;
-    max-height: 132px;
+    align-content: start;
+    max-height: none;
     overflow-x: hidden;
     overflow-y: hidden;
     resize: none;

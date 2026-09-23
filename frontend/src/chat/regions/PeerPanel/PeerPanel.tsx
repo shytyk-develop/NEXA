@@ -1,5 +1,103 @@
+import { useCallback, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { AsideToggle } from '../../components/AsideToggle';
 import { Icon } from '../../components/Icon';
+
+type HighlightBounds = {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+};
+
+function PeerOptions() {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
+    const reduceMotion = useReducedMotion() === true;
+
+    const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
+        const container = containerRef.current;
+        if (!(element && container)) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+
+        setHighlightBounds({
+            top: elementRect.top - containerRect.top + container.scrollTop,
+            left: elementRect.left - containerRect.left + container.scrollLeft,
+            width: elementRect.width,
+            height: elementRect.height,
+        });
+    }, []);
+
+    const spring = reduceMotion
+        ? { duration: 0 }
+        : { type: 'spring' as const, stiffness: 500, damping: 40 };
+
+    return (
+        <div
+            ref={containerRef}
+            className="peer-options"
+            onMouseLeave={() => setHighlightBounds(null)}
+        >
+            <AnimatePresence>
+                {highlightBounds ? (
+                    <motion.div
+                        key="peer-options-highlight"
+                        className="peer-options-highlight"
+                        aria-hidden="true"
+                        initial={{
+                            opacity: 0,
+                            top: highlightBounds.top,
+                            left: highlightBounds.left,
+                            width: highlightBounds.width,
+                            height: highlightBounds.height,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            top: highlightBounds.top,
+                            left: highlightBounds.left,
+                            width: highlightBounds.width,
+                            height: highlightBounds.height,
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={spring}
+                    />
+                ) : null}
+            </AnimatePresence>
+            <button
+                id="uiPeerMuteBtn"
+                className="peer-option"
+                type="button"
+                onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
+                onFocus={(event) => setHighlightFromElement(event.currentTarget)}
+            >
+                <Icon href="#icon-bell-off" />
+                Mute
+            </button>
+            <button
+                id="uiPeerClearBtn"
+                className="peer-option peer-option--danger"
+                type="button"
+                onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
+                onFocus={(event) => setHighlightFromElement(event.currentTarget)}
+            >
+                <Icon href="#icon-trash" />
+                Clear chat history
+            </button>
+            <button
+                id="uiPeerDeleteBtn"
+                className="peer-option peer-option--danger"
+                type="button"
+                onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
+                onFocus={(event) => setHighlightFromElement(event.currentTarget)}
+            >
+                <Icon href="#icon-ban" />
+                Delete chat
+            </button>
+        </div>
+    );
+}
 
 export function PeerPanel() {
     return (
@@ -77,20 +175,7 @@ export function PeerPanel() {
                             </section>
                             <section className="peer-section peer-section--options" aria-labelledby="uiPeerOptionsTitle">
                                 <h3 id="uiPeerOptionsTitle" className="peer-section-title">Options</h3>
-                                <div className="peer-options">
-                                    <button id="uiPeerMuteBtn" className="peer-option" type="button">
-                                        <Icon href="#icon-bell-off" />
-                                        Mute
-                                    </button>
-                                    <button id="uiPeerClearBtn" className="peer-option peer-option--danger" type="button">
-                                        <Icon href="#icon-trash" />
-                                        Clear chat history
-                                    </button>
-                                    <button id="uiPeerDeleteBtn" className="peer-option peer-option--danger" type="button">
-                                        <Icon href="#icon-ban" />
-                                        Delete chat
-                                    </button>
-                                </div>
+                                <PeerOptions />
                             </section>
                         </div>
                     </div>

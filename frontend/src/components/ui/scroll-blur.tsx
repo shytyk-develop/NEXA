@@ -11,6 +11,10 @@ export interface ScrollBlurProps extends React.HTMLAttributes<HTMLDivElement> {
   axis?: ScrollBlurAxis;
   edgeSize?: number;
   snap?: ScrollSnap;
+  /** When false, keep the native/OS scrollbar visible. Default true. */
+  hideScrollbar?: boolean;
+  /** Keep edge fades visible even at scroll extents (e.g. under floating chrome). */
+  forceEdges?: boolean;
   viewportClassName?: string;
   contentClassName?: string;
   children: React.ReactNode;
@@ -20,6 +24,8 @@ export function ScrollBlur({
   axis = "vertical",
   edgeSize = 40,
   snap = "none",
+  hideScrollbar = true,
+  forceEdges = false,
   className,
   viewportClassName,
   contentClassName,
@@ -41,16 +47,34 @@ export function ScrollBlur({
     const viewport = viewportRef.current;
     if (!viewport) return;
 
-    const maxTop = viewport.scrollHeight - viewport.clientHeight;
-    const maxLeft = viewport.scrollWidth - viewport.clientWidth;
+    const maxTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    const maxLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    // Ignore subpixel / tiny overflow — otherwise the edge fade darkens the last row
+    // when content barely fits (common after folder collapse animations).
+    const overflowSlop = Math.max(8, Math.round(edgeSize * 0.35));
+    const canScrollY =
+      maxTop > overflowSlop && viewport.clientHeight > edgeSize * 1.5;
+    const canScrollX =
+      maxLeft > overflowSlop && viewport.clientWidth > edgeSize * 1.5;
+
+    if (viewport.scrollTop > maxTop) {
+      viewport.scrollTop = maxTop;
+    }
+    if (viewport.scrollLeft > maxLeft) {
+      viewport.scrollLeft = maxLeft;
+    }
 
     setEdges({
-      top: isVertical && viewport.scrollTop > 2,
-      bottom: isVertical && viewport.scrollTop < maxTop - 2,
-      left: isHorizontal && viewport.scrollLeft > 2,
-      right: isHorizontal && viewport.scrollLeft < maxLeft - 2,
+      top: isVertical && (forceEdges || (canScrollY && viewport.scrollTop > 2)),
+      bottom:
+        isVertical &&
+        (forceEdges || (canScrollY && viewport.scrollTop < maxTop - 2)),
+      left: isHorizontal && (forceEdges || (canScrollX && viewport.scrollLeft > 2)),
+      right:
+        isHorizontal &&
+        (forceEdges || (canScrollX && viewport.scrollLeft < maxLeft - 2)),
     });
-  }, [isHorizontal, isVertical]);
+  }, [edgeSize, forceEdges, isHorizontal, isVertical]);
 
   React.useEffect(() => {
     const viewport = viewportRef.current;
@@ -58,10 +82,13 @@ export function ScrollBlur({
 
     updateEdges();
 
-    const resizeObserver = new ResizeObserver(updateEdges);
+    const resizeObserver = new ResizeObserver(() => {
+      updateEdges();
+    });
     resizeObserver.observe(viewport);
-    if (viewport.firstElementChild) {
-      resizeObserver.observe(viewport.firstElementChild);
+    const content = viewport.firstElementChild;
+    if (content) {
+      resizeObserver.observe(content);
     }
 
     viewport.addEventListener("scroll", updateEdges, { passive: true });
@@ -84,7 +111,8 @@ export function ScrollBlur({
         ref={viewportRef}
         data-slot="scroll-blur-viewport"
         className={cn(
-          "scrollbar-none h-full w-full",
+          "h-full w-full",
+          hideScrollbar && "scrollbar-none",
           isVertical && "overflow-y-auto",
           isHorizontal && "overflow-x-auto",
           snap === "x" && "snap-x snap-mandatory",
@@ -203,11 +231,11 @@ function ScrollBlurEdge({
     >
       <div
         className={cn(
-          "absolute inset-0 from-background via-background/70 to-transparent",
+          "absolute inset-0 from-background via-background/75 to-transparent",
           gradient
         )}
       />
-      <div className={cn("absolute inset-0 backdrop-blur-[2px]", mask)} />
+      <div className={cn("absolute inset-0 backdrop-blur-[4px]", mask)} />
     </motion.div>
   );
 }

@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 
 type Tab = {
@@ -29,6 +29,13 @@ type ExpandableTabsProps = {
     onChange?: (index: number | null) => void;
 };
 
+type HighlightBounds = {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+};
+
 const SWAP_MOTION = {
     initial: { opacity: 0, y: 8, filter: 'blur(5px)' },
     animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
@@ -49,8 +56,11 @@ export function ExpandableTabs({
 }: ExpandableTabsProps) {
     const [selected, setSelected] = useState(activeIndex);
     const [captionWidth, setCaptionWidth] = useState<number | undefined>();
+    const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
     const sizerRef = useRef<HTMLSpanElement>(null);
+    const navRef = useRef<HTMLElement>(null);
     const skipEnter = useRef(true);
+    const reduceMotion = useReducedMotion() === true;
     const items = tabs
         .map((tab, index) => ({ tab, index }))
         .filter((entry): entry is { tab: Tab; index: number } => isTab(entry.tab));
@@ -74,17 +84,63 @@ export function ExpandableTabs({
         if (next != null) setCaptionWidth(next);
     }, [longestCaption]);
 
+    const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
+        const container = navRef.current;
+        if (!(element && container)) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+
+        setHighlightBounds({
+            top: elementRect.top - containerRect.top + container.scrollTop,
+            left: elementRect.left - containerRect.left + container.scrollLeft,
+            width: elementRect.width,
+            height: elementRect.height,
+        });
+    }, []);
+
     const handleSelect = (index: number) => {
         setSelected(index);
         onChange?.(index);
     };
 
+    const spring = reduceMotion
+        ? { duration: 0 }
+        : { type: 'spring' as const, stiffness: 500, damping: 40 };
+
     return (
         <nav
+            ref={navRef}
             id={id}
             className={`sidebar-dock expandable-tabs${className ? ` ${className}` : ''}`}
             aria-label={label}
+            onMouseLeave={() => setHighlightBounds(null)}
         >
+            <AnimatePresence>
+                {highlightBounds ? (
+                    <motion.div
+                        key="dock-highlight"
+                        className="expandable-tabs__highlight"
+                        aria-hidden="true"
+                        initial={{
+                            opacity: 0,
+                            top: highlightBounds.top,
+                            left: highlightBounds.left,
+                            width: highlightBounds.width,
+                            height: highlightBounds.height,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            top: highlightBounds.top,
+                            left: highlightBounds.left,
+                            width: highlightBounds.width,
+                            height: highlightBounds.height,
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={spring}
+                    />
+                ) : null}
+            </AnimatePresence>
             {items.map(({ tab, index }) => {
                 const Icon = tab.icon;
                 const isSelected = selected === index;
@@ -107,6 +163,8 @@ export function ExpandableTabs({
                         aria-current={isActive ? 'page' : undefined}
                         data-rail={tab.rail}
                         onClick={() => handleSelect(index)}
+                        onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
+                        onFocus={(event) => setHighlightFromElement(event.currentTarget)}
                         className={classes}
                     >
                         <Icon size={20} strokeWidth={1.75} />

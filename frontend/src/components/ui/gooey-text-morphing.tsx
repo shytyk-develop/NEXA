@@ -17,6 +17,8 @@ interface GooeyTextProps {
    * Change it to morph to another text; omit for continuous cycling.
    */
   activeIndex?: number;
+  /** SVG threshold gooey look — too aggressive for small UI type; default on. */
+  threshold?: boolean;
 }
 
 function writeSlot(el: HTMLSpanElement, value: string) {
@@ -39,6 +41,7 @@ export function GooeyText({
   className,
   textClassName,
   activeIndex,
+  threshold = true,
 }: GooeyTextProps) {
   const text1Ref = React.useRef<HTMLSpanElement>(null);
   const text2Ref = React.useRef<HTMLSpanElement>(null);
@@ -166,20 +169,22 @@ export function GooeyText({
 
   return (
     <div className={cn("gooey-text relative", className)}>
-      <svg className="gooey-text__svg absolute h-0 w-0" aria-hidden="true" focusable="false">
-        <defs>
-          <filter id={filterId}>
-            <feColorMatrix
-              in="SourceGraphic"
-              type="matrix"
-              values="1 0 0 0 0
-                      0 1 0 0 0
-                      0 0 1 0 0
-                      0 0 0 255 -140"
-            />
-          </filter>
-        </defs>
-      </svg>
+      {threshold ? (
+        <svg className="gooey-text__svg absolute h-0 w-0" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id={filterId}>
+              <feColorMatrix
+                in="SourceGraphic"
+                type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 255 -140"
+              />
+            </filter>
+          </defs>
+        </svg>
+      ) : null}
 
       <span className="gooey-text__sizer" aria-hidden="true">
         {sizerText}
@@ -187,7 +192,7 @@ export function GooeyText({
 
       <div
         className="gooey-text__morph flex items-center justify-center"
-        style={{ filter: `url(#${filterId})` }}
+        style={threshold ? { filter: `url(#${filterId})` } : undefined}
       >
         <span
           ref={text1Ref}
