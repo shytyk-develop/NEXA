@@ -2,12 +2,14 @@ import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import "./scroll-blur.css";
 
 type ScrollBlurAxis = "vertical" | "horizontal" | "both";
 type ScrollSnap = "none" | "x" | "y" | "both";
 type ScrollSnapAlign = "start" | "center" | "end";
 type ScrollBlurSide = "top" | "bottom" | "left" | "right";
-type ScrollBlurEdgeVariant = "fade" | "custom";
+type ScrollBlurEdgeVariant = "fade" | "mask" | "custom";
+type Edges = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 
 export interface ScrollBlurProps extends React.HTMLAttributes<HTMLDivElement> {
   axis?: ScrollBlurAxis;
@@ -19,10 +21,21 @@ export interface ScrollBlurProps extends React.HTMLAttributes<HTMLDivElement> {
   forceEdges?: boolean;
   /**
    * "fade": tinted gradient + light blur (default).
+   * "mask": progressive — the content itself fades out (mask-image on the
+   *   viewport, so every descendant goes with it whatever its z-index, and the
+   *   real background shows through: no colour to match), with a light blur
+   *   that strengthens toward the edge on top. Vertical or horizontal (not both).
    * "custom": a bare, unstyled edge (no layers, no inline size) — style it entirely
    * through `edgeClassNames`.
    */
   edgeVariant?: ScrollBlurEdgeVariant;
+  /**
+   * Hide the edge fades while the content is resizing (e.g. an animated tree
+   * expand / collapse) and re-evaluate once it settles. Otherwise the fades get
+   * toggled frame by frame as the height crosses the overflow line and smear
+   * over the rows passing beneath them.
+   */
+  hideEdgesWhileResizing?: boolean;
   /** Extra classes per edge; with edgeVariant="custom" they carry all the styling. */
   edgeClassNames?: Partial<Record<ScrollBlurSide, string>>;
   viewportClassName?: string;
@@ -30,12 +43,16 @@ export interface ScrollBlurProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
+/** Quiet period after the last resize before edges are re-evaluated. */
+const RESIZE_SETTLE_MS = 180;
+
 export function ScrollBlur({
   axis = "vertical",
   edgeSize = 40,
   snap = "none",
   hideScrollbar = true,
   forceEdges = false,
+  hideEdgesWhileResizing = false,
   edgeVariant = "fade",
   edgeClassNames,
   className,
@@ -46,14 +63,33 @@ export function ScrollBlur({
 }: ScrollBlurProps) {
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const reduceMotion = useReducedMotion();
-  const [edges, setEdges] = React.useState({
+  const [edges, setEdges] = React.useState<Edges>({
     top: false,
     bottom: false,
     left: false,
     right: false,
   });
+  // True while content is resizing (only with hideEdgesWhileResizing).
+  const [resizing, setResizing] = React.useState(false);
   const isVertical = axis === "vertical" || axis === "both";
   const isHorizontal = axis === "horizontal" || axis === "both";
+
+  const isMask = edgeVariant === "mask";
+  const maskAxis = axis === "horizontal" ? "horizontal" : "vertical";
+  const showStart = (maskAxis === "vertical" ? edges.top : edges.left) && !resizing;
+  const showEnd = (maskAxis === "vertical" ? edges.bottom : edges.right) && !resizing;
+  // Fade lengths per edge (0 = crisp). Registered custom properties in
+  // scroll-blur.css, so they transition; keyboard focus scrolls clear of them.
+  const maskVars: Record<string, string> = {
+    "--sb-fade-start": showStart ? `${edgeSize}px` : "0px",
+    "--sb-fade-end": showEnd ? `${edgeSize}px` : "0px",
+  };
+  const maskStyle = {
+    ...maskVars,
+    ...(maskAxis === "vertical"
+      ? { scrollPaddingBlock: edgeSize }
+      : { scrollPaddingInline: edgeSize }),
+  } as React.CSSProperties;
 
   const updateEdges = React.useCallback(() => {
     const viewport = viewportRef.current;
@@ -76,7 +112,7 @@ export function ScrollBlur({
       viewport.scrollLeft = maxLeft;
     }
 
-    setEdges({
+    const next: Edges = {
       top: isVertical && (forceEdges || (canScrollY && viewport.scrollTop > 2)),
       bottom:
         isVertical &&
@@ -85,7 +121,16 @@ export function ScrollBlur({
       right:
         isHorizontal &&
         (forceEdges || (canScrollX && viewport.scrollLeft < maxLeft - 2)),
-    });
+    };
+    // Runs on every scroll event: only re-render when an edge actually flips.
+    setEdges((prev) =>
+      prev.top === next.top &&
+      prev.bottom === next.bottom &&
+      prev.left === next.left &&
+      prev.right === next.right
+        ? prev
+        : next
+    );
   }, [edgeSize, forceEdges, isHorizontal, isVertical]);
 
   React.useEffect(() => {
@@ -94,9 +139,26 @@ export function ScrollBlur({
 
     updateEdges();
 
-    const resizeObserver = new ResizeObserver(() => {
-      updateEdges();
+    let settleTimer = 0;
+    // The observer's initial callback isn't a resize — don't suppress on it.
+    let primed = false;
+    const primeFrame = window.requestAnimationFrame(() => {
+      primed = true;
     });
+    const onResize = () => {
+      if (!hideEdgesWhileResizing || !primed) {
+        updateEdges();
+        return;
+      }
+      setResizing(true);
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        updateEdges();
+        setResizing(false);
+      }, RESIZE_SETTLE_MS);
+    };
+
+    const resizeObserver = new ResizeObserver(onResize);
     resizeObserver.observe(viewport);
     const content = viewport.firstElementChild;
     if (content) {
@@ -107,11 +169,13 @@ export function ScrollBlur({
     window.addEventListener("resize", updateEdges);
 
     return () => {
+      window.cancelAnimationFrame(primeFrame);
+      window.clearTimeout(settleTimer);
       resizeObserver.disconnect();
       viewport.removeEventListener("scroll", updateEdges);
       window.removeEventListener("resize", updateEdges);
     };
-  }, [updateEdges]);
+  }, [updateEdges, hideEdgesWhileResizing]);
 
   return (
     <div
@@ -122,6 +186,8 @@ export function ScrollBlur({
       <div
         ref={viewportRef}
         data-slot="scroll-blur-viewport"
+        data-edge-mask={isMask ? maskAxis : undefined}
+        data-resizing={isMask && resizing ? "" : undefined}
         className={cn(
           "h-full w-full",
           hideScrollbar && "scrollbar-none",
@@ -132,6 +198,7 @@ export function ScrollBlur({
           snap === "both" && "snap-both snap-mandatory",
           viewportClassName
         )}
+        style={isMask ? maskStyle : undefined}
       >
         <div data-slot="scroll-blur-content" className={contentClassName}>
           {children}
@@ -141,7 +208,8 @@ export function ScrollBlur({
       {isVertical ? (
         <>
           <ScrollBlurEdge
-            visible={edges.top}
+            visible={edges.top && !resizing}
+            instant={resizing}
             side="top"
             size={edgeSize}
             reduceMotion={reduceMotion}
@@ -149,7 +217,8 @@ export function ScrollBlur({
             className={edgeClassNames?.top}
           />
           <ScrollBlurEdge
-            visible={edges.bottom}
+            visible={edges.bottom && !resizing}
+            instant={resizing}
             side="bottom"
             size={edgeSize}
             reduceMotion={reduceMotion}
@@ -161,7 +230,8 @@ export function ScrollBlur({
       {isHorizontal ? (
         <>
           <ScrollBlurEdge
-            visible={edges.left}
+            visible={edges.left && !resizing}
+            instant={resizing}
             side="left"
             size={edgeSize}
             reduceMotion={reduceMotion}
@@ -169,7 +239,8 @@ export function ScrollBlur({
             className={edgeClassNames?.left}
           />
           <ScrollBlurEdge
-            visible={edges.right}
+            visible={edges.right && !resizing}
+            instant={resizing}
             side="right"
             size={edgeSize}
             reduceMotion={reduceMotion}
@@ -210,8 +281,11 @@ function ScrollBlurEdge({
   reduceMotion,
   variant,
   className,
+  instant = false,
 }: {
   visible: boolean;
+  /** Hide without the fade (content is moving under it). */
+  instant?: boolean;
   side: ScrollBlurSide;
   size: number;
   reduceMotion: boolean | null;
@@ -247,14 +321,16 @@ function ScrollBlurEdge({
         side === "left" && "inset-y-0 left-0",
         side === "right" && "inset-y-0 right-0",
         isVertical ? "w-full" : "h-full",
+        variant === "mask" && "scroll-blur-edge--mask",
         className
       )}
+      data-edge-side={variant === "mask" ? side : undefined}
       style={
-        variant === "fade" ? (isVertical ? { height: size } : { width: size }) : undefined
+        variant === "custom" ? undefined : isVertical ? { height: size } : { width: size }
       }
       initial={false}
       animate={{ opacity: visible ? 1 : 0 }}
-      transition={{ duration: reduceMotion ? 0 : 0.16 }}
+      transition={{ duration: reduceMotion || instant ? 0 : 0.16 }}
     >
       {variant === "fade" ? (
         <>

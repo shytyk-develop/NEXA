@@ -3930,12 +3930,13 @@ html[data-wallpaper-dim] {
     display: flex;
     height: 24px;
     justify-content: flex-end;
-    min-width: 49px;
+    /* Sized by its buttons: + only on Work / Personal; + rename delete on custom folders. */
+    min-width: 24px;
     opacity: 0;
     pointer-events: auto;
     position: relative;
     transition: opacity 0.12s ease;
-    width: 49px;
+    width: max-content;
 }
 
 #page-chat .sidebar-file-tree .file-tree-item-row:hover .folder-item-actions,
@@ -3981,6 +3982,42 @@ html[data-wallpaper-dim] {
 #page-chat .sidebar-file-tree .folder-item-action:hover {
     background: transparent;
     color: #f4f4f5;
+}
+
+/* Chats inside folders: mini avatar + name (ChatSidebar FolderChatItem). */
+#page-chat .sidebar-file-tree .folder-chat-avatar {
+    align-items: center;
+    border: 0;
+    border-radius: 999px;
+    display: inline-flex;
+    flex: none;
+    font-family: var(--f-ui, inherit);
+    font-size: 8px;
+    font-weight: 600;
+    height: 18px;
+    justify-content: center;
+    letter-spacing: 0;
+    line-height: 1;
+    width: 18px;
+}
+
+/* The chat open in the conversation window. */
+#page-chat .sidebar-file-tree .is-folder-chat-active {
+    color: #f4f4f5;
+}
+
+#page-chat .sidebar-file-tree .folder-item-action--add:hover {
+    color: var(--color-brand, #afb9cd);
+}
+
+/* Folder currently receiving chats: keep its actions visible and mark the row. */
+/* (className lands on the row's button; actions are its sibling in the row.) */
+#page-chat .sidebar-file-tree .file-tree-item-row:has(> .is-folder-picking) .folder-item-actions {
+    opacity: 1;
+}
+
+#page-chat .sidebar-file-tree .file-tree-item-row:has(> .is-folder-picking) .folder-item-action--add {
+    color: var(--color-brand, #afb9cd);
 }
 
 #page-chat .sidebar-file-tree .folder-item-action--danger:hover {
@@ -4775,7 +4812,8 @@ html[data-wallpaper-dim] {
     position: relative;
     transition:
         margin-left 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-        width 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+        width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        padding-left var(--pick-mode-duration) var(--pick-mode-ease);
     width: calc(100% - 2 * var(--users-list-gutter) - var(--contact-active-inset));
     z-index: 1;
 }
@@ -5263,4 +5301,250 @@ html[data-wallpaper-dim] {
     overflow: visible;
     transform: none;
     width: min(360px, calc(100vw - 32px));
+}
+
+/* ── Add chats to folder: dock-slot bar + pickable chat rows (ChatSidebar.tsx) ──
+   While picking, the bar takes the dock's place (same cell; the tabs stay
+   mounted underneath, hidden and inert). */
+#page-chat .sidebar-dock-bar__stack {
+    display: grid;
+    justify-content: inherit;
+    width: 100%;
+}
+
+#page-chat .sidebar-dock-bar__nav {
+    display: flex;
+    grid-area: 1 / 1;
+    justify-content: inherit;
+    min-width: 0;
+}
+
+#page-chat .sidebar-dock-bar[data-mode="pick"] .sidebar-dock-bar__nav {
+    pointer-events: none;
+}
+
+/* Frosted single-row bar in the dock's slot:
+   [ Add to <folder> · N selected ]            [ Cancel ] ( Save ) */
+#page-chat .folder-pick-bar {
+    align-items: center;
+    align-self: center;
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    background: color-mix(in srgb, var(--nexa-aside-fill, #161920) 72%, transparent);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--expandable-tabs-radius, 18px);
+    box-shadow:
+        0 -8px 24px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-sizing: border-box;
+    /* Lets the info side react to the bar's own width (narrow sidebars). */
+    container-type: inline-size;
+    display: flex;
+    gap: 12px;
+    grid-area: 1 / 1;
+    justify-content: space-between;
+    min-width: 0;
+    padding: 10px 14px;
+    width: 100%;
+    z-index: 1;
+}
+
+/* Left: shrinks and clips — never runs under the buttons. */
+#page-chat .folder-pick-bar__info {
+    align-items: center;
+    display: flex;
+    flex: 1 1 0;
+    font-size: 12.5px;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#page-chat .folder-pick-bar__prefix {
+    color: var(--text-secondary, #a1a1aa);
+    flex: none;
+    opacity: 0.75;
+}
+
+/* Only the folder name gives way on long names. */
+#page-chat .folder-pick-bar__name {
+    color: var(--text, #f4f4f5);
+    flex: 0 1 auto;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Selected count as a small badge: "(2)". */
+#page-chat .folder-pick-bar__count {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: var(--text, #f4f4f5);
+    display: inline-flex;
+    flex: none;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    height: 18px;
+    justify-content: center;
+    min-width: 18px;
+    padding: 0 5px;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease;
+}
+
+#page-chat .folder-pick-bar__count[data-empty] {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-tertiary, #71717a);
+}
+
+/* Narrow bar: drop "Add to", keep "<folder> (N)". */
+@container (max-width: 280px) {
+    #page-chat .folder-pick-bar__prefix {
+        display: none;
+    }
+}
+
+/* Right: fixed, never shrinks. */
+#page-chat .folder-pick-bar__actions {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+#page-chat .folder-pick-bar__btn {
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    padding: 6px 14px;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+    white-space: nowrap;
+}
+
+#page-chat .folder-pick-bar__btn--cancel {
+    background: transparent;
+    color: var(--text-secondary, #a1a1aa);
+    padding-inline: 4px;
+}
+
+#page-chat .folder-pick-bar__btn--cancel:hover {
+    color: var(--text, #f4f4f5);
+}
+
+#page-chat .folder-pick-bar__btn--save {
+    background: color-mix(in srgb, #fff 90%, transparent);
+    color: var(--bg, #0a0a0a);
+}
+
+#page-chat .folder-pick-bar__btn--save:hover {
+    background: #fff;
+}
+
+#page-chat .folder-pick-bar__btn:active {
+    transform: scale(0.96);
+}
+
+#page-chat .folder-pick-bar__btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    #page-chat .folder-pick-bar {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: var(--nexa-aside-fill, #161920);
+    }
+}
+
+/* Pick mode ("add chats to folder"): one duration + curve for everything —
+   rows, checks, and the dock ↔ pick bar swap (PICK_MODE_TRANSITION in JS). */
+#page-chat {
+    --pick-mode-duration: 240ms;
+    --pick-mode-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Room the check takes at the row's start: 20px circle + 10px gap. */
+    --pick-mode-room: 30px;
+}
+
+/* The row's own padding opens the room (real layout, so names / previews keep
+   ellipsizing correctly as it moves). */
+#page-chat #usersList .contact-row.is-pickable {
+    padding-left: calc(10px + var(--pick-mode-room));
+}
+
+/* The check: always mounted, parked at the row's start; eases in with the room. */
+#page-chat #usersList .contact-row__pick {
+    align-items: center;
+    border: 1.5px solid color-mix(in srgb, #fff 22%, transparent);
+    border-radius: 999px;
+    box-sizing: border-box;
+    display: inline-flex;
+    height: 20px;
+    justify-content: center;
+    left: 10px;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) translateX(-10px) scale(0.6);
+    transition:
+        opacity 0.2s ease,
+        transform var(--pick-mode-duration) var(--pick-mode-ease),
+        background-color 0.16s ease,
+        border-color 0.16s ease;
+    width: 20px;
+    z-index: 1;
+}
+
+#page-chat #usersList .contact-row.is-pickable .contact-row__pick {
+    opacity: 1;
+    transform: translateY(-50%);
+}
+
+#page-chat #usersList .contact-row.is-picked .contact-row__pick {
+    background: var(--color-brand, #afb9cd);
+    border-color: var(--color-brand, #afb9cd);
+}
+
+#page-chat #usersList .contact-row__pick-mark {
+    color: var(--bg, #0a0a0a);
+    display: inline-flex;
+}
+
+/* Time and unread badge step back (fade, no reflow) while picking. */
+#page-chat #usersList .contact-row .contact-time,
+#page-chat #usersList .contact-row .contact-unread {
+    transition:
+        opacity 0.2s ease,
+        transform var(--pick-mode-duration) var(--pick-mode-ease);
+}
+
+#page-chat #usersList .contact-row.is-pickable .contact-time {
+    opacity: 0;
+}
+
+#page-chat #usersList .contact-row.is-pickable .contact-unread {
+    opacity: 0;
+    transform: scale(0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat #usersList .contact-row,
+    #page-chat #usersList .contact-row__pick,
+    #page-chat #usersList .contact-row .contact-time,
+    #page-chat #usersList .contact-row .contact-unread {
+        transition: none;
+    }
 }

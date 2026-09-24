@@ -5,6 +5,7 @@ import {
     Folder,
     Inbox,
     MessageCircle,
+    MessageSquarePlus,
     Pencil,
     Plus,
     Search,
@@ -59,11 +60,77 @@ type FolderTreeState = {
     personal: CustomFolder[];
 };
 
-const MAX_FOLDER_DEPTH = 2;
+/*
+ * Folder structure: All → Work / Personal (fixed) → one level of subfolders.
+ * Subfolders can't contain folders; expanded, they offer "+ Add Chats".
+ */
 const FOLDER_STORAGE_KEY = 'nexa.sidebar.custom-folders';
+/** Folder id ('work' | 'personal' | custom id) → usernames added to it. */
+const FOLDER_CHATS_STORAGE_KEY = 'nexa.sidebar.folder-chats';
 
-function folderOf(username: string): FolderRoot {
-    return username === 'nexa_lab' ? 'work' : 'personal';
+type FolderChats = Record<string, string[]>;
+
+/**
+ * Entering / leaving "add chats" mode: the dock ↔ pick bar swap uses the same
+ * duration and curve as the rows' check / padding transition
+ * (--pick-mode-duration / --pick-mode-ease in app-layout.css), so it all moves
+ * as one.
+ */
+const PICK_MODE_TRANSITION = { duration: 0.24, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] };
+
+/** Target of "add chats" mode: which folder, and its name for the banner. */
+type FolderPick = { folderId: string; name: string };
+
+function loadFolderChats(): FolderChats {
+    try {
+        const raw = localStorage.getItem(FOLDER_CHATS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || typeof parsed !== 'object') return {};
+        const out: FolderChats = {};
+        Object.entries(parsed).forEach(([id, list]) => {
+            if (Array.isArray(list)) out[id] = list.filter((u): u is string => typeof u === 'string');
+        });
+        return out;
+    } catch {
+        return {};
+    }
+}
+
+function saveFolderChats(map: FolderChats) {
+    try {
+        localStorage.setItem(FOLDER_CHATS_STORAGE_KEY, JSON.stringify(map));
+    } catch {
+        /* ignore quota */
+    }
+}
+
+/** Sidebar filter for a folder id. */
+function filterForFolder(folderId: string): LibraryFilter {
+    return folderId === 'work' || folderId === 'personal' ? folderId : `folder:${folderId}`;
+}
+
+/** Folder id a filter points at, if it's a folder filter. */
+function folderIdOfFilter(filter: LibraryFilter): string | null {
+    if (filter === 'work' || filter === 'personal') return filter;
+    if (filter.startsWith('folder:')) return filter.slice('folder:'.length);
+    return null;
+}
+
+/**
+ * Subfolders are one level deep. Trees saved when two levels were allowed are
+ * flattened (nested folders move up next to their parent), so no folder — or
+ * its chats — silently disappears.
+ */
+function flattenFolders(folders: CustomFolder[]): CustomFolder[] {
+    const out: CustomFolder[] = [];
+    const visit = (list: CustomFolder[]) => {
+        list.forEach((folder) => {
+            out.push({ id: folder.id, name: folder.name, children: [] });
+            if (Array.isArray(folder.children)) visit(folder.children);
+        });
+    };
+    visit(folders);
+    return out;
 }
 
 function loadFolderTree(): FolderTreeState {
@@ -72,8 +139,8 @@ function loadFolderTree(): FolderTreeState {
         if (!raw) return { work: [], personal: [] };
         const parsed = JSON.parse(raw);
         return {
-            work: Array.isArray(parsed?.work) ? parsed.work : [],
-            personal: Array.isArray(parsed?.personal) ? parsed.personal : [],
+            work: Array.isArray(parsed?.work) ? flattenFolders(parsed.work) : [],
+            personal: Array.isArray(parsed?.personal) ? flattenFolders(parsed.personal) : [],
         };
     } catch {
         return { work: [], personal: [] };
@@ -149,20 +216,97 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
         return sum + count;
     }, 0);
     const mutedTotal = chats.filter((chat) => Boolean(snap.myUsername && isChatMuted(snap.myUsername, chat.username))).length;
-    const workTotal = chats.filter((chat) => folderOf(chat.username) === 'work').length;
-    const personalTotal = chats.filter((chat) => folderOf(chat.username) === 'personal').length;
+
+    // Chats explicitly added to folders (Work / Personal / custom), persisted locally.
+    const [folderChats, setFolderChats] = useState<FolderChats>(() => loadFolderChats());
+    useEffect(() => {
+        saveFolderChats(folderChats);
+    }, [folderChats]);
+
+    const chatNames = useMemo(() => new Set(chats.map((chat: any) => chat.username as string)), [chats]);
+    /** Chats in a folder that still exist in the chat list. */
+    const folderCount = useCallback(
+        (folderId: string) => (folderChats[folderId] || []).filter((u) => chatNames.has(u)).length,
+        [folderChats, chatNames],
+    );
+    const foldersTotal = useMemo(() => {
+        const all = new Set<string>();
+        Object.values(folderChats).forEach((list) => list.forEach((u) => chatNames.has(u) && all.add(u)));
+        return all.size;
+    }, [folderChats, chatNames]);
+
+    // "Add chats to <folder>" mode: the list below turns into a multi-select.
+    const [picking, setPicking] = useState<FolderPick | null>(null);
+    const [picked, setPicked] = useState<Set<string>>(() => new Set());
+
+    const startPicking = useCallback(
+        (folderId: string, name: string) => {
+            setPicking({ folderId, name });
+            setPicked(new Set(folderChats[folderId] || []));
+        },
+        [folderChats],
+    );
+    const cancelPicking = useCallback(() => setPicking(null), []);
+    const savePicking = () => {
+        if (!picking) return;
+        const { folderId } = picking;
+        setFolderChats((prev) => ({ ...prev, [folderId]: [...picked] }));
+        setPicking(null);
+        // Show the folder's contents right away.
+        setLibraryFilter(filterForFolder(folderId));
+    };
+    const togglePicked = (username: string) => {
+        setPicked((prev) => {
+            const next = new Set(prev);
+            if (next.has(username)) next.delete(username);
+            else next.add(username);
+            return next;
+        });
+    };
+
+    const chatByName = useMemo(() => new Map(chats.map((chat: any) => [chat.username as string, chat])), [chats]);
+    /** Chats in a folder, in the order they were added (missing chats skipped). */
+    const folderMembers = useCallback(
+        (folderId: string) =>
+            (folderChats[folderId] || []).map((u) => chatByName.get(u)).filter(Boolean) as any[],
+        [folderChats, chatByName],
+    );
+    const removeFromFolder = useCallback((folderId: string, username: string) => {
+        setFolderChats((prev) => ({ ...prev, [folderId]: (prev[folderId] || []).filter((u) => u !== username) }));
+    }, []);
+
+    const onFoldersRemoved = useCallback((ids: string[]) => {
+        setFolderChats((prev) => {
+            const next = { ...prev };
+            ids.forEach((id) => delete next[id]);
+            return next;
+        });
+        setPicking((current) => (current && ids.includes(current.folderId) ? null : current));
+    }, []);
+
+    useEffect(() => {
+        if (!picking) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') cancelPicking();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [picking, cancelPicking]);
+
     const visibleChats = useMemo(() => {
+        const folderId = folderIdOfFilter(libraryFilter);
+        const members = folderId ? new Set(folderChats[folderId] || []) : null;
         return chats.filter((chat) => {
             const unread = snap.unreadCounts[chat.username] ?? chat.unread_count ?? 0;
             const muted = Boolean(snap.myUsername && isChatMuted(snap.myUsername, chat.username));
             if (libraryFilter === 'unread') return unread > 0;
             if (libraryFilter === 'muted') return muted;
-            if (libraryFilter === 'work') return folderOf(chat.username) === 'work';
-            if (libraryFilter === 'personal') return folderOf(chat.username) === 'personal';
-            if (libraryFilter.startsWith('folder:')) return false;
+            if (members) return members.has(chat.username);
             return true;
         });
-    }, [chats, libraryFilter, snap.myUsername, snap.unreadCounts]);
+    }, [chats, libraryFilter, folderChats, snap.myUsername, snap.unreadCounts]);
+    // While picking, every chat is offered (checked if already in the folder).
+    const listedChats = picking ? chats : visibleChats;
     const showWelcome = !snap.loading && chats.length === 0;
 
     return (
@@ -192,14 +336,23 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
                         <SidebarLibrary
                             unreadCount={unreadTotal}
                             mutedCount={mutedTotal}
-                            workCount={workTotal}
-                            personalCount={personalTotal}
+                            foldersTotal={foldersTotal}
+                            folderCount={folderCount}
+                            pickingFolderId={picking?.folderId ?? null}
+                            onAddChats={startPicking}
+                            onFoldersRemoved={onFoldersRemoved}
+                            folderMembers={folderMembers}
+                            onRemoveFromFolder={removeFromFolder}
+                            onOpenChat={(username) => onSelectChat?.(username)}
+                            activeUsername={snap.activeUsername ?? null}
+                            myUsername={snap.myUsername ?? null}
                             active={libraryFilter}
                             onSelect={setLibraryFilter}
                         />
                         <div id="usersList">
                             <ScrollBlur
-                                edgeSize={40}
+                                edgeVariant="mask"
+                                edgeSize={32}
                                 className="sidebar-scroll-blur h-full min-h-0"
                                 contentClassName="sidebar-scroll-blur__content"
                             >
@@ -213,22 +366,29 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
                                             </span>
                                         </div>
                                     ))
-                                ) : visibleChats.length === 0 ? (
+                                ) : listedChats.length === 0 ? (
                                     <div className="empty-state">
-                                        {chats.length === 0 ? 'No conversations yet' : 'Nothing in this folder'}
+                                        {chats.length === 0
+                                            ? 'No conversations yet'
+                                            : folderIdOfFilter(libraryFilter)
+                                                ? 'No chats in this folder yet — hover it and press +'
+                                                : 'Nothing in this folder'}
                                     </div>
                                 ) : (
                                     <ContactList>
-                                        {visibleChats.map((user: any) => (
+                                        {listedChats.map((user: any) => (
                                             <ContactRow
                                                 key={user.username}
                                                 user={user}
                                                 myUsername={snap.myUsername}
-                                                active={snap.activeUsername === user.username}
+                                                active={!picking && snap.activeUsername === user.username}
                                                 online={privacy.showOnlineStatus ? snap.onlineUsers.has(user.username) : null}
                                                 unread={snap.unreadCounts[user.username] ?? user.unread_count ?? 0}
                                                 typing={Boolean(privacy.typingIndicators && snap.typingUsers.has(user.username))}
                                                 muted={Boolean(snap.myUsername && isChatMuted(snap.myUsername, user.username))}
+                                                pickable={Boolean(picking)}
+                                                picked={picked.has(user.username)}
+                                                onTogglePick={() => togglePicked(user.username)}
                                                 onSelect={() => onSelectChat?.(user.username)}
                                             />
                                         ))}
@@ -275,7 +435,15 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
                     </div>
                 </aside>
 
-                <SidebarDock onOpenSpotlight={onOpenSpotlight} />
+                {/* While choosing chats for a folder, the dock's slot holds Cancel / Save. */}
+                <SidebarDock
+                    onOpenSpotlight={onOpenSpotlight}
+                    pick={
+                        picking
+                            ? { name: picking.name, count: picked.size, onCancel: cancelPicking, onSave: savePicking }
+                            : null
+                    }
+                />
 
                 <ProfileNav />
             </div>
@@ -286,15 +454,33 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
 function SidebarLibrary({
     unreadCount,
     mutedCount,
-    workCount,
-    personalCount,
+    foldersTotal,
+    folderCount,
+    pickingFolderId,
+    onAddChats,
+    onFoldersRemoved,
+    folderMembers,
+    onRemoveFromFolder,
+    onOpenChat,
+    activeUsername,
+    myUsername,
     active,
     onSelect,
 }: {
     unreadCount: number;
     mutedCount: number;
-    workCount: number;
-    personalCount: number;
+    /** Distinct chats across all folders (All's count). */
+    foldersTotal: number;
+    folderCount: (folderId: string) => number;
+    /** Folder currently receiving chats (highlighted), if any. */
+    pickingFolderId: string | null;
+    onAddChats: (folderId: string, name: string) => void;
+    onFoldersRemoved: (folderIds: string[]) => void;
+    folderMembers: (folderId: string) => any[];
+    onRemoveFromFolder: (folderId: string, username: string) => void;
+    onOpenChat: (username: string) => void;
+    activeUsername: string | null;
+    myUsername: string | null;
     active: LibraryFilter;
     onSelect: (filter: LibraryFilter) => void;
 }) {
@@ -303,7 +489,6 @@ function SidebarLibrary({
     const [tree, setTree] = useState<FolderTreeState>(() => loadFolderTree());
     const [drafting, setDrafting] = useState<{ root: FolderRoot; parentId: string | null } | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);
-    const foldersTotal = workCount + personalCount;
 
     useEffect(() => {
         saveFolderTree(tree);
@@ -365,6 +550,8 @@ function SidebarLibrary({
             [root]: removeFolderFromTree(prev[root], folderId),
         }));
         setExpandedIds((prev) => prev.filter((id) => !removedIds.includes(id)));
+        // Their chat assignments go with them.
+        onFoldersRemoved(removedIds);
         setRenamingId((id) => (id && removedIds.includes(id) ? null : id));
         setDrafting((draft) =>
             draft && draft.parentId && removedIds.includes(draft.parentId) ? null : draft
@@ -385,11 +572,13 @@ function SidebarLibrary({
         if (nodeId.endsWith(':new')) {
             event?.preventDefault();
             const parent = nodeId.slice(0, -':new'.length);
-            if (parent === 'work' || parent === 'personal') {
-                startDraft(parent, null);
-                return;
-            }
-            startDraft(findFolderRoot(tree, parent), parent);
+            if (parent === 'work' || parent === 'personal') startDraft(parent, null);
+            return;
+        }
+        // "+ Add Chats" rows and chat rows act through their own onClick; neither is a
+        // selectable folder.
+        if (nodeId.endsWith(':add') || nodeId.startsWith('chat:')) {
+            event?.preventDefault();
             return;
         }
         if (nodeId === 'all') return;
@@ -402,6 +591,20 @@ function SidebarLibrary({
 
     const labelWithCount = (label: string, count: number) =>
         count > 0 ? `${label}  ${count}` : label;
+
+    /** The chats added to a folder, as tree rows (open on click, remove on hover). */
+    const renderFolderChats = (folderId: string) =>
+        folderMembers(folderId).map((user) => (
+            <FolderChatItem
+                key={`${folderId}:${user.username}`}
+                folderId={folderId}
+                user={user}
+                myUsername={myUsername}
+                active={activeUsername === user.username}
+                onOpen={() => onOpenChat(user.username)}
+                onRemove={() => onRemoveFromFolder(folderId, user.username)}
+            />
+        ));
 
     return (
         <div id="uiSidebarLibrary" className="sidebar-library">
@@ -431,7 +634,11 @@ function SidebarLibrary({
 
             <p className="sidebar-library__kicker">Folders</p>
             <ScrollBlur
-                edgeSize={28}
+                edgeVariant="mask"
+                edgeSize={20}
+                // Folder expand / collapse animates the height: keep the fades off
+                // the rows while it moves, show them only once it overflows at rest.
+                hideEdgesWhileResizing
                 className="sidebar-folder-scroll max-h-[320px]"
                 viewportClassName="sidebar-folder-scroll__viewport !h-auto max-h-[320px]"
                 contentClassName="sidebar-folder-scroll__content"
@@ -448,24 +655,30 @@ function SidebarLibrary({
                 >
                     <FileTreeList>
                         <FileTreeItem nodeId="all" label={labelWithCount('All', foldersTotal)} hasChildren>
-                            <FileTreeItem nodeId="work" label={labelWithCount('Work', workCount)} hasChildren>
+                            <FileTreeItem
+                                nodeId="work"
+                                label={labelWithCount('Work', folderCount('work'))}
+                                hasChildren
+                                className={pickingFolderId === 'work' ? 'is-folder-picking' : undefined}
+                                trailing={<FolderAddChatsAction name="Work" onAddChats={() => onAddChats('work', 'Work')} />}
+                            >
                                 {tree.work.map((folder) => (
                                     <CustomFileTreeFolder
                                         key={folder.id}
-                                        root="work"
                                         folder={folder}
-                                        depth={1}
-                                        drafting={drafting}
+                                        expanded={expandedIds.includes(folder.id)}
                                         renamingId={renamingId}
-                                        onStartDraft={startDraft}
-                                        onCommitDraft={commitDraft}
-                                        onCancelDraft={cancelDraft}
                                         onStartRename={startRename}
                                         onCommitRename={commitRename}
                                         onCancelRename={cancelRename}
                                         onDeleteFolder={deleteFolder}
+                                        folderCount={folderCount}
+                                        pickingFolderId={pickingFolderId}
+                                        onAddChats={onAddChats}
+                                        renderChats={renderFolderChats}
                                     />
                                 ))}
+                                {renderFolderChats('work')}
                                 {drafting?.root === 'work' && drafting.parentId == null ? (
                                     <FolderNameDraft onCommit={commitDraft} onCancel={cancelDraft} />
                                 ) : (
@@ -480,24 +693,30 @@ function SidebarLibrary({
                                     />
                                 )}
                             </FileTreeItem>
-                            <FileTreeItem nodeId="personal" label={labelWithCount('Personal', personalCount)} hasChildren>
+                            <FileTreeItem
+                                nodeId="personal"
+                                label={labelWithCount('Personal', folderCount('personal'))}
+                                hasChildren
+                                className={pickingFolderId === 'personal' ? 'is-folder-picking' : undefined}
+                                trailing={<FolderAddChatsAction name="Personal" onAddChats={() => onAddChats('personal', 'Personal')} />}
+                            >
                                 {tree.personal.map((folder) => (
                                     <CustomFileTreeFolder
                                         key={folder.id}
-                                        root="personal"
                                         folder={folder}
-                                        depth={1}
-                                        drafting={drafting}
+                                        expanded={expandedIds.includes(folder.id)}
                                         renamingId={renamingId}
-                                        onStartDraft={startDraft}
-                                        onCommitDraft={commitDraft}
-                                        onCancelDraft={cancelDraft}
                                         onStartRename={startRename}
                                         onCommitRename={commitRename}
                                         onCancelRename={cancelRename}
                                         onDeleteFolder={deleteFolder}
+                                        folderCount={folderCount}
+                                        pickingFolderId={pickingFolderId}
+                                        onAddChats={onAddChats}
+                                        renderChats={renderFolderChats}
                                     />
                                 ))}
+                                {renderFolderChats('personal')}
                                 {drafting?.root === 'personal' && drafting.parentId == null ? (
                                     <FolderNameDraft onCommit={commitDraft} onCancel={cancelDraft} />
                                 ) : (
@@ -520,36 +739,42 @@ function SidebarLibrary({
     );
 }
 
+/** A subfolder of Work / Personal. Holds chats only — expanded, it offers "+ Add Chats". */
 function CustomFileTreeFolder({
-    root,
     folder,
-    depth,
-    drafting,
+    expanded,
     renamingId,
-    onStartDraft,
-    onCommitDraft,
-    onCancelDraft,
     onStartRename,
     onCommitRename,
     onCancelRename,
     onDeleteFolder,
+    folderCount,
+    pickingFolderId,
+    onAddChats,
+    renderChats,
 }: {
-    root: FolderRoot;
     folder: CustomFolder;
-    depth: number;
-    drafting: { root: FolderRoot; parentId: string | null } | null;
+    /** Open subfolders already show "+ Add Chats" inside, so the hover + steps aside. */
+    expanded: boolean;
     renamingId: string | null;
-    onStartDraft: (root: FolderRoot, parentId: string | null) => void;
-    onCommitDraft: (name: string) => void;
-    onCancelDraft: () => void;
     onStartRename: (folderId: string) => void;
     onCommitRename: (folderId: string, name: string) => void;
     onCancelRename: () => void;
     onDeleteFolder: (folderId: string) => void;
+    folderCount: (folderId: string) => number;
+    pickingFolderId: string | null;
+    onAddChats: (folderId: string, name: string) => void;
+    /** Rows for the chats added to this folder. */
+    renderChats: (folderId: string) => ReactNode;
 }) {
-    const canNest = depth < MAX_FOLDER_DEPTH;
-    const draftHere = drafting?.root === root && drafting.parentId === folder.id;
     const isRenaming = renamingId === folder.id;
+    const count = folderCount(folder.id);
+    const label = count > 0 ? `${folder.name}  ${count}` : folder.name;
+    const rowClass =
+        [isRenaming ? 'is-folder-renaming' : '', pickingFolderId === folder.id ? 'is-folder-picking' : '']
+            .filter(Boolean)
+            .join(' ') || undefined;
+    const addChats = () => onAddChats(folder.id, folder.name);
 
     const trailing = isRenaming ? (
         <FolderNameDraft
@@ -560,76 +785,90 @@ function CustomFileTreeFolder({
         />
     ) : (
         <FolderItemActions
+            name={folder.name}
+            onAddChats={expanded ? undefined : addChats}
             onRename={() => onStartRename(folder.id)}
             onDelete={() => onDeleteFolder(folder.id)}
         />
     );
 
-    const nested = canNest ? (
-        <>
-            {folder.children.map((child) => (
-                <CustomFileTreeFolder
-                    key={child.id}
-                    root={root}
-                    folder={child}
-                    depth={depth + 1}
-                    drafting={drafting}
-                    renamingId={renamingId}
-                    onStartDraft={onStartDraft}
-                    onCommitDraft={onCommitDraft}
-                    onCancelDraft={onCancelDraft}
-                    onStartRename={onStartRename}
-                    onCommitRename={onCommitRename}
-                    onCancelRename={onCancelRename}
-                    onDeleteFolder={onDeleteFolder}
-                />
-            ))}
-            {draftHere ? (
-                <FolderNameDraft onCommit={onCommitDraft} onCancel={onCancelDraft} />
-            ) : (
-                <FileTreeItem
-                    nodeId={`${folder.id}:new`}
-                    label="New Folder"
-                    icon={<Plus className="size-4.5" />}
-                    onClick={(event) => {
-                        event.preventDefault();
-                        onStartDraft(root, folder.id);
-                    }}
-                />
-            )}
-        </>
-    ) : null;
-
-    if (!canNest) {
-        return (
-            <FileTreeItem
-                nodeId={folder.id}
-                label={folder.name}
-                className={isRenaming ? 'is-folder-renaming' : undefined}
-                trailing={trailing}
-            />
-        );
-    }
-
     return (
         <FileTreeItem
             nodeId={folder.id}
-            label={folder.name}
+            label={label}
             hasChildren
-            className={isRenaming ? 'is-folder-renaming' : undefined}
+            className={rowClass}
             trailing={trailing}
         >
-            {nested}
+            {renderChats(folder.id)}
+            <FileTreeItem
+                nodeId={`${folder.id}:add`}
+                label="Add Chats"
+                icon={<Plus className="size-4.5" />}
+                onClick={(event) => {
+                    event.preventDefault();
+                    addChats();
+                }}
+            />
         </FileTreeItem>
     );
 }
 
+/** Shared "+ add chats" button for a folder row (shown on hover). */
+function AddChatsButton({ name, onAddChats, tabIndex }: { name: string; onAddChats: () => void; tabIndex?: number }) {
+    return (
+        <button
+            type="button"
+            className="folder-item-action folder-item-action--add"
+            aria-label={`Add chats to ${name}`}
+            title="Add chats"
+            tabIndex={tabIndex}
+            onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onAddChats();
+            }}
+            onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+            }}
+            onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                event.stopPropagation();
+                onAddChats();
+            }}
+        >
+            <MessageSquarePlus className="size-3.5" aria-hidden />
+        </button>
+    );
+}
+
+/** Work / Personal: fixed folders — adding chats is their only action. */
+function FolderAddChatsAction({ name, onAddChats }: { name: string; onAddChats: () => void }) {
+    return (
+        <div className="folder-item-actions" data-folder-actions>
+            <div className="folder-item-actions__idle">
+                <AddChatsButton name={name} onAddChats={onAddChats} />
+            </div>
+        </div>
+    );
+}
+
 function FolderItemActions({
+    name,
+    onAddChats,
     onRename,
     onDelete,
+    deleteLabel = 'Delete folder',
 }: {
-    onRename: () => void;
+    name: string;
+    /** Omit to hide the "+ add chats" button. */
+    onAddChats?: () => void;
+    /** Omit to hide the rename button. */
+    onRename?: () => void;
     onDelete: () => void;
+    deleteLabel?: string;
 }) {
     const [confirming, setConfirming] = useState(false);
 
@@ -645,25 +884,30 @@ function FolderItemActions({
             onMouseLeave={() => setConfirming(false)}
         >
             <div className="folder-item-actions__idle" aria-hidden={confirming}>
-                <button
-                    type="button"
-                    className="folder-item-action"
-                    aria-label="Rename folder"
-                    title="Rename"
-                    tabIndex={confirming ? -1 : 0}
-                    onPointerDown={(event) => {
-                        stop(event);
-                        onRename();
-                    }}
-                    onClick={stop}
-                >
-                    <Pencil className="size-3.5" aria-hidden />
-                </button>
+                {onAddChats ? (
+                    <AddChatsButton name={name} onAddChats={onAddChats} tabIndex={confirming ? -1 : 0} />
+                ) : null}
+                {onRename ? (
+                    <button
+                        type="button"
+                        className="folder-item-action"
+                        aria-label="Rename folder"
+                        title="Rename"
+                        tabIndex={confirming ? -1 : 0}
+                        onPointerDown={(event) => {
+                            stop(event);
+                            onRename();
+                        }}
+                        onClick={stop}
+                    >
+                        <Pencil className="size-3.5" aria-hidden />
+                    </button>
+                ) : null}
                 <button
                     type="button"
                     className="folder-item-action folder-item-action--danger"
-                    aria-label="Delete folder"
-                    title="Delete"
+                    aria-label={deleteLabel}
+                    title={deleteLabel}
                     tabIndex={confirming ? -1 : 0}
                     onPointerDown={(event) => {
                         stop(event);
@@ -678,7 +922,7 @@ function FolderItemActions({
             <button
                 type="button"
                 className="folder-item-action folder-item-action--confirm"
-                aria-label="Confirm delete folder"
+                aria-label={`Confirm: ${deleteLabel.toLowerCase()}`}
                 title="Confirm delete"
                 tabIndex={confirming ? 0 : -1}
                 aria-hidden={!confirming}
@@ -692,6 +936,52 @@ function FolderItemActions({
                 <Check className="size-3.5 folder-item-action__check" aria-hidden />
             </button>
         </div>
+    );
+}
+
+/** A chat inside a folder: mini avatar + name; opens on click, trash on hover. */
+function FolderChatItem({
+    folderId,
+    user,
+    myUsername,
+    active,
+    onOpen,
+    onRemove,
+}: {
+    folderId: string;
+    user: any;
+    myUsername: string | null;
+    active: boolean;
+    onOpen: () => void;
+    onRemove: () => void;
+}) {
+    const profile = resolveContactProfile(user.username, user, myUsername);
+    const label = getDisplayLabel(user.username, profile);
+
+    return (
+        <FileTreeItem
+            nodeId={`chat:${folderId}:${user.username}`}
+            label={label}
+            className={active ? 'is-folder-chat is-folder-chat-active' : 'is-folder-chat'}
+            icon={
+                <span
+                    className={`contact-avatar folder-chat-avatar${profile.avatarDataUrl ? ' has-photo' : ''}`}
+                    style={{ ['--avatar-hue' as string]: String(getAvatarHue(user.username)) }}
+                    aria-hidden="true"
+                >
+                    {profile.avatarDataUrl ? (
+                        <img src={profile.avatarDataUrl} alt="" className="contact-avatar-img" loading="lazy" />
+                    ) : (
+                        getInitials(label)
+                    )}
+                </span>
+            }
+            trailing={<FolderItemActions name={label} onDelete={onRemove} deleteLabel="Remove from folder" />}
+            onClick={(event) => {
+                event.preventDefault();
+                onOpen();
+            }}
+        />
     );
 }
 
@@ -854,6 +1144,58 @@ function LibraryRow({
     );
 }
 
+/** Takes the dock's place while choosing chats for a folder. */
+function FolderPickBar({
+    name,
+    count,
+    onCancel,
+    onSave,
+}: {
+    name: string;
+    count: number;
+    onCancel: () => void;
+    onSave: () => void;
+}) {
+    const reduceMotion = useReducedMotion() === true;
+    return (
+        <motion.div
+            className="folder-pick-bar"
+            role="region"
+            aria-label={`Add chats to ${name}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={reduceMotion ? { duration: 0 } : PICK_MODE_TRANSITION}
+        >
+            {/* One line: "Add to <folder> (N)" … Cancel [Save]. The info side shrinks
+                and clips (folder name ellipsizes; "Add to" drops on narrow bars);
+                the buttons never shrink. */}
+            <div className="folder-pick-bar__info">
+                <span className="folder-pick-bar__prefix">Add to</span>
+                <strong className="folder-pick-bar__name" title={name}>
+                    {name}
+                </strong>
+                <span
+                    className="folder-pick-bar__count"
+                    data-empty={count === 0 || undefined}
+                    aria-live="polite"
+                    aria-label={count === 0 ? 'None selected' : `${count} selected`}
+                >
+                    {count}
+                </span>
+            </div>
+            <div className="folder-pick-bar__actions">
+                <button type="button" className="folder-pick-bar__btn folder-pick-bar__btn--cancel" onClick={onCancel}>
+                    Cancel
+                </button>
+                <button type="button" className="folder-pick-bar__btn folder-pick-bar__btn--save" onClick={onSave}>
+                    Save
+                </button>
+            </div>
+        </motion.div>
+    );
+}
+
 function ContactList({ children }: { children: ReactNode }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
@@ -934,6 +1276,9 @@ function ContactRow({
     unread,
     typing,
     muted,
+    pickable = false,
+    picked = false,
+    onTogglePick,
     onSelect,
 }: {
     user: any;
@@ -943,6 +1288,10 @@ function ContactRow({
     unread: number;
     typing: boolean;
     muted: boolean;
+    /** "Add chats to folder" mode: the row toggles a checkmark instead of opening the chat. */
+    pickable?: boolean;
+    picked?: boolean;
+    onTogglePick?: () => void;
     onSelect: () => void;
 }) {
     const rowRef = useRef<HTMLButtonElement>(null);
@@ -954,6 +1303,7 @@ function ContactRow({
     const presenceClass = online == null ? 'presence-neutral' : online ? 'is-online' : 'is-offline';
     const time = formatSidebarTime(user.last_message_at);
     const preview = truncateSidebarPreview(user.last_message_preview);
+    // Kept mounted in pick mode (CSS fades it out) so nothing pops.
     const showBadge = unread > 0 && !active;
 
     const bumpHighlight = () => onHighlight?.(rowRef.current);
@@ -965,11 +1315,13 @@ function ContactRow({
         <button
             ref={rowRef}
             type="button"
-            className={`contact-row${active ? ' is-active' : ''}`}
+            className={`contact-row${active ? ' is-active' : ''}${pickable ? ' is-pickable' : ''}${picked ? ' is-picked' : ''}`}
             data-username={user.username}
-            aria-label={`Open chat with ${label}`}
-            aria-current={active ? 'true' : 'false'}
-            onClick={onSelect}
+            role={pickable ? 'checkbox' : undefined}
+            aria-checked={pickable ? picked : undefined}
+            aria-label={pickable ? `Include ${label}` : `Open chat with ${label}`}
+            aria-current={!pickable && active ? 'true' : 'false'}
+            onClick={pickable ? onTogglePick : onSelect}
             onMouseEnter={bumpHighlight}
             onFocus={bumpHighlight}
         >
@@ -984,6 +1336,18 @@ function ContactRow({
                 }}
                 transition={spring}
             />
+            {/* Always mounted: in pick mode it eases in at the row's start while the
+                row's padding opens room for it — [ check | avatar | name / preview ]. */}
+            <span className="contact-row__pick" aria-hidden="true">
+                <motion.span
+                    className="contact-row__pick-mark"
+                    initial={false}
+                    animate={{ scale: picked ? 1 : 0.4, opacity: picked ? 1 : 0 }}
+                    transition={spring}
+                >
+                    <Check size={12} strokeWidth={3} />
+                </motion.span>
+            </span>
             <div
                 className={`contact-avatar${profile.avatarDataUrl ? ' has-photo' : ''}`}
                 style={{ ['--avatar-hue' as string]: String(getAvatarHue(user.username)) }}
@@ -1019,6 +1383,7 @@ function ContactRow({
                     {unread > 99 ? '99+' : String(unread)}
                 </span>
             ) : null}
+
         </button>
     );
 }
@@ -1037,11 +1402,18 @@ function readDockActiveIndex() {
     return 0;
 }
 
+type DockPick = { name: string; count: number; onCancel: () => void; onSave: () => void };
+
 const SidebarDock = memo(function SidebarDock({
     onOpenSpotlight,
+    pick = null,
 }: {
     onOpenSpotlight?: () => void;
+    /** "Add chats to folder" in progress: show its Cancel / Save bar instead of the tabs. */
+    pick?: DockPick | null;
 }) {
+    const reduceMotion = useReducedMotion() === true;
+    const dockSwap = reduceMotion ? { duration: 0 } : PICK_MODE_TRANSITION;
     const [activeIndex, setActiveIndex] = useState(0);
 
     useEffect(() => {
@@ -1055,26 +1427,51 @@ const SidebarDock = memo(function SidebarDock({
     }, []);
 
     return (
-        <div className="sidebar-dock-bar">
-            <ExpandableTabs
-                id="uiSidebarDock"
-                label="App sections"
-                tabs={DOCK_TABS}
-                activeIndex={activeIndex}
-                onChange={(index) => {
-                    if (index == null) return;
-                    const tab = DOCK_TABS[index];
-                    if (!tab) return;
-                    if ('action' in tab && tab.action) {
-                        onOpenSpotlight?.();
-                        return;
-                    }
-                    closeComposeSearch({ immediate: true });
-                    if (tab.rail === 'chats') showChatsView();
-                    else if (tab.rail === 'identity') openProfile('identity');
-                    else if (tab.rail === 'settings') openAppSettings('appearance');
-                }}
-            />
+        <div className="sidebar-dock-bar" data-mode={pick ? 'pick' : 'nav'}>
+            {/* Tabs and the pick bar share one cell. The tabs stay mounted (hidden and
+                inert while picking): app.js binds its own click handlers to those
+                buttons at startup, and a remount would drop them. */}
+            <div className="sidebar-dock-bar__stack">
+                <motion.div
+                    className="sidebar-dock-bar__nav"
+                    initial={false}
+                    animate={{ opacity: pick ? 0 : 1, y: pick ? 8 : 0 }}
+                    transition={dockSwap}
+                    inert={pick ? true : undefined}
+                    aria-hidden={pick ? true : undefined}
+                >
+                        <ExpandableTabs
+                            id="uiSidebarDock"
+                            label="App sections"
+                            tabs={DOCK_TABS}
+                            activeIndex={activeIndex}
+                            onChange={(index) => {
+                                if (index == null) return;
+                                const tab = DOCK_TABS[index];
+                                if (!tab) return;
+                                if ('action' in tab && tab.action) {
+                                    onOpenSpotlight?.();
+                                    return;
+                                }
+                                closeComposeSearch({ immediate: true });
+                                if (tab.rail === 'chats') showChatsView();
+                                else if (tab.rail === 'identity') openProfile('identity');
+                                else if (tab.rail === 'settings') openAppSettings('appearance');
+                            }}
+                        />
+                </motion.div>
+                <AnimatePresence initial={false}>
+                    {pick ? (
+                        <FolderPickBar
+                            key="pick"
+                            name={pick.name}
+                            count={pick.count}
+                            onCancel={pick.onCancel}
+                            onSave={pick.onSave}
+                        />
+                    ) : null}
+                </AnimatePresence>
+            </div>
         </div>
     );
 });

@@ -1,0 +1,121 @@
+/* ScrollBlur edgeVariant="mask" — progressive fade + blur at scroll edges.
+   The viewport's own content fades (mask-image), so everything inside goes with
+   it regardless of z-index, and the real background shows through — no tint to
+   match. A thin blur, strongest at the edge, sits above (the mask gives the
+   viewport its own stacking context, so the blur layer stays on top). */
+
+@property --sb-fade-start {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --sb-fade-end {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+
+[data-slot="scroll-blur-viewport"][data-edge-mask] {
+    overscroll-behavior: contain;
+    transition:
+        --sb-fade-start 200ms ease,
+        --sb-fade-end 200ms ease;
+}
+
+/* Eased (not linear) alpha ramp at each end: rows fade gently, then drop off at
+   the edge. The animated fade lengths are read directly here (not through an
+   intermediate custom property) so every browser re-resolves them per frame. */
+[data-slot="scroll-blur-viewport"][data-edge-mask="vertical"] {
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        rgb(0 0 0 / 0.18) calc(var(--sb-fade-start) * 0.3),
+        rgb(0 0 0 / 0.55) calc(var(--sb-fade-start) * 0.62),
+        #000 var(--sb-fade-start),
+        #000 calc(100% - var(--sb-fade-end)),
+        rgb(0 0 0 / 0.55) calc(100% - var(--sb-fade-end) * 0.62),
+        rgb(0 0 0 / 0.18) calc(100% - var(--sb-fade-end) * 0.3),
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        rgb(0 0 0 / 0.18) calc(var(--sb-fade-start) * 0.3),
+        rgb(0 0 0 / 0.55) calc(var(--sb-fade-start) * 0.62),
+        #000 var(--sb-fade-start),
+        #000 calc(100% - var(--sb-fade-end)),
+        rgb(0 0 0 / 0.55) calc(100% - var(--sb-fade-end) * 0.62),
+        rgb(0 0 0 / 0.18) calc(100% - var(--sb-fade-end) * 0.3),
+        transparent 100%
+    );
+}
+
+[data-slot="scroll-blur-viewport"][data-edge-mask="horizontal"] {
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        rgb(0 0 0 / 0.18) calc(var(--sb-fade-start) * 0.3),
+        rgb(0 0 0 / 0.55) calc(var(--sb-fade-start) * 0.62),
+        #000 var(--sb-fade-start),
+        #000 calc(100% - var(--sb-fade-end)),
+        rgb(0 0 0 / 0.55) calc(100% - var(--sb-fade-end) * 0.62),
+        rgb(0 0 0 / 0.18) calc(100% - var(--sb-fade-end) * 0.3),
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        rgb(0 0 0 / 0.18) calc(var(--sb-fade-start) * 0.3),
+        rgb(0 0 0 / 0.55) calc(var(--sb-fade-start) * 0.62),
+        #000 var(--sb-fade-start),
+        #000 calc(100% - var(--sb-fade-end)),
+        rgb(0 0 0 / 0.55) calc(100% - var(--sb-fade-end) * 0.62),
+        rgb(0 0 0 / 0.18) calc(100% - var(--sb-fade-end) * 0.3),
+        transparent 100%
+    );
+}
+
+/* Content is resizing (animated expand / collapse): drop the fades at once. */
+[data-slot="scroll-blur-viewport"][data-edge-mask][data-resizing] {
+    transition: none;
+}
+
+/* Blur layer: strongest at the edge, gone by the inner end. */
+.scroll-blur-edge--mask {
+    -webkit-backdrop-filter: blur(var(--sb-edge-blur, 2.5px));
+    backdrop-filter: blur(var(--sb-edge-blur, 2.5px));
+}
+
+.scroll-blur-edge--mask[data-edge-side="top"] {
+    -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+    mask-image: linear-gradient(to bottom, #000, transparent);
+}
+
+.scroll-blur-edge--mask[data-edge-side="bottom"] {
+    -webkit-mask-image: linear-gradient(to top, #000, transparent);
+    mask-image: linear-gradient(to top, #000, transparent);
+}
+
+.scroll-blur-edge--mask[data-edge-side="left"] {
+    -webkit-mask-image: linear-gradient(to right, #000, transparent);
+    mask-image: linear-gradient(to right, #000, transparent);
+}
+
+.scroll-blur-edge--mask[data-edge-side="right"] {
+    -webkit-mask-image: linear-gradient(to left, #000, transparent);
+    mask-image: linear-gradient(to left, #000, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-slot="scroll-blur-viewport"][data-edge-mask] {
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .scroll-blur-edge--mask {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}

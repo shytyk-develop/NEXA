@@ -207,8 +207,19 @@
     min-width: 0;
     padding: 10px 12px;
     position: relative;
-    transition: background 0.18s ease;
+    transition:
+        background 0.18s ease,
+        padding-left var(--pick-mode-duration, 240ms) var(--pick-mode-ease, ease);
     width: 100%;
+}
+
+/* Pick mode on mobile rows (12px base inset). */
+#page-chat.is-viewport-app-stack #usersList .contact-row.is-pickable {
+    padding-left: calc(12px + var(--pick-mode-room, 30px));
+}
+
+#page-chat.is-viewport-app-stack #usersList .contact-row__pick {
+    left: 12px;
 }
 
 #page-chat.is-viewport-app-stack #usersList .contact-row:last-child {
