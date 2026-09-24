@@ -4007,7 +4007,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .sidebar-file-tree .folder-item-action--add:hover {
-    color: var(--color-brand, #afb9cd);
+    color: #f4f4f5;
 }
 
 /* Folder currently receiving chats: keep its actions visible and mark the row. */
@@ -4017,7 +4017,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .sidebar-file-tree .file-tree-item-row:has(> .is-folder-picking) .folder-item-action--add {
-    color: var(--color-brand, #afb9cd);
+    color: #f4f4f5;
 }
 
 #page-chat .sidebar-file-tree .folder-item-action--danger:hover {
