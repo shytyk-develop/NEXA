@@ -875,7 +875,8 @@ registerOverlayActions({
             .catch(() => showToast('Copy failed.', 'error'));
     },
     'message.delete': (payload) => {
-        if (payload?.messageId) deleteSingleMessage(payload.messageId);
+        // The quick bar's delete button has its own Confirm step.
+        if (payload?.messageId) deleteSingleMessage(payload.messageId, { confirmed: payload.confirmed === true });
     },
     'message.highlight': (payload) => {
         highlightMessageRow(payload?.messageId || payload?.clientMessageId);
@@ -1601,6 +1602,23 @@ DOM.dockSettings?.addEventListener('click', (event) => {
         DOM.fileInput.value = '';
     });
     DOM.replyCloseBtn?.addEventListener('click', clearPendingReply);
+    // The rest of the reply banner jumps to the quoted message; the ✕ above only cancels.
+    const jumpToPendingReply = () => {
+        const messageId = state.pendingReply?.messageId;
+        if (!messageId) return;
+        if (!scrollToMessageById(messageId)) {
+            showToast('The original message is no longer in this chat.', 'info');
+        }
+    };
+    DOM.replyBar?.addEventListener('click', (event) => {
+        if (event.target.closest('#uiReplyCloseBtn')) return;
+        jumpToPendingReply();
+    });
+    DOM.replyBar?.querySelector('.composer-reply-body')?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        jumpToPendingReply();
+    });
     DOM.peerMuteBtn?.addEventListener('click', () => {
         if (!state.currentTargetUser) return;
         showToast('Mute is coming soon.', 'info');
@@ -1864,11 +1882,10 @@ async function deleteCurrentChat() {
     }
 }
 
-async function deleteSingleMessage(messageId) {
+async function deleteSingleMessage(messageId, { confirmed = false } = {}) {
     if (!state.currentTargetUser || !messageId) return;
 
-    const confirmed = window.confirm("Delete this message from the database?");
-    if (!confirmed) {
+    if (!confirmed && !window.confirm("Delete this message from the database?")) {
         focusComposer();
         return;
     }

@@ -134,13 +134,13 @@
 }
 
 #page-chat .profile-nav-btn--logout {
-    color: #fca5a5;
+    color: var(--danger);
 }
 
 #page-chat .profile-nav-btn--logout:hover,
 #page-chat .profile-nav-btn--logout:focus-visible {
-    background: rgba(248, 113, 113, 0.08);
-    color: #fecaca;
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
+    color: var(--danger-hover);
 }
 
 #page-chat.is-viewport-app-stack .profile-e2ee-card,
@@ -189,7 +189,7 @@
     #page-chat.is-viewport-app-stack .profile-nav-btn--logout:hover,
     #page-chat.is-viewport-profile-stack .profile-nav-btn--logout:hover {
         background: transparent;
-        color: #f87171;
+        color: var(--danger);
     }
 }
 
@@ -524,7 +524,7 @@
 }
 
 #page-chat.is-viewport-profile-stack .profile-nav-btn--logout {
-    color: #f87171;
+    color: var(--danger);
     margin-top: 18px;
 }
 
@@ -1073,8 +1073,8 @@
 }
 
 #page-chat .profile-workspace .profile-status-dot.is-busy {
-    background: #f87171;
-    box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+    background: var(--danger);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 #page-chat .profile-workspace .profile-status-dot.is-invisible {
@@ -1315,7 +1315,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-status.is-busy {
-    color: #f87171;
+    color: var(--danger);
 }
 
 #page-chat .profile-workspace .profile-preview-status.is-invisible {
@@ -2080,16 +2080,16 @@
 }
 
 #page-chat .profile-workspace .profile-data-action.is-danger .profile-data-action-icon {
-    border-color: rgba(248, 113, 113, 0.28);
-    color: #f87171;
+    border-color: color-mix(in srgb, var(--danger) 28%, transparent);
+    color: var(--danger);
 }
 
 #page-chat .profile-workspace .profile-data-action.is-danger .profile-data-action-title {
-    color: #f87171;
+    color: var(--danger);
 }
 
 #page-chat .profile-workspace .profile-data-action.is-danger:hover .profile-data-action-title {
-    text-shadow: 0 0 14px rgba(248, 113, 113, 0.35);
+    text-shadow: 0 0 14px color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
 #page-chat .profile-workspace .profile-data-layout.is-ready .profile-data-overview {

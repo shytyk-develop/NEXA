@@ -11,6 +11,9 @@
     --color-muted-foreground: #71717a;
     --color-ring: color-mix(in srgb, #fff 28%, transparent);
     --color-brand: #afb9cd;
+    /* Map Tailwind's reds (text-red-500 etc. used from JS) onto the site's one danger red. */
+    --color-red-400: var(--danger, #ef4444);
+    --color-red-500: var(--danger, #ef4444);
 }
 
 #page-chat {

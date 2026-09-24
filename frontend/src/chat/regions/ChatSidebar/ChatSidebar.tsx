@@ -298,7 +298,8 @@ function SidebarLibrary({
     active: LibraryFilter;
     onSelect: (filter: LibraryFilter) => void;
 }) {
-    const [expandedIds, setExpandedIds] = useState<string[]>(['all', 'work']);
+    // Default: only All is open — Work / Personal show as collapsed rows.
+    const [expandedIds, setExpandedIds] = useState<string[]>(['all']);
     const [tree, setTree] = useState<FolderTreeState>(() => loadFolderTree());
     const [drafting, setDrafting] = useState<{ root: FolderRoot; parentId: string | null } | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);

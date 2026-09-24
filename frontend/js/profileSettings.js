@@ -1,6 +1,7 @@
 // Profile Settings — identity, appearance, security, privacy, data.
 
 import { buildChatTranscript, copyText, downloadTextFile, makeSafeFilename } from './chatActions.js';
+import { describeLinkWarnings, enableLinkWarnings, LINK_WARNINGS_CHANGED, pauseLinkWarnings } from './linkWarnings.js';
 import {
     buildStorageReport,
     clearChatHistory,
@@ -83,9 +84,14 @@ export function initProfileSettings(context) {
 }
 
 export function queueProfilePanelRefresh(section = 'identity') {
-    pendingProfileSection = section || 'identity';
+    // Each queued refresh carries its own section: one click can queue this more
+    // than once (the dock's React handler and ui.js's delegated one both fire), and
+    // a shared "pending" value reset by the first refresh made the second one
+    // fall back to identity — Settings opened on Profile instead of Appearance.
+    const target = section || 'identity';
+    pendingProfileSection = target;
     requestAnimationFrame(() => {
-        requestAnimationFrame(() => onProfilePanelOpen());
+        requestAnimationFrame(() => onProfilePanelOpen(target));
     });
 }
 
@@ -173,6 +179,13 @@ function bindShell() {
         });
     });
 
+    // Link warnings are a per-device setting (localStorage), not a synced preference.
+    $p('uiPrefLinkWarnings')?.addEventListener('change', (event) => {
+        if (event.target.checked) enableLinkWarnings();
+        else pauseLinkWarnings(Infinity);
+    });
+    window.addEventListener(LINK_WARNINGS_CHANGED, hydrateLinkWarnings);
+
     $p('uiProfileClearCacheBtn')?.addEventListener('click', clearDrafts);
     $p('uiProfileClearHistoryBtn')?.addEventListener('click', clearHistory);
     $p('uiProfileExportDataBtn')?.addEventListener('click', exportStorageReport);
@@ -198,11 +211,11 @@ export function onProfilePanelClose() {
     });
 }
 
-export function onProfilePanelOpen() {
+export function onProfilePanelOpen(sectionOverride) {
     const username = resolveUsername();
     draftProfile = loadProfile(username);
     avatarPreviewUrl = draftProfile.avatarDataUrl;
-    const section = pendingProfileSection || 'identity';
+    const section = sectionOverride || pendingProfileSection || 'identity';
     setSection(section);
     pendingProfileSection = 'identity';
     hydrateIdentity(username);
@@ -1103,6 +1116,22 @@ function syncAppearancePreview(partial = {}) {
     preview.style.setProperty('--preview-dim', String(dim));
 }
 
+const linkDateFormat = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+function hydrateLinkWarnings() {
+    const input = $p('uiPrefLinkWarnings');
+    const hint = $p('uiPrefLinkWarningsHint');
+    const status = describeLinkWarnings();
+    if (input) input.checked = status.state === 'on';
+    if (!hint) return;
+    hint.textContent =
+        status.state === 'on'
+            ? 'Hold to confirm before an external link opens.'
+            : status.state === 'paused'
+                ? `Paused until ${linkDateFormat.format(status.until)}.`
+                : 'Off on this device.';
+}
+
 export function hydrateProfilePrivacy(preferences) {
     const prefs = preferences || ctx?.getPreferences?.() || {};
     const map = {
@@ -1114,4 +1143,5 @@ export function hydrateProfilePrivacy(preferences) {
         const el = $p(id);
         if (el) el.checked = prefs[key] !== false;
     });
+    hydrateLinkWarnings();
 }

@@ -467,7 +467,13 @@ export function ChatInput({ onSend }: ChatInputProps) {
                         aria-hidden={!hasReply || !expanded}
                     >
                         <div className="composer-reply-accent" aria-hidden="true" />
-                        <div className="composer-reply-body">
+                        <div
+                            className="composer-reply-body"
+                            role="button"
+                            tabIndex={0}
+                            title="Show message"
+                            aria-label="Show the message you're replying to"
+                        >
                             <p id="uiReplyLabel" className="composer-reply-label">Reply</p>
                             <p id="uiReplyPreview" className="composer-reply-preview" />
                         </div>

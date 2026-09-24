@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 type ScrollBlurAxis = "vertical" | "horizontal" | "both";
 type ScrollSnap = "none" | "x" | "y" | "both";
 type ScrollSnapAlign = "start" | "center" | "end";
+type ScrollBlurSide = "top" | "bottom" | "left" | "right";
+type ScrollBlurEdgeVariant = "fade" | "custom";
 
 export interface ScrollBlurProps extends React.HTMLAttributes<HTMLDivElement> {
   axis?: ScrollBlurAxis;
@@ -15,6 +17,14 @@ export interface ScrollBlurProps extends React.HTMLAttributes<HTMLDivElement> {
   hideScrollbar?: boolean;
   /** Keep edge fades visible even at scroll extents (e.g. under floating chrome). */
   forceEdges?: boolean;
+  /**
+   * "fade": tinted gradient + light blur (default).
+   * "custom": a bare, unstyled edge (no layers, no inline size) — style it entirely
+   * through `edgeClassNames`.
+   */
+  edgeVariant?: ScrollBlurEdgeVariant;
+  /** Extra classes per edge; with edgeVariant="custom" they carry all the styling. */
+  edgeClassNames?: Partial<Record<ScrollBlurSide, string>>;
   viewportClassName?: string;
   contentClassName?: string;
   children: React.ReactNode;
@@ -26,6 +36,8 @@ export function ScrollBlur({
   snap = "none",
   hideScrollbar = true,
   forceEdges = false,
+  edgeVariant = "fade",
+  edgeClassNames,
   className,
   viewportClassName,
   contentClassName,
@@ -133,12 +145,16 @@ export function ScrollBlur({
             side="top"
             size={edgeSize}
             reduceMotion={reduceMotion}
+            variant={edgeVariant}
+            className={edgeClassNames?.top}
           />
           <ScrollBlurEdge
             visible={edges.bottom}
             side="bottom"
             size={edgeSize}
             reduceMotion={reduceMotion}
+            variant={edgeVariant}
+            className={edgeClassNames?.bottom}
           />
         </>
       ) : null}
@@ -149,12 +165,16 @@ export function ScrollBlur({
             side="left"
             size={edgeSize}
             reduceMotion={reduceMotion}
+            variant={edgeVariant}
+            className={edgeClassNames?.left}
           />
           <ScrollBlurEdge
             visible={edges.right}
             side="right"
             size={edgeSize}
             reduceMotion={reduceMotion}
+            variant={edgeVariant}
+            className={edgeClassNames?.right}
           />
         </>
       ) : null}
@@ -188,11 +208,15 @@ function ScrollBlurEdge({
   side,
   size,
   reduceMotion,
+  variant,
+  className,
 }: {
   visible: boolean;
-  side: "top" | "bottom" | "left" | "right";
+  side: ScrollBlurSide;
   size: number;
   reduceMotion: boolean | null;
+  variant: ScrollBlurEdgeVariant;
+  className?: string;
 }) {
   const isVertical = side === "top" || side === "bottom";
   const gradient =
@@ -222,20 +246,27 @@ function ScrollBlurEdge({
         side === "bottom" && "inset-x-0 bottom-0",
         side === "left" && "inset-y-0 left-0",
         side === "right" && "inset-y-0 right-0",
-        isVertical ? "w-full" : "h-full"
+        isVertical ? "w-full" : "h-full",
+        className
       )}
-      style={isVertical ? { height: size } : { width: size }}
+      style={
+        variant === "fade" ? (isVertical ? { height: size } : { width: size }) : undefined
+      }
       initial={false}
       animate={{ opacity: visible ? 1 : 0 }}
       transition={{ duration: reduceMotion ? 0 : 0.16 }}
     >
-      <div
-        className={cn(
-          "absolute inset-0 from-background via-background/75 to-transparent",
-          gradient
-        )}
-      />
-      <div className={cn("absolute inset-0 backdrop-blur-[4px]", mask)} />
+      {variant === "fade" ? (
+        <>
+          <div
+            className={cn(
+              "absolute inset-0 from-background via-background/75 to-transparent",
+              gradient
+            )}
+          />
+          <div className={cn("absolute inset-0 backdrop-blur-[4px]", mask)} />
+        </>
+      ) : null}
     </motion.div>
   );
 }

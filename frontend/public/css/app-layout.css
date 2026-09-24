@@ -43,7 +43,7 @@
     --nexa-aside-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
     --nexa-aside-motion-duration-out: 0.52s;
     --nexa-aside-motion-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --nexa-aside-start-w: 328px;
+    --nexa-aside-start-w: 288px;
     --peer-panel-glass: var(--nexa-aside-fill);
     --control-glass: color-mix(in srgb, #1a1a1a calc(22% + var(--glass-intensity) * 0.56%), transparent);
     --wallpaper-dim: calc(var(--dim-intensity) * 1%);
@@ -599,7 +599,7 @@ html[data-wallpaper-dim] {
 
 #page-chat .rail-presence,
 #page-chat #status {
-    background: var(--red, #ef4444);
+    background: var(--danger);
     border: 2px solid color-mix(in srgb, var(--bg, #0a0a0a) 70%, transparent);
     border-radius: 999px;
     display: block;
@@ -612,7 +612,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat #status.status-offline {
-    background: var(--red, #ef4444);
+    background: var(--danger);
 }
 
 #page-chat .sidebar {
@@ -635,7 +635,7 @@ html[data-wallpaper-dim] {
         border-radius 0.32s ease,
         box-shadow 0.32s ease,
         padding 0.32s ease;
-    width: var(--nexa-aside-start-w, 328px);
+    width: var(--nexa-aside-start-w, 288px);
 }
 
 #page-chat .sidebar.is-collapsed {
@@ -647,7 +647,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .sidebar > * {
-    min-width: var(--nexa-aside-start-w, 328px);
+    min-width: var(--nexa-aside-start-w, 288px);
 }
 
 #page-chat .sidebar.no-motion {
@@ -1043,7 +1043,7 @@ html[data-wallpaper-dim] {
         width var(--sidebar-motion-duration) var(--sidebar-motion-ease),
         margin-left var(--sidebar-motion-duration) var(--sidebar-motion-ease),
         margin-right var(--sidebar-motion-duration) var(--sidebar-motion-ease);
-    width: var(--nexa-aside-start-w, 328px);
+    width: var(--nexa-aside-start-w, 288px);
     z-index: 4;
 }
 
@@ -1061,7 +1061,7 @@ html[data-wallpaper-dim] {
         transform var(--sidebar-motion-duration) var(--sidebar-motion-ease),
         visibility 0s linear 0s;
     visibility: visible;
-    width: var(--nexa-aside-start-w, 328px);
+    width: var(--nexa-aside-start-w, 288px);
     /* Cover the tucked toggle so it slides out from under the shelf. */
     z-index: 2;
 }
@@ -2152,12 +2152,14 @@ html[data-wallpaper-dim] {
     --chat-header-morph-duration: 0.28s;
     --chat-header-morph-ease: cubic-bezier(0.32, 0.72, 0, 1);
     align-items: center;
-    background: color-mix(in srgb, var(--chat-stage-fill, #10131a) 42%, transparent);
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--capsule-stroke);
+    /* Solid, matching the composer capsule (see .composer-shell) */
+    background: var(--nexa-aside-fill, #161920);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--nexa-aside-stroke, var(--capsule-stroke));
     border-radius: 999px;
-    box-shadow: var(--glass-inset-highlight);
+    /* Composer's lift, mirrored: it casts down onto the thread */
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
     display: flex;
     flex: 0 0 auto;
     height: 100%;
@@ -2316,12 +2318,12 @@ html[data-wallpaper-dim] {
 #page-chat .chat-header-search-btn {
     align-items: center;
     aspect-ratio: 1;
-    background: color-mix(in srgb, var(--chat-stage-fill, #10131a) 42%, transparent);
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--capsule-stroke);
+    background: var(--nexa-aside-fill, #161920);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--nexa-aside-stroke, var(--capsule-stroke));
     border-radius: 999px;
-    box-shadow: var(--glass-inset-highlight);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
     color: #a1a1aa;
     cursor: pointer;
     display: inline-flex;
@@ -3446,9 +3448,9 @@ html[data-wallpaper-dim] {
     z-index: 1;
 }
 
-/* Messages ScrollBlur — dim under floating chrome, then short fade into the stage */
+/* Messages ScrollBlur — bare edges (edgeVariant="custom") styled by
+   .chat-scroll-blur-top / -bottom below, sized to the floating header / composer. */
 #page-chat .chat-messages-scroll {
-    --color-background: var(--chat-stage-fill, #10131a);
     --messages-blur-fade: 28px;
     --messages-blur-top-h: calc(
         var(--nexa-surface-inset, 20px) + var(--layout-header-h, 58px) + var(--messages-blur-fade)
@@ -3464,48 +3466,64 @@ html[data-wallpaper-dim] {
     z-index: 1;
 }
 
-#page-chat .chat-messages-scroll [data-slot="scroll-blur-edge"].top-0 {
-    height: var(--messages-blur-top-h) !important;
-    top: 0;
+/* Progressive blur + dim: backdrop blur and a stage-tinted gradient, both faded out toward
+   the thread by the same linear mask so neither leaves a band or seam. Heights
+   reach past the floating header / composer (80px when those aren't measured).
+   Tune the dim through --messages-blur-dim (peak alpha at the edge).
+   The tint is the stage colour as actually painted (wallpaper fill + its dim
+   overlay, see #page-chat::before), so at full strength the edge blends into the
+   chosen theme instead of reading as a darker band. */
+#page-chat .chat-messages-scroll {
+    --messages-blur-dim: 0.92;
+    --messages-blur-tint: color-mix(
+        in srgb,
+        #000 var(--wallpaper-dim, 0%),
+        var(--chat-stage-fill, #10131a)
+    );
 }
 
-#page-chat .chat-messages-scroll [data-slot="scroll-blur-edge"].bottom-0 {
-    bottom: 0;
-    height: var(--messages-blur-bottom-h) !important;
-}
-
-/* Progressive dim under chrome — match top/bottom softness */
-#page-chat .chat-messages-scroll [data-slot="scroll-blur-edge"].top-0 > div:first-child {
+.chat-scroll-blur-top {
     background: linear-gradient(
         to bottom,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 94%, transparent) 0%,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 88%, transparent) 40%,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 55%, transparent) 62%,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 22%, transparent) 82%,
+        color-mix(in srgb, var(--messages-blur-tint) calc(var(--messages-blur-dim, 0.92) * 100%), transparent) 0%,
+        /* Hold near full strength along the edge before easing off. */
+        color-mix(in srgb, var(--messages-blur-tint) calc(var(--messages-blur-dim, 0.92) * 90%), transparent) 20%,
+        color-mix(in srgb, var(--messages-blur-tint) calc(var(--messages-blur-dim, 0.92) * 40%), transparent) 60%,
         transparent 100%
     );
+    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(40px);
+    height: var(--messages-blur-top-h, 80px);
+    left: 0;
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+    mask-image: linear-gradient(to bottom, black, transparent);
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 10;
 }
 
-#page-chat .chat-messages-scroll [data-slot="scroll-blur-edge"].top-0 > div:last-child {
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-}
-
-#page-chat .chat-messages-scroll [data-slot="scroll-blur-edge"].bottom-0 > div:first-child {
-    /* Dense under the composer, then a softer progressive fade upward */
+.chat-scroll-blur-bottom {
     background: linear-gradient(
         to top,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 94%, transparent) 0%,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 88%, transparent) 40%,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 55%, transparent) 62%,
-        color-mix(in srgb, var(--chat-stage-fill, #10131a) 22%, transparent) 82%,
+        color-mix(in srgb, var(--messages-blur-tint) calc(var(--messages-blur-dim, 0.92) * 100%), transparent) 0%,
+        /* Hold near full strength along the edge before easing off. */
+        color-mix(in srgb, var(--messages-blur-tint) calc(var(--messages-blur-dim, 0.92) * 90%), transparent) 20%,
+        color-mix(in srgb, var(--messages-blur-tint) calc(var(--messages-blur-dim, 0.92) * 40%), transparent) 60%,
         transparent 100%
     );
-}
-
-#page-chat .chat-messages-scroll [data-slot="scroll-blur-edge"].bottom-0 > div:last-child {
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(40px);
+    bottom: 0;
+    height: var(--messages-blur-bottom-h, 80px);
+    left: 0;
+    -webkit-mask-image: linear-gradient(to top, black, transparent);
+    mask-image: linear-gradient(to top, black, transparent);
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    z-index: 10;
 }
 
 #page-chat .chat-messages-scroll__viewport {
@@ -3967,13 +3985,13 @@ html[data-wallpaper-dim] {
 
 #page-chat .sidebar-file-tree .folder-item-action--danger:hover {
     background: transparent;
-    color: #f87171;
+    color: var(--danger);
 }
 
 #page-chat .sidebar-file-tree .folder-item-action--confirm {
-    background: color-mix(in srgb, #ef4444 18%, transparent);
+    background: color-mix(in srgb, var(--danger) 18%, transparent);
     border-radius: 999px;
-    color: #f87171;
+    color: var(--danger);
     height: 24px;
     opacity: 0;
     overflow: hidden;
@@ -4017,8 +4035,8 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .sidebar-file-tree .folder-item-action--confirm:hover {
-    background: color-mix(in srgb, #ef4444 28%, transparent);
-    color: #fecaca;
+    background: color-mix(in srgb, var(--danger) 28%, transparent);
+    color: var(--danger-hover);
 }
 
 #page-chat .sidebar-file-tree [role="treeitem"].is-folder-renaming {
@@ -5213,7 +5231,7 @@ html[data-wallpaper-dim] {
     }
 
     #page-chat .sidebar > * {
-        min-width: var(--nexa-aside-start-w, 328px);
+        min-width: var(--nexa-aside-start-w, 288px);
     }
 
     .sidebar-brand .e2e-chip {

@@ -641,9 +641,10 @@
 }
 
 #authError.text-red-400 {
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.28);
-    color: #fca5a5 !important;
+    background: var(--danger-10);
+    border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+    /* Lighter step for small error text on the dark card. */
+    color: var(--danger-hover) !important;
 }
 
 #authError.text-green-400 {

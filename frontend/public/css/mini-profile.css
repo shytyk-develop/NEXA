@@ -104,8 +104,8 @@
 }
 
 .mini-profile-status.is-offline {
-    background: rgba(239, 68, 68, 0.12);
-    color: #f87171;
+    background: var(--danger-10);
+    color: var(--danger);
 }
 
 .mini-profile-bio {

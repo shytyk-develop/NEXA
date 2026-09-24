@@ -35,13 +35,20 @@
     --shadow-bubble-other: inset 0 1px 0 color-mix(in srgb, #fff 3%, transparent);
     --green: #86efac;
     --amber: #fbbf24;
-    --red: #f87171;
+    /* The one red for destructive actions (delete, remove, log out) and errors,
+       site-wide. Tints below derive from it; --red is kept as an alias. */
+    --danger: #ef4444;
+    /* Lighter step for hover/pressed text on dark surfaces. */
+    --danger-hover: color-mix(in srgb, var(--danger) 70%, #fff);
+    --danger-10: color-mix(in srgb, var(--danger) 12%, transparent);
+    --danger-20: color-mix(in srgb, var(--danger) 22%, transparent);
+    --red: var(--danger);
     --accent-10: rgba(244, 244, 245, 0.1);
     --accent-20: rgba(244, 244, 245, 0.18);
     --green-10: rgba(134, 239, 172, 0.12);
     --green-20: rgba(134, 239, 172, 0.22);
-    --red-10: rgba(248, 113, 113, 0.12);
-    --red-20: rgba(248, 113, 113, 0.22);
+    --red-10: var(--danger-10);
+    --red-20: var(--danger-20);
     --focus: rgba(244, 244, 245, 0.45);
 
     /* Polish tokens */

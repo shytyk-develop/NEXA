@@ -10,8 +10,10 @@ export const MessageFeed = memo(function MessageFeed() {
     return (
         <div className="chat-stage">
             <ScrollBlur
-                edgeSize={56}
+                edgeSize={80}
                 forceEdges
+                edgeVariant="custom"
+                edgeClassNames={{ top: 'chat-scroll-blur-top', bottom: 'chat-scroll-blur-bottom' }}
                 hideScrollbar={false}
                 className="chat-messages-scroll"
                 viewportClassName="chat-messages-scroll__viewport"

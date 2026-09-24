@@ -6,13 +6,11 @@ const holderId = 'ui-overlay-modal-holder';
 const panelIds = {
     settings: 'uiSettingsPanel',
     shortcuts: 'uiShortcutsPanel',
-    linkConfirm: 'uiLinkConfirmPanel',
 };
 
 const closeButtonSelectors = {
     settings: '#uiCloseSettingsBtn',
     shortcuts: '#uiCloseShortcutsBtn',
-    linkConfirm: '[data-overlay-close]',
 };
 
 /** @type {Record<string, { panel: HTMLElement, parent: HTMLElement, next: ChildNode|null }>} */

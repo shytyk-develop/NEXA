@@ -31,6 +31,17 @@
     min-width: 0;
 }
 
+/* Clicking the banner (not its ✕) jumps to the quoted message. */
+.composer-reply-body {
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.composer-reply-body:focus-visible {
+    outline: 2px solid color-mix(in srgb, currentColor 45%, transparent);
+    outline-offset: 2px;
+}
+
 .composer-reply-label {
     color: var(--dock-accent, var(--accent));
     font-size: 11px;
@@ -174,41 +185,418 @@
     word-break: break-word;
 }
 
-/* Side gutter actions — beside bubble, never on top of text */
-.message-hover-actions {
+/* ── Swipe to reply (js/messageSwipeReply.js) ─────────────────────────────────
+   Drag a bubble left; a reply arrow eases in from behind its right edge. */
+:root {
+    --swipe-reply-return: 350ms;
+    --swipe-reply-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Horizontal drags reach the gesture; vertical ones still scroll the thread. */
+.message-row .message-bubble {
+    touch-action: pan-y;
+}
+
+/* The arrow sits beneath the bubble and is uncovered as the bubble slides away. */
+.message-shell > .message-bubble {
+    z-index: 1;
+}
+
+.message-row.is-swiping .message-bubble {
+    cursor: grabbing;
+}
+
+.message-row .message-bubble.is-swipe-returning {
+    transition:
+        border-radius var(--quickbar-duration, 280ms) var(--quickbar-ease, ease),
+        padding-bottom var(--quickbar-duration, 280ms) var(--quickbar-ease, ease),
+        transform var(--swipe-reply-return) var(--swipe-reply-ease);
+}
+
+/* No text selection while a swipe is in progress. */
+html.is-swiping-message,
+html.is-swiping-message * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.message-swipe-reply {
     align-items: center;
-    display: flex;
-    flex-shrink: 0;
-    gap: var(--space-1);
+    background: var(--bubble-fill-other, #16181e);
+    border: 1px solid var(--bubble-surface-border, rgba(255, 255, 255, 0.06));
+    border-radius: 999px;
+    color: var(--text-secondary);
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
     opacity: 0;
     pointer-events: none;
     position: absolute;
+    /* Fits the short pull (max 56px): fully uncovered by the time it arms. */
+    right: 4px;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-50%) scale(0.6) rotate(-45deg);
     transition:
-        opacity var(--duration-fast) ease,
-        visibility var(--duration-fast) ease,
-        transform var(--duration-fast) ease;
+        background-color 160ms ease,
+        color 160ms ease;
+    width: 28px;
+    z-index: 0;
+}
+
+.message-swipe-reply .ui-icon {
+    height: 14px;
+    width: 14px;
+}
+
+/* Past the threshold: letting go will reply. */
+.message-swipe-reply.is-armed {
+    background: var(--text);
+    color: var(--bg, #0a0a0a);
+}
+
+.message-swipe-reply.is-swipe-returning {
+    transition:
+        opacity var(--swipe-reply-return) var(--swipe-reply-ease),
+        transform var(--swipe-reply-return) var(--swipe-reply-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .message-row .message-bubble.is-swipe-returning,
+    .message-swipe-reply.is-swipe-returning {
+        transition: none;
+    }
+}
+
+/* ── Jump-to-message highlight (reply banner / quoted preview) ───────────────
+   The bubble just turns a touch lighter, then eases back — no glow. Drawn on an
+   overlay so the bubble's own fill is never swapped out mid-fade. */
+.message-bubble.message-highlight-pulse::after {
+    animation: highlightPulse 1.8s ease-in-out forwards;
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+}
+
+@keyframes highlightPulse {
+    0%,
+    40% {
+        background-color: rgba(255, 255, 255, 0.07);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .message-bubble.message-highlight-pulse::after {
+        animation-duration: 0.6s;
+    }
+}
+
+/* ── External link warning (inline, in the bubble; js/messageLinkBar.js) ──────
+   One row: [Hold to open] … [Pause ⇄]. "Pause" morphs into a full-row option
+   bar (src/chat/quickbar/LinkWarningRow.tsx). */
+.message-quickbar__body.message-linkbar {
+    display: block;
+}
+
+.message-linkbar__slot {
+    position: relative;
+    z-index: 1;
+}
+
+/* Closed row and open bar share one cell; the row's width is sprung by JS
+   (compact closed → as wide as the options need), and the bubble follows it. */
+.lw-row {
+    display: grid;
+    max-width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.lw-row__layer {
+    align-items: center;
+    display: flex;
+    grid-area: 1 / 1;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Out-of-flow copy of the open bar, only measured. */
+.lw-row__sizer {
+    align-items: center;
+    display: flex;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
     visibility: hidden;
+    width: max-content;
+}
+
+/* Same box as the open bar, so the measured width matches it exactly. */
+.lw-row__sizer,
+.lw-row__open {
+    box-sizing: border-box;
+    gap: 2px;
+    padding: 2px;
+}
+
+/* Options bar: out of flow, pinned right (width = measured options width, set
+   inline). Only the closed view sizes the row. */
+.lw-row__open {
+    align-items: center;
+    bottom: 0;
+    display: flex;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 1;
+}
+
+.lw-row__closed {
+    gap: 6px;
+    justify-content: space-between;
+}
+
+/* The closed view fills the (animated) row width once it's set. */
+.lw-row__closed {
+    width: 100%;
+}
+
+.lw-row__hold {
+    display: inline-flex;
+}
+
+/* The one backdrop: pinned right, its width sprung by JS from the trigger's to
+   the whole row's. Real width (not a scale morph) keeps the pill ends round. */
+.lw-select__bg {
+    background: color-mix(in srgb, currentColor 9%, transparent);
+    border-radius: 999px;
+    bottom: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: background-color 160ms ease;
+    z-index: 0;
+}
+
+.lw-row:not([data-open]):has(.lw-select__trigger:hover) .lw-select__bg {
+    background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.lw-select__trigger {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    gap: 2px;
+    height: 28px;
+    padding: 0 8px 0 11px;
+}
+
+.lw-select__trigger-label,
+.lw-select__trigger-icon {
+    align-items: center;
+    display: inline-flex;
+}
+
+.lw-select__trigger-icon {
+    opacity: 0.6;
+    transform: rotate(-90deg);
+}
+
+.lw-select__chips {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    gap: 1px;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.lw-select__chip {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    height: 24px;
+    justify-content: center;
+    padding: 0 8px;
+    position: relative;
+    transition: color 300ms ease;
     white-space: nowrap;
-    z-index: 4;
 }
 
-.message-row:hover .message-hover-actions,
-.message-row:focus-within .message-hover-actions,
-.message-hover-actions:focus-within {
-    opacity: 1;
-    pointer-events: auto;
-    visibility: visible;
+.lw-select__chip[data-active],
+.lw-select__chip:hover {
+    color: inherit;
 }
 
-/* Incoming: free space on the right of bubble */
-.message-row--other .message-hover-actions {
-    left: calc(100% + var(--space-2));
+.lw-select__chip-bg {
+    background: color-mix(in srgb, currentColor 16%, transparent);
+    inset: 0;
+    position: absolute;
 }
 
-.message-row--own .message-hover-actions {
-    right: calc(100% + var(--space-2));
+.lw-select__chip-label {
+    position: relative;
+    z-index: 1;
+}
+
+/* Pre-promoted, so the first open doesn't pay for layer creation mid-animation. */
+.lw-row__open .lw-select__chip,
+.lw-row__open .lw-select__icon-btn,
+.lw-row__hold,
+.lw-select__trigger {
+    will-change: transform, opacity;
+}
+
+/* ✕ (back out) and ✓ (apply) bracket the options. */
+.lw-select__icon-btn {
+    align-items: center;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    height: 24px;
+    justify-content: center;
+    padding: 0;
+    width: 28px;
+}
+
+.lw-select__cancel {
+    background: transparent;
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    transition:
+        background-color 160ms ease,
+        color 160ms ease;
+}
+
+.lw-select__cancel:hover {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    color: inherit;
+}
+
+.lw-select__apply {
+    background: var(--text, #f4f4f5);
+    color: var(--bg, #0a0a0a);
+}
+
+.lw-select__chip:focus-visible,
+.lw-select__icon-btn:focus-visible,
+.lw-select__trigger:focus-visible {
+    outline: 2px solid color-mix(in srgb, currentColor 45%, transparent);
+    outline-offset: -2px;
+}
+
+/* Hover feedback (the link bar has no shared hover pill). */
+.message-linkbar__hold[data-state="idle"]:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* HoldToConfirmButton (src/components/ui/hold-to-confirm.tsx) as "Hold to open":
+   a progress ring fills around the icon while held. */
+.hold-confirm {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+.message-quickbar__action.message-linkbar__hold {
+    gap: 5px;
+    padding-inline: 4px 10px;
+    /* Press scale comes from the component (motion); a CSS transform transition
+       would re-ease every frame it writes and make the press lag. */
+    transition:
+        background-color 120ms var(--ease-ui, ease),
+        color 200ms ease;
+}
+
+.hold-confirm__ring {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    justify-content: center;
+    position: relative;
+}
+
+.hold-confirm__glyph {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.hold-confirm__check {
+    inset: 0;
+    position: absolute;
+}
+
+.hold-confirm__progress {
+    inset: 0;
+    position: absolute;
+    transform: rotate(-90deg);
+}
+
+.hold-confirm__label {
+    display: inline-flex;
+    overflow: hidden;
+    position: relative;
+    transition: opacity 200ms ease;
+}
+
+.hold-confirm__label[data-holding] {
+    opacity: 0.6;
+}
+
+.hold-confirm__label-text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.hold-confirm__sr {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+/* Hold complete on touch: letting go opens the link. */
+.hold-confirm[data-state="armed"] {
+    background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.hold-confirm[data-state="confirmed"] {
+    color: var(--green, #86efac);
+}
+
+/* Phones show action buttons icon-only at 30px; "Hold to open" keeps its label. */
+@media (max-width: 600px) {
+    .message-quickbar__action.message-linkbar__hold {
+        padding-inline: 4px 10px;
+        width: auto;
+    }
 }
 
 .message-react-fab {
@@ -298,7 +686,6 @@
     color: var(--red) !important;
 }
 
-.message-quick-btn,
 .message-action-btn--delete {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -316,16 +703,6 @@
     position: relative;
     transition: background 120ms, color 120ms, border-color 120ms;
     z-index: 7;
-}
-
-.message-quick-btn {
-    font-size: 13px;
-}
-
-.message-quick-btn:hover {
-    background: var(--hover);
-    border-color: var(--border-strong);
-    color: var(--text);
 }
 
 .message-reactions {
@@ -547,15 +924,10 @@
     justify-content: flex-start;
 }
 
-.message-row.is-actions-pending .message-hover-actions {
-    opacity: 0.35;
-}
-
 .message-row.is-actions-pending .message-reaction-chip {
     opacity: 0.55;
 }
 
-.message-quick-btn[aria-disabled="true"],
 .message-action-btn--delete[aria-disabled="true"] {
     cursor: not-allowed;
     opacity: 0.45;
@@ -571,4 +943,404 @@
     cursor: not-allowed;
     opacity: 0.35;
     pointer-events: none;
+}
+
+/* ── Message bubbles: solid, quiet fills ──────────────────────────────────────
+   Fully opaque, so the thread never shows through. Each fill is the bubble tone
+   laid over the active theme's stage colour (the ratio the old translucent
+   bubbles showed at), so they stay low-key and follow the chosen wallpaper.
+   Declared on #page-chat so --chat-stage-fill resolves per theme; :root keeps
+   defaults for bubbles rendered outside it (e.g. the overlay spotlight). */
+:root {
+    --bubble-fill-own: #24252c;
+    --bubble-fill-other: #16181e;
+    --bubble-surface-border: rgba(255, 255, 255, 0.06);
+    --bubble-surface-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+        0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+#page-chat {
+    --bubble-fill-own: color-mix(in srgb, rgb(63, 63, 70) 42%, var(--chat-stage-fill, #10131a));
+    --bubble-fill-other: color-mix(in srgb, rgb(30, 30, 35) 45%, var(--chat-stage-fill, #10131a));
+}
+
+.message-row .message-bubble--own,
+.message-row .message-bubble--other {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 1px solid var(--bubble-surface-border);
+    box-shadow: var(--bubble-surface-shadow);
+}
+
+.message-row .message-bubble--own {
+    background: var(--bubble-fill-own);
+}
+
+.message-row .message-bubble--other {
+    background: var(--bubble-fill-other);
+}
+
+/* ── Inline message quick actions (right-click / double-click) ───────────────
+   The panel lives inside .message-bubble, so bubble + actions read as one
+   continuous surface and scroll together with the thread. */
+:root {
+    --quickbar-duration: 280ms;
+    --quickbar-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Registered so the reactions edge fades can transition as they toggle. */
+@property --qb-fade-l {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --qb-fade-r {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+
+.message-row .message-bubble {
+    transition:
+        border-radius var(--quickbar-duration) var(--quickbar-ease),
+        padding-bottom var(--quickbar-duration) var(--quickbar-ease);
+}
+
+/* Width is pinned to px by JS for the duration of the resize (max-content can't animate). */
+.message-row .message-bubble.is-quickbar-resizing {
+    transition:
+        border-radius var(--quickbar-duration) var(--quickbar-ease),
+        padding-bottom var(--quickbar-duration) var(--quickbar-ease),
+        width var(--quickbar-duration) var(--quickbar-ease);
+}
+
+/* Breathing room below an open message; the next one eases down in step with the panel. */
+.message-row {
+    transition: margin-bottom var(--quickbar-duration) var(--quickbar-ease);
+}
+
+.message-row.has-quickbar {
+    margin-bottom: 14px;
+}
+
+/* The hover heart would sit on top of the open panel; hidden until it has fully collapsed. */
+.message-row.quick-bar-open .message-react-fab {
+    display: none;
+}
+
+/* The time floats right, so in a widened bubble it would drift away from short
+   text. Keep text + time at their natural width, on the bubble's own side. */
+.message-bubble.is-quickbar-layout .message-body-row {
+    width: fit-content;
+}
+
+.message-bubble--own.is-quickbar-layout .message-body-row {
+    margin-left: auto;
+}
+
+/* Open: drop the cluster tail so the grown bubble has an even, rounded base. */
+.message-row .message-bubble.has-quickbar {
+    border-radius: var(--radius-bubble);
+    padding-bottom: 6px;
+}
+
+.message-quickbar {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-inline: -6px;
+    transition: grid-template-rows var(--quickbar-duration) var(--quickbar-ease);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.message-quickbar.is-open {
+    grid-template-rows: 1fr;
+}
+
+.message-quickbar__clip {
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.message-quickbar__body {
+    align-items: center;
+    /* Soft divider between the message and its actions. */
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+    opacity: 0;
+    /* Small inner inset so the buttons don't sit on the bubble's edge; the open
+       width is measured from this, so the bubble widens to fit it. */
+    padding: 4px 4px 2px;
+    transform: translateY(-6px) scale(0.97);
+    transform-origin: top center;
+    transition:
+        opacity var(--quickbar-duration) var(--quickbar-ease),
+        transform var(--quickbar-duration) var(--quickbar-ease);
+}
+
+.message-quickbar.is-open .message-quickbar__body {
+    opacity: 1;
+    transform: none;
+}
+
+.message-quickbar__actions {
+    display: flex;
+    flex: none;
+    gap: 2px;
+}
+
+.message-quickbar__action,
+.message-quickbar__reaction {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    height: 28px;
+    justify-content: center;
+    padding: 0;
+    position: relative;
+    /* Springy hover lift, shared by every button in the bar (was Copy-only). */
+    transition:
+        background-color 120ms var(--ease-ui, ease),
+        transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.message-quickbar__action:hover:not(:disabled),
+.message-quickbar__reaction:hover {
+    transform: scale(1.05);
+}
+
+.message-quickbar__action:active:not(:disabled),
+.message-quickbar__reaction:active {
+    transform: scale(0.95);
+    transition-duration: 120ms;
+}
+
+.message-quickbar__action {
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    gap: 4px;
+    padding-inline: 7px 9px;
+    white-space: nowrap;
+}
+
+.message-quickbar__reaction {
+    width: 30px;
+}
+
+/* React island (Copy / Delete) renders straight into the actions row. */
+.message-quickbar__buttons-host {
+    display: contents;
+}
+
+/* AutoWidth's measured content; exiting labels pop out absolutely (popLayout),
+   so they need positioned parents and don't count toward the width. */
+.message-quickbar__autowidth {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    position: relative;
+    width: max-content;
+}
+
+.message-quickbar__swap,
+.message-quickbar__delete {
+    align-items: center;
+    display: inline-flex;
+    gap: 4px;
+    position: relative;
+}
+
+.message-quickbar__delete {
+    gap: 0;
+}
+
+/* Opens 0 → 30px around the ✕; overflow stays visible so its circle is never cut. */
+.message-quickbar__cancel-slot {
+    display: inline-flex;
+    flex: none;
+    overflow: visible;
+}
+
+/* Gap lives on the ✕ (not slot padding) so the slot can close to exactly 0. */
+.message-quickbar__cancel-slot > .message-quickbar__icon {
+    margin-left: 2px;
+}
+
+.message-quickbar__icon {
+    align-items: center;
+    display: flex;
+}
+
+.message-quickbar__action--icon {
+    padding-inline: 0;
+    width: 28px;
+}
+
+/* Delete's confirm step: filled, like the component's destructive button. */
+.message-quickbar__action.is-danger.is-confirming {
+    background: var(--danger);
+    color: #fff;
+}
+
+.message-quickbar__action .ui-icon,
+.message-quickbar__more .ui-icon {
+    flex: none;
+    height: 15px;
+    width: 15px;
+}
+
+/* Phones: icons only, so the reactions strip keeps usable room. */
+@media (max-width: 600px) {
+    .message-quickbar__action {
+        padding-inline: 0;
+        width: 30px;
+    }
+
+    .message-quickbar__label {
+        display: none;
+    }
+}
+
+/* Shared hover highlight (positioned + sprung by JS), styled like the sidebar
+   folder tree's pill. Buttons stay transparent and sit above it. */
+.message-quickbar__body {
+    position: relative;
+}
+
+.message-quickbar__hover {
+    background: color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 55%,
+        transparent
+    );
+    border: 1px solid color-mix(
+        in srgb,
+        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 45%,
+        transparent
+    );
+    border-radius: 999px;
+    box-sizing: border-box;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease;
+    z-index: 0;
+}
+
+.message-quickbar__hover.is-danger {
+    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 24%, transparent);
+}
+
+.message-quickbar__actions,
+.message-quickbar__divider,
+.message-quickbar__reactions {
+    position: relative;
+    z-index: 1;
+}
+
+.message-quickbar__action:focus-visible,
+.message-quickbar__reaction:focus-visible {
+    outline: 2px solid color-mix(in srgb, currentColor 55%, transparent);
+    outline-offset: -2px;
+}
+
+.message-quickbar__action:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.message-quickbar__action.is-danger {
+    color: var(--danger);
+}
+
+.message-quickbar__divider {
+    align-self: stretch;
+    background: rgba(255, 255, 255, 0.08);
+    flex: none;
+    margin: 6px 3px;
+    width: 1px;
+}
+
+.message-quickbar__reactions {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 1px;
+    /* Soft edge fades; each side only appears when there's more to scroll to. */
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--qb-fade-l),
+        #000 calc(100% - var(--qb-fade-r)),
+        transparent
+    );
+    mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--qb-fade-l),
+        #000 calc(100% - var(--qb-fade-r)),
+        transparent
+    );
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    transition:
+        --qb-fade-l 180ms ease,
+        --qb-fade-r 180ms ease;
+    -webkit-overflow-scrolling: touch;
+}
+
+.message-quickbar__reactions::-webkit-scrollbar {
+    display: none;
+}
+
+.message-quickbar__reaction {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.message-quickbar__reaction.is-active {
+    background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.message-quickbar__more {
+    opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .message-row,
+    .message-row .message-bubble,
+    .message-row .message-bubble.is-quickbar-resizing,
+    .message-quickbar,
+    .message-quickbar__body {
+        transition: none;
+    }
+
+    .message-quickbar__reactions {
+        scroll-behavior: auto;
+    }
+
+    .message-quickbar__action:hover:not(:disabled),
+    .message-quickbar__action:active:not(:disabled),
+    .message-quickbar__reaction:hover,
+    .message-quickbar__reaction:active {
+        transform: none;
+    }
 }

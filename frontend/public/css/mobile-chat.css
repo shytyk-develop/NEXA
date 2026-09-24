@@ -346,7 +346,7 @@
 
 #page-chat.is-viewport-app-stack .chat-header-peer,
 #page-chat.is-viewport-app-stack .chat-header-search-btn {
-    background: color-mix(in srgb, var(--chat-stage-fill, #10131a) 42%, transparent);
+    background: var(--nexa-aside-fill, #161920);
 }
 
 #page-chat.is-viewport-app-stack.is-compose-search .compose-spotlight {
@@ -528,15 +528,7 @@
 }
 
 /* Bottom sheets for menus on small screens */
-#page-chat.is-viewport-app-stack .message-hover-actions {
-    display: none !important;
-}
-
 @media (max-width: 760px) {
-    .message-hover-actions {
-        display: none !important;
-    }
-
     .overlay-surface.is-sheet:not(.overlay-surface--drawer) {
         border-radius: 18px 18px 14px 14px;
         bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;

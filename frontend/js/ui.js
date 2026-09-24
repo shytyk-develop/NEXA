@@ -2,12 +2,13 @@ import {
     closeOverlay,
     closeOverlaysForChatChange,
     getOverlayState,
-    openContextMenu,
     openDropdown,
     openMessageActionsDrawer,
     openModalOverlay,
     openPopoverOverlay,
 } from '../ui/overlays/overlayManager.js';
+import { isMessageQuickBarTarget, openMessageQuickBar } from './messageQuickBar.js';
+import { initSwipeToReply } from './messageSwipeReply.js';
 import { DEFAULT_QUICK_REACTION, getMyReaction, getReactionCounts } from './messageReactions.js';
 import {
     appendLinkedTextContent,
@@ -1410,19 +1411,6 @@ function buildMessageElement(message, previousMessage = null, nextMessage = null
 
     bubble.append(inner);
 
-    const hoverActions = document.createElement('div');
-    hoverActions.className = 'message-hover-actions';
-    hoverActions.setAttribute('role', 'group');
-    hoverActions.setAttribute('aria-label', 'Quick reply');
-
-    const replyBtn = document.createElement('button');
-    replyBtn.type = 'button';
-    replyBtn.className = 'message-quick-btn';
-    replyBtn.dataset.action = 'reply';
-    replyBtn.title = 'Reply';
-    replyBtn.textContent = '↩';
-    hoverActions.append(replyBtn);
-
     const reactBtn = document.createElement('button');
     reactBtn.type = 'button';
     reactBtn.className = 'message-react-fab';
@@ -1431,7 +1419,7 @@ function buildMessageElement(message, previousMessage = null, nextMessage = null
     reactBtn.textContent = DEFAULT_QUICK_REACTION;
     syncMessageReactFab(reactBtn, message.reactions);
 
-    shell.append(bubble, hoverActions, reactBtn);
+    shell.append(bubble, reactBtn);
     contentWrap.append(shell);
 
     const reactionsEl = buildReactionsEl(message);
@@ -1455,7 +1443,7 @@ export function syncMessageRowActions(row) {
     const hasId = getRowMessageId(row) != null;
     row.classList.toggle('is-actions-pending', !hasId);
 
-    row.querySelectorAll('[data-action="reply"], [data-action="react"], [data-action="delete"]').forEach((btn) => {
+    row.querySelectorAll('[data-action="react"], [data-action="delete"]').forEach((btn) => {
         btn.removeAttribute('disabled');
         if (hasId) {
             btn.removeAttribute('aria-disabled');
@@ -1464,9 +1452,7 @@ export function syncMessageRowActions(row) {
         }
 
         const action = btn.dataset.action;
-        if (action === 'reply') {
-            btn.title = hasId ? 'Reply' : 'Waiting for sync';
-        } else if (action === 'react') {
+        if (action === 'react') {
             btn.title = hasId
                 ? (btn.classList.contains('is-active') ? 'Remove reaction' : 'React')
                 : 'Waiting for sync';
@@ -1509,6 +1495,9 @@ function handleMessageActionsEvent(event) {
     const row = event.target.closest('.message-row');
     if (!row) return;
 
+    // The inline quick bar handles its own clicks (fast taps there aren't a message double-click).
+    if (isMessageQuickBarTarget(event.target)) return;
+
     if (event.type === 'dblclick') {
         const bubble = event.target.closest('.message-bubble');
         if (!bubble) return;
@@ -1530,27 +1519,7 @@ function handleMessageActionsEvent(event) {
         const payload = messageContextPayloadGetter?.(row);
         if (!payload) return;
 
-        const rect = bubble.getBoundingClientRect();
-        const own = row.classList.contains('message-row--own');
-        openContextMenu({
-            x: own ? rect.left : rect.right,
-            y: rect.bottom,
-            payload: { ...payload, messageId },
-            targetId: messageId,
-        });
-        return;
-    }
-
-    if (event.target.closest('[data-action="reply"]')) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const { messageId } = resolveRowActionContext(row);
-        if (!messageId) {
-            notifyActionUnavailable('reply');
-            return;
-        }
-        messageActionHandlers.onReply?.({ id: messageId });
+        openMessageQuickBar(row, { ...payload, messageId });
         return;
     }
 
@@ -1638,6 +1607,17 @@ export function initMessageActions() {
     DOM.messagesDiv.addEventListener('click', handleMessageActionsEvent, true);
     DOM.messagesDiv.addEventListener('dblclick', handleMessageActionsEvent, true);
 
+    initSwipeToReply(DOM.messagesDiv, {
+        onReply: (row) => {
+            const { messageId } = resolveRowActionContext(row);
+            if (!messageId) {
+                notifyActionUnavailable('reply');
+                return;
+            }
+            messageActionHandlers.onReply?.({ id: messageId });
+        },
+    });
+
     DOM.messagesDiv.addEventListener('touchend', (event) => {
         if (!isAppStackViewport()) return;
         if (event.target.closest('a, button, .message-reaction-chip, .message-link')) return;
@@ -1657,15 +1637,33 @@ export function initMessageActions() {
     }, { passive: false });
 }
 
+/** Keep in sync with the .message-highlight-pulse animation in message-features.css. */
+const HIGHLIGHT_PULSE_MS = 1800;
+
+/**
+ * Smooth-scroll to a message and flash its bubble. Returns false when the message
+ * isn't in the rendered thread (e.g. it has since been deleted).
+ */
 export function scrollToMessageById(messageId) {
-    if (messageId == null) return;
+    if (messageId == null) return false;
     const row = DOM.messagesDiv.querySelector(
         `[data-message-id="${CSS.escape(String(messageId))}"]`
     );
-    if (!row) return;
-    row.classList.add('is-highlighted');
+    if (!row) return false;
     row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    window.setTimeout(() => row.classList.remove('is-highlighted'), 1600);
+
+    const bubble = row.querySelector('.message-bubble');
+    if (bubble) {
+        // Restart the pulse if it's already running (repeat clicks).
+        bubble.classList.remove('message-highlight-pulse');
+        void bubble.offsetWidth;
+        bubble.classList.add('message-highlight-pulse');
+        window.clearTimeout(Number(bubble.dataset.pulseTimer));
+        bubble.dataset.pulseTimer = String(window.setTimeout(() => {
+            bubble.classList.remove('message-highlight-pulse');
+        }, HIGHLIGHT_PULSE_MS));
+    }
+    return true;
 }
 
 export function patchMessageReactionsDom(messageId, reactions, myUsername) {
@@ -2319,17 +2317,7 @@ export function initMessageContextMenu(getContextPayload) {
         const payload = getContextPayload(row);
         if (!payload) return;
 
-        if (isAppStackViewport()) {
-            openMobileMessageActions(row, row.querySelector('.message-bubble'));
-            return;
-        }
-
-        openContextMenu({
-            x: event.clientX,
-            y: event.clientY,
-            payload,
-            targetId: payload.clientMessageId || payload.messageId || 'message',
-        });
+        openMessageQuickBar(row, payload);
     });
 }
 
