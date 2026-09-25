@@ -765,7 +765,7 @@ initProfileSettings({
         }
         if (!opts.silent) showToast('Privacy setting applied.', 'success');
     },
-    openSettingsSection: (section) => openAppSettings(section),
+    openSettingsSection: (section) => openAppSettings(section, { force: true }),
     onProfileSectionChange: () => onProfileSectionOpened(),
     onProfileSaved: async (profile) => {
         updateProfileRailButton(state.myUsername);
@@ -1623,11 +1623,12 @@ DOM.dockSettings?.addEventListener('click', (event) => {
         if (!state.currentTargetUser) return;
         showToast('Mute is coming soon.', 'info');
     });
-    DOM.peerClearBtn?.addEventListener('click', () => {
-        clearCurrentChatHistory();
-    });
-    DOM.peerDeleteBtn?.addEventListener('click', () => {
-        deleteCurrentChat();
+    // The peer panel's Delete / Clear pills open an in-panel confirmation
+    // (PeerPanel.tsx); its confirm button dispatches this, already confirmed.
+    window.addEventListener('nexa:peer-action', (event) => {
+        const action = event.detail?.action;
+        if (action === 'clear') clearCurrentChatHistory({ confirmed: true });
+        else if (action === 'delete') deleteCurrentChat({ confirmed: true });
     });
     DOM.peerSecurityBtn?.addEventListener('click', () => {
         openCurrentChatInfo();
@@ -1818,15 +1819,14 @@ function exportCurrentChat() {
     showToast("Local chat exported.", "success");
 }
 
-async function clearCurrentChatHistory() {
+async function clearCurrentChatHistory({ confirmed = false } = {}) {
     if (!state.currentTargetUser) {
         showToast("Select a chat first.", "error");
         return;
     }
 
     const partner = state.currentTargetUser;
-    const confirmed = window.confirm(`Clear all messages with ${partner}? This cannot be undone.`);
-    if (!confirmed) {
+    if (!confirmed && !window.confirm(`Clear all messages with ${partner}? This cannot be undone.`)) {
         closeAllPopovers();
         focusComposer();
         return;
@@ -1849,15 +1849,14 @@ async function clearCurrentChatHistory() {
     }
 }
 
-async function deleteCurrentChat() {
+async function deleteCurrentChat({ confirmed = false } = {}) {
     if (!state.currentTargetUser) {
         showToast("Select a chat first.", "error");
         return;
     }
 
     const partner = state.currentTargetUser;
-    const confirmed = window.confirm(`Delete the chat with ${partner}? This cannot be undone.`);
-    if (!confirmed) {
+    if (!confirmed && !window.confirm(`Delete the chat with ${partner}? This cannot be undone.`)) {
         closeAllPopovers();
         focusComposer();
         return;

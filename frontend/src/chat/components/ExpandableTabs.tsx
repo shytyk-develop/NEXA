@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
@@ -56,9 +56,7 @@ export function ExpandableTabs({
     onChange,
 }: ExpandableTabsProps) {
     const [selected, setSelected] = useState(activeIndex);
-    const [captionWidth, setCaptionWidth] = useState<number | undefined>();
     const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
-    const sizerRef = useRef<HTMLSpanElement>(null);
     const navRef = useRef<HTMLElement>(null);
     const skipEnter = useRef(true);
     const reduceMotion = useReducedMotion() === true;
@@ -80,11 +78,6 @@ export function ExpandableTabs({
         skipEnter.current = false;
     }, []);
 
-    useLayoutEffect(() => {
-        const next = sizerRef.current?.offsetWidth;
-        if (next != null) setCaptionWidth(next);
-    }, [longestCaption]);
-
     const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
         const container = navRef.current;
         if (!(element && container)) return;
@@ -101,6 +94,9 @@ export function ExpandableTabs({
     }, []);
 
     const handleSelect = (index: number) => {
+        const tab = tabs[index];
+        // Repeat click on the section already open: nothing to switch.
+        if (tab && isTab(tab) && !tab.action && index === activeIndex) return;
         setSelected(index);
         onChange?.(index);
     };
@@ -166,17 +162,25 @@ export function ExpandableTabs({
                         onFocus={(event) => setHighlightFromElement(event.currentTarget)}
                         className={classes}
                     >
+                        {/* One active pill, moved between tabs by layoutId (no remount,
+                            no background swap between buttons). */}
+                        {isActive ? (
+                            <motion.span
+                                layoutId="activeTabIndicator"
+                                className="expandable-tabs__active"
+                                aria-hidden="true"
+                                transition={highlightTransition}
+                            />
+                        ) : null}
                         <Icon size={20} strokeWidth={1.75} />
                     </button>
                 );
             })}
             <div className="expandable-tabs__sep" aria-hidden="true" />
-            <span
-                className="expandable-tabs__caption"
-                aria-hidden="true"
-                style={captionWidth != null ? { width: captionWidth } : undefined}
-            >
-                <span ref={sizerRef} className="expandable-tabs__caption-sizer">
+            {/* Sizer + caption share one grid cell: the slot is as wide as the
+                longest title (no reflow when switching) and the caption is centred. */}
+            <span className="expandable-tabs__caption" aria-hidden="true">
+                <span className="expandable-tabs__caption-sizer">
                     {longestCaption}
                 </span>
                 <motion.span

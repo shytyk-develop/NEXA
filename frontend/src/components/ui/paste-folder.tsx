@@ -18,23 +18,26 @@ type PasteFolderProps = {
     className?: string;
 };
 
-/** Match composer open ease — one continuous path, no spring bounce */
-const FOLDER_EASE = [0.4, 0, 0.2, 1] as const;
+/** The folder is drawn at 52% (the layout box stays full size for the tuck). */
+const FOLDER_SCALE = 0.52;
 
-const SLIDE_IN = {
-    duration: 0.36,
-    ease: FOLDER_EASE,
-};
+const SLIDE = { type: 'spring' as const, stiffness: 380, damping: 30 };
 
-/** Soft dissolve + slight tuck under the shell */
-const HIDE_OUT = {
-    duration: 0.22,
-    ease: FOLDER_EASE,
+/**
+ * Exit: an eased glide back under the composer instead of the spring (which
+ * snapped down and faded almost at once). The composer covers it and the shelf
+ * clips below the tuck line, so opacity only lets go near the end.
+ */
+const TUCK_EASE = [0.45, 0, 0.2, 1] as const;
+const TUCK = {
+    y: { duration: 0.42, ease: TUCK_EASE },
+    opacity: { duration: 0.18, delay: 0.24, ease: 'easeOut' as const },
 };
 
 /**
- * Paste shelf host — eases up from under the composer on enter,
- * fades/tucks under the shell on collapse.
+ * Paste shelf host — slides up from behind the composer's top edge (the
+ * composer paints above; the shelf clips below its tuck line) and back down
+ * behind it on removal before unmounting.
  */
 export function PasteFolder({
     documents,
@@ -54,19 +57,9 @@ export function PasteFolder({
                     ? `Pasted document: ${primary.title}`
                     : `${documents.length} pasted documents`
             }
-            initial={{ y: 48, opacity: 0, scale: 0.52 }}
-            animate={{
-                y: 0,
-                opacity: 1,
-                scale: 0.52,
-                transition: SLIDE_IN,
-            }}
-            exit={{
-                y: -10,
-                opacity: 0,
-                scale: 0.5,
-                transition: HIDE_OUT,
-            }}
+            initial={{ y: '100%', opacity: 0, scale: FOLDER_SCALE }}
+            animate={{ y: '0%', opacity: 1, scale: FOLDER_SCALE, transition: SLIDE }}
+            exit={{ y: '100%', opacity: 0, scale: FOLDER_SCALE, transition: TUCK }}
             style={{ transformOrigin: 'bottom left' }}
         >
             <div

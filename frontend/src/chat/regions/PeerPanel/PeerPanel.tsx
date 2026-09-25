@@ -1,7 +1,17 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FocusEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { BellOff, Check, Eraser, Trash2 } from 'lucide-react';
+import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
 import { AsideToggle } from '../../components/AsideToggle';
 import { Icon } from '../../components/Icon';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { OtpInput, type OtpInputHandle, type OtpStatus } from '@/components/ui/otp-input';
+import {
+    getActiveSavedMessages,
+    getSavedMessagesPeer,
+    subscribeSavedMessages,
+    type SavedMessage,
+} from '../../savedMessages';
 
 type HighlightBounds = {
     top: number;
@@ -10,92 +20,430 @@ type HighlightBounds = {
     height: number;
 };
 
-function PeerOptions() {
-    const containerRef = useRef<HTMLDivElement>(null);
+type ActionHighlight = HighlightBounds & { tone: 'primary' | 'danger' };
+
+type ConfirmAction = 'delete' | 'clear';
+
+/** Pill ⇄ confirmation morph (shared layoutId). */
+const CONFIRM_SPRING = { type: 'spring' as const, stiffness: 280, damping: 28 };
+
+type ConfirmStep = 'confirm' | 'otp' | 'success';
+
+/** Success view stays up this long before the drawer folds and the action runs. */
+const SUCCESS_HOLD_MS = 1200;
+
+/** A fresh 4-digit code per confirmation, so the step can't become muscle memory. */
+function makeConfirmCode() {
+    const [n] = crypto.getRandomValues(new Uint32Array(1));
+    return String(n % 10000).padStart(4, '0');
+}
+
+const CONFIRM_COPY: Record<ConfirmAction, { title: string; description: string; confirm: string; pending: string }> = {
+    // The endpoint removes the stored history for both participants; the
+    // wording says what actually happens (no "just for you").
+    delete: {
+        title: 'Delete this chat?',
+        description: 'This removes the chat from your list and deletes its message history. It can’t be undone.',
+        confirm: 'Delete',
+        pending: 'Deleting this chat…',
+    },
+    clear: {
+        title: 'Clear chat history?',
+        description: 'This deletes every message in this chat. The chat stays in your list. It can’t be undone.',
+        confirm: 'Clear',
+        pending: 'Clearing chat history…',
+    },
+};
+
+/** The pill's fill — the element that morphs into the confirmation panel. */
+function PillSurface({ action, reduceMotion }: { action: ConfirmAction; reduceMotion: boolean }) {
+    return (
+        <motion.span
+            layoutId={`peer-confirm-${action}`}
+            className="peer-action-pill__surface"
+            style={{ borderRadius: 24 }}
+            transition={reduceMotion ? { duration: 0 } : CONFIRM_SPRING}
+            aria-hidden="true"
+        />
+    );
+}
+
+/**
+ * Delete / Clear confirmation: the pill's fill grows (layoutId) to cover the
+ * profile card, then walks confirm → code → success. The action runs only after
+ * the success view; Cancel, Escape, a click outside or switching chats fold it
+ * back (and cancel it) until then.
+ */
+function PeerConfirm({
+    action,
+    reduceMotion,
+    onCancel,
+}: {
+    action: ConfirmAction;
+    reduceMotion: boolean;
+    onCancel: () => void;
+}) {
+    const panelRef = useRef<HTMLDivElement>(null);
+    const cancelRef = useRef<HTMLButtonElement>(null);
+    const otpRef = useRef<OtpInputHandle>(null);
+    const [step, setStep] = useState<ConfirmStep>('confirm');
+    const [otpStatus, setOtpStatus] = useState<OtpStatus>('idle');
+    const [expectedOtp] = useState(makeConfirmCode);
+    const copy = CONFIRM_COPY[action];
+    const ActionIcon = action === 'delete' ? Trash2 : Eraser;
+
+    // Once verified the flow completes on its own: no cancelling mid-success.
+    const cancel = useCallback(() => {
+        if (step !== 'success') onCancel();
+    }, [step, onCancel]);
+
+    useEffect(() => {
+        if (step === 'confirm') cancelRef.current?.focus({ preventScroll: true });
+        const onPointerDown = (event: PointerEvent) => {
+            if (!panelRef.current?.contains(event.target as Node)) cancel();
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') cancel();
+        };
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown, true);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [step, cancel]);
+
+    // Wrong code: shake (OtpInput), then clear the cells for another try.
+    useEffect(() => {
+        if (otpStatus !== 'error') return undefined;
+        const timer = window.setTimeout(() => {
+            otpRef.current?.clear();
+            setOtpStatus('idle');
+        }, 900);
+        return () => window.clearTimeout(timer);
+    }, [otpStatus]);
+
+    // Verified: hold the success view, then run the action and fold back.
+    // Unmounting first (chat switched) clears the timer, so nothing runs.
+    useEffect(() => {
+        if (step !== 'success') return undefined;
+        const timer = window.setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('nexa:peer-action', { detail: { action } }));
+            onCancel();
+        }, SUCCESS_HOLD_MS);
+        return () => window.clearTimeout(timer);
+    }, [step, action, onCancel]);
+
+    const handleOtpSubmit = (value: string) => {
+        if (value === expectedOtp) {
+            setOtpStatus('success');
+            setStep('success');
+        } else {
+            setOtpStatus('error');
+        }
+    };
+
+    const stepMotion = reduceMotion
+        ? {}
+        : {
+              initial: { opacity: 0, y: 6 },
+              animate: { opacity: 1, y: 0, transition: { delay: 0.12, duration: 0.2 } },
+              exit: { opacity: 0, y: -4, transition: { duration: 0.1 } },
+          };
+
+    return (
+        <motion.div
+            ref={panelRef}
+            layoutId={`peer-confirm-${action}`}
+            className="peer-confirm"
+            // The card's inner radius: --peer-card-radius (50px) minus its 1px
+            // border. A plain number so Framer can scale-correct the corners
+            // while the panel morphs (a calc() string would warp mid-flight).
+            style={{ borderRadius: 49 }}
+            transition={reduceMotion ? { duration: 0 } : CONFIRM_SPRING}
+            role="alertdialog"
+            aria-modal="false"
+            aria-labelledby="uiPeerConfirmTitle"
+            aria-describedby="uiPeerConfirmCopy"
+        >
+            <AnimatePresence mode="wait" initial={false}>
+                {step === 'confirm' ? (
+                    <motion.div key="confirm" className="peer-confirm__body" {...stepMotion}>
+                        <div className="peer-confirm__center">
+                            <span className="peer-confirm__icon" aria-hidden="true">
+                                <ActionIcon />
+                            </span>
+                            <h3 id="uiPeerConfirmTitle" className="peer-confirm__title">{copy.title}</h3>
+                            <p id="uiPeerConfirmCopy" className="peer-confirm__copy">{copy.description}</p>
+                        </div>
+                        <div className="peer-confirm__actions">
+                            <button
+                                type="button"
+                                className="peer-confirm__btn peer-confirm__btn--danger"
+                                onClick={() => setStep('otp')}
+                            >
+                                {copy.confirm}
+                            </button>
+                            <button ref={cancelRef} type="button" className="peer-confirm__btn" onClick={cancel}>
+                                Cancel
+                            </button>
+                        </div>
+                    </motion.div>
+                ) : step === 'otp' ? (
+                    <motion.div key="otp" className="peer-confirm__body" {...stepMotion}>
+                        <div className="peer-confirm__center">
+                            <span className="peer-confirm__icon" aria-hidden="true">
+                                <ActionIcon />
+                            </span>
+                            <h3 id="uiPeerConfirmTitle" className="peer-confirm__title">Security Verification</h3>
+                            <p id="uiPeerConfirmCopy" className="peer-confirm__copy">
+                                Enter the verification code: <strong className="peer-confirm__code">{expectedOtp}</strong>
+                            </p>
+                            <OtpInput
+                                ref={otpRef}
+                                className="peer-confirm__otp"
+                                length={4}
+                                groupEvery={0}
+                                autoFocus
+                                status={otpStatus}
+                                onComplete={handleOtpSubmit}
+                                errorMessage="Incorrect code. Try again."
+                            />
+                        </div>
+                        <div className="peer-confirm__actions">
+                            <button type="button" className="peer-confirm__btn" onClick={cancel}>
+                                Cancel
+                            </button>
+                        </div>
+                    </motion.div>
+                ) : (
+                    <motion.div key="success" className="peer-confirm__body" {...stepMotion}>
+                        <div className="peer-confirm__center">
+                            <motion.span
+                                className="peer-confirm__check"
+                                aria-hidden="true"
+                                initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 18, delay: 0.1 }}
+                            >
+                                <Check />
+                            </motion.span>
+                            <h3 id="uiPeerConfirmTitle" className="peer-confirm__title" role="status">Verified</h3>
+                            <p id="uiPeerConfirmCopy" className="peer-confirm__copy">{copy.pending}</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+}
+
+/**
+ * Mute (filled, contrast) · Delete · Clear (light, red text) — Mute is wired in
+ * js/app.js; Delete / Clear open PeerConfirm, which dispatches the action.
+ * Hover / focus uses the left sidebar's motion: one highlight slides between
+ * the pills on the list spring and fades in / out at the row's edges.
+ */
+function PeerActions() {
+    const rowRef = useRef<HTMLDivElement>(null);
+    const [highlight, setHighlight] = useState<ActionHighlight | null>(null);
+    const [confirming, setConfirming] = useState<ConfirmAction | null>(null);
+    const reduceMotion = useReducedMotion() === true;
+    const peer = useSyncExternalStore(subscribeSavedMessages, getSavedMessagesPeer);
+
+    // A pending confirmation never carries over to another chat.
+    useEffect(() => {
+        setConfirming(null);
+    }, [peer]);
+
+    const closeConfirm = useCallback(() => setConfirming(null), []);
+
+    const highlightFrom = useCallback((element: HTMLElement) => {
+        const row = rowRef.current;
+        if (!row) return;
+        const rowRect = row.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
+        setHighlight({
+            top: rect.top - rowRect.top,
+            left: rect.left - rowRect.left,
+            width: rect.width,
+            height: rect.height,
+            tone: element.classList.contains('peer-action-pill--primary') ? 'primary' : 'danger',
+        });
+    }, []);
+
+    const pillEvents = {
+        onMouseEnter: (event: MouseEvent<HTMLButtonElement>) => highlightFrom(event.currentTarget),
+        onFocus: (event: FocusEvent<HTMLButtonElement>) => highlightFrom(event.currentTarget),
+    };
+
+    const openConfirm = (action: ConfirmAction) => {
+        setHighlight(null);
+        setConfirming(action);
+    };
+
+    return (
+        <>
+            <div ref={rowRef} className="peer-actions" onMouseLeave={() => setHighlight(null)}>
+                <AnimatePresence>
+                    {highlight && !confirming ? (
+                        <motion.div
+                            key="peer-actions-highlight"
+                            className="peer-actions-highlight"
+                            data-tone={highlight.tone}
+                            aria-hidden="true"
+                            initial={{ opacity: 0, top: highlight.top, left: highlight.left, width: highlight.width, height: highlight.height }}
+                            animate={{ opacity: 1, top: highlight.top, left: highlight.left, width: highlight.width, height: highlight.height }}
+                            exit={{ opacity: 0 }}
+                            transition={reduceMotion ? instantHoverTransition : listHoverTransition}
+                        />
+                    ) : null}
+                </AnimatePresence>
+                <button id="uiPeerMuteBtn" className="peer-action-pill peer-action-pill--primary" type="button" {...pillEvents}>
+                    <BellOff aria-hidden="true" />
+                    <span>Mute</span>
+                </button>
+                <button
+                    id="uiPeerDeleteBtn"
+                    className="peer-action-pill peer-action-pill--danger"
+                    type="button"
+                    aria-label="Delete chat"
+                    aria-haspopup="dialog"
+                    onClick={() => openConfirm('delete')}
+                    {...pillEvents}
+                >
+                    {confirming !== 'delete' ? <PillSurface action="delete" reduceMotion={reduceMotion} /> : null}
+                    <span>Delete</span>
+                </button>
+                <button
+                    id="uiPeerClearBtn"
+                    className="peer-action-pill peer-action-pill--danger"
+                    type="button"
+                    aria-label="Clear chat history"
+                    aria-haspopup="dialog"
+                    onClick={() => openConfirm('clear')}
+                    {...pillEvents}
+                >
+                    {confirming !== 'clear' ? <PillSurface action="clear" reduceMotion={reduceMotion} /> : null}
+                    <span>Clear</span>
+                </button>
+            </div>
+            <AnimatePresence>
+                {confirming ? (
+                    <PeerConfirm
+                        key={confirming}
+                        action={confirming}
+                        reduceMotion={reduceMotion}
+                        onCancel={closeConfirm}
+                    />
+                ) : null}
+            </AnimatePresence>
+        </>
+    );
+}
+
+const dayMonth = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' });
+const dayMonthYear = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+
+function formatSavedDate(savedAt: number) {
+    const date = new Date(savedAt);
+    return (date.getFullYear() === new Date().getFullYear() ? dayMonth : dayMonthYear).format(date);
+}
+
+/** Two tucked cards behind a message-row card, fading into the card surface. */
+function StackedCardsIllustration() {
+    return (
+        <div aria-hidden="true" className="stacked-cards">
+            <div className="stacked-cards__back" />
+            <div className="stacked-cards__middle" />
+            <div className="stacked-cards__front">
+                <div className="stacked-cards__avatar" />
+                <div className="stacked-cards__lines">
+                    <div className="stacked-cards__line" />
+                    <div className="stacked-cards__line stacked-cards__line--short" />
+                </div>
+            </div>
+            <div className="stacked-cards__fade" />
+        </div>
+    );
+}
+
+/** Saved Messages card: rows share one sliding hover highlight (sidebar spring). */
+function SavedMessages() {
+    const items = useSyncExternalStore(subscribeSavedMessages, getActiveSavedMessages);
+    const listRef = useRef<HTMLUListElement>(null);
     const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
     const reduceMotion = useReducedMotion() === true;
 
     const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
-        const container = containerRef.current;
-        if (!(element && container)) return;
-
-        const containerRect = container.getBoundingClientRect();
-        const elementRect = element.getBoundingClientRect();
-
+        const list = listRef.current;
+        if (!(element && list)) return;
+        const listRect = list.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
         setHighlightBounds({
-            top: elementRect.top - containerRect.top + container.scrollTop,
-            left: elementRect.left - containerRect.left + container.scrollLeft,
-            width: elementRect.width,
-            height: elementRect.height,
+            top: rect.top - listRect.top,
+            left: rect.left - listRect.left,
+            width: rect.width,
+            height: rect.height,
         });
     }, []);
 
-    const spring = reduceMotion
-        ? { duration: 0 }
-        : { type: 'spring' as const, stiffness: 500, damping: 40 };
-
     return (
-        <div
-            ref={containerRef}
-            className="peer-options"
-            onMouseLeave={() => setHighlightBounds(null)}
-        >
-            <AnimatePresence>
-                {highlightBounds ? (
-                    <motion.div
-                        key="peer-options-highlight"
-                        className="peer-options-highlight"
-                        aria-hidden="true"
-                        initial={{
-                            opacity: 0,
-                            top: highlightBounds.top,
-                            left: highlightBounds.left,
-                            width: highlightBounds.width,
-                            height: highlightBounds.height,
-                        }}
-                        animate={{
-                            opacity: 1,
-                            top: highlightBounds.top,
-                            left: highlightBounds.left,
-                            width: highlightBounds.width,
-                            height: highlightBounds.height,
-                        }}
-                        exit={{ opacity: 0 }}
-                        transition={spring}
-                    />
-                ) : null}
-            </AnimatePresence>
-            <button
-                id="uiPeerMuteBtn"
-                className="peer-option"
-                type="button"
-                onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
-                onFocus={(event) => setHighlightFromElement(event.currentTarget)}
-            >
-                <Icon href="#icon-bell-off" />
-                Mute
-            </button>
-            <button
-                id="uiPeerClearBtn"
-                className="peer-option peer-option--danger"
-                type="button"
-                onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
-                onFocus={(event) => setHighlightFromElement(event.currentTarget)}
-            >
-                <Icon href="#icon-trash" />
-                Clear chat history
-            </button>
-            <button
-                id="uiPeerDeleteBtn"
-                className="peer-option peer-option--danger"
-                type="button"
-                onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
-                onFocus={(event) => setHighlightFromElement(event.currentTarget)}
-            >
-                <Icon href="#icon-ban" />
-                Delete chat
-            </button>
-        </div>
+        <section className="saved-messages-card" aria-labelledby="uiPeerSavedTitle">
+            <h3 id="uiPeerSavedTitle" className="saved-messages-title">Saved Messages</h3>
+            {items.length ? (
+                <ul
+                    ref={listRef}
+                    className="saved-messages-list"
+                    onMouseLeave={() => setHighlightBounds(null)}
+                >
+                    <AnimatePresence>
+                        {highlightBounds ? (
+                            <motion.li
+                                key="saved-highlight"
+                                className="saved-messages-highlight"
+                                aria-hidden="true"
+                                initial={{ opacity: 0, ...highlightBounds }}
+                                animate={{ opacity: 1, ...highlightBounds }}
+                                exit={{ opacity: 0 }}
+                                transition={reduceMotion ? instantHoverTransition : listHoverTransition}
+                            />
+                        ) : null}
+                    </AnimatePresence>
+                    {items.map((item: SavedMessage) => (
+                        <li
+                            key={item.id}
+                            className="saved-message-item"
+                            tabIndex={0}
+                            onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
+                            onFocus={(event) => setHighlightFromElement(event.currentTarget)}
+                        >
+                            <div className="saved-message-head">
+                                <span className="saved-message-author">{item.author}</span>
+                                <time className="saved-message-date" dateTime={new Date(item.savedAt).toISOString()}>
+                                    {formatSavedDate(item.savedAt)}
+                                </time>
+                            </div>
+                            <p className="saved-message-preview">{item.text}</p>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <div className="saved-messages-empty flex flex-1 items-center justify-center p-2">
+                    <Empty className="py-4">
+                        <EmptyHeader>
+                            <EmptyMedia className="mb-4">
+                                <StackedCardsIllustration />
+                            </EmptyMedia>
+                            <EmptyTitle>No saved messages</EmptyTitle>
+                            <EmptyDescription className="max-w-[220px]">
+                                No saved messages added yet. Forward or save messages here for quick access.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                    </Empty>
+                </div>
+            )}
+        </section>
     );
 }
 
@@ -152,31 +500,47 @@ export function PeerPanel() {
                             </div>
                         </div>
                         <div id="uiPeerBody" className="peer-panel-body" hidden>
-                            <div className="peer-hero">
-                                <div id="uiPeerAvatar" className="peer-avatar contact-avatar" aria-hidden="true" />
-                                <h2 id="uiPeerName" className="peer-name" />
-                                <p id="uiPeerHandle" className="peer-handle" />
-                                <p id="uiPeerStatus" className="peer-status" />
-                            </div>
-                            <section className="peer-section" aria-labelledby="uiPeerAboutTitle">
-                                <h3 id="uiPeerAboutTitle" className="peer-section-title">About</h3>
-                                <p id="uiPeerBio" className="peer-bio" />
-                            </section>
-                            <section className="peer-section peer-section--encrypt" aria-labelledby="uiPeerEncryptTitle">
-                                <div className="peer-encrypt-head">
-                                    <h3 id="uiPeerEncryptTitle" className="peer-section-title">Encryption</h3>
-                                    <span className="peer-verified">
-                                        <Icon href="#icon-check-circle" />
-                                        Verified
-                                    </span>
+                            <section className="profile-info-card" aria-labelledby="uiPeerName">
+                                <div id="uiPeerAvatar" className="peer-avatar peer-avatar--cover contact-avatar" aria-hidden="true" />
+                                {/* Card-coloured cutout in the photo's top-right corner; the
+                                    collapse toggle (#uiPeerPanelToggle, in the dock) sits in it. */}
+                                <span className="profile-cover-notch" aria-hidden="true">
+                                    <span className="profile-cover-notch__joint profile-cover-notch__joint--top" />
+                                    <span className="profile-cover-notch__joint profile-cover-notch__joint--side" />
+                                </span>
+                                {/* Hide-panel button: a real child of the card, so it moves with
+                                    the panel's slide (js/ui.js handles the click). The dock's edge
+                                    tab only appears once the panel is collapsed, to reopen it. */}
+                                <button
+                                    id="uiPeerCoverToggle"
+                                    className="profile-cover-toggle"
+                                    type="button"
+                                    aria-controls="uiPeerPanel"
+                                    aria-label="Hide conversation panel"
+                                    title="Hide panel"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+                                        <line x1="15" y1="3" x2="15" y2="21" />
+                                        <path d="M7 8h2M7 12h2M7 16h2" />
+                                    </svg>
+                                </button>
+                                <div className="profile-title-row">
+                                    <h2 id="uiPeerName" className="peer-name profile-name" />
+                                    <p id="uiPeerStatus" className="peer-status" />
                                 </div>
-                                <p id="uiPeerEncryptCopy" className="peer-encrypt-copy">Messages are end-to-end encrypted.</p>
-                                <button id="uiPeerSecurityBtn" className="peer-security-btn" type="button">View Security Details</button>
+                                <p id="uiPeerBio" className="peer-bio profile-bio" />
+                                <PeerActions />
                             </section>
-                            <section className="peer-section peer-section--options" aria-labelledby="uiPeerOptionsTitle">
-                                <h3 id="uiPeerOptionsTitle" className="peer-section-title">Options</h3>
-                                <PeerOptions />
-                            </section>
+                            <SavedMessages />
                         </div>
                     </div>
                 </aside>

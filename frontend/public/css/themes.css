@@ -41,13 +41,18 @@ html[data-theme] {
 html[data-theme] #page-chat :is(
     .list-hover-highlight,
     .library-list-highlight,
-    .peer-options-highlight,
     .library-row,
-    .peer-option,
     .sidebar-file-tree [role="treeitem"],
     #usersList .contact-row
 ) {
     border-radius: var(--list-item-radius);
+}
+
+/* The bottom nav bar's highlight is a circle, like its buttons. !important:
+   the shared rule above uses :is(…, #usersList .contact-row), which counts
+   at ID specificity and would otherwise win. */
+html[data-theme] #page-chat .expandable-tabs__highlight {
+    border-radius: 50% !important;
 }
 
 /* ── Sidebar: chat list — clean rows, outline only on hover / active ─────── */
@@ -126,8 +131,13 @@ html[data-theme] #page-chat .sidebar-file-tree .file-tree-item-row:has(> [role="
 
 html[data-theme] #page-chat .expandable-tabs__btn.is-active,
 html[data-theme] #page-chat .expandable-tabs__btn[aria-current="page"] {
-    background: var(--active-pill-bg);
+    /* The pill is .expandable-tabs__active (slides between tabs) */
+    background: transparent;
     color: var(--active-pill-text);
+}
+
+html[data-theme] #page-chat .expandable-tabs__active {
+    background: var(--active-pill-bg);
 }
 
 html[data-theme] #page-chat :is(.expandable-tabs__btn, .library-row, .sidebar-file-tree [role="treeitem"]) {
@@ -222,28 +232,9 @@ html[data-theme] #page-chat .message-row.is-highlighted .search-hit {
 }
 
 /* ── Paste preview folder (src/components/ui/folder-interaction) ─────────────
-   Glass pocket + frosted front flap from the --glass-* tokens (per theme
-   type, public/js/themes.js); the sheets inside are clean cards with the
+   Back wall + front flap are solid --card-bg with one --border-subtle hairline
+   (folder-interaction.css); the sheets inside are clean cards with the
    theme's text, so the preview reads crisp on light themes too. */
-html[data-theme] .folder-interaction__body {
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    backdrop-filter: blur(var(--glass-blur));
-    background: var(--glass-fill);
-    border: 1px solid var(--glass-stroke);
-    box-shadow: var(--glass-shadow);
-}
-
-html[data-theme] .folder-interaction__grad-fill-start {
-    stop-color: var(--glass-flap-start);
-}
-
-html[data-theme] .folder-interaction__grad-fill-end {
-    stop-color: var(--glass-flap-end);
-}
-
-html[data-theme] :is(.folder-interaction__grad-stroke-start, .folder-interaction__grad-stroke-end) {
-    stop-color: var(--glass-edge);
-}
 
 html[data-theme] .folder-interaction__page {
     background: var(--glass-sheet);

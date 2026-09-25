@@ -83,17 +83,30 @@ export function initProfileSettings(context) {
     bindShell();
 }
 
+/** rAF ids of the refresh in flight — a newer request cancels it. */
+let queuedRefresh = [0, 0];
+
 export function queueProfilePanelRefresh(section = 'identity') {
-    // Each queued refresh carries its own section: one click can queue this more
-    // than once (the dock's React handler and ui.js's delegated one both fire), and
-    // a shared "pending" value reset by the first refresh made the second one
-    // fall back to identity — Settings opened on Profile instead of Appearance.
+    // Latest request wins: rapid tab switches (Profile → Settings → Profile)
+    // used to leave older refreshes queued two frames out, which then painted
+    // a stale section over the current one (flicker). Cancel before queueing.
     const target = section || 'identity';
     pendingProfileSection = target;
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => onProfilePanelOpen(target));
+    cancelAnimationFrame(queuedRefresh[0]);
+    cancelAnimationFrame(queuedRefresh[1]);
+    queuedRefresh[0] = requestAnimationFrame(() => {
+        queuedRefresh[1] = requestAnimationFrame(() => {
+            // The user may have left Profile / Settings in the meantime.
+            const page = document.getElementById('page-chat');
+            if (page && !page.matches('.is-app-view-identity, .is-app-view-settings')) return;
+            onProfilePanelOpen(target);
+        });
     });
 }
+
+/** Bumped per hydrate call: an older async run that resolves late bails out. */
+let securityRun = 0;
+let devicesRun = 0;
 
 function bindShell() {
     const panel = document.getElementById('uiProfilePanel');
@@ -382,8 +395,10 @@ async function hydrateSecurity() {
     const verifiedEl = $p('uiProfileSecVerified');
     const verifiedHint = $p('uiProfileSecVerifiedHint');
     hydrateDeviceIdentity();
+    const run = ++securityRun;
 
     const pub = await resolvePublicKeyJwk();
+    if (run !== securityRun) return;
     if (!pub) {
         if (fpEl) {
             fpEl.textContent = 'Sign in and unlock keys to view your fingerprint.';
@@ -401,6 +416,7 @@ async function hydrateSecurity() {
 
     try {
         const fp = await computeKeyFingerprint(pub);
+        if (run !== securityRun) return;
         if (fpEl) {
             fpEl.textContent = fp;
             fpEl.dataset.raw = fp.replace(/\s/g, '');
@@ -498,6 +514,7 @@ async function hydrateDevices() {
     const othersWrap = $p('uiProfileDevicesOthersWrap');
     const emptyEl = $p('uiProfileDevicesEmpty');
     if (!currentHost) return;
+    const run = ++devicesRun;
 
     currentHost.replaceChildren();
     othersHost?.replaceChildren();
@@ -520,6 +537,10 @@ async function hydrateDevices() {
             devices = [];
         }
     }
+
+    // A newer hydrate started while this one awaited: its rows win (overlapping
+    // runs used to append duplicate device rows).
+    if (run !== devicesRun) return;
 
     if (!devices.length) {
         devices = [{

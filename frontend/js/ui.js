@@ -22,6 +22,7 @@ import {
     loadProfile,
 } from './profile.js';
 import { resolveContactProfile } from './profileDirectory.js';
+import { setSavedMessagesPeer } from '../src/chat/savedMessages.ts';
 import {
     clearPasteAttachments,
     getPasteAttachmentsLength,
@@ -348,7 +349,8 @@ function initPeerPanelCollapse() {
             const target = event.target;
             if (!(target instanceof Element)) return;
 
-            if (target.closest('#uiSidebarToggle')) {
+            // Edge tab (reopens when collapsed) or the header cutout button
+            if (target.closest('#uiSidebarToggle, #uiSidebarHeaderToggle')) {
                 const sidebar = document.getElementById('uiSidebar') || DOM.sidebar;
                 if (!sidebar) return;
                 const next = !sidebar.classList.contains('is-collapsed');
@@ -358,7 +360,8 @@ function initPeerPanelCollapse() {
                 return;
             }
 
-            if (target.closest('#uiPeerPanelToggle')) {
+            // Dock edge tab (reopens a collapsed panel) or the cover-cutout button in the profile card
+            if (target.closest('#uiPeerPanelToggle, #uiPeerCoverToggle')) {
                 const peer = document.getElementById('uiPeerPanel') || DOM.peerPanel;
                 if (!peer) return;
                 const next = !peer.classList.contains('is-collapsed');
@@ -2165,8 +2168,27 @@ export function openSettings() {
     openModalOverlay('settings', 'settings');
 }
 
+/** Current app view from #page-chat's classes: 'chats' | 'identity' | 'settings'. */
+function currentAppView() {
+    const page = DOM.pageChat || document.getElementById('page-chat');
+    if (page?.classList.contains('is-app-view-settings')) return 'settings';
+    if (page?.classList.contains('is-app-view-identity')) return 'identity';
+    return 'chats';
+}
+
+/**
+ * Desktop: re-requesting the view that's already open is a no-op. One dock click
+ * reaches three handlers (React onChange, the delegated one here, app.js), and
+ * rapid repeat clicks on the active tab re-ran the whole switch each time.
+ * Stacked (mobile) layouts keep re-running: the tab also resets the drill level.
+ */
+function isRepeatViewRequest(view) {
+    return !isAppStackViewport() && !isProfileStackViewport() && currentAppView() === view;
+}
+
 /** Open the in-app settings surface (Appearance / Security / …), not the interface modal. */
-export function openAppSettings(section = 'appearance') {
+export function openAppSettings(section = 'appearance', { force = false } = {}) {
+    if (!force && isRepeatViewRequest('settings')) return;
     closeOverlay();
     setAppView('settings');
     queueProfilePanelRefresh(section);
@@ -2176,6 +2198,7 @@ export function openAppSettings(section = 'appearance') {
 }
 
 export function showChatsView() {
+    if (isRepeatViewRequest('chats')) return;
     setAppView('chats');
     if (isAppStackViewport()) setChatDrillLevel('list');
 }
@@ -2184,9 +2207,11 @@ export function openProfile(section = 'identity') {
     closeOverlay();
     // Non-identity sections live under Settings, not the Profile page.
     if (section && section !== 'identity') {
-        openAppSettings(section);
+        // A deep link to a section must switch it even while Settings is open.
+        openAppSettings(section, { force: true });
         return;
     }
+    if (isRepeatViewRequest('identity')) return;
     setAppView('identity');
     queueProfilePanelRefresh('identity');
     if (isProfileStackViewport()) {
@@ -2696,6 +2721,7 @@ function refreshPeerPanel(username = contactsState.activeUsername) {
 
     const active = username || null;
     const empty = !active;
+    setSavedMessagesPeer(active);
     const becameEmpty = empty && !panel.classList.contains('is-empty');
     panel.classList.toggle('is-empty', empty);
     if (DOM.peerBody) DOM.peerBody.hidden = empty;
@@ -2764,7 +2790,14 @@ function refreshPeerPanel(username = contactsState.activeUsername) {
     }
 
     const online = realtimeContext.onlineUsers.has(active);
-    DOM.peerStatus.textContent = online ? 'Online' : 'Offline';
+    if (online) {
+        const now = document.createElement('span');
+        now.className = 'peer-status-now';
+        now.textContent = 'Now';
+        DOM.peerStatus.replaceChildren('Last seen: ', now);
+    } else {
+        DOM.peerStatus.textContent = 'Offline';
+    }
     DOM.peerStatus.className = `peer-status ${online ? 'is-online' : 'is-offline'}`;
 }
 

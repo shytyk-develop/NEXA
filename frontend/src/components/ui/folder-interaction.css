@@ -12,19 +12,28 @@
     width: 20rem;
 }
 
-/* Theme-tinted pocket — matte glass with backdrop blur */
+/* Ultra-clear folder: both walls are a whisper of tint + blur + one
+   --border-subtle hairline — no dense fills, gradients or glows. */
+.folder-interaction {
+    --folder-tint: rgba(255, 255, 255, 0.02);
+    /* Back wall: the theme's card colour at 80%, so the pocket reads as a surface */
+    --folder-wall-tint: color-mix(in srgb, var(--card-bg, #121212) 80%, transparent);
+}
+
+:root[data-theme^="light"] .folder-interaction {
+    --folder-tint: rgba(0, 0, 0, 0.05);
+}
+
 .folder-interaction__body {
     align-items: center;
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    background: color-mix(
-        in srgb,
-        var(--nexa-aside-fill, #161920) 72%,
-        transparent
-    );
-    border: 1px solid color-mix(in srgb, var(--dock-accent, #afb9cd) 14%, transparent);
-    border-radius: 16px;
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--theme-tint, #fff) 6%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    background: var(--folder-wall-tint) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+    /* The flap's own edge sits 1px below this line — one hairline, not two */
+    border-bottom-color: transparent;
+    border-radius: 20px;
+    box-shadow: none;
     display: flex;
     height: 100%;
     justify-content: center;
@@ -32,18 +41,6 @@
     margin-right: auto;
     position: relative;
     width: 87.5%;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-    .folder-interaction__body {
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        background: color-mix(
-            in srgb,
-            var(--nexa-aside-fill, #161920) 92%,
-            var(--dock-accent, #afb9cd)
-        );
-    }
 }
 
 .folder-interaction .folder > div,
@@ -92,20 +89,33 @@
     pointer-events: none;
 }
 
-.folder-interaction__grad-fill-start {
-    stop-color: color-mix(in srgb, var(--dock-accent, #afb9cd) 18%, #0e0e10);
+/* Front flap: same tint + hairline. Its blur is kept light (2px, vs the
+   wall's 8px) so the sheet stays clearly readable through it. */
+.folder-interaction__flap-blur {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    height: 100%;
+    width: 100%;
 }
 
-.folder-interaction__grad-fill-end {
-    stop-color: color-mix(in srgb, var(--nexa-aside-fill, #161920) 88%, #000);
+.folder-interaction__flap-shape {
+    fill: var(--folder-tint);
+    stroke: var(--border-subtle, rgba(255, 255, 255, 0.1));
+    stroke-width: 1px;
 }
 
-.folder-interaction__grad-stroke-start {
-    stop-color: color-mix(in srgb, var(--dock-accent, #afb9cd) 28%, #fff);
-}
+@media (prefers-reduced-transparency: reduce) {
+    .folder-interaction__body,
+    :root[data-theme] .folder-interaction__body {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: var(--card-bg, #121212) !important;
+    }
 
-.folder-interaction__grad-stroke-end {
-    stop-color: color-mix(in srgb, var(--dock-accent, #afb9cd) 12%, #0a0a0a);
+    .folder-interaction__flap-blur {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
 }
 
 .folder-interaction__page {

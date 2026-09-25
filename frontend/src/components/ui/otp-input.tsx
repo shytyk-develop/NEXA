@@ -1,6 +1,7 @@
-// --- Component ---
-"use client";
-
+// OTP input (adapted from the snippet in DraftComponents.tsx): same hook,
+// props and motion; cell / message colours come from the theme tokens
+// (.otp-cell* / .otp-message in public/css/peer-panel.css) instead of
+// Tailwind `dark:` classes, since themes here are driven by data-theme.
 import {
   useCallback,
   useEffect,
@@ -12,6 +13,7 @@ import {
   type ClipboardEvent,
   type FocusEvent,
   type KeyboardEvent,
+  type Ref,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -302,7 +304,7 @@ export type OtpInputProps = {
   autoFocus?: boolean;
   focusOnError?: boolean;
   className?: string;
-  ref?: React.Ref<OtpInputHandle>;
+  ref?: Ref<OtpInputHandle>;
 };
 
 export function OtpInput({
@@ -366,11 +368,7 @@ export function OtpInput({
     hint.length > 0 || errorMessage.length > 0 || successMessage.length > 0;
 
   const message = error ? errorMessage : success ? successMessage : hint;
-  const messageTone = error
-    ? "text-red-600 dark:text-red-400"
-    : success
-      ? "text-emerald-600 dark:text-emerald-400"
-      : "text-stone-500 dark:text-stone-400";
+  const messageTone = error ? "is-error" : success ? "is-success" : "is-hint";
 
   return (
     <div className={`inline-flex flex-col ${className}`}>
@@ -395,17 +393,10 @@ export function OtpInput({
                 aria-label={`${label}, character ${i + 1} of ${length}`}
                 aria-invalid={error || undefined}
                 aria-describedby={hasStatus ? statusId : undefined}
-                className={`h-12 w-10 rounded-[10px] border-2 text-center text-[15px] text-transparent caret-transparent outline-none transition-[background-color,border-color,box-shadow] duration-150 selection:bg-transparent focus-visible:outline-none disabled:opacity-50 ${
-                  error
-                    ? "border-red-500 bg-white dark:border-red-400 dark:bg-[#252522]"
-                    : success
-                      ? "border-emerald-500 bg-white dark:border-emerald-400 dark:bg-[#252522]"
-                      : active
-                        ? "border-[#4568FF] bg-white dark:border-[#93B0FF] dark:bg-[#252522]"
-                        : char
-                          ? "border-stone-300 bg-white dark:border-white/20 dark:bg-[#252522]"
-                          : "border-stone-200 bg-stone-100/70 shadow-[inset_0_1px_2px_rgba(28,25,23,0.07)] dark:border-white/[0.08] dark:bg-[#1D1D1A] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.45)]"
-                }`}
+                data-state={
+                  error ? "error" : success ? "success" : active ? "active" : char ? "filled" : "empty"
+                }
+                className="otp-cell h-12 w-10 text-center text-[15px] text-transparent caret-transparent outline-none selection:bg-transparent focus-visible:outline-none disabled:opacity-50"
               />
 
               <span
@@ -443,7 +434,7 @@ export function OtpInput({
                             }
                       }
                       transition={enter}
-                      className="col-start-1 row-start-1 font-mono text-[15px] tabular-nums text-stone-700 dark:text-stone-200"
+                      className="otp-cell__char col-start-1 row-start-1 font-mono text-[15px] tabular-nums"
                     >
                       {char}
                     </motion.span>
@@ -452,7 +443,7 @@ export function OtpInput({
 
                 {active && !char && !disabled ? (
                   <motion.span
-                    className="col-start-1 row-start-1 block h-[17px] w-[1.5px] rounded-[1px] bg-stone-700 dark:bg-stone-200"
+                    className="otp-cell__caret col-start-1 row-start-1 block h-[17px] w-[1.5px] rounded-[1px]"
                     initial={{ opacity: 1 }}
                     animate={
                       reduced ? { opacity: 1 } : { opacity: [1, 1, 0, 0] }
@@ -488,7 +479,7 @@ export function OtpInput({
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduced ? { opacity: 0 } : { opacity: 0, y: -3 }}
                 transition={swap}
-                className={`col-start-1 row-start-1 ${messageTone}`}
+                className={`otp-message col-start-1 row-start-1 ${messageTone}`}
               >
                 {message}
               </motion.span>
@@ -503,44 +494,3 @@ export function OtpInput({
   );
 }
 
-export default OtpInput;
-
-
-// --- Demo ---
-"use client";
-
-import {
-  OtpInput,
-  type OtpInputHandle,
-  type OtpStatus,
-} from "@/components/ui/otp-input";
-import * as React from "react";
-
-const CODE = "204815";
-
-export default function OtpInputDemo() {
-  const field = React.useRef<OtpInputHandle>(null);
-  const [status, setStatus] = React.useState<OtpStatus>("idle");
-
-  React.useEffect(() => {
-    if (status === "idle") return;
-    const back = setTimeout(() => {
-      field.current?.clear();
-      setStatus("idle");
-    }, 1600);
-    return () => clearTimeout(back);
-  }, [status]);
-
-  return (
-    <div className="flex justify-center p-8">
-      <OtpInput
-        ref={field}
-        status={status}
-        onComplete={(value) => setStatus(value === CODE ? "success" : "error")}
-        hint={`Try ${CODE}, or anything else.`}
-        successMessage="Code accepted."
-        errorMessage="That code is not right."
-      />
-    </div>
-  );
-}

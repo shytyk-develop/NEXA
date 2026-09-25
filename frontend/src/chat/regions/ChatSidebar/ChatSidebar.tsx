@@ -330,9 +330,38 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
                 </div>
 
                 <aside id="uiSidebar" className="sidebar" aria-label="Navigation and contacts">
-                    <header className="sidebar-brand">
+                    <header className="sidebar-brand left-sidebar-header">
                         {/* Drawn as a mask so it takes the theme's text colour (see .brand-logo). */}
                         <span role="img" aria-label="NEXA" className="sidebar-brand__mark brand-logo" />
+                        {/* Aside-coloured cutout in the header's top-right corner holding the
+                            hide button — same build as the right panel's cover cutout. The
+                            edge tab (#uiSidebarToggle) only returns once collapsed. */}
+                        <span className="left-sidebar-header__notch" aria-hidden="true">
+                            <span className="left-sidebar-header__joint left-sidebar-header__joint--top" />
+                            <span className="left-sidebar-header__joint left-sidebar-header__joint--side" />
+                        </span>
+                        <button
+                            id="uiSidebarHeaderToggle"
+                            className="left-sidebar-collapse-btn"
+                            type="button"
+                            aria-controls="uiSidebar"
+                            aria-label="Hide contacts"
+                            title="Hide contacts"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                            >
+                                <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+                                <line x1="15" y1="3" x2="15" y2="21" />
+                                <path d="M7 8h2M7 12h2M7 16h2" />
+                            </svg>
+                        </button>
                     </header>
 
                     <section className="sidebar-chats" aria-label="Chats">

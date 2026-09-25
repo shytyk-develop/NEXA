@@ -29,7 +29,7 @@
     --nexa-aside-stroke: color-mix(in srgb, #fff 7%, var(--nexa-aside-fill));
     --nexa-aside-blur: 0px;
     --nexa-aside-saturate: 100%;
-    --nexa-aside-radius: 32px;
+    --nexa-aside-radius: 50px;
     --nexa-aside-shadow: none;
     --nexa-aside-toggle-blur: 0px;
     --nexa-aside-toggle-h: 88px;
@@ -416,8 +416,10 @@ html[data-wallpaper-dim] {
 #page-chat .sidebar-dock-bar {
     --dock-surface: color-mix(in srgb, #0a0a0a 78%, #1a1a1a);
     --dock-stroke: var(--nexa-aside-stroke);
-    --expandable-tabs-radius: 18px;
-    --expandable-tabs-btn-radius: 13px;
+    /* Pill bar; buttons 20px (≈ bar radius − its 5px padding), so the green
+       active pill and the hover highlight follow the bar's contour */
+    --expandable-tabs-radius: 9999px;
+    --expandable-tabs-btn-radius: 20px;
     align-items: center;
     display: flex;
     flex-shrink: 0;
@@ -431,10 +433,11 @@ html[data-wallpaper-dim] {
     align-self: center;
     background: color-mix(in srgb, var(--nexa-aside-fill, var(--dock-surface)) 88%, var(--theme-section, #111));
     border: 1px solid var(--nexa-aside-stroke, var(--dock-stroke));
-    border-radius: var(--expandable-tabs-radius);
+    border-radius: var(--expandable-tabs-radius) !important;
     box-shadow: var(--nexa-aside-shadow, inset 0 1px 0 color-mix(in srgb, var(--theme-tint, #fff) 4%, transparent));
     box-sizing: border-box;
     display: flex;
+    overflow: hidden;
     flex: 0 0 auto;
     flex-wrap: nowrap;
     gap: 4px;
@@ -449,11 +452,34 @@ html[data-wallpaper-dim] {
     content: none;
 }
 
+/* Desktop left sidebar: the bar spans the sidebar and the caption takes the
+   rest of the row, text centred — exactly midway between the divider and the
+   bar's edge. (At max-content the 40px buttons + caption slot overflowed the
+   264px row and overflow: hidden clipped the caption's right side.) */
+#page-chat:not(.is-viewport-app-stack) .left-capsule .sidebar-dock {
+    gap: 3px;
+    width: 100%;
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-capsule .expandable-tabs__caption {
+    flex: 1 1 0;
+    min-width: 0;
+    /* No padding: centring is by the free space on each side */
+    padding: 0;
+}
+
+/* Divider → caption box = 3 (margin) + 3 (gap) = 6px, matching caption box →
+   bar edge = 5px padding + 1px border, so the box is centred on the gap. */
+#page-chat:not(.is-viewport-app-stack) .left-capsule .expandable-tabs__sep {
+    margin-right: 3px;
+}
+
 #page-chat .expandable-tabs__btn {
     align-items: center;
     background: transparent;
     border: 0;
-    border-radius: var(--expandable-tabs-btn-radius);
+    /* 1:1 circle: hover, focus and the active pill keep the round contour */
+    border-radius: 50% !important;
     color: var(--theme-text-muted, #a1a1aa);
     cursor: pointer;
     display: inline-flex;
@@ -463,15 +489,15 @@ html[data-wallpaper-dim] {
     font-size: 13px;
     font-weight: 500;
     gap: 0;
-    height: auto;
+    height: 40px;
     justify-content: center;
-    min-height: 38px;
-    min-width: 38px;
-    padding: 8px;
+    min-height: 40px;
+    min-width: 40px;
+    padding: 0;
     position: relative;
     text-decoration: none;
     transition: color 0.3s ease;
-    width: 38px;
+    width: 40px;
     z-index: 1;
 }
 
@@ -490,6 +516,20 @@ html[data-wallpaper-dim] {
     pointer-events: none;
     position: absolute;
     z-index: 0;
+}
+
+/* Active pill: under the icon, GPU-composited while it slides */
+#page-chat .expandable-tabs__active {
+    /* Filled by the theme (themes.css: --active-pill-bg); unthemed keeps the
+       old look, an accent-coloured icon with no pill */
+    background: transparent;
+    border-radius: 50%;
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    z-index: -1;
 }
 
 #page-chat .expandable-tabs__btn:hover,
@@ -519,10 +559,12 @@ html[data-wallpaper-dim] {
     --caption-pad: 14px;
     align-items: center;
     box-sizing: content-box;
-    display: flex;
+    display: grid;
     flex: 0 0 auto;
+    /* Centre the (sizer-wide) column in the box, and the text in the column */
     justify-content: center;
-    min-height: 38px;
+    justify-items: center;
+    min-height: 40px;
     min-width: 0;
     overflow: hidden;
     padding: 0 var(--caption-pad);
@@ -534,9 +576,8 @@ html[data-wallpaper-dim] {
     font-family: var(--f-ui, inherit);
     font-size: 13px;
     font-weight: 500;
-    left: 0;
+    grid-area: 1 / 1;
     pointer-events: none;
-    position: absolute;
     visibility: hidden;
     white-space: nowrap;
 }
@@ -548,6 +589,7 @@ html[data-wallpaper-dim] {
     font-family: var(--f-ui, inherit);
     font-size: 13px;
     font-weight: 500;
+    grid-area: 1 / 1;
     position: relative;
     white-space: nowrap;
     width: max-content;
@@ -580,9 +622,9 @@ html[data-wallpaper-dim] {
     background: transparent;
     border: 0;
     box-shadow: none;
-    min-height: 38px;
-    min-width: 38px;
-    width: auto;
+    min-height: 40px;
+    min-width: 40px;
+    width: 40px;
 }
 
 #page-chat.is-app-view-identity .profile-nav-toggle {
@@ -1028,8 +1070,9 @@ html[data-wallpaper-dim] {
 
 /* Desktop: left capsule = contacts + bottom dock (mirrors peer-panel-dock) */
 #page-chat:not(.is-viewport-app-stack) .left-capsule {
-    --sidebar-motion-duration: var(--nexa-aside-motion-duration);
-    --sidebar-motion-ease: var(--nexa-aside-motion-ease);
+    /* Same clock as the right panel (peer-panel.css): open + close */
+    --sidebar-motion-duration: 0.28s;
+    --sidebar-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
     --sidebar-toggle-h: var(--nexa-aside-toggle-h);
     align-self: center;
     flex-shrink: 0;
@@ -1096,8 +1139,8 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat:not(.is-viewport-app-stack).is-sidebar-collapsed .left-capsule {
-    --sidebar-motion-duration: var(--nexa-aside-motion-duration-out);
-    --sidebar-motion-ease: var(--nexa-aside-motion-ease-out);
+    --sidebar-motion-duration: 0.28s;
+    --sidebar-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
     /* Ride to the viewport edge with the panel — same as peer margin-right → 0 */
     margin-left: 0;
     margin-right: 0;
@@ -1405,24 +1448,31 @@ html[data-wallpaper-dim] {
     z-index: 0;
 }
 
-/* Folder paste shelf — left peek under composer (transform scale keeps layout box large;
-   tuck via negative margin into the folder visual at bottom-left of that box) */
+/* Folder paste shelf — a drawer on the composer's top edge (out of flow).
+   Its bottom sits --paste-tuck behind the composer (z 10), so the folder
+   peeks out as before; clip-path cuts everything below that line, so the
+   folder's slide (y: 100% → 0, paste-folder.tsx) reads as coming out from
+   behind the composer, never out from under it. Sheets that fly up when the
+   folder opens aren't clipped (the inset is unbounded on the other sides). */
 #page-chat .chat-main > .input-bar .paste-attachments--folder {
+    --paste-tuck: 50px;
     align-items: flex-end;
     background: transparent;
     border: 0;
     border-radius: 0;
+    bottom: calc(100% - var(--paste-tuck));
+    clip-path: inset(-100vh -100vw 0 -100vw);
     justify-content: flex-start;
-    margin: 0 auto -58px;
+    left: 0;
+    margin: 0 auto;
     max-height: none;
     max-width: 560px;
     overflow: visible;
     padding: 44px 0 0 16px;
     pointer-events: none;
-    transition:
-        padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    position: absolute;
+    right: 0;
+    transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     z-index: 1;
 }
@@ -3750,6 +3800,156 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
     height: 26px;
 }
 
+/* ── Left header: NEXA block with the hide button in a top-right cutout ─────
+   Same build as the right panel's cover cutout (public/css/peer-panel.css):
+   an aside-coloured plate over the header's corner, concave curve = button
+   radius + gap, two radial "inverted corner" joints. Header is inset 13px in
+   the shelf (14px from the outer edge, like the right cards' photo). */
+#page-chat:not(.is-viewport-app-stack) .left-capsule .sidebar {
+    padding-top: 0;
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-sidebar-header {
+    --lh-inset: 13px;
+    --lh-btn: 36px;
+    --lh-gap: 5px;
+    /* Button position from the shelf's inner edge (not the header's), equal
+       on both sides. 17px keeps an even ~11px ring to the shelf's 50px corner
+       arc along the diagonal (12px from the straight edges sat ~3px from it).
+       The cutout's curve (btn/2 + gap) is concentric with the button. */
+    --lh-btn-right: 17px;
+    --lh-btn-top: 17px;
+    /* Joints: roomy along the top; on the side, 64 − 45 = 19px under the
+       cutout holds the joint (9) + the header's bottom corner (10) */
+    --lh-joint-top: 12px;
+    --lh-joint-side: 9px;
+    --lh-notch-w: calc(var(--lh-btn-right) + var(--lh-btn) + var(--lh-gap));
+    --lh-notch-h: calc(var(--lh-btn-top) + var(--lh-btn) + var(--lh-gap));
+    /* Soft wash of the text colour, no border: ≈ rgba(0,0,0,.03) on the light
+       themes, rgba(255,255,255,.03) on Dark Neon. The cutout plate is opaque
+       aside fill, so it stays flush with the shelf around it. */
+    background: color-mix(in srgb, var(--text-primary, var(--theme-text, #fff)) 3%, transparent) !important;
+    border: 0;
+    /* Top-left concentric with the shelf; bottoms fit under the side joint */
+    border-radius: calc(var(--nexa-aside-radius) - 1px - var(--lh-inset)) 0 10px 10px;
+    height: 64px !important; /* base .sidebar-brand forces height: auto !important */
+    margin: var(--lh-inset) var(--lh-inset) 28px;
+    /* `.sidebar > *` pins children to the full aside width (no reflow while
+       collapsing); with side margins that overflowed the shelf and pushed the
+       cutout + button past its edge. Pin to the width inside the margins and
+       the shelf's 1px borders instead. */
+    min-width: calc(var(--nexa-aside-start-w, 288px) - 2px - var(--lh-inset) * 2);
+    padding: 10px 16px;
+    position: relative;
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-sidebar-header .sidebar-brand__mark {
+    height: 22px;
+    max-height: 22px;
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-sidebar-header__notch {
+    background: var(--nexa-aside-fill);
+    border-bottom-left-radius: calc(var(--lh-btn) / 2 + var(--lh-gap));
+    border-top-right-radius: calc(var(--nexa-aside-radius) - 1px);
+    height: var(--lh-notch-h);
+    pointer-events: none;
+    position: absolute;
+    right: calc(var(--lh-inset) * -1);
+    top: calc(var(--lh-inset) * -1);
+    width: var(--lh-notch-w);
+    z-index: 1;
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-sidebar-header__joint {
+    --j: var(--lh-joint-top);
+    background: radial-gradient(
+        circle at 0 100%,
+        transparent var(--j),
+        var(--nexa-aside-fill) calc(var(--j) + 0.5px)
+    );
+    height: var(--j);
+    position: absolute;
+    width: var(--j);
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-sidebar-header__joint--top {
+    right: 100%;
+    top: var(--lh-inset);
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-sidebar-header__joint--side {
+    --j: var(--lh-joint-side);
+    right: var(--lh-inset);
+    top: 100%;
+}
+
+/* Same button as the right panel's (.profile-cover-toggle) */
+#page-chat .left-sidebar-collapse-btn {
+    align-items: center;
+    appearance: none;
+    background-color: var(--card-bg, var(--nexa-aside-fill));
+    border: 1px solid var(--border-subtle, var(--nexa-aside-stroke));
+    border-radius: 50%;
+    color: color-mix(in srgb, var(--text-primary, #f4f4f5) 55%, var(--card-bg, #121212));
+    cursor: pointer;
+    display: inline-flex;
+    height: var(--lh-btn, 36px);
+    justify-content: center;
+    min-height: var(--lh-btn, 36px);
+    min-width: var(--lh-btn, 36px);
+    padding: 0;
+    position: absolute;
+    /* Header-relative, from the shelf-relative position above */
+    right: calc(var(--lh-btn-right, 12px) - var(--lh-inset, 13px));
+    top: calc(var(--lh-btn-top, 10px) - var(--lh-inset, 13px));
+    transition:
+        background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    width: var(--lh-btn, 36px);
+    z-index: 2;
+}
+
+#page-chat .left-sidebar-collapse-btn:is(:hover, :focus-visible) {
+    background-color: var(--hover-bg) !important;
+    color: var(--text-primary, #f4f4f5);
+    outline: none;
+}
+
+#page-chat .left-sidebar-collapse-btn svg {
+    display: block;
+    height: 16px;
+    width: 16px;
+}
+
+/* Mobile keeps its own header; no cutout there */
+#page-chat.is-viewport-app-stack :is(.left-sidebar-header__notch, .left-sidebar-collapse-btn) {
+    display: none;
+}
+
+/* While the header button is on screen the edge tab (and its stroke notch)
+   stays away; it returns once collapsed, to reopen the sidebar. */
+#page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:has(.sidebar:not([hidden])) .aside-toggle--start {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden;
+}
+
+#page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:has(.sidebar:not([hidden]))::after {
+    display: none;
+}
+
+/* Collapsed: the reopen tab fades in as soon as the slide ends */
+#page-chat:not(.is-viewport-app-stack).is-sidebar-collapsed .aside-toggle--start {
+    transition:
+        transform var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        opacity 0.18s ease var(--sidebar-motion-duration),
+        color 0.15s ease,
+        left var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        right var(--nexa-aside-toggle-duration) var(--nexa-aside-toggle-ease),
+        z-index 0s linear var(--sidebar-motion-duration);
+}
+
 #page-chat .contact-search-wrap {
     margin-bottom: 32px;
     padding: 0 16px;
@@ -4155,12 +4355,14 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.08em;
-    margin: 14px 8px 6px;
+    /* Tighter to the section it labels */
+    margin: 6px 8px 4px !important;
+    padding-top: 0;
     text-transform: uppercase;
 }
 
 #page-chat .sidebar-library__kicker:first-child {
-    margin-top: 0;
+    margin-top: 0 !important;
 }
 
 
