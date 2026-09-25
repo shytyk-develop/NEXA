@@ -4,13 +4,10 @@
 import { runOverlayAction } from '../ui/overlays/overlayManager.js';
 import { copyText } from './chatActions.js';
 import { buildLinkBar } from './messageLinkBar.js';
-import { createIcon } from './uiIcon.js';
 import { MORE_REACTIONS, QUICK_REACTIONS } from './messageReactions.js';
 
 /** Keep in sync with `--quickbar-duration` in message-features.css. */
 const ANIM_MS = 280;
-/** Edge fade width of the reactions strip, shown only on sides with hidden content. */
-const FADE_PX = 14;
 /** Reactions visible in the open bubble before the strip needs scrolling. */
 const PEEK_REACTIONS = 4.5;
 /** Same spring as the sidebar folder tree's hover highlight (file-tree.tsx). */
@@ -19,9 +16,7 @@ const HOVER_SPRING = { type: 'spring', stiffness: 500, damping: 40 };
 /** @type {{ key: string, row: HTMLElement, bubble: HTMLElement, panel: HTMLElement, closedWidth: number } | null} */
 let open = null;
 let listenersBound = false;
-/** @type {WeakMap<HTMLElement, ResizeObserver>} */
-const stripObservers = new WeakMap();
-/** Unmount for each panel's React Copy/Delete island. */
+/** Unmount for each panel's React island (the menu, or the link row). */
 const buttonRoots = new WeakMap();
 
 /*
@@ -38,23 +33,6 @@ const buttonsModuleReady = import('../src/chat/quickbar/QuickBarButtons.tsx').th
 
 function prefersReducedMotion() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-function buildReplyButton(payload) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'message-quickbar__action';
-    // Labels collapse to icons on narrow screens (CSS), so keep an accessible name.
-    btn.setAttribute('aria-label', 'Reply');
-    btn.disabled = !payload?.messageId;
-    const label = document.createElement('span');
-    label.className = 'message-quickbar__label';
-    label.textContent = 'Reply';
-    btn.append(createIcon('icon-reply'), label);
-    btn.addEventListener('click', () => {
-        if (!btn.disabled) pick('message.reply', payload);
-    });
-    return btn;
 }
 
 /** Copy stays in the bar (its "Copied!" swap is the feedback) instead of closing it. */
@@ -75,19 +53,14 @@ function pick(id, payload) {
     runOverlayAction(id, payload);
 }
 
-function appendReactionButton(strip, emoji, payload) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'message-quickbar__reaction';
-    btn.textContent = emoji;
-    btn.title = `React ${emoji}`;
-    btn.setAttribute('aria-label', `React ${emoji}`);
-    const active = payload?.currentEmoji === emoji;
-    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    if (active) btn.classList.add('is-active');
-    btn.addEventListener('click', () => pick('reaction.pick', { messageId: payload.messageId, emoji }));
-    strip.append(btn);
-    return btn;
+/**
+ * For actions that don't touch the row (Save): run once the collapse has
+ * finished, so their side effects (a list re-render, a toast) never land on
+ * the collapse's frames.
+ */
+function pickAfterClose(id, payload) {
+    closeMessageQuickBar();
+    window.setTimeout(() => runOverlayAction(id, payload), prefersReducedMotion() ? 0 : ANIM_MS);
 }
 
 /**
@@ -112,71 +85,39 @@ function createPanelShell({ role, label, modifier }) {
     return { panel, body };
 }
 
+/**
+ * Actions panel: the React menu (src/chat/quickbar/QuickBarMenu.tsx — the
+ * TwentyThreeFour selector for Save and 🙂); this side owns the frame, the
+ * bubble's open / close resize and the shared hover highlight.
+ */
 function buildActionsPanel(payload) {
     const { panel, body } = createPanelShell({ role: 'toolbar', label: 'Message actions' });
+    const host = document.createElement('div');
+    host.className = 'message-quickbar__menu-host';
+    body.append(host);
 
-    const actions = document.createElement('div');
-    actions.className = 'message-quickbar__actions';
-    actions.append(buildReplyButton(payload));
-
-    // Copy + Delete are animated React components; they render into this host.
-    const buttonsHost = document.createElement('span');
-    buttonsHost.className = 'message-quickbar__buttons-host';
-    actions.append(buttonsHost);
     // Delete removes the message for both sides, so it stays limited to own messages.
     const canDelete = payload?.messageType === 'outgoing' && Boolean(payload?.messageId);
-    buttonRoots.set(panel, buttonsModule.mountQuickBarButtons(buttonsHost, {
+    const rest = [...QUICK_REACTIONS, ...MORE_REACTIONS];
+
+    buttonRoots.set(panel, buttonsModule.mountQuickBarMenu(host, {
+        canReply: Boolean(payload?.messageId),
+        onReply: () => pick('message.reply', payload),
         canCopy: Boolean(payload?.text),
         onCopy: () => copyMessageText(payload),
         // The button's own Confirm step replaces the app's window.confirm here.
-        onDelete: canDelete
-            ? () => pick('message.delete', { ...payload, confirmed: true })
+        onDelete: canDelete ? () => pick('message.delete', { ...payload, confirmed: true }) : undefined,
+        canSave: Boolean(payload?.text),
+        onSaveLocal: () => pickAfterClose('message.save', payload),
+        // Reactions need a synced server id; until then there's no 🙂.
+        reactions: payload.messageId
+            ? {
+                  current: payload.currentEmoji || null,
+                  more: rest.filter((emoji, i) => rest.indexOf(emoji) === i && !['👍', '❤️', '😂', '😮', '🔥', '🚀'].includes(emoji)),
+                  onPick: (emoji) => pick('reaction.pick', { messageId: payload.messageId, emoji }),
+              }
             : undefined,
     }));
-    body.append(actions);
-
-    // Reactions need a synced server id; until then the panel is actions-only.
-    if (payload.messageId) {
-        const divider = document.createElement('span');
-        divider.className = 'message-quickbar__divider';
-        divider.setAttribute('aria-hidden', 'true');
-
-        const strip = document.createElement('div');
-        strip.className = 'message-quickbar__reactions';
-        strip.setAttribute('role', 'group');
-        strip.setAttribute('aria-label', 'Reactions');
-        QUICK_REACTIONS.forEach((emoji) => appendReactionButton(strip, emoji, payload));
-
-        const more = document.createElement('button');
-        more.type = 'button';
-        more.className = 'message-quickbar__reaction message-quickbar__more';
-        more.title = 'More reactions';
-        more.setAttribute('aria-label', 'More reactions');
-        more.append(createIcon('icon-plus'));
-        more.addEventListener('click', () => {
-            more.remove();
-            const first = MORE_REACTIONS.map((emoji) => appendReactionButton(strip, emoji, payload))[0];
-            strip.scrollTo({ left: first?.offsetLeft ?? strip.scrollWidth, behavior: 'smooth' });
-            first?.focus({ preventScroll: true });
-        });
-        strip.append(more);
-
-        strip.addEventListener('scroll', () => syncStripFades(strip), { passive: true });
-        // Width settles during the bubble's resize animation; re-check fades as it does.
-        const observer = new ResizeObserver(() => syncStripFades(strip));
-        observer.observe(strip);
-        stripObservers.set(panel, observer);
-
-        // A mouse wheel only scrolls vertically; map it onto the horizontal strip.
-        strip.addEventListener('wheel', (event) => {
-            if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-            if (strip.scrollWidth <= strip.clientWidth) return;
-            event.preventDefault();
-            strip.scrollBy({ left: event.deltaY });
-        }, { passive: false });
-
-        body.append(divider, strip);
-    }
 
     attachHoverHighlight(body);
     return panel;
@@ -231,6 +172,13 @@ function attachHoverHighlight(body) {
     };
 
     const moveTo = (btn) => {
+        // Save / 🙂 have their own backdrop (hover tint) and, when open, their
+        // own sliding selection — like the link row's Pause: stay out of both.
+        // (Delete has no visible pill at rest, so it keeps the shared hover.)
+        if (btn?.closest('.qb-select__bar, .qb-select__trigger:not(.qb-select__trigger--danger)')) {
+            hide();
+            return;
+        }
         if (!btn || btn.disabled || btn === target) return;
         target = btn;
         pill.classList.toggle('is-danger', btn.classList.contains('is-danger'));
@@ -303,16 +251,7 @@ function offsetWithin(el, ancestor) {
     return { left, top };
 }
 
-/** Fade only the edges that actually have more emoji behind them. */
-function syncStripFades(strip) {
-    const maxScroll = strip.scrollWidth - strip.clientWidth;
-    strip.style.setProperty('--qb-fade-l', strip.scrollLeft > 1 ? `${FADE_PX}px` : '0px');
-    strip.style.setProperty('--qb-fade-r', strip.scrollLeft < maxScroll - 1 ? `${FADE_PX}px` : '0px');
-}
-
 function removePanel(panel) {
-    stripObservers.get(panel)?.disconnect();
-    stripObservers.delete(panel);
     buttonRoots.get(panel)?.();
     buttonRoots.delete(panel);
     panel.remove();

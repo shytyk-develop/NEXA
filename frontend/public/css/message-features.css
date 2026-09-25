@@ -1094,6 +1094,343 @@ html.is-swiping-message * {
     gap: 2px;
 }
 
+/* ── Actions menu (src/chat/quickbar/QuickBarMenu.tsx) ───────────────────────
+   Save and 🙂 open like the link row's Pause picker (.lw-select above): the
+   trigger's backdrop grows by real left + width over the row (solid: the
+   bubble's own fill + a wash of its text colour, so nothing shows through),
+   the rest of the row eases back, the options slide in from the right. */
+.message-bubble--own {
+    --qb-surface: var(--bubble-fill-own);
+}
+
+.message-bubble--other {
+    --qb-surface: var(--bubble-fill-other);
+}
+
+.message-quickbar__menu-host {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.qb-select {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    /* Nothing in the row may push past the bubble's edge */
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.qb-select__row {
+    align-items: center;
+    gap: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+.qb-select__rest {
+    align-items: center;
+    display: flex;
+    gap: 2px;
+}
+
+/* One backdrop per trigger: rests under its pill, grows over the whole row */
+.qb-select__bg {
+    background: color-mix(in srgb, currentColor 9%, var(--qb-surface, var(--bubble-fill-other, #16181e)));
+    border-radius: 999px;
+    bottom: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    transition: background-color 160ms ease;
+}
+
+/* Hover tints only the hovered trigger's own backdrop */
+.qb-select:not([data-open]):has(.qb-select__trigger[data-selector="save"]:hover:not(:disabled)) .qb-select__bg[data-selector="save"],
+.qb-select:not([data-open]):has(.qb-select__trigger[data-selector="react"]:hover) .qb-select__bg[data-selector="react"] {
+    background: color-mix(in srgb, currentColor 14%, var(--qb-surface, var(--bubble-fill-other, #16181e)));
+}
+
+.qb-select__trigger {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    gap: 6px;
+    /* Same height as Reply / Copy / Delete, so the row stays one line */
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0 12px;
+    position: relative;
+}
+
+/* Delete: an action-looking trigger in the danger colour (no pill at rest) */
+.qb-select__trigger--danger {
+    color: var(--text-danger);
+    padding: 0 9px 0 7px;
+}
+
+.qb-select__trigger--danger svg {
+    flex: none;
+}
+
+/* Copy's icon slot: fixed size, the copy / ✓ glyphs crossfade inside it */
+.qb-select__swap-icon {
+    display: inline-flex;
+    flex: none;
+    height: 15px;
+    position: relative;
+    width: 15px;
+}
+
+.qb-select__swap-glyph {
+    display: flex;
+    inset: 0;
+    position: absolute;
+}
+
+/* Delete bar: ✕ · prompt · Confirm */
+.qb-select__prompt {
+    flex: 1 1 auto;
+    font-size: 12.5px;
+    font-weight: 500;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 4px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qb-select__confirm {
+    align-items: center;
+    background: var(--color-danger, #f62834);
+    border: 0;
+    border-radius: 999px;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 5px;
+    height: 24px;
+    padding: 0 11px 0 9px;
+    transition: background-color 160ms ease;
+}
+
+.qb-select__confirm:hover {
+    background: var(--danger-hover, var(--color-danger, #f62834));
+}
+
+.qb-select__confirm:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-danger, #f62834) 55%, transparent);
+    outline-offset: 2px;
+}
+
+/* 🙂 alone: a round button */
+.qb-select__trigger:not(:has(.message-quickbar__label)) {
+    padding: 0;
+    width: 28px;
+}
+
+.qb-select__trigger:disabled {
+    cursor: default;
+    opacity: 0.4 !important;
+}
+
+.qb-select__trigger .ui-icon {
+    display: block;
+    flex: none;
+    height: 15px;
+    width: 15px;
+}
+
+/* Divider before 🙂: clear of both pills */
+.qb-select__row .message-quickbar__divider {
+    background: var(--border-subtle, color-mix(in srgb, currentColor 14%, transparent));
+    margin: 6px 4px;
+}
+
+.qb-select__emoji {
+    font-size: 15px;
+    line-height: 1;
+}
+
+/* The open bar (one per trigger): over the grown backdrop, across the row */
+.qb-select__bar {
+    align-items: center;
+    display: flex;
+    gap: 2px;
+    inset: 0;
+    padding: 0 2px;
+    position: absolute;
+    z-index: 3;
+}
+
+.qb-select__bar[aria-hidden] {
+    pointer-events: none;
+}
+
+.qb-select__chips {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    gap: 1px;
+    min-width: 0;
+}
+
+/* Save: two equal capsules up to the edge */
+.qb-select__chips--halves {
+    gap: 4px;
+}
+
+.qb-select__chips--halves .qb-select__chip {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.qb-select__strip {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    gap: 1px;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--qb-fade-l, 0px), #000 calc(100% - var(--qb-fade-r, 0px)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--qb-fade-l, 0px), #000 calc(100% - var(--qb-fade-r, 0px)), transparent);
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+}
+
+.qb-select__strip::-webkit-scrollbar {
+    display: none;
+}
+
+.qb-select__chip {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    height: 24px;
+    justify-content: center;
+    padding: 0 8px;
+    position: relative;
+    transition: color 300ms ease;
+    white-space: nowrap;
+}
+
+.qb-select__chip[aria-pressed="true"],
+.qb-select__chip:hover:not(:disabled) {
+    color: inherit;
+}
+
+.qb-select__chip:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.qb-select__chip--emoji {
+    color: inherit;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    width: 28px;
+}
+
+.qb-select__chip-bg {
+    background: color-mix(in srgb, currentColor 16%, transparent);
+    inset: 0;
+    position: absolute;
+}
+
+.qb-select__chip-label {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+    position: relative;
+    z-index: 1;
+}
+
+.qb-select__chip .ui-icon {
+    flex: none;
+    height: 14px;
+    width: 14px;
+}
+
+.qb-select__more .ui-icon {
+    opacity: 0.7;
+}
+
+/* Pre-promoted, so the first open doesn't pay for layer creation mid-animation */
+.qb-select__bar .qb-select__chip,
+.qb-select__bar .qb-select__icon-btn,
+.qb-select__bar .qb-select__prompt,
+.qb-select__bar .qb-select__confirm,
+.qb-select__rest,
+.qb-select__trigger {
+    will-change: transform, opacity;
+}
+
+/* ✕ backs out without applying */
+.qb-select__icon-btn {
+    align-items: center;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    height: 24px;
+    justify-content: center;
+    padding: 0;
+    width: 28px;
+}
+
+.qb-select__cancel {
+    background: transparent;
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    transition:
+        background-color 160ms ease,
+        color 160ms ease;
+}
+
+.qb-select__cancel:hover {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    color: inherit;
+}
+
+.qb-select__trigger:focus-visible,
+.qb-select__chip:focus-visible,
+.qb-select__icon-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, currentColor 55%, transparent);
+    outline-offset: -2px;
+}
+
+/* The bar's shared hover pill stays out of the way while a selector is open */
+.message-quickbar__body:has(.qb-select[data-open]) > .message-quickbar__hover {
+    opacity: 0 !important;
+}
+
 .message-quickbar__action,
 .message-quickbar__reaction {
     align-items: center;

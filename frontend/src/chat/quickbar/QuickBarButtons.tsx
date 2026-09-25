@@ -14,6 +14,7 @@ import { createRoot } from 'react-dom/client';
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from 'motion/react';
 import { Check, Trash2, X } from 'lucide-react';
 import LinkWarningRow, { type LinkWarningRowProps } from './LinkWarningRow';
+import QuickBarMenu, { type QuickBarMenuProps } from './QuickBarMenu';
 
 /** Re-exported for the quick bar's vanilla hover highlight (keeps motion out of the entry chunk). */
 export { animate } from 'motion/react';
@@ -108,7 +109,7 @@ function CheckIcon() {
     );
 }
 
-function CopyButton({ disabled, onCopy }: { disabled: boolean; onCopy: () => Promise<boolean> }) {
+export function CopyButton({ disabled, onCopy }: { disabled: boolean; onCopy: () => Promise<boolean> }) {
     const [copied, setCopied] = useState(false);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -164,7 +165,7 @@ function CopyButton({ disabled, onCopy }: { disabled: boolean; onCopy: () => Pro
 /** Width the ✕ slot opens to: the 28px icon button plus a 2px gap. */
 const CANCEL_SLOT_WIDTH = 30;
 
-function DeleteButton({ onDelete }: { onDelete: () => void }) {
+export function DeleteButton({ onDelete }: { onDelete: () => void }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const reduceMotion = useReducedMotion();
 
@@ -269,6 +270,13 @@ function QuickBarButtons({ canCopy, onCopy, onDelete }: QuickBarButtonsProps) {
 export function mountQuickBarButtons(host: HTMLElement, props: QuickBarButtonsProps): () => void {
     const root = createRoot(host);
     flushSync(() => root.render(<QuickBarButtons {...props} />));
+    return () => root.unmount();
+}
+
+/** The full actions menu (actions / reactions / save views), see QuickBarMenu.tsx. */
+export function mountQuickBarMenu(host: HTMLElement, props: QuickBarMenuProps): () => void {
+    const root = createRoot(host);
+    flushSync(() => root.render(<QuickBarMenu {...props} />));
     return () => root.unmount();
 }
 

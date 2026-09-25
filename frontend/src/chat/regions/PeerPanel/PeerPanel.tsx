@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FocusEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { BellOff, Check, Eraser, Trash2 } from 'lucide-react';
+import { BellOff, Check, ChevronRight, Eraser, Lock, Trash2 } from 'lucide-react';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
 import { AsideToggle } from '../../components/AsideToggle';
 import { Icon } from '../../components/Icon';
+import { runOverlayAction } from '../../../../ui/overlays/overlayManager.js';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { OtpInput, type OtpInputHandle, type OtpStatus } from '@/components/ui/otp-input';
+import { ScrollBlur } from '@/components/ui/scroll-blur';
 import {
     getActiveSavedMessages,
     getSavedMessagesPeer,
@@ -345,6 +347,9 @@ function PeerActions() {
 const dayMonth = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' });
 const dayMonthYear = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 
+/** "SEP" in the date tile. */
+const MONTH_SHORT = new Intl.DateTimeFormat('en', { month: 'short' });
+
 function formatSavedDate(savedAt: number) {
     const date = new Date(savedAt);
     return (date.getFullYear() === new Date().getFullYear() ? dayMonth : dayMonthYear).format(date);
@@ -375,59 +380,89 @@ function SavedMessages() {
     const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
     const reduceMotion = useReducedMotion() === true;
 
+    // Layout offsets, not getBoundingClientRect: the highlight lives inside the
+    // scrolling list (so it must be in the list's scroll space), and the cards
+    // enter with a small translate (a mid-animation rect put it off by pixels).
     const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
         const list = listRef.current;
-        if (!(element && list)) return;
-        const listRect = list.getBoundingClientRect();
-        const rect = element.getBoundingClientRect();
+        if (!(element && list && list.contains(element))) return;
         setHighlightBounds({
-            top: rect.top - listRect.top,
-            left: rect.left - listRect.left,
-            width: rect.width,
-            height: rect.height,
+            top: element.offsetTop,
+            left: element.offsetLeft,
+            width: element.offsetWidth,
+            height: element.offsetHeight,
         });
     }, []);
 
     return (
         <section className="saved-messages-card" aria-labelledby="uiPeerSavedTitle">
-            <h3 id="uiPeerSavedTitle" className="saved-messages-title">Saved Messages</h3>
+            {/* Header banner: title, privacy note, dot pattern */}
+            <div className="saved-banner">
+                <span className="saved-banner__dots" aria-hidden="true" />
+                <h3 id="uiPeerSavedTitle" className="saved-banner__title">Saved Messages</h3>
+                <p className="saved-banner__note">
+                    <Lock size={12} strokeWidth={2.25} aria-hidden="true" />
+                    Private notes, only on your devices
+                </p>
+            </div>
             {items.length ? (
-                <ul
-                    ref={listRef}
-                    className="saved-messages-list"
-                    onMouseLeave={() => setHighlightBounds(null)}
+                // Progressive edges (content fades + blurs at top / bottom, only
+                // where more is scrolled past) — the chat list's ScrollBlur mask.
+                <ScrollBlur
+                    edgeVariant="mask"
+                    edgeSize={28}
+                    className="saved-messages-scroll"
+                    contentClassName="saved-messages-scroll__content"
                 >
-                    <AnimatePresence>
-                        {highlightBounds ? (
-                            <motion.li
-                                key="saved-highlight"
-                                className="saved-messages-highlight"
-                                aria-hidden="true"
-                                initial={{ opacity: 0, ...highlightBounds }}
-                                animate={{ opacity: 1, ...highlightBounds }}
-                                exit={{ opacity: 0 }}
-                                transition={reduceMotion ? instantHoverTransition : listHoverTransition}
-                            />
-                        ) : null}
-                    </AnimatePresence>
-                    {items.map((item: SavedMessage) => (
-                        <li
-                            key={item.id}
-                            className="saved-message-item"
-                            tabIndex={0}
-                            onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
-                            onFocus={(event) => setHighlightFromElement(event.currentTarget)}
-                        >
-                            <div className="saved-message-head">
-                                <span className="saved-message-author">{item.author}</span>
-                                <time className="saved-message-date" dateTime={new Date(item.savedAt).toISOString()}>
-                                    {formatSavedDate(item.savedAt)}
-                                </time>
-                            </div>
-                            <p className="saved-message-preview">{item.text}</p>
-                        </li>
-                    ))}
-                </ul>
+                    <ul
+                        ref={listRef}
+                        className="saved-messages-list"
+                        onMouseLeave={() => setHighlightBounds(null)}
+                    >
+                        <AnimatePresence>
+                            {highlightBounds ? (
+                                <motion.li
+                                    key="saved-highlight"
+                                    className="saved-messages-highlight"
+                                    aria-hidden="true"
+                                    initial={{ opacity: 0, ...highlightBounds }}
+                                    animate={{ opacity: 1, ...highlightBounds }}
+                                    exit={{ opacity: 0 }}
+                                    transition={reduceMotion ? instantHoverTransition : listHoverTransition}
+                                />
+                            ) : null}
+                        </AnimatePresence>
+                        {items.map((item: SavedMessage) => {
+                            const date = new Date(item.savedAt);
+                            return (
+                                <li
+                                    key={item.id}
+                                    className="saved-message-item"
+                                    onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
+                                >
+                                    {/* Opens the saved message in the thread (scroll + highlight) */}
+                                    <button
+                                        type="button"
+                                        className="saved-message-card"
+                                        title={`Saved ${formatSavedDate(item.savedAt)} — show in chat`}
+                                        onFocus={(event) => setHighlightFromElement(event.currentTarget.parentElement)}
+                                        onClick={() => runOverlayAction('message.highlight', { messageId: item.id })}
+                                    >
+                                        <time className="saved-message-date" dateTime={date.toISOString()}>
+                                            <span className="saved-message-date__day">{date.getDate()}</span>
+                                            <span className="saved-message-date__month">{MONTH_SHORT.format(date)}</span>
+                                        </time>
+                                        <span className="saved-message-body">
+                                            <span className="saved-message-author">{item.author}</span>
+                                            <span className="saved-message-preview">{item.text}</span>
+                                        </span>
+                                        <ChevronRight className="saved-message-chevron" size={16} strokeWidth={2} aria-hidden="true" />
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </ScrollBlur>
             ) : (
                 <div className="saved-messages-empty flex flex-1 items-center justify-center p-2">
                     <Empty className="py-4">

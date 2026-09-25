@@ -1,7 +1,7 @@
-// Saved messages, per conversation, kept on this device only (localStorage).
-// The peer panel lists the active chat's items; js/ui.js tells the store which
-// chat is active. saveMessage / removeSavedMessage are the write API for a
-// future "Save" message action.
+// Saved messages, per account and conversation, kept on this device only
+// (localStorage, like the chat history). js/app.js sets the signed-in owner and
+// saves from the message quick bar ("Save locally"); js/ui.js tells the store
+// which chat is active; the peer panel lists that chat's items.
 
 export type SavedMessage = {
     id: string;
@@ -12,16 +12,19 @@ export type SavedMessage = {
     savedAt: number;
 };
 
-const STORAGE_KEY = 'nexa:saved-messages:v1';
+const STORAGE_PREFIX = 'nexa:saved-messages:v1:';
 const EMPTY: SavedMessage[] = [];
 
+/** Signed-in account: each one gets its own list (no sharing on a shared browser). */
+let owner: string | null = null;
 let activePeer: string | null = null;
-let byPeer: Record<string, SavedMessage[]> = load();
+let byPeer: Record<string, SavedMessage[]> = {};
 const listeners = new Set<() => void>();
 
 function load(): Record<string, SavedMessage[]> {
+    if (!owner) return {};
     try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_PREFIX + owner) || '{}');
         return parsed && typeof parsed === 'object' ? parsed : {};
     } catch {
         return {};
@@ -29,11 +32,20 @@ function load(): Record<string, SavedMessage[]> {
 }
 
 function persist() {
+    if (!owner) return;
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(byPeer));
+        localStorage.setItem(STORAGE_PREFIX + owner, JSON.stringify(byPeer));
     } catch {
         // Storage full / blocked: the list still works for this session.
     }
+}
+
+/** Switch to an account's list (login / session restore), or clear it (logout). */
+export function setSavedMessagesOwner(username: string | null) {
+    if (owner === username) return;
+    owner = username;
+    byPeer = load();
+    emit();
 }
 
 function emit() {
@@ -64,6 +76,7 @@ export function setSavedMessagesPeer(username: string | null) {
 }
 
 export function saveMessage(username: string, message: SavedMessage) {
+    if (!owner) return;
     const list = (byPeer[username] || []).filter((item) => item.id !== message.id);
     byPeer = { ...byPeer, [username]: [message, ...list] };
     persist();

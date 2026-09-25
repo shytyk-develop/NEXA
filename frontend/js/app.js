@@ -148,6 +148,7 @@ import {
 } from './smartPaste.js';
 import { getPrivacyFlags, isChatMuted, toggleChatMuted, loadMutedChats } from './privacy.js';
 import { registerShortcuts } from './shortcuts.js';
+import { saveMessage, setSavedMessagesOwner } from '../src/chat/savedMessages.ts';
 import {
     buildChatTranscript,
     downloadTextFile,
@@ -884,6 +885,19 @@ registerOverlayActions({
     'message.reply': (payload) => {
         startReplyToMessage(payload);
     },
+    'message.save': (payload) => {
+        // "Save locally" in the quick bar: this account, this device only.
+        const partner = state.currentTargetUser;
+        if (!partner || !payload?.text) return;
+        const id = payload.messageId || payload.clientMessageId || `local-${Date.now()}`;
+        saveMessage(partner, {
+            id: String(id),
+            author: payload.author || partner,
+            text: payload.text,
+            savedAt: Date.now(),
+        });
+        showToast('Saved to Saved Messages.', 'success');
+    },
     'message.react': (payload) => {
         if (!payload?.messageId) return;
         const row = DOM.messagesDiv.querySelector(
@@ -1306,6 +1320,7 @@ function maybeNotifyIncomingMessage(from, text, isActiveChat) {
 // Runs after SUCCESSFUL login
 function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat') {
     state.myUsername = username;
+    setSavedMessagesOwner(username);
     state.myPublicKeyJwk = exportedPublicKeyJSON;
     state.chatHistory = loadHistory(state.myUsername);
     updateProfileRailButton(username);
@@ -1945,6 +1960,7 @@ function handleLogout() {
     localStorage.removeItem('auth_username');
 
     state.myUsername = null;
+    setSavedMessagesOwner(null);
     state.myKeys = null;
     state.token = null;
     state.currentTargetUser = null;
@@ -1984,6 +2000,7 @@ async function initializeApp() {
                 // Restore tokens to active RAM state boundaries
                 state.token = savedToken;
                 state.myUsername = savedUsername;
+                setSavedMessagesOwner(savedUsername);
                 state.myKeys = {
                     publicKey: await importPublicKey(savedKeysJWK.publicKey),
                     privateKey: await importPrivateKey(savedKeysJWK.privateKey)
