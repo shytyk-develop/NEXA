@@ -861,6 +861,7 @@
         <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></symbol>
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
         <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></symbol>
+        <symbol id="icon-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
         <symbol id="icon-reply" viewBox="0 0 24 24"><path d="M9 17l-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></symbol>
         <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
         <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
@@ -1078,129 +1079,103 @@
                 </header>
                 <div class="profile-body">
                     <div data-profile-section="identity" class="profile-identity-layout hidden">
-                        <div class="profile-identity-aside">
-                            <div class="profile-avatar-card">
-                                <div class="profile-avatar-orbit" aria-hidden="true">
-                                    <svg class="profile-avatar-rings" viewBox="0 0 280 280" focusable="false">
-                                        <circle cx="140" cy="140" r="78" fill="none" stroke="currentColor" stroke-opacity="0.18"/>
-                                        <circle cx="140" cy="140" r="104" fill="none" stroke="currentColor" stroke-opacity="0.12" stroke-dasharray="2 10"/>
-                                        <circle cx="140" cy="140" r="128" fill="none" stroke="currentColor" stroke-opacity="0.08"/>
-                                        <circle cx="212" cy="72" r="2.2" fill="currentColor" fill-opacity="0.35"/>
-                                        <circle cx="68" cy="196" r="1.6" fill="currentColor" fill-opacity="0.28"/>
-                                        <circle cx="228" cy="168" r="1.4" fill="currentColor" fill-opacity="0.22"/>
-                                    </svg>
-                                    <div id="uiProfileAvatarZone" class="profile-avatar-zone" role="button" tabindex="0" aria-label="Change avatar">
-                                        <img id="uiProfileAvatarImg" class="hidden" alt="">
-                                        <span id="uiProfileAvatarInitials" class="profile-avatar-initials">?</span>
-                                        <div id="uiProfileEyes" class="profile-eyes hidden" aria-hidden="true"></div>
-                                    </div>
-                                </div>
-                                <input id="uiProfileAvatarInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
-                                <div class="profile-avatar-actions">
-                                    <button id="uiProfileAvatarUploadBtn" class="profile-change-avatar" type="button">
-                                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-upload"/></svg>
-                                        Change avatar
-                                    </button>
-                                    <button id="uiProfileAvatarRemoveBtn" class="profile-remove-avatar" type="button" title="Remove avatar" aria-label="Remove avatar">
-                                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-trash"/></svg>
-                                    </button>
-                                </div>
-                                <p class="profile-avatar-hint">JPG, PNG or WEBP. Max 512 KB</p>
+                        <!-- Header card: avatar, name + verified, public link · View profile -->
+                        <header id="uiProfileHeaderCard" class="ps-header">
+                            <div id="uiProfileAvatarZone" class="profile-avatar-zone ps-header__avatar" role="button" tabindex="0" aria-label="Change photo — click or drop an image">
+                                <img id="uiProfileAvatarImg" class="hidden" alt="">
+                                <span id="uiProfileAvatarInitials" class="profile-avatar-initials">?</span>
                             </div>
-                            <div class="profile-about-card">
-                                <svg class="profile-about-icon ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>
-                                <div class="profile-about-copy">
-                                    <p class="profile-about-title">About your identity</p>
-                                    <p class="profile-about-text">This is your public identity in NEXA. People can find and connect with you using your username.</p>
-                                </div>
+                            <div class="ps-header__copy">
+                                <p class="ps-header__name">
+                                    <span id="uiProfilePreviewName">—</span>
+                                    <svg class="ps-header__verified ui-icon" role="img" aria-label="Verified"><title>Verified — end-to-end encrypted identity</title><use href="#icon-check-circle"/></svg>
+                                </p>
+                                <p id="uiProfileLink" class="ps-header__link">—</p>
+                                <!-- Bio, or the status when there's no bio (js: updatePreview). -->
+                                <p id="uiProfilePreviewBio" class="ps-header__bio is-placeholder">Available</p>
+                            </div>
+                        </header>
+
+                        <!-- Page header: title · Cancel / Save changes -->
+                        <div class="ps-pagehead">
+                            <div class="ps-pagehead__copy">
+                                <h3 class="ps-pagehead__title">Profile Settings</h3>
+                                <p class="ps-pagehead__sub">Update your public profile, company branding and social presence.</p>
+                            </div>
+                            <div class="ps-pagehead__actions">
+                                <button id="uiProfileResetBtn" class="ps-btn ps-btn--ghost" type="button" disabled>Cancel</button>
+                                <button id="uiProfileSaveChangesBtn" class="ps-btn ps-btn--primary" type="button" disabled>Save changes</button>
                             </div>
                         </div>
 
-                        <div class="profile-form-col">
-                            <div class="profile-field">
-                                <div class="profile-field__head">
-                                    <label for="uiProfileDisplayName">Display name</label>
-                                    <span id="uiProfileNameCount" class="profile-field-meta">0 / 32</span>
+                        <!-- One card; rows split by hairlines. -->
+                        <div class="ps-card">
+                            <section class="ps-row" aria-labelledby="uiPsPublicTitle">
+                                <div class="ps-row__intro">
+                                    <h4 id="uiPsPublicTitle" class="ps-row__title">Public profile</h4>
+                                    <p class="ps-row__desc">This will be displayed on your primary Nexa workspace.</p>
                                 </div>
-                                <input id="uiProfileDisplayName" type="text" maxlength="32" placeholder="How you appear in chats" autocomplete="nickname" spellcheck="false">
-                            </div>
+                                <div class="ps-row__body">
+                                    <label for="uiProfileDisplayName" class="ps-sr-only">Display name</label>
+                                    <div class="ps-input">
+                                        <input id="uiProfileDisplayName" type="text" maxlength="32" placeholder="Display name" autocomplete="nickname" spellcheck="false">
+                                        <span id="uiProfileNameCount" class="ps-input__count" aria-hidden="true">0 / 32</span>
+                                    </div>
+                                    <div class="ps-prefix-input" role="group" aria-label="Profile link">
+                                        <span class="ps-prefix-input__prefix" aria-hidden="true">nexa.to/</span>
+                                        <span id="uiProfileUsername" class="ps-prefix-input__value">Loading…</span>
+                                        <button id="uiProfileCopyLink" class="profile-field-action" type="button">Copy</button>
+                                    </div>
+                                    <p id="uiProfileUsernameHint" class="profile-field-hint is-ok">Your username is unique.</p>
+                                </div>
+                            </section>
 
-                            <div class="profile-field-row">
-                                <div class="profile-field">
-                                    <label for="uiProfileStatus">Status</label>
-                                    <div class="profile-status-control">
-                                        <span id="uiProfileStatusDot" class="profile-status-dot is-available" aria-hidden="true"></span>
-                                        <select id="uiProfileStatus" aria-label="Status">
-                                            <option value="available">Available</option>
-                                            <option value="away">Away</option>
-                                            <option value="busy">Busy</option>
-                                            <option value="invisible">Invisible</option>
-                                        </select>
-                                        <svg class="profile-status-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+                            <section class="ps-row" aria-labelledby="uiPsPhotoTitle">
+                                <div class="ps-row__intro">
+                                    <h4 id="uiPsPhotoTitle" class="ps-row__title">Profile photo</h4>
+                                    <p class="ps-row__desc">Upload a high resolution PNG, JPG or WebP square image.</p>
+                                </div>
+                                <div class="ps-row__body ps-photo">
+                                    <button id="uiProfileAvatarUploadBtn" class="ps-dropzone" type="button">
+                                        <span class="ps-dropzone__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-upload"/></svg></span>
+                                        <span class="ps-dropzone__text"><strong>Click to upload</strong> or drag and drop</span>
+                                        <span class="ps-dropzone__hint">PNG, JPG or WebP (max. 512KB)</span>
+                                    </button>
+                                    <!-- Only shown while there's a photo to remove. -->
+                                    <button id="uiProfileAvatarRemoveBtn" class="ps-photo__remove" type="button">Remove photo</button>
+                                    <input id="uiProfileAvatarInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
+                                </div>
+                            </section>
+
+                            <section class="ps-row" aria-labelledby="uiPsBioTitle">
+                                <div class="ps-row__intro">
+                                    <h4 id="uiPsBioTitle" class="ps-row__title">Bio</h4>
+                                    <p class="ps-row__desc">Briefly describe your company or personal role.</p>
+                                </div>
+                                <div class="ps-row__body">
+                                    <label for="uiProfileBio" class="ps-sr-only">Bio</label>
+                                    <div class="ps-input ps-input--area">
+                                        <textarea id="uiProfileBio" maxlength="140" rows="4" placeholder="A few words about you" autocomplete="off" spellcheck="true"></textarea>
+                                        <span id="uiProfileBioCount" class="ps-input__count" aria-hidden="true">0 / 140</span>
                                     </div>
                                 </div>
-                                <div class="profile-field">
-                                    <div class="profile-field__head">
-                                        <label for="uiProfileBio">Bio</label>
-                                        <span id="uiProfileBioCount" class="profile-field-meta">0 / 140</span>
-                                    </div>
-                                    <input id="uiProfileBio" type="text" maxlength="140" placeholder="Building something great" autocomplete="off" spellcheck="true">
-                                </div>
-                            </div>
+                            </section>
 
-                            <div class="profile-field">
-                                <label for="uiProfileUsername">Username</label>
-                                <div class="profile-field-control">
-                                    <span id="uiProfileUsername" class="profile-field-value">Loading…</span>
-                                    <button id="uiProfileUsernameEdit" class="profile-field-action" type="button">Edit</button>
+                            <section class="ps-row" aria-labelledby="uiPsStatusTitle">
+                                <div class="ps-row__intro">
+                                    <h4 id="uiPsStatusTitle" class="ps-row__title">Status</h4>
+                                    <p class="ps-row__desc">Set your current availability profile.</p>
                                 </div>
-                                <p id="uiProfileUsernameHint" class="profile-field-hint is-ok">Your username is unique.</p>
-                            </div>
-
-                            <div class="profile-field">
-                                <label>Profile link</label>
-                                <div class="profile-field-control">
-                                    <span id="uiProfileLink" class="profile-field-value">—</span>
-                                    <button id="uiProfileCopyLink" class="profile-field-action" type="button">Copy</button>
+                                <div class="ps-row__body">
+                                    <!-- Status switcher (React island); the hidden native select stays the source of truth. -->
+                                    <div id="uiProfileStatusSwitcher" class="ps-status"></div>
+                                    <select id="uiProfileStatus" class="ps-select__native" aria-hidden="true" tabindex="-1">
+                                        <option value="available">Available</option>
+                                        <option value="away">Away</option>
+                                        <option value="busy">Busy</option>
+                                        <option value="invisible">Invisible</option>
+                                    </select>
                                 </div>
-                                <p class="profile-field-hint">Share this link to connect with others.</p>
-                            </div>
-
-                            <div class="profile-field">
-                                <label>User ID</label>
-                                <div class="profile-field-control">
-                                    <span id="uiProfileUserId" class="profile-field-value profile-field-value--mono">Loading…</span>
-                                    <button id="uiProfileCopyUserId" class="profile-copy-btn profile-field-action" type="button">Copy</button>
-                                </div>
-                                <p class="profile-field-hint">Used for technical and security purposes.</p>
-                            </div>
-
-                            <section class="profile-preview-panel" aria-label="Profile preview">
-                                <h3 class="profile-preview-kicker">Profile preview</h3>
-                                <div id="uiProfilePreviewStage" class="profile-preview-stage">
-                                    <div class="profile-preview-bg" aria-hidden="true">
-                                        <div class="profile-preview-bg__grid"></div>
-                                        <img class="profile-preview-bg__mark" src="/brand/nexa-logo.svg" alt="" decoding="async">
-                                    </div>
-                                    <div class="profile-preview-tilt">
-                                    <div id="uiProfilePreviewMini" class="profile-preview-mini">
-                                        <div class="profile-preview-mini-face">
-                                        <div id="uiProfileAvatarPreview" class="profile-preview-avatar">
-                                            <img id="uiProfilePreviewImg" class="hidden" alt="">
-                                            <span id="uiProfilePreviewInitials">?</span>
-                                        </div>
-                                        <p id="uiProfilePreviewName" class="profile-preview-name">—</p>
-                                        <p id="uiProfilePreviewHandle" class="profile-preview-handle">@</p>
-                                        <p id="uiProfilePreviewBio" class="profile-preview-bio is-placeholder">No bio yet</p>
-                                        <p id="uiProfilePreviewStatus" class="profile-preview-status is-available">
-                                            <span class="profile-preview-status-dot" aria-hidden="true"></span>
-                                            <span id="uiProfilePreviewStatusLabel">Available</span>
-                                        </p>
-                                        </div>
-                                    </div>
-                                    </div>
-                                </div>
-                                <p class="profile-preview-note">This is how others see your profile.</p>
                             </section>
                         </div>
                     </div>

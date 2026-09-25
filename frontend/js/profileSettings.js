@@ -24,7 +24,7 @@ import {
 } from './profile.js';
 import { getPrivacyFlags } from './privacy.js';
 import { loadHistory } from './storage.js';
-import { setProfileEyesActive } from './eyeTracking.js';
+import { ambientFromHue, extractAmbientColor } from './avatarAmbient.js';
 import { startPreviewTilt, stopPreviewTilt } from './cardTilt.js';
 import { getDevices, registerDevice } from './api.js';
 import { detectDeviceInfo, devicePayload, getDeviceId } from './device.js';
@@ -50,6 +50,8 @@ const PRIVACY_HINTS = {
 
 let ctx = null;
 let draftProfile = null;
+/** Identity fields as last saved — the save bar compares the form against this. */
+let savedIdentity = null;
 let avatarPreviewUrl = null;
 let dataAnimToken = 0;
 let pendingProfileSection = 'identity';
@@ -119,6 +121,7 @@ function bindShell() {
     $p('uiProfileDisplayName')?.addEventListener('input', onIdentityInput);
     $p('uiProfileBio')?.addEventListener('input', onIdentityInput);
     $p('uiProfileStatus')?.addEventListener('change', onStatusChange);
+    mountStatusSwitcher();
 
     const avatarZone = $p('uiProfileAvatarZone');
     const fileInput = $p('uiProfileAvatarInput');
@@ -126,28 +129,40 @@ function bindShell() {
     $p('uiProfileAvatarRemoveBtn')?.addEventListener('click', removeAvatar);
     fileInput?.addEventListener('change', onAvatarFileSelected);
 
-    if (avatarZone && fileInput) {
-        avatarZone.addEventListener('dragover', (e) => {
+    // Both the header avatar and the Profile photo dropzone accept a dropped image.
+    [avatarZone, $p('uiProfileAvatarUploadBtn')].forEach((target) => {
+        if (!target || !fileInput) return;
+        target.addEventListener('dragover', (e) => {
             e.preventDefault();
-            avatarZone.classList.add('is-dragover');
+            target.classList.add('is-dragover');
         });
-        avatarZone.addEventListener('dragleave', () => avatarZone.classList.remove('is-dragover'));
-        avatarZone.addEventListener('drop', (e) => {
+        target.addEventListener('dragleave', () => target.classList.remove('is-dragover'));
+        target.addEventListener('drop', (e) => {
             e.preventDefault();
-            avatarZone.classList.remove('is-dragover');
+            target.classList.remove('is-dragover');
             const file = e.dataTransfer?.files?.[0];
             if (file) processAvatarFile(file);
         });
+    });
+    if (avatarZone && fileInput) {
+        avatarZone.addEventListener('click', () => fileInput.click());
         avatarZone.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                fileInput?.click();
+                fileInput.click();
             }
         });
     }
 
-    $p('uiProfileDisplayName')?.addEventListener('blur', () => saveIdentity(true));
-    $p('uiProfileBio')?.addEventListener('blur', () => saveIdentity(true));
+    // Text + status edits are staged: the save bar commits or resets them.
+    $p('uiProfileSaveChangesBtn')?.addEventListener('click', saveIdentityChanges);
+    $p('uiProfileResetBtn')?.addEventListener('click', resetIdentityChanges);
+    $p('uiProfileDisplayName')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            saveIdentityChanges();
+        }
+    });
 
     $p('uiProfileSaveBtn')?.addEventListener('click', () => saveIdentity(false));
     $p('uiProfileUsernameEdit')?.addEventListener('click', onUsernameEdit);
@@ -203,7 +218,6 @@ function syncPreviewTilt(active) {
 }
 
 export function onProfilePanelClose() {
-    setProfileEyesActive(false);
     syncPreviewTilt(false);
     dataAnimToken += 1;
     document.querySelectorAll('#uiProfilePanel [data-profile-section]').forEach((section) => {
@@ -260,12 +274,6 @@ function setSection(id, { fromUser = false } = {}) {
 
     const foot = panel.querySelector('.profile-foot');
     if (foot) foot.classList.add('hidden');
-
-    if (id === 'identity' && !avatarPreviewUrl) {
-        setProfileEyesActive(true, $p('uiProfileEyes'));
-    } else {
-        setProfileEyesActive(false);
-    }
 
     syncPreviewTilt(id === 'identity');
 
@@ -327,6 +335,8 @@ function hydrateIdentity(username) {
     updatePreview(username);
     updateCharCounts();
     hydrateUserId(username);
+    snapshotSavedIdentity();
+    syncSaveBar();
 }
 
 async function hydrateUserId(username) {
@@ -726,6 +736,7 @@ function onIdentityInput() {
     draftProfile.bio = $p('uiProfileBio')?.value || '';
     updatePreview(resolveUsername());
     updateCharCounts();
+    syncSaveBar();
 }
 
 function onStatusChange() {
@@ -733,13 +744,107 @@ function onStatusChange() {
     draftProfile.status = value;
     syncStatusDot(value);
     updatePreview(resolveUsername());
-    saveIdentity(true);
+    syncSaveBar();
+}
+
+/** The identity form's fields, normalised the way they'd be saved. */
+function readIdentityForm() {
+    return {
+        displayName: sanitizeProfileText($p('uiProfileDisplayName')?.value || '', PROFILE_LIMITS.displayName),
+        bio: sanitizeProfileText($p('uiProfileBio')?.value || '', PROFILE_LIMITS.bio),
+        status: sanitizeProfileStatus($p('uiProfileStatus')?.value),
+    };
+}
+
+function snapshotSavedIdentity() {
+    savedIdentity = {
+        displayName: sanitizeProfileText(draftProfile?.displayName || '', PROFILE_LIMITS.displayName),
+        bio: sanitizeProfileText(draftProfile?.bio || '', PROFILE_LIMITS.bio),
+        status: sanitizeProfileStatus(draftProfile?.status),
+    };
+}
+
+function isIdentityDirty() {
+    if (!savedIdentity || !resolveUsername()) return false;
+    const form = readIdentityForm();
+    return (
+        form.displayName !== savedIdentity.displayName ||
+        form.bio !== savedIdentity.bio ||
+        form.status !== savedIdentity.status
+    );
+}
+
+/** Cancel / Save changes are live only while the form differs from what's saved. */
+function syncSaveBar() {
+    const dirty = isIdentityDirty();
+    const save = $p('uiProfileSaveChangesBtn');
+    const reset = $p('uiProfileResetBtn');
+    if (save) save.disabled = !dirty;
+    if (reset) reset.disabled = !dirty;
+}
+
+function saveIdentityChanges() {
+    if (!isIdentityDirty()) return;
+    saveIdentity(false);
+    snapshotSavedIdentity();
+    syncSaveBar();
+}
+
+function resetIdentityChanges() {
+    if (!savedIdentity) return;
+    const nameInput = $p('uiProfileDisplayName');
+    const bioInput = $p('uiProfileBio');
+    const statusSelect = $p('uiProfileStatus');
+    if (nameInput) nameInput.value = savedIdentity.displayName;
+    if (bioInput) bioInput.value = savedIdentity.bio;
+    if (statusSelect) statusSelect.value = savedIdentity.status;
+    draftProfile.displayName = savedIdentity.displayName;
+    draftProfile.bio = savedIdentity.bio;
+    draftProfile.status = savedIdentity.status;
+    syncStatusDot(savedIdentity.status);
+    updatePreview(resolveUsername());
+    updateCharCounts();
+    syncSaveBar();
 }
 
 function syncStatusDot(status) {
+    const value = sanitizeProfileStatus(status);
     const dot = $p('uiProfileStatusDot');
-    if (!dot) return;
-    dot.className = `profile-status-dot is-${sanitizeProfileStatus(status)}`;
+    if (dot) dot.className = `profile-status-dot is-${value}`;
+    // The switcher mirrors the native select (Cancel / load set it from here).
+    statusSwitcher?.update(value);
+}
+
+/** Status switcher island (src/chat/profile/StatusSwitcher.tsx) once loaded. */
+let statusSwitcher = null;
+
+/**
+ * Status is picked with a carousel-style switcher (‹ • • • • ›) over the hidden
+ * native <select>, which stays the source of truth — a pick writes the select
+ * and fires `change`, so the existing status flow (preview, Cancel / Save) runs
+ * unchanged. Loaded as its own chunk to keep React out of the entry bundle.
+ */
+function mountStatusSwitcher() {
+    const host = $p('uiProfileStatusSwitcher');
+    const select = $p('uiProfileStatus');
+    if (!host || !select || statusSwitcher) return;
+    import('../src/chat/profile/StatusSwitcher.tsx')
+        .then(({ mountStatusSwitcher: mount }) => {
+            statusSwitcher = mount(host, {
+                value: sanitizeProfileStatus(select.value),
+                onChange: (value) => {
+                    if (select.value === value) return;
+                    select.value = value;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                },
+            });
+        })
+        .catch(() => {
+            // Island failed to load: fall back to the plain select.
+            select.classList.remove('ps-select__native');
+            select.removeAttribute('aria-hidden');
+            select.removeAttribute('tabindex');
+        });
 }
 
 function profileLinkFor(username) {
@@ -776,7 +881,8 @@ function updatePreview(username) {
     const status = sanitizeProfileStatus(draftProfile.status);
     const bio = draftProfile.bio?.trim();
     if (previewBio) {
-        previewBio.textContent = bio || 'No bio yet';
+        // Header subtitle: the bio, or the current status when there isn't one.
+        previewBio.textContent = bio || statusLabel(status);
         previewBio.classList.toggle('is-placeholder', !bio);
     }
     if (previewStatus) {
@@ -811,7 +917,7 @@ function updatePreview(username) {
             previewInitials?.classList.remove('hidden');
         }
     }
-    previewRing?.classList.remove('has-eyes');
+    syncHeaderAmbient(username);
 }
 
 function renderAvatar(ringEl, initialsEl, imgEl, username, dataUrl) {
@@ -825,16 +931,37 @@ function renderAvatar(ringEl, initialsEl, imgEl, username, dataUrl) {
             imgEl.src = dataUrl;
             imgEl.classList.remove('hidden');
             initialsEl?.classList.add('hidden');
-            ringEl.classList.remove('has-eyes');
-            setProfileEyesActive(false);
         } else {
+            // No photo: initials on the user's hue gradient.
             imgEl.removeAttribute('src');
             imgEl.classList.add('hidden');
-            initialsEl?.classList.add('hidden');
-            ringEl.classList.add('has-eyes');
-            setProfileEyesActive(true, $p('uiProfileEyes'));
+            initialsEl?.classList.remove('hidden');
         }
     }
+}
+
+/** Latest ambient request; an older (slower) extraction must not win. */
+let ambientToken = 0;
+
+/**
+ * Tint the header banner's right-side glow with the avatar's dominant colour,
+ * muted (js/avatarAmbient.js); without a photo, the user's avatar hue.
+ * --ps-ambient-glow is a registered custom property the CSS transitions, so a
+ * new photo eases the banner into its colour.
+ */
+function syncHeaderAmbient(username) {
+    const header = $p('uiProfileHeaderCard');
+    if (!header) return;
+    const token = ++ambientToken;
+    const fallback = ambientFromHue(getAvatarHue(username));
+    const apply = (color) => {
+        if (token === ambientToken) header.style.setProperty('--ps-ambient-glow', color || fallback);
+    };
+    if (!avatarPreviewUrl) {
+        apply(fallback);
+        return;
+    }
+    extractAmbientColor(avatarPreviewUrl).then(apply, () => apply(fallback));
 }
 
 async function onAvatarFileSelected(event) {
@@ -855,7 +982,7 @@ async function processAvatarFile(file) {
         draftProfile.avatarDataUrl = avatarPreviewUrl;
         updatePreview(resolveUsername());
         ctx?.showToast?.('Avatar updated.', 'success');
-        saveIdentity(true);
+        saveAvatarOnly();
     } catch {
         ctx?.showToast?.('Could not load image.', 'error');
     }
@@ -865,7 +992,20 @@ function removeAvatar() {
     avatarPreviewUrl = null;
     draftProfile.avatarDataUrl = null;
     updatePreview(resolveUsername());
-    saveIdentity(true);
+    saveAvatarOnly();
+}
+
+/**
+ * The photo applies immediately — but only the photo: staged name / bio /
+ * status edits stay staged for the save bar.
+ */
+function saveAvatarOnly() {
+    const username = resolveUsername();
+    if (!username) return;
+    const stored = loadProfile(username);
+    stored.avatarDataUrl = avatarPreviewUrl;
+    saveProfile(username, stored);
+    ctx?.onProfileSaved?.(stored);
 }
 
 function saveIdentity(silent = false) {

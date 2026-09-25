@@ -587,12 +587,34 @@
     padding: 18px 32px 20px;
 }
 
+/* Identity: header card, page header (title + Cancel / Save), then one card of
+   two-column rows. margin: auto centres the column in both axes inside the
+   body's flex column; taller than the viewport, it scrolls from the top. */
 #page-chat .profile-workspace .profile-identity-layout {
-    align-items: start;
-    display: grid;
-    gap: 28px;
-    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 20px;
+    margin: auto;
+    max-width: 880px;
     min-height: 0;
+    width: 100%;
+}
+
+#page-chat.is-app-view-identity .profile-workspace .profile-body {
+    /* Rows stack when the body itself gets narrow. */
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+}
+
+/* The panel header (title + ✕) lines up with the centred card on Profile. */
+#page-chat.is-app-view-identity:not(.is-viewport-profile-stack) .profile-workspace .profile-head {
+    align-self: center;
+    box-sizing: border-box;
+    margin-inline: auto;
+    max-width: 880px;
+    width: calc(100% - 64px);
 }
 
 #page-chat .profile-workspace .profile-identity-aside {
@@ -661,163 +683,7 @@
     text-shadow: none;
 }
 
-#page-chat .profile-workspace .profile-avatar-zone.has-eyes {
-    background: color-mix(in srgb, #0c0c0c 45%, transparent);
-}
-
-#page-chat .profile-workspace .profile-eyes {
-    align-items: center;
-    display: flex;
-    height: 100%;
-    justify-content: center;
-    pointer-events: none;
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-}
-
-#page-chat .profile-workspace .profile-eyes.hidden {
-    display: none;
-}
-
-#page-chat .profile-workspace .profile-eyes__pair {
-    align-items: center;
-    display: flex;
-    gap: 12px;
-    transform: translateY(-4px);
-}
-
-#page-chat .profile-workspace .profile-eye {
-    height: 42px;
-    position: relative;
-    transform-origin: 50% 50%;
-    transition: transform 0.1s ease-in-out;
-    width: 48px;
-}
-
-#page-chat .profile-workspace .profile-eye.is-blinking {
-    transform: scaleY(0.08);
-}
-
-#page-chat .profile-workspace .profile-eye__ball {
-    background:
-        radial-gradient(circle at 35% 32%, #d4d4d8 0%, #a1a1aa 58%, #71717a 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    box-shadow:
-        inset 0 2px 8px rgba(0, 0, 0, 0.28),
-        inset 0 -1px 4px rgba(255, 255, 255, 0.08),
-        0 6px 16px rgba(0, 0, 0, 0.35);
-    height: 100%;
-    overflow: hidden;
-    position: relative;
-    width: 100%;
-}
-
-#page-chat .profile-workspace .profile-eye__iris {
-    background:
-        radial-gradient(
-            circle at 38% 36%,
-            #8b8b92 0%,
-            #3f3f46 46%,
-            #18181b 78%,
-            #09090b 100%
-        );
-    border-radius: 50%;
-    box-shadow:
-        inset 0 2px 6px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(0, 0, 0, 0.2);
-    height: 46%;
-    left: 27%;
-    overflow: hidden;
-    position: absolute;
-    top: 27%;
-    width: 46%;
-    will-change: transform;
-}
-
-#page-chat .profile-workspace .profile-eye__fibers {
-    background:
-        repeating-conic-gradient(
-            from 8deg,
-            transparent 0deg 11deg,
-            rgba(244, 244, 245, 0.18) 11deg 12deg
-        );
-    border-radius: 50%;
-    inset: 0;
-    opacity: 0.55;
-    position: absolute;
-}
-
-#page-chat .profile-workspace .profile-eye__fibers::after {
-    border: 1px solid rgba(244, 244, 245, 0.14);
-    border-radius: 50%;
-    content: "";
-    inset: 22%;
-    position: absolute;
-}
-
-#page-chat .profile-workspace .profile-eye__pupil {
-    background: #09090b;
-    border-radius: 50%;
-    height: 48%;
-    left: 26%;
-    position: absolute;
-    top: 26%;
-    width: 48%;
-    will-change: transform;
-}
-
-#page-chat .profile-workspace .profile-eye__glint {
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.82), rgba(244, 244, 245, 0.28) 70%, transparent);
-    border-radius: 50%;
-    filter: blur(0.4px);
-    height: 18%;
-    left: 28%;
-    position: absolute;
-    top: 22%;
-    width: 18%;
-}
-
-#page-chat .profile-workspace .profile-eye__glint--sm {
-    background: rgba(255, 255, 255, 0.45);
-    filter: none;
-    height: 8%;
-    left: 58%;
-    top: 58%;
-    width: 8%;
-}
-
-#page-chat .profile-workspace .profile-eye__lid {
-    pointer-events: none;
-    position: absolute;
-}
-
-#page-chat .profile-workspace .profile-eye__lid--top {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.22), transparent);
-    border-radius: 50% 50% 0 0;
-    height: 34%;
-    inset: 0 0 auto;
-}
-
-#page-chat .profile-workspace .profile-eye__lid--bot {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.14), transparent);
-    border-radius: 0 0 50% 50%;
-    height: 20%;
-    inset: auto 0 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
-    #page-chat .profile-workspace .profile-eye,
-    #page-chat .profile-workspace .profile-eye__iris,
-    #page-chat .profile-workspace .profile-eye__pupil {
-        transition: none;
-    }
-
-    #page-chat .profile-workspace .profile-eye.is-blinking {
-        transform: none;
-    }
-
     #page-chat .profile-workspace .profile-preview-mini {
         transform: none;
         will-change: auto;
@@ -2121,9 +1987,7 @@
     }
 }
 
-#page-chat .profile-workspace .profile-identity-layout:not(.is-ready) .profile-avatar-card,
-#page-chat .profile-workspace .profile-identity-layout:not(.is-ready) .profile-about-card,
-#page-chat .profile-workspace .profile-identity-layout:not(.is-ready) .profile-form-col > *,
+#page-chat .profile-workspace .profile-identity-layout:not(.is-ready) > *,
 #page-chat .profile-workspace .profile-security-layout:not(.is-ready) .profile-sec-block,
 #page-chat .profile-workspace .profile-privacy-layout:not(.is-ready) .profile-sec-kicker,
 #page-chat .profile-workspace .profile-privacy-layout:not(.is-ready) .profile-privacy-row,
@@ -2131,9 +1995,7 @@
     opacity: 0;
 }
 
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-avatar-card,
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-about-card,
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-form-col > *,
+#page-chat .profile-workspace .profile-identity-layout.is-ready > *,
 #page-chat .profile-workspace .profile-security-layout.is-ready .profile-sec-block,
 #page-chat .profile-workspace .profile-privacy-layout.is-ready .profile-sec-kicker,
 #page-chat .profile-workspace .profile-privacy-layout.is-ready .profile-privacy-row,
@@ -2141,14 +2003,9 @@
     animation: profile-section-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-avatar-card { animation-delay: 0s; }
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-about-card { animation-delay: 0.07s; }
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-form-col > :nth-child(1) { animation-delay: 0.1s; }
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-form-col > :nth-child(2) { animation-delay: 0.16s; }
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-form-col > :nth-child(3) { animation-delay: 0.22s; }
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-form-col > :nth-child(4) { animation-delay: 0.28s; }
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-form-col > :nth-child(5) { animation-delay: 0.34s; }
-#page-chat .profile-workspace .profile-identity-layout.is-ready .profile-preview-panel { animation-delay: 0.4s; }
+#page-chat .profile-workspace .profile-identity-layout.is-ready > :nth-child(1) { animation-delay: 0s; }
+#page-chat .profile-workspace .profile-identity-layout.is-ready > :nth-child(2) { animation-delay: 0.06s; }
+#page-chat .profile-workspace .profile-identity-layout.is-ready > :nth-child(3) { animation-delay: 0.12s; }
 
 #page-chat .profile-workspace .profile-security-layout.is-ready .profile-sec-block:nth-child(1) { animation-delay: 0.04s; }
 #page-chat .profile-workspace .profile-security-layout.is-ready .profile-sec-block:nth-child(2) { animation-delay: 0.1s; }
@@ -3721,5 +3578,621 @@
 
     #page-chat .profile-workspace .appearance-preview__stage {
         min-height: 280px;
+    }
+}
+
+/* ── Identity (Profile) — header card · page header · rows card ──────────── */
+#page-chat .profile-workspace .profile-identity-layout {
+    --ps-card-bg: #12141c;
+    --ps-field-bg: #0d0f14;
+    --ps-line: rgba(255, 255, 255, 0.08);
+    --ps-accent: #34d399;
+}
+
+/* Buttons shared by the header card and the page header. */
+#page-chat .profile-workspace .ps-btn {
+    align-items: center;
+    border-radius: 999px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    gap: 6px;
+    height: 36px;
+    justify-content: center;
+    padding: 0 14px;
+    text-decoration: none;
+    transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        color 0.16s ease,
+        opacity 0.16s ease,
+        transform 0.16s ease;
+    white-space: nowrap;
+}
+
+#page-chat .profile-workspace .ps-btn .ui-icon {
+    height: 13px;
+    width: 13px;
+}
+
+#page-chat .profile-workspace .ps-btn--ghost {
+    background: var(--ps-field-bg);
+    border: 1px solid var(--ps-line);
+    color: #d4d4d8;
+}
+
+#page-chat .profile-workspace .ps-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]) {
+    background: #1a1d27;
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #fff;
+}
+
+#page-chat .profile-workspace .ps-btn--primary {
+    background: #f4f4f5;
+    border: 1px solid #f4f4f5;
+    color: #0a0a0a;
+}
+
+#page-chat .profile-workspace .ps-btn--primary:hover:not(:disabled) {
+    background: #fff;
+}
+
+#page-chat .profile-workspace .ps-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+#page-chat .profile-workspace .ps-btn:disabled,
+#page-chat .profile-workspace .ps-btn[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+#page-chat .profile-workspace .ps-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline-offset: 2px;
+}
+
+/* 1. Header card — ambient banner tinted by the avatar (js: syncHeaderAmbient).
+   Stack: dark card (#0d0f14) · progressive glow that starts at the avatar and
+   dissipates to the right (z 1) · a light even scrim so the name and handle
+   stay fully legible on top of it (z 1, above the glow) · content (z 2). */
+@property --ps-ambient-glow {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #4a5578;
+}
+
+#page-chat .profile-workspace .ps-header {
+    --ps-banner-base: #0d0f14;
+    align-items: center;
+    background: var(--ps-banner-base);
+    border: 1px solid var(--ps-line);
+    border-radius: 20px;
+    display: flex;
+    gap: 16px;
+    isolation: isolate;
+    min-width: 0;
+    overflow: hidden;
+    padding: 20px 24px;
+    position: relative;
+    transition: --ps-ambient-glow 0.5s ease;
+}
+
+/* Glow: strongest at the avatar, easing out across the card. Bleeds past the
+   edges so the blur doesn't leave a dark rim (the card clips it). */
+#page-chat .profile-workspace .ps-header::before {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--ps-ambient-glow) 35%, transparent) 0%,
+        color-mix(in srgb, var(--ps-ambient-glow) 18%, transparent) 45%,
+        color-mix(in srgb, var(--ps-ambient-glow) 5%, transparent) 80%,
+        transparent 100%
+    );
+    content: "";
+    filter: blur(24px);
+    inset: -24px;
+    pointer-events: none;
+    position: absolute;
+    z-index: 1;
+}
+
+/* Scrim: an even dark veil over the glow — keeps text contrast without
+   flattening the colour. */
+#page-chat .profile-workspace .ps-header::after {
+    background: color-mix(in srgb, var(--ps-banner-base) 30%, transparent);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 1;
+}
+
+/* Content above both layers. */
+#page-chat .profile-workspace .ps-header > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Avatar: a circle with clean edges, thin border, neutral fill. */
+#page-chat .profile-workspace .ps-header__avatar.profile-avatar-zone {
+    align-items: center;
+    background: #151822;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    box-shadow: none;
+    color: #d4d4d8;
+    cursor: pointer;
+    display: flex;
+    flex: none;
+    height: 64px;
+    justify-content: center;
+    overflow: hidden;
+    width: 64px;
+}
+
+#page-chat .profile-workspace .ps-header__avatar img {
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+    position: absolute;
+    width: 100%;
+}
+
+/* Text block, vertically centred on the avatar (the card aligns items center). */
+#page-chat .profile-workspace .ps-header__copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    justify-content: center;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .ps-header__name {
+    align-items: center;
+    color: #f4f4f5;
+    display: flex;
+    font-size: 22px;
+    font-weight: 700;
+    gap: 8px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .ps-header__name > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Scaled with the 22px name; centred on its line box by the flex row. */
+#page-chat .profile-workspace .ps-header__verified {
+    color: var(--ps-accent);
+    flex: none;
+    height: 20px;
+    width: 20px;
+}
+
+#page-chat .profile-workspace .ps-header__link {
+    color: #8a8a8a;
+    font-size: 13px;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Bio (or status), up to two lines. */
+#page-chat .profile-workspace .ps-header__bio {
+    -webkit-box-orient: vertical;
+    color: rgba(255, 255, 255, 0.7);
+    display: -webkit-box;
+    font-size: 13px;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    line-height: 1.45;
+    margin: 4px 0 0;
+    max-width: 500px;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+/* 2. Page header: title + actions. */
+#page-chat .profile-workspace .ps-pagehead {
+    align-items: flex-end;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+#page-chat .profile-workspace .ps-pagehead__copy {
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .ps-pagehead__title {
+    color: #f4f4f5;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin: 0 0 4px;
+}
+
+#page-chat .profile-workspace .ps-pagehead__sub {
+    color: var(--text-tertiary, #71717a);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 0;
+}
+
+#page-chat .profile-workspace .ps-pagehead__actions {
+    display: flex;
+    flex: none;
+    gap: 8px;
+}
+
+/* 3. Rows card. */
+#page-chat .profile-workspace .ps-card {
+    background: var(--ps-card-bg);
+    border: 1px solid var(--ps-line);
+    border-radius: 20px;
+    overflow: visible;
+}
+
+#page-chat .profile-workspace .ps-row {
+    border-bottom: 1px solid var(--ps-line);
+    display: grid;
+    gap: 32px;
+    grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
+    padding: 22px 24px;
+}
+
+#page-chat .profile-workspace .ps-row:last-child {
+    border-bottom: 0;
+}
+
+#page-chat .profile-workspace .ps-row__title {
+    color: #f4f4f5;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0 0 4px;
+}
+
+#page-chat .profile-workspace .ps-row__desc {
+    color: var(--text-tertiary, #71717a);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 0;
+}
+
+#page-chat .profile-workspace .ps-row__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+@container (max-width: 640px) {
+    #page-chat .profile-workspace .ps-row {
+        gap: 12px;
+        grid-template-columns: minmax(0, 1fr);
+        padding: 18px;
+    }
+
+    #page-chat .profile-workspace .ps-pagehead {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #page-chat .profile-workspace .ps-header {
+        flex-wrap: wrap;
+    }
+}
+
+#page-chat .profile-workspace .ps-sr-only {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+/* Inputs: dark fill, hairline, 8px radius; 40px single-line. */
+#page-chat .profile-workspace .ps-card input[type="text"],
+#page-chat .profile-workspace .ps-card textarea {
+    background: var(--ps-field-bg);
+    border: 1px solid var(--ps-line);
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: #f4f4f5;
+    font: inherit;
+    font-size: 14px;
+    transition:
+        border-color 0.15s ease,
+        background-color 0.15s ease;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .ps-card input[type="text"] {
+    height: 40px;
+    padding: 0 12px;
+}
+
+#page-chat .profile-workspace .ps-card input[type="text"]:focus,
+#page-chat .profile-workspace .ps-card textarea:focus {
+    border-color: rgba(255, 255, 255, 0.22);
+    outline: none;
+}
+
+#page-chat .profile-workspace .ps-input {
+    position: relative;
+}
+
+#page-chat .profile-workspace .ps-card .ps-input input[type="text"] {
+    padding-right: 64px;
+}
+
+#page-chat .profile-workspace .ps-input__count {
+    color: #a1a1aa;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.5;
+    pointer-events: none;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#page-chat .profile-workspace .ps-card .ps-input--area textarea {
+    display: block;
+    height: 112px;
+    line-height: 1.5;
+    padding: 10px 12px 22px;
+    resize: none;
+}
+
+#page-chat .profile-workspace .ps-input--area .ps-input__count {
+    bottom: 8px;
+    top: auto;
+    transform: none;
+}
+
+/* Link: [ nexa.to/ | username | Copy ]. */
+#page-chat .profile-workspace .ps-prefix-input {
+    align-items: center;
+    background: var(--ps-field-bg);
+    border: 1px solid var(--ps-line);
+    border-radius: 8px;
+    box-sizing: border-box;
+    display: flex;
+    height: 40px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+#page-chat .profile-workspace .ps-prefix-input__prefix {
+    align-items: center;
+    align-self: stretch;
+    background: rgba(255, 255, 255, 0.04);
+    border-right: 1px solid var(--ps-line);
+    color: #8a8a8a;
+    display: flex;
+    flex: none;
+    font-size: 13.5px;
+    padding: 0 12px;
+}
+
+#page-chat .profile-workspace .ps-prefix-input__value {
+    color: #f4f4f5;
+    flex: 1;
+    font-size: 14px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#page-chat .profile-workspace .ps-prefix-input .profile-field-action {
+    margin-right: 4px;
+    padding: 5px 10px;
+}
+
+#page-chat .profile-workspace .ps-row .profile-field-hint {
+    margin: -4px 0 0;
+}
+
+/* Photo: the dropzone alone; "Remove photo" under it only while there's a photo
+   (the header avatar's <img> is .hidden when there isn't). */
+#page-chat .profile-workspace .ps-photo {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#page-chat .profile-workspace .ps-photo__remove {
+    align-self: flex-start;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: #8a8a8a;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12.5px;
+    padding: 4px 10px;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+#page-chat .profile-workspace .ps-photo__remove:hover {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
+}
+
+#page-chat .profile-workspace .ps-photo__remove:focus-visible {
+    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline-offset: 2px;
+}
+
+#page-chat .profile-workspace .profile-identity-layout:has(#uiProfileAvatarImg.hidden) .ps-photo__remove {
+    display: none;
+}
+
+#page-chat .profile-workspace .ps-dropzone {
+    align-items: center;
+    background: var(--ps-field-bg);
+    border: 1px dashed rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    box-sizing: border-box;
+    color: #a1a1aa;
+    cursor: pointer;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    font: inherit;
+    gap: 4px;
+    min-width: 0;
+    padding: 18px 16px;
+    text-align: center;
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease;
+}
+
+#page-chat .profile-workspace .ps-dropzone:hover,
+#page-chat .profile-workspace .ps-dropzone.is-dragover {
+    background: #11141b;
+    border-color: color-mix(in srgb, var(--ps-accent) 55%, transparent);
+}
+
+#page-chat .profile-workspace .ps-dropzone:focus-visible {
+    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline-offset: 2px;
+}
+
+#page-chat .profile-workspace .ps-dropzone__icon {
+    align-items: center;
+    background: color-mix(in srgb, var(--ps-accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ps-accent) 24%, transparent);
+    border-radius: 10px;
+    color: var(--ps-accent);
+    display: inline-flex;
+    height: 36px;
+    justify-content: center;
+    margin-bottom: 6px;
+    width: 36px;
+}
+
+#page-chat .profile-workspace .ps-dropzone__icon .ui-icon {
+    height: 16px;
+    width: 16px;
+}
+
+#page-chat .profile-workspace .ps-dropzone__text {
+    font-size: 13px;
+}
+
+#page-chat .profile-workspace .ps-dropzone__text strong {
+    color: var(--ps-accent);
+    font-weight: 600;
+}
+
+#page-chat .profile-workspace .ps-dropzone__hint {
+    color: var(--text-tertiary, #71717a);
+    font-size: 12px;
+}
+
+/* 4. Status: carousel-style switcher (StatusSwitcher.tsx) over a hidden select.
+   Colours (tint, arrows, active dot, label) are animated inline per status. */
+#page-chat .profile-workspace .ps-select__native {
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+}
+
+#page-chat .profile-workspace .ps-status {
+    display: flex;
+    min-height: 44px;
+}
+
+#page-chat .profile-workspace .status-switcher {
+    align-items: center;
+    border: 1px solid var(--ps-line);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 4px;
+    padding: 6px;
+}
+
+#page-chat .profile-workspace .status-switcher__arrow {
+    align-items: center;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    height: 32px;
+    justify-content: center;
+    padding: 0;
+    width: 32px;
+}
+
+#page-chat .profile-workspace .status-switcher__dots {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    padding: 0 8px;
+}
+
+#page-chat .profile-workspace .status-switcher__dot {
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    flex: none;
+    height: 8px;
+    padding: 0;
+    /* Bigger hit area than the 8px dot. */
+    position: relative;
+}
+
+#page-chat .profile-workspace .status-switcher__dot::before {
+    content: "";
+    inset: -8px -3px;
+    position: absolute;
+}
+
+#page-chat .profile-workspace .status-switcher__dot:focus-visible,
+#page-chat .profile-workspace .status-switcher__arrow:focus-visible {
+    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline-offset: 3px;
+}
+
+#page-chat .profile-workspace .status-switcher__label {
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 64px;
+    padding: 0 10px 0 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .profile-workspace .ps-btn {
+        animation: none;
+        transition: none;
     }
 }
