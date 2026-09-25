@@ -392,7 +392,7 @@ html[data-wallpaper-dim] {
 
 #page-chat .nav-rail .rail-presence,
 #page-chat .nav-rail #status {
-    background: var(--red);
+    background: var(--color-danger);
     border: none;
     border-radius: 50%;
     box-shadow: none;
@@ -410,7 +410,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .nav-rail #status.status-offline {
-    background: var(--red);
+    background: var(--color-danger);
 }
 
 #page-chat .sidebar-dock-bar {
@@ -599,7 +599,7 @@ html[data-wallpaper-dim] {
 
 #page-chat .rail-presence,
 #page-chat #status {
-    background: var(--danger);
+    background: var(--color-danger);
     border: 2px solid color-mix(in srgb, var(--bg, var(--theme-border, #0a0a0a)) 70%, transparent);
     border-radius: 999px;
     display: block;
@@ -612,7 +612,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat #status.status-offline {
-    background: var(--danger);
+    background: var(--color-danger);
 }
 
 #page-chat .sidebar {
@@ -2045,7 +2045,7 @@ html[data-wallpaper-dim] {
 }
 
 .composer-status.danger {
-    color: var(--red);
+    color: var(--text-danger);
 }
 
 .composer-char-counter {
@@ -2080,7 +2080,7 @@ html[data-wallpaper-dim] {
 }
 
 .composer-char-counter.danger {
-    color: var(--red);
+    color: var(--text-danger);
 }
 
 .chat-main > .input-bar:focus-within {
@@ -2413,7 +2413,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .chat-header-presence.is-offline {
-    background: var(--red);
+    background: var(--color-danger);
     box-shadow: 0 0 0 2px var(--red-20);
 }
 
@@ -2585,9 +2585,20 @@ html[data-wallpaper-dim] {
 #page-chat .compose-spotlight {
     --spotlight-h: var(--layout-header-h, 54px);
     --spotlight-icon: 16px;
+    --spotlight-stroke: 2px;
     --spotlight-gap: 10px;
-    --spotlight-glass: color-mix(in srgb, var(--chat-stage-fill, #10131a) 78%, #1a1d26);
-    --spotlight-glass-stroke: var(--capsule-stroke);
+    /* One surface for the input and the shortcut buttons: the theme's card
+       fill + hairline (#FFFFFF on the light themes, #121212 on Dark Neon). */
+    --spotlight-glass: var(--card-bg, color-mix(in srgb, var(--chat-stage-fill, #10131a) 78%, #1a1d26));
+    --spotlight-glass-stroke: var(--border-subtle, var(--capsule-stroke));
+    --spotlight-surface-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    /* Shortcut circles = input height (js/composeSearch.jsx reads --spotlight-h) */
+    --spotlight-btn: var(--spotlight-h);
+    /* Collapsed: a true pill — radius = half the input height, not 999px, so
+       the corners stay circular while the results height animates instead of
+       bulging into an oval. Expanded: switches straight to --spotlight-radius-open. */
+    --spotlight-radius: calc(var(--spotlight-h) / 2);
+    --spotlight-radius-open: 18px;
     --spotlight-ink: var(--text, #f4f4f5);
     --spotlight-muted: #8a8a8a;
     --spotlight-chip: color-mix(in srgb, var(--chat-stage-fill, #10131a) 70%, #1a1d26);
@@ -2682,13 +2693,13 @@ html[data-wallpaper-dim] {
 
 #page-chat .compose-spotlight__shell svg {
     height: var(--spotlight-icon);
-    stroke-width: 1.4;
+    stroke-width: var(--spotlight-stroke);
     width: var(--spotlight-icon);
 }
 
 #page-chat .compose-spotlight__card {
     border: 1px solid var(--spotlight-glass-stroke);
-    border-radius: 999px;
+    border-radius: var(--spotlight-radius) !important;
     box-shadow: var(--glass-inset-highlight);
     display: flex;
     flex: 1 1 auto;
@@ -2718,7 +2729,7 @@ html[data-wallpaper-dim] {
     color: var(--spotlight-muted);
     flex-shrink: 0;
     height: var(--spotlight-icon);
-    stroke-width: 1.4;
+    stroke-width: var(--spotlight-stroke);
     width: var(--spotlight-icon);
 }
 
@@ -2843,7 +2854,7 @@ html[data-wallpaper-dim] {
 
 #page-chat .compose-spotlight__shortcut .ui-icon {
     height: var(--spotlight-icon);
-    stroke-width: 1.4;
+    stroke-width: var(--spotlight-stroke);
     width: var(--spotlight-icon);
 }
 
@@ -2880,26 +2891,26 @@ html[data-wallpaper-dim] {
     backdrop-filter: blur(36px) saturate(180%);
     -webkit-backdrop-filter: blur(36px) saturate(180%);
     border: 1px solid var(--spotlight-glass-stroke);
-    box-shadow: var(--glass-inset-highlight);
+    box-shadow: var(--spotlight-surface-shadow);
     color: var(--spotlight-ink);
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     justify-content: flex-start;
-    border-radius: 999px;
+    border-radius: var(--spotlight-radius) !important;
     max-height: 50vh;
     max-height: 50dvh;
     min-width: 0;
     overflow: hidden;
     position: relative;
     transform-origin: top center;
-    transition: border-radius 0.22s ease;
     width: 100%;
     z-index: 10;
 }
 
+/* Instant switch (no radius transition) the moment results open */
 #page-chat .compose-react-card:has(.compose-react-results-slot.is-open) {
-    border-radius: var(--nexa-chrome-radius, 24px);
+    border-radius: var(--spotlight-radius-open) !important;
 }
 
 #page-chat .compose-react-input-row {
@@ -2928,7 +2939,7 @@ html[data-wallpaper-dim] {
 #page-chat .compose-react-search-icon svg,
 #page-chat .compose-react-shortcut-icon svg {
     height: var(--spotlight-icon);
-    stroke-width: 1.4;
+    stroke-width: var(--spotlight-stroke);
     width: var(--spotlight-icon);
 }
 
@@ -3013,24 +3024,27 @@ html[data-wallpaper-dim] {
 
 #page-chat .compose-react-shortcut {
     align-items: center;
-    background: var(--spotlight-glass);
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--spotlight-glass-stroke);
-    border-radius: 999px;
-    box-shadow: var(--glass-inset-highlight);
+    align-self: flex-start;
+    background-color: var(--spotlight-glass) !important;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     color: var(--spotlight-ink);
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     flex: 0 0 auto;
-    height: var(--spotlight-h);
+    height: var(--spotlight-btn);
     justify-content: center;
-    min-width: 0;
+    /* Centre on the input row even while the results panel grows the card */
+    margin-top: calc((var(--spotlight-h) - var(--spotlight-btn)) / 2);
+    min-height: var(--spotlight-btn);
     overflow: hidden;
+    padding: 0;
     position: relative;
     transform-origin: center center;
-    transition: background-color 0.32s ease, border-color 0.32s ease, box-shadow 0.32s ease;
-    width: var(--spotlight-h);
+    transition: border-color 0.24s ease, box-shadow 0.24s ease;
+    /* width is driven by framer-motion (SHORTCUT_SIZE → 0 when tucked away) */
+    width: var(--spotlight-btn);
     will-change: transform, width, opacity;
     z-index: 1;
 }
@@ -3040,47 +3054,40 @@ html[data-wallpaper-dim] {
     appearance: none;
     background: transparent;
     border: 0;
-    border-radius: 999px;
+    border-radius: 50%;
     color: inherit;
     cursor: pointer;
     display: inline-flex;
-    height: var(--spotlight-h);
+    flex-shrink: 0;
+    height: var(--spotlight-btn);
     justify-content: center;
     line-height: 0;
-    opacity: 0.38;
+    min-height: var(--spotlight-btn);
+    min-width: var(--spotlight-btn);
+    opacity: 0.6;
     padding: 0;
     position: relative;
     transition: opacity 0.28s ease, color 0.28s ease;
-    width: var(--spotlight-h);
+    width: var(--spotlight-btn);
 }
 
 #page-chat .compose-react-shortcut-button:hover,
 #page-chat .compose-react-shortcut-button:focus-visible {
-    opacity: 0.72;
+    opacity: 1;
     outline: none;
 }
 
-/* Soft active mark — quiet ring, no fill */
-#page-chat .compose-react-shortcut-active {
-    background: transparent;
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--theme-tint, #fff) 28%, transparent);
-    inset: 0;
-    pointer-events: none;
-    position: absolute;
-}
-
+/* Selected shortcut: same white circle, marked by a crisp hairline ring */
 #page-chat .compose-react-shortcut.is-active {
-    background: var(--spotlight-glass);
-    border-color: color-mix(in srgb, var(--theme-tint, #fff) 22%, var(--spotlight-glass-stroke));
-    box-shadow: none;
+    border: 1.5px solid var(--spotlight-glass-stroke) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 #page-chat .compose-react-shortcut-button.is-active,
 #page-chat .compose-react-shortcut-button.is-active:hover,
 #page-chat .compose-react-shortcut-button.is-active:focus-visible {
     color: var(--spotlight-ink);
-    opacity: 0.88;
+    opacity: 1;
 }
 
 #page-chat .compose-react-shortcut-icon {
@@ -3099,13 +3106,9 @@ html[data-wallpaper-dim] {
     flex-shrink: 0;
 }
 
-#page-chat .compose-react-shortcut-button.is-close {
-    opacity: 0.32;
-}
-
 #page-chat .compose-react-shortcut-button.is-close:hover,
 #page-chat .compose-react-shortcut-button.is-close:focus-visible {
-    opacity: 0.9;
+    opacity: 1;
 }
 
 #page-chat .compose-react-search-icon-swap {
@@ -3133,11 +3136,15 @@ html[data-wallpaper-dim] {
 
 #page-chat .compose-react-results-slot__clip {
     overflow: hidden;
+    /* Divider lives here (inset, no layout) so the scroller's fade mask can't erase it */
+    box-shadow: inset 0 1px 0 var(--spotlight-glass-stroke);
 }
 
+/* Progressive fade at the scroll edges: rows dissolve instead of being cut */
 #page-chat .compose-react-results {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 16px, black calc(100% - 20px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0px, black 16px, black calc(100% - 20px), transparent 100%);
     background: transparent;
-    border-top: 1px solid var(--spotlight-glass-stroke);
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -3179,6 +3186,23 @@ html[data-wallpaper-dim] {
 
 #page-chat .compose-react-result-enter {
     animation: compose-result-in 0.2s ease-out both;
+    position: relative;
+}
+
+/* Sliding highlight (framer layoutId) — spring shared with the sidebar lists.
+   Sits behind the row (z 0); a pale neutral wash of the ink colour:
+   ≈ rgba(255,255,255,.04) on Dark Neon, rgba(0,0,0,.03) on the light themes. */
+#page-chat .compose-react-result-highlight {
+    background: color-mix(in srgb, var(--spotlight-ink) 4%, transparent);
+    border-radius: 12px;
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
+html[data-theme^="light"] #page-chat .compose-react-result-highlight {
+    background: color-mix(in srgb, var(--spotlight-ink) 3%, transparent);
 }
 
 #page-chat .compose-react-result-card {
@@ -3186,27 +3210,39 @@ html[data-wallpaper-dim] {
     appearance: none;
     background: transparent;
     border: 0;
-    border-radius: 14px;
+    border-radius: 12px;
     color: var(--spotlight-ink);
     cursor: pointer;
     display: flex;
     gap: 12px;
     min-height: 64px;
     padding: 12px;
+    position: relative;
     text-align: left;
+    transition:
+        transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     width: 100%;
+    z-index: 1;
 }
 
-#page-chat .compose-react-result-card.is-last {
-    border-bottom-left-radius: 24px;
-    border-bottom-right-radius: 24px;
+/* Avatar, copy and chevron always paint above the highlight */
+#page-chat .compose-react-result-card > * {
+    position: relative;
+    z-index: 1;
 }
 
+/* The fill comes from the sliding highlight; the row itself only nudges */
 #page-chat .compose-react-result-card:hover,
-#page-chat .compose-react-result-card:focus-visible,
 #page-chat .compose-react-result-card.is-active {
-    background: var(--spotlight-chip);
     box-shadow: none;
+    outline: none;
+    transform: translateX(2px);
+}
+
+/* Keyboard focus without a pointer-driven highlight still gets the fill */
+#page-chat .compose-react-result-card:focus-visible:not(.is-active) {
+    background-color: color-mix(in srgb, var(--spotlight-ink) 4%, transparent);
     outline: none;
 }
 
@@ -3252,7 +3288,11 @@ html[data-wallpaper-dim] {
     display: flex;
     justify-content: flex-end;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transform: translateX(-4px);
+    /* Same curve + duration as the row nudge, so arrow and row settle together */
+    transition:
+        opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #page-chat .compose-react-result-chevron svg {
@@ -3264,6 +3304,7 @@ html[data-wallpaper-dim] {
 #page-chat .compose-react-result-card:focus-visible .compose-react-result-chevron,
 #page-chat .compose-react-result-card.is-active .compose-react-result-chevron {
     opacity: 1;
+    transform: translateX(0);
 }
 
 
@@ -3416,6 +3457,8 @@ html[data-wallpaper-dim] {
     #page-chat .compose-react-results,
     #page-chat .compose-react-results-status,
     #page-chat .compose-react-result-enter,
+    #page-chat .compose-react-result-card,
+    #page-chat .compose-react-result-chevron,
     #page-chat .compose-react-input-char {
         animation: none;
         transition: none;
@@ -4042,13 +4085,13 @@ html[data-wallpaper-dim] {
 
 #page-chat .sidebar-file-tree .folder-item-action--danger:hover {
     background: transparent;
-    color: var(--danger);
+    color: var(--text-danger);
 }
 
 #page-chat .sidebar-file-tree .folder-item-action--confirm {
-    background: color-mix(in srgb, var(--danger) 18%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 18%, transparent);
     border-radius: 999px;
-    color: var(--danger);
+    color: var(--text-danger);
     height: 24px;
     opacity: 0;
     overflow: hidden;
@@ -4092,7 +4135,7 @@ html[data-wallpaper-dim] {
 }
 
 #page-chat .sidebar-file-tree .folder-item-action--confirm:hover {
-    background: color-mix(in srgb, var(--danger) 28%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 28%, transparent);
     color: var(--danger-hover);
 }
 
@@ -5119,7 +5162,7 @@ html[data-wallpaper-dim] {
 
 .foot-icon-btn--danger:hover {
     background: var(--red-10);
-    color: var(--red);
+    color: var(--text-danger);
 }
 
 /* ─── Empty / subtitle typography (no Tailwind) ─── */

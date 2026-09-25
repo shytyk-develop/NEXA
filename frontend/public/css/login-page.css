@@ -642,7 +642,7 @@
 
 #authError.text-red-400 {
     background: var(--danger-10);
-    border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 28%, transparent);
     /* Lighter step for small error text on the dark card. */
     color: var(--danger-hover) !important;
 }

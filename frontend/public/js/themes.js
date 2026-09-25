@@ -58,6 +58,8 @@
                 '--text-primary': '#191B13',
                 '--text-secondary': '#5D6153',
                 '--text-on-accent': '#FFFFFF',
+                '--color-danger': '#D34B37',
+                '--text-danger': '#D34B37',
             },
         },
         {
@@ -79,6 +81,8 @@
                 '--text-primary': '#191B13',
                 '--text-secondary': '#5D6153',
                 '--text-on-accent': '#191B13',
+                '--color-danger': '#D34B37',
+                '--text-danger': '#D34B37',
             },
         },
         {
@@ -100,6 +104,8 @@
                 '--text-primary': '#FFFFFF',
                 '--text-secondary': '#737373',
                 '--text-on-accent': '#070707',
+                '--color-danger': '#F62834',
+                '--text-danger': '#F62834',
             },
         },
     ];
@@ -277,6 +283,16 @@
         vars['--t3'] = tertiary;
         vars['--spotlight-ink'] = c['--text-primary'];
         vars['--spotlight-muted'] = c['--text-secondary'];
+        // Destructive / error red (optional per theme; defaults follow the type).
+        var danger = c['--color-danger'] || (dark ? '#F62834' : '#D34B37');
+        vars['--color-danger'] = danger;
+        vars['--text-danger'] = c['--text-danger'] || danger;
+        vars['--danger'] = danger;
+        vars['--red'] = danger;
+        // Hover step: lighter on dark surfaces, deeper on light ones.
+        vars['--danger-hover'] = 'color-mix(in srgb, ' + danger + ' 70%, ' + (dark ? '#FFFFFF' : '#000000') + ')';
+        vars['--danger-10'] = 'color-mix(in srgb, ' + danger + ' 12%, transparent)';
+        vars['--danger-20'] = 'color-mix(in srgb, ' + danger + ' 22%, transparent)';
         // Accent.
         vars['--accent'] = c['--accent-primary'];
         vars['--dock-accent'] = c['--accent-primary'];

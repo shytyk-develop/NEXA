@@ -5,7 +5,7 @@
 // (--sidebar-hover-transition in public/css/themes.css), which settles in
 // about the same time as the spring.
 
-/** Sliding hover highlight: fast, lightly damped, no overshoot (ζ ≈ 0.9). */
-export const listHoverTransition = { type: 'spring', stiffness: 500, damping: 40 } as const;
+/** Sliding hover highlight: soft glide, no overshoot (ζ ≈ 0.95). */
+export const listHoverTransition = { type: 'spring', stiffness: 380, damping: 37 } as const;
 
 export const instantHoverTransition = { duration: 0 };

@@ -12,14 +12,15 @@ let preview = null;
 let previewName = null;
 /** Theme shown in the preview while a card is hovered / focused (else the active one). */
 let browsing = null;
-/** Pending revert to the active theme (see leave in buildCard). */
+/** Pending revert to the active theme (see scheduleRevert). */
 let revertTimer = 0;
+/** Pending repaint frame: bursts of hover events collapse into one repaint. */
+let repaintFrame = 0;
 /**
- * Leaving a card waits this long before the preview heads back to the active
- * theme: moving across the gap to the next card then goes straight from one
- * hovered theme to the other instead of dipping through the active one.
+ * Leaving the card grid waits this long before the preview heads back to the
+ * active theme, so brushing past the grid's edge doesn't flash it.
  */
-const REVERT_DELAY = 120;
+const REVERT_DELAY = 160;
 
 /** Relative luminance of a #rrggbb colour (0–1). */
 function luminance(hex) {
@@ -53,7 +54,12 @@ function paintPreview(theme) {
         '--pv-pill-text': c['--active-pill-text'],
         '--pv-on-accent': c['--text-on-accent'],
     };
-    Object.entries(vars).forEach(([key, value]) => preview.style.setProperty(key, value || ''));
+    // Only touch vars whose value changes: rewriting an unchanged one is a
+    // no-op for the cascade, but skipping it keeps in-flight transitions intact.
+    Object.entries(vars).forEach(([key, value]) => {
+        const next = value || '';
+        if (preview.style.getPropertyValue(key) !== next) preview.style.setProperty(key, next);
+    });
     preview.dataset.themeType = theme.type;
     if (previewName) previewName.textContent = theme.name;
 }
@@ -67,7 +73,35 @@ function activeTheme() {
 }
 
 function repaint() {
+    window.cancelAnimationFrame(repaintFrame);
+    repaintFrame = 0;
     paintPreview(browsing || activeTheme());
+}
+
+/**
+ * Repaint on the next frame. A fast sweep (Light Emerald → Light Lime → Dark
+ * Neon) fires several enter events per frame; only the last target is painted,
+ * and the CSS transitions retarget from the colours currently on screen.
+ */
+function queueRepaint() {
+    if (repaintFrame) return;
+    repaintFrame = window.requestAnimationFrame(repaint);
+}
+
+function browse(theme) {
+    window.clearTimeout(revertTimer);
+    if (browsing?.id === theme.id) return;
+    browsing = theme;
+    queueRepaint();
+}
+
+function scheduleRevert() {
+    window.clearTimeout(revertTimer);
+    revertTimer = window.setTimeout(() => {
+        if (!browsing) return;
+        browsing = null;
+        queueRepaint();
+    }, REVERT_DELAY);
 }
 
 
@@ -136,30 +170,19 @@ function buildCard(theme) {
         setThemeAnimated(theme.id).catch((error) => console.error('Theme switch failed:', error));
     });
 
-    // Browsing: the preview follows the hovered / focused card, then eases
-    // back to the active theme (the CSS cross-fades every --pv-* change).
-    const browse = () => {
-        window.clearTimeout(revertTimer);
-        if (browsing?.id === theme.id) return;
-        browsing = theme;
-        repaint();
-    };
-    const leave = () => {
-        if (browsing?.id !== theme.id) return;
-        window.clearTimeout(revertTimer);
-        revertTimer = window.setTimeout(() => {
-            browsing = null;
-            repaint();
-        }, REVERT_DELAY);
-    };
+    // Browsing: the preview follows the hovered / focused card (the CSS
+    // cross-fades every --pv-* change). Leaving a card doesn't revert — only
+    // leaving the whole grid does (see initThemePicker), so crossing the gap
+    // between cards goes straight from one theme to the next.
     card.addEventListener('pointerenter', (event) => {
-        if (event.pointerType === 'mouse') browse();
+        if (event.pointerType === 'mouse') browse(theme);
     });
-    card.addEventListener('pointerleave', leave);
     card.addEventListener('focus', () => {
-        if (card.matches(':focus-visible')) browse();
+        if (card.matches(':focus-visible')) browse(theme);
     });
-    card.addEventListener('blur', leave);
+    card.addEventListener('blur', (event) => {
+        if (!host?.contains(event.relatedTarget)) scheduleRevert();
+    });
     return card;
 }
 
@@ -197,6 +220,9 @@ export function initThemePicker(el, previewEl = null, nameEl = null) {
         return;
     }
     host.replaceChildren(...themes.map(buildCard));
+    host.addEventListener('pointerleave', (event) => {
+        if (event.pointerType === 'mouse') scheduleRevert();
+    });
 
     // Arrow keys move between cards and apply, like a native radio group.
     host.addEventListener('keydown', (event) => {

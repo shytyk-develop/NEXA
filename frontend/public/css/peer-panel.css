@@ -660,13 +660,13 @@
 }
 
 .peer-option--danger {
-    color: #e05d5d;
+    color: var(--text-danger);
 }
 
 .peer-option--danger:hover:not(:disabled),
 .peer-option--danger:focus-visible:not(:disabled) {
     background: transparent;
-    color: #f07171;
+    color: var(--danger-hover);
 }
 
 .peer-option:disabled {

@@ -683,7 +683,7 @@ html.is-swiping-message * {
 .composer-status.danger,
 #uiCharCounter.danger,
 .composer-char-counter.danger {
-    color: var(--red) !important;
+    color: var(--text-danger) !important;
 }
 
 .message-action-btn--delete {
@@ -872,7 +872,7 @@ html.is-swiping-message * {
 }
 
 .overlay-surface--message-actions .overlay-menu-item.is-danger:hover {
-    background: rgba(255, 80, 80, 0.12);
+    background: var(--danger-10);
 }
 
 .reaction-picker-btn,
@@ -936,7 +936,7 @@ html.is-swiping-message * {
 .message-action-btn--delete:hover {
     background: var(--red-10);
     border-color: var(--red-20);
-    color: var(--red);
+    color: var(--text-danger);
 }
 
 .message-action-btn--delete:disabled {
@@ -1192,7 +1192,7 @@ html.is-swiping-message * {
    which is near-black on the light themes. The icons are stroked lucide
    glyphs, so colour (currentColor stroke) is what turns them white; no fill. */
 .message-quickbar__action.is-danger.is-confirming {
-    background: var(--danger, #ef4444) !important;
+    background: var(--color-danger, #F62834) !important;
     color: #ffffff !important;
 }
 
@@ -1250,8 +1250,8 @@ html.is-swiping-message * {
 }
 
 .message-quickbar__hover.is-danger {
-    background: color-mix(in srgb, var(--danger) 16%, transparent);
-    border-color: color-mix(in srgb, var(--danger) 24%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+    border-color: color-mix(in srgb, var(--color-danger) 24%, transparent);
 }
 
 .message-quickbar__actions,
@@ -1273,7 +1273,7 @@ html.is-swiping-message * {
 }
 
 .message-quickbar__action.is-danger {
-    color: var(--danger);
+    color: var(--text-danger);
 }
 
 .message-quickbar__divider {

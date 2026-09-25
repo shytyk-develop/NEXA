@@ -105,7 +105,7 @@
 
 .mini-profile-status.is-offline {
     background: var(--danger-10);
-    color: var(--danger);
+    color: var(--text-danger);
 }
 
 .mini-profile-bio {

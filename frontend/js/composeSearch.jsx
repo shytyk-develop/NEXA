@@ -1,4 +1,4 @@
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
     ChevronRight,
     CircleUser,
@@ -7,6 +7,7 @@ import {
     X,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 
@@ -73,7 +74,8 @@ const DEFAULT_SHORTCUTS = [
     { id: 'close', label: 'Close', Icon: X },
 ];
 
-const SHORTCUT_SIZE = 52;
+/** Fallback shortcut diameter; the live one is read from CSS (see readShortcutSize). */
+const SHORTCUT_SIZE = 54;
 const SHORTCUT_GAP = 12;
 const LIQUID_SPRING = {
     type: 'spring',
@@ -430,13 +432,6 @@ function ShortcutButton({
             onMouseLeave={onHoverEnd}
             onClick={onClick}
         >
-            {active ? (
-                <motion.span
-                    layoutId="compose-shortcut-active"
-                    className="compose-react-shortcut-active"
-                    transition={{ type: 'spring', duration: 0.42, bounce: 0.12 }}
-                />
-            ) : null}
             <span className="compose-react-shortcut-icon">
                 {icon}
             </span>
@@ -572,8 +567,11 @@ function SearchResultsContainer({
     onHover,
     onSelect,
 }) {
+    const reduceMotion = useReducedMotion();
     return (
-        <div
+        // layoutScroll: the sliding highlight measures rows inside this scroller
+        <motion.div
+            layoutScroll
             onMouseLeave={() => onHover(null)}
             className="compose-react-results"
         >
@@ -589,6 +587,16 @@ function SearchResultsContainer({
                         className="compose-react-result-enter"
                         style={{ animationDelay: `${Math.min(index, 8) * 28}ms` }}
                     >
+                        {/* One highlight slides between rows (hover + arrow keys),
+                            on the sidebar lists' spring. */}
+                        {hoveredIndex === index ? (
+                            <motion.span
+                                layoutId="compose-result-highlight"
+                                className="compose-react-result-highlight"
+                                aria-hidden="true"
+                                transition={reduceMotion ? instantHoverTransition : listHoverTransition}
+                            />
+                        ) : null}
                         <SearchResultCard
                             result={result}
                             isLast={index === searchResults.length - 1}
@@ -598,8 +606,19 @@ function SearchResultsContainer({
                     </div>
                 ))
             )}
-        </div>
+        </motion.div>
     );
+}
+
+/**
+ * Shortcut circles match the input's height (--spotlight-h, which follows the
+ * header height per breakpoint), so framer-motion's width target is read from
+ * CSS instead of being hard-coded.
+ */
+function readShortcutSize() {
+    const host = document.getElementById('uiComposeSpotlight');
+    const size = host ? parseFloat(getComputedStyle(host).getPropertyValue('--spotlight-h')) : NaN;
+    return Number.isFinite(size) && size > 0 ? size : SHORTCUT_SIZE;
 }
 
 function AppleSpotlight({
@@ -618,6 +637,7 @@ function AppleSpotlight({
     const [status, setStatus] = useState('');
     const [entered, setEntered] = useState(false);
     const [resultsMounted, setResultsMounted] = useState(false);
+    const [shortcutSize, setShortcutSize] = useState(readShortcutSize);
     const resultsOpen = Boolean(searchValue);
     const showShortcuts = !searchValue;
     const selectedMode = SEARCH_MODES[activeMode] || SEARCH_MODES.new;
@@ -629,6 +649,13 @@ function AppleSpotlight({
     useEffect(() => {
         setEntered(true);
     }, []);
+
+    useEffect(() => {
+        const sync = () => setShortcutSize(readShortcutSize());
+        sync();
+        window.addEventListener('resize', sync);
+        return () => window.removeEventListener('resize', sync);
+    }, [version]);
 
     useEffect(() => {
         if (resultsOpen) {
@@ -871,7 +898,6 @@ function AppleSpotlight({
                             </div>
                         </div>
 
-                        <LayoutGroup id="compose-shortcuts">
                         {shortcuts.map((shortcut, index) => (
                             <motion.div
                                 key={shortcut.id}
@@ -885,7 +911,7 @@ function AppleSpotlight({
                                 )}
                                 initial={{
                                     scale: 0.7,
-                                    x: -SHORTCUT_SIZE * (index + 1),
+                                    x: -shortcutSize * (index + 1),
                                     width: 0,
                                     marginLeft: 0,
                                     opacity: 0,
@@ -895,13 +921,13 @@ function AppleSpotlight({
                                         ? {
                                               scale: 1,
                                               x: 0,
-                                              width: SHORTCUT_SIZE,
+                                              width: shortcutSize,
                                               marginLeft: SHORTCUT_GAP,
                                               opacity: 1,
                                           }
                                         : {
                                               scale: 0.7,
-                                              x: -SHORTCUT_SIZE * (index + 1),
+                                              x: -shortcutSize * (index + 1),
                                               width: 0,
                                               marginLeft: 0,
                                               opacity: 0,
@@ -924,7 +950,6 @@ function AppleSpotlight({
                                 />
                             </motion.div>
                         ))}
-                        </LayoutGroup>
                     </div>
                 </motion.div>
             )}

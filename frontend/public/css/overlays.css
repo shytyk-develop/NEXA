@@ -205,7 +205,7 @@
 }
 
 .overlay-menu-item.is-danger {
-    color: var(--red);
+    color: var(--text-danger);
 }
 
 .overlay-menu-item.is-danger:hover {

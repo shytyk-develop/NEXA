@@ -134,12 +134,12 @@
 }
 
 #page-chat .profile-nav-btn--logout {
-    color: var(--danger);
+    color: var(--text-danger);
 }
 
 #page-chat .profile-nav-btn--logout:hover,
 #page-chat .profile-nav-btn--logout:focus-visible {
-    background: color-mix(in srgb, var(--danger) 8%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 8%, transparent);
     color: var(--danger-hover);
 }
 
@@ -189,7 +189,7 @@
     #page-chat.is-viewport-app-stack .profile-nav-btn--logout:hover,
     #page-chat.is-viewport-profile-stack .profile-nav-btn--logout:hover {
         background: transparent;
-        color: var(--danger);
+        color: var(--text-danger);
     }
 }
 
@@ -524,7 +524,7 @@
 }
 
 #page-chat.is-viewport-profile-stack .profile-nav-btn--logout {
-    color: var(--danger);
+    color: var(--text-danger);
     margin-top: 18px;
 }
 
@@ -939,8 +939,8 @@
 }
 
 #page-chat .profile-workspace .profile-status-dot.is-busy {
-    background: var(--danger);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--danger) 40%, transparent);
+    background: var(--color-danger);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-danger) 40%, transparent);
 }
 
 #page-chat .profile-workspace .profile-status-dot.is-invisible {
@@ -1181,7 +1181,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-status.is-busy {
-    color: var(--danger);
+    color: var(--text-danger);
 }
 
 #page-chat .profile-workspace .profile-preview-status.is-invisible {
@@ -1946,16 +1946,16 @@
 }
 
 #page-chat .profile-workspace .profile-data-action.is-danger .profile-data-action-icon {
-    border-color: color-mix(in srgb, var(--danger) 28%, transparent);
-    color: var(--danger);
+    border-color: color-mix(in srgb, var(--color-danger) 28%, transparent);
+    color: var(--text-danger);
 }
 
 #page-chat .profile-workspace .profile-data-action.is-danger .profile-data-action-title {
-    color: var(--danger);
+    color: var(--text-danger);
 }
 
 #page-chat .profile-workspace .profile-data-action.is-danger:hover .profile-data-action-title {
-    text-shadow: 0 0 14px color-mix(in srgb, var(--danger) 35%, transparent);
+    text-shadow: 0 0 14px color-mix(in srgb, var(--color-danger) 35%, transparent);
 }
 
 #page-chat .profile-workspace .profile-data-layout.is-ready .profile-data-overview {
@@ -2725,7 +2725,7 @@
 }
 
 #uiProfileAvatarRemoveBtn:hover {
-    color: var(--red);
+    color: var(--text-danger);
 }
 
 .profile-btn:active {
@@ -3476,8 +3476,8 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
 }
 
 #page-chat .profile-workspace .ps-photo__remove:hover {
-    background: color-mix(in srgb, var(--danger) 12%, transparent);
-    color: var(--danger);
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--text-danger);
 }
 
 #page-chat .profile-workspace .ps-photo__remove:focus-visible {
@@ -3798,14 +3798,15 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
    A miniature app window painted with --pv-* (set by js/themePicker.js from
    the active theme, or the hovered one). Fallbacks = Dark Neon. */
 #page-chat .profile-workspace .appearance-preview {
-    --pv-ease: 0.35s ease;
+    --pv-ease: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: grid;
     gap: 10px;
 }
 
 /* Every part of the preview eases between themes: fills, text, strokes and
    shadows all follow the --pv-* vars on one clock, so hovering a theme card
-   (or leaving it) cross-fades the whole mini app rather than snapping. */
+   (or leaving it) cross-fades the whole mini app rather than snapping.
+   !important so no per-part rule can drop a property off the shared clock. */
 #page-chat .profile-workspace .appearance-preview,
 #page-chat .profile-workspace .appearance-preview *,
 #page-chat .profile-workspace .appearance-preview *::before,
@@ -3814,7 +3815,9 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
         background-color var(--pv-ease),
         color var(--pv-ease),
         border-color var(--pv-ease),
-        box-shadow var(--pv-ease);
+        fill var(--pv-ease),
+        stroke var(--pv-ease),
+        box-shadow var(--pv-ease) !important;
 }
 
 #page-chat .profile-workspace .appearance-preview__window {

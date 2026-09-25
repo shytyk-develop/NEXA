@@ -104,7 +104,7 @@
 }
 
 .danger {
-    color: var(--red) !important;
+    color: var(--text-danger) !important;
 }
 
 .empty-state {
@@ -365,7 +365,7 @@ kbd {
 }
 
 .toast.is-error {
-    border-left-color: var(--red);
+    border-left-color: var(--color-danger);
 }
 
 .toast.is-success {
