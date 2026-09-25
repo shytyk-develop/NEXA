@@ -24,14 +24,12 @@ import {
 } from './profile.js';
 import { getPrivacyFlags } from './privacy.js';
 import { loadHistory } from './storage.js';
-import { ambientFromHue, extractAmbientColor } from './avatarAmbient.js';
+import { ambientPaletteFromHue, extractAmbientPalette } from './avatarAmbient.js';
+import { initThemePicker, syncThemePicker } from './themePicker.js';
+import { attachHoverHighlight } from './hoverHighlight.js';
 import { startPreviewTilt, stopPreviewTilt } from './cardTilt.js';
 import { getDevices, registerDevice } from './api.js';
 import { detectDeviceInfo, devicePayload, getDeviceId } from './device.js';
-import {
-    levelIndexToPercent,
-    percentToLevelIndex,
-} from '../ui/levelSlider.js';
 
 const PRIVACY_HINTS = {
     showOnlineStatus: {
@@ -207,6 +205,13 @@ function bindShell() {
     $p('uiProfileDeleteAccountBtn')?.addEventListener('click', onDeleteAccount);
 
     bindAppearancePreviewControls();
+    initThemePicker($p('uiThemePicker'), $p('uiAppearancePreview'), $p('uiAppearancePreviewName'));
+
+    // Sliding hover highlight, as in the left aside: a fill under the Data
+    // action rows; an outline over the (opaque) theme cards and density chips.
+    attachHoverHighlight(document.querySelector('#uiProfilePanel .profile-data-actions'), '.profile-data-action');
+    attachHoverHighlight($p('uiThemePicker'), '.theme-card', { mode: 'ring' });
+    attachHoverHighlight($p('uiAppearanceDensityPicker'), '.appearance-chip', { mode: 'ring' });
 }
 
 function syncPreviewTilt(active) {
@@ -244,7 +249,7 @@ export function onProfilePanelOpen(sectionOverride) {
 
 const PROFILE_SECTION_META = {
     identity: ['Profile', 'Manage your identity. Visible only to you.'],
-    appearance: ['Appearance', 'Theme, wallpaper, and how chats look.'],
+    appearance: ['Appearance', 'Theme and how chats look.'],
     security: ['Security', 'Built with privacy by design.'],
     privacy: ['Privacy', 'Control your visibility and interactions.'],
     data: ['Data & storage', 'Manage your local data and exports.'],
@@ -280,6 +285,9 @@ function setSection(id, { fromUser = false } = {}) {
     panel.querySelectorAll('[data-profile-section]').forEach((section) => {
         if (section.dataset.profileSection !== id) section.classList.remove('is-ready');
     });
+
+    // Appearance: show which theme is active right now.
+    if (id === 'appearance') syncThemePicker();
 
     if (id === 'data') {
         playDataIntro(resolveUsername());
@@ -943,25 +951,30 @@ function renderAvatar(ringEl, initialsEl, imgEl, username, dataUrl) {
 /** Latest ambient request; an older (slower) extraction must not win. */
 let ambientToken = 0;
 
+/** Banner glow variables, one per palette colour (most prominent first). */
+const AMBIENT_VARS = ['--ps-ambient-glow', '--ps-ambient-glow-2', '--ps-ambient-glow-3'];
+
 /**
- * Tint the header banner's right-side glow with the avatar's dominant colour,
- * muted (js/avatarAmbient.js); without a photo, the user's avatar hue.
- * --ps-ambient-glow is a registered custom property the CSS transitions, so a
- * new photo eases the banner into its colour.
+ * Paint the header banner with the avatar's own colours: up to three main
+ * colours of the photo (js/avatarAmbient.js); without a photo, the user's
+ * avatar hue and two neighbours. The vars are registered custom properties
+ * the CSS transitions, so a new photo eases the banner into its colours.
  */
 function syncHeaderAmbient(username) {
     const header = $p('uiProfileHeaderCard');
     if (!header) return;
     const token = ++ambientToken;
-    const fallback = ambientFromHue(getAvatarHue(username));
-    const apply = (color) => {
-        if (token === ambientToken) header.style.setProperty('--ps-ambient-glow', color || fallback);
+    const fallback = ambientPaletteFromHue(getAvatarHue(username));
+    const apply = (palette) => {
+        if (token !== ambientToken) return;
+        const colours = palette?.length ? palette : fallback;
+        AMBIENT_VARS.forEach((name, i) => header.style.setProperty(name, colours[i] || colours[0]));
     };
     if (!avatarPreviewUrl) {
         apply(fallback);
         return;
     }
-    extractAmbientColor(avatarPreviewUrl).then(apply, () => apply(fallback));
+    extractAmbientPalette(avatarPreviewUrl).then(apply, () => apply(fallback));
 }
 
 async function onAvatarFileSelected(event) {
@@ -1139,47 +1152,17 @@ async function copyField(text) {
     }
 }
 
-/** Appearance controls — level sliders + wallpaper/density. */
+/** Appearance controls — message density (the theme picker binds itself). */
 function bindAppearancePreviewControls() {
     const root = $p('uiProfileAppearanceLayout');
     if (!root || root.dataset.appearanceBound) return;
     root.dataset.appearanceBound = '1';
 
-    bindLevelSlider($p('uiAppearanceGlassLevel'), 'glassIntensity');
-    bindLevelSlider($p('uiAppearanceDimLevel'), 'wallpaperDim');
-
     root.addEventListener('click', (event) => {
         const densityChip = event.target.closest('#uiAppearanceDensityPicker [data-appearance-density]');
-        if (densityChip) {
-            applyAppearancePreference(
-                'compactMode',
-                densityChip.dataset.appearanceDensity === 'compact'
-            );
-            return;
-        }
-
-        const wallpaper = event.target.closest('#uiAppearanceWallpaperGrid [data-appearance-wallpaper]');
-        if (!wallpaper || wallpaper.disabled) return;
-        applyAppearancePreference('wallpaper', wallpaper.dataset.appearanceWallpaper);
+        if (!densityChip) return;
+        applyAppearancePreference('compactMode', densityChip.dataset.appearanceDensity === 'compact');
     });
-}
-
-function bindLevelSlider(el, key) {
-    if (!el) return;
-
-    const applyFromEvent = (event, silent) => {
-        const percent = Number.isFinite(event?.detail?.percent)
-            ? event.detail.percent
-            : levelIndexToPercent(el.levelIndex ?? Math.round(Number(el.value) || 0));
-        const previewPatch = key === 'glassIntensity'
-            ? { appearanceGlass: percent }
-            : { appearanceDim: percent };
-        syncAppearancePreview(previewPatch);
-        applyAppearancePreference(key, percent, { silent });
-    };
-
-    el.addEventListener('input', (event) => applyFromEvent(event, true));
-    el.addEventListener('change', (event) => applyFromEvent(event, false));
 }
 
 function applyAppearancePreference(key, value, opts = {}) {
@@ -1192,33 +1175,10 @@ function applyAppearancePreference(key, value, opts = {}) {
 
 export function hydrateAppearanceControls(preferences = {}) {
     const prefs = preferences || ctx?.getPreferences?.() || {};
-    const glass = levelIndexToPercent(percentToLevelIndex(prefs.glassIntensity ?? 0));
-    const dim = levelIndexToPercent(percentToLevelIndex(prefs.wallpaperDim ?? 0));
-    const wallpaper = prefs.wallpaper || 'mist';
     const density = prefs.compactMode ? 'compact' : 'comfortable';
-
-    const glassLevel = $p('uiAppearanceGlassLevel');
-    const dimLevel = $p('uiAppearanceDimLevel');
-
-    if (glassLevel) glassLevel.value = percentToLevelIndex(glass);
-    if (dimLevel) dimLevel.value = percentToLevelIndex(dim);
-
     syncChipGroup('#uiAppearanceDensityPicker', 'data-appearance-density', density);
-
-    const grid = $p('uiAppearanceWallpaperGrid');
-    grid?.querySelectorAll('[data-appearance-wallpaper]').forEach((btn) => {
-        if (btn.disabled) return;
-        const on = btn.dataset.appearanceWallpaper === wallpaper;
-        btn.classList.toggle('is-active', on);
-        btn.setAttribute('aria-checked', on ? 'true' : 'false');
-    });
-
-    syncAppearancePreview({
-        appearanceWallpaper: wallpaper,
-        appearanceGlass: glass,
-        appearanceDim: dim,
-        appearanceDensity: density,
-    });
+    const preview = $p('uiAppearancePreview');
+    if (preview) preview.dataset.appearanceDensity = density;
 }
 
 function syncChipGroup(selector, attr, value) {
@@ -1229,31 +1189,6 @@ function syncChipGroup(selector, attr, value) {
         btn.classList.toggle('is-active', on);
         btn.setAttribute('aria-checked', on ? 'true' : 'false');
     });
-}
-
-function syncAppearancePreview(partial = {}) {
-    const preview = $p('uiAppearancePreview');
-    if (!preview) return;
-
-    const wallpaper = partial.appearanceWallpaper
-        || preview.dataset.appearanceWallpaper
-        || 'mist';
-    const glass = levelIndexToPercent(
-        percentToLevelIndex(partial.appearanceGlass ?? preview.dataset.appearanceGlass ?? 0)
-    );
-    const dim = levelIndexToPercent(
-        percentToLevelIndex(partial.appearanceDim ?? preview.dataset.appearanceDim ?? 0)
-    );
-    const density = partial.appearanceDensity
-        || preview.dataset.appearanceDensity
-        || 'comfortable';
-
-    preview.dataset.appearanceWallpaper = wallpaper;
-    preview.dataset.appearanceGlass = String(glass);
-    preview.dataset.appearanceDim = String(dim);
-    preview.dataset.appearanceDensity = density;
-    preview.style.setProperty('--preview-glass', String(glass));
-    preview.style.setProperty('--preview-dim', String(dim));
 }
 
 const linkDateFormat = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

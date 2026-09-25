@@ -44,7 +44,7 @@
 }
 
 #page-chat .profile-nav-kicker {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-family: var(--f-ui);
     font-size: 11px;
     font-weight: 500;
@@ -58,7 +58,7 @@
     background: transparent;
     border: 1px solid transparent;
     border-radius: 12px;
-    color: #9a9a9a;
+    color: var(--theme-text-muted, #9a9a9a);
     cursor: pointer;
     display: flex;
     font-family: var(--f-ui);
@@ -70,17 +70,17 @@
 
 #page-chat .profile-nav-btn:hover,
 #page-chat .profile-nav-btn:focus-visible {
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 4%, transparent);
     border-color: transparent;
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     outline: none;
 }
 
 #page-chat .profile-nav-btn.is-active {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 6%, transparent);
     border-color: transparent;
     box-shadow: none;
-    color: #fff;
+    color: var(--theme-text, #fff);
     font-weight: 500;
     position: relative;
 }
@@ -118,8 +118,8 @@
 }
 
 #page-chat .profile-e2ee-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid #222;
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 3%, transparent);
+    border: 1px solid var(--theme-border, #222);
     border-radius: 14px;
     margin-top: 0;
     padding: 14px 14px 12px;
@@ -160,7 +160,7 @@
 #page-chat.is-viewport-app-stack .profile-nav-btn.is-active,
 #page-chat.is-viewport-profile-stack .profile-nav-btn.is-active {
     background: transparent;
-    color: #e8e8e8;
+    color: var(--theme-text, #e8e8e8);
     font-weight: 500;
 }
 
@@ -173,8 +173,8 @@
 #page-chat.is-viewport-app-stack .profile-nav-btn.is-active:focus-visible,
 #page-chat.is-viewport-profile-stack .profile-nav-btn.is-active:hover,
 #page-chat.is-viewport-profile-stack .profile-nav-btn.is-active:focus-visible {
-    background: rgba(255, 255, 255, 0.04);
-    color: #f4f4f5;
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 4%, transparent);
+    color: var(--theme-text, #f4f4f5);
 }
 
 @media (hover: none) {
@@ -183,7 +183,7 @@
     #page-chat.is-viewport-profile-stack .profile-nav-btn:hover,
     #page-chat.is-viewport-profile-stack .profile-nav-btn.is-active:hover {
         background: transparent;
-        color: #e8e8e8;
+        color: var(--theme-text, #e8e8e8);
     }
 
     #page-chat.is-viewport-app-stack .profile-nav-btn--logout:hover,
@@ -201,7 +201,7 @@
 }
 
 #page-chat .profile-e2ee-kicker {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.06em;
@@ -228,7 +228,7 @@
 }
 
 #page-chat .profile-e2ee-copy {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 13px;
     font-weight: 400;
     letter-spacing: 0.01em;
@@ -239,7 +239,7 @@
 #page-chat .profile-e2ee-link {
     background: none;
     border: none;
-    color: #cfcfcf;
+    color: var(--theme-text-muted, #cfcfcf);
     cursor: pointer;
     font-family: var(--f-ui);
     font-size: 12px;
@@ -249,7 +249,7 @@
 }
 
 #page-chat .profile-e2ee-link:hover {
-    color: #fff;
+    color: var(--theme-text, #fff);
 }
 
 #page-chat .profile-workspace .profile-main {
@@ -292,7 +292,7 @@
 }
 
 #page-chat .profile-workspace .profile-head-sub {
-    color: #7a7a7a;
+    color: var(--theme-text-muted, #7a7a7a);
     font-size: 12px;
     font-weight: 400;
     letter-spacing: 0.005em;
@@ -372,7 +372,7 @@
 /* Small screens: nested full-screen profile levels (nav ↔ section) */
 #page-chat .profile-nav-toolbar {
     align-items: center;
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid var(--theme-border, #1a1a1a);
     display: none;
     flex-shrink: 0;
     gap: 12px;
@@ -386,7 +386,7 @@
 }
 
 #page-chat .profile-nav-toolbar-title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-family: var(--f-ui);
     font-size: 16px;
     font-weight: 500;
@@ -395,7 +395,7 @@
 }
 
 #page-chat .profile-nav-toolbar-sub {
-    color: #7a7a7a;
+    color: var(--theme-text-muted, #7a7a7a);
     font-size: 13px;
     margin: 4px 0 0;
 }
@@ -488,7 +488,7 @@
 }
 
 #page-chat.is-viewport-profile-stack .profile-nav {
-    background: #000;
+    background: var(--theme-section, #000);
     border-right: none;
     box-shadow: none;
     gap: 2px;
@@ -505,7 +505,7 @@
 
 #page-chat.is-viewport-profile-stack .profile-nav-btn {
     border-radius: 14px;
-    color: #e8e8e8;
+    color: var(--theme-text, #e8e8e8);
     gap: 14px;
     min-height: 52px;
     padding: 14px 14px;
@@ -543,7 +543,7 @@
 }
 
 #page-chat.is-viewport-profile-stack .profile-workspace .profile-main {
-    background: #000;
+    background: var(--theme-section, #000);
     display: flex;
     flex-direction: column;
     max-width: none;
@@ -652,7 +652,7 @@
 }
 
 #page-chat .profile-workspace .profile-avatar-rings {
-    color: #fff;
+    color: var(--theme-text, #fff);
     height: 100%;
     left: 0;
     pointer-events: none;
@@ -674,7 +674,7 @@
 
 #page-chat .profile-workspace .profile-avatar-zone:hover,
 #page-chat .profile-workspace .profile-avatar-zone.is-dragover {
-    border-color: #444;
+    border-color: var(--theme-border, #444);
     box-shadow: none;
 }
 
@@ -703,7 +703,7 @@
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 10px;
     box-shadow: none;
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     cursor: pointer;
     display: inline-flex;
     flex: 1;
@@ -718,8 +718,8 @@
 }
 
 #page-chat .profile-workspace .profile-change-avatar:hover {
-    background: color-mix(in srgb, #fff 6%, transparent);
-    border-color: color-mix(in srgb, #fff 10%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #fff) 10%, transparent);
 }
 
 #page-chat .profile-workspace .profile-change-avatar .ui-icon {
@@ -735,7 +735,7 @@
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 10px;
     box-shadow: none;
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     cursor: pointer;
     display: inline-flex;
     flex-shrink: 0;
@@ -752,13 +752,13 @@
 }
 
 #page-chat .profile-workspace .profile-remove-avatar:hover {
-    background: color-mix(in srgb, #fff 6%, transparent);
-    border-color: color-mix(in srgb, #fff 10%, transparent);
-    color: #f4f4f5;
+    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #fff) 10%, transparent);
+    color: var(--theme-text, #f4f4f5);
 }
 
 #page-chat .profile-workspace .profile-avatar-hint {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-size: 12px;
     font-weight: 400;
     letter-spacing: 0.01em;
@@ -776,7 +776,7 @@
 }
 
 #page-chat .profile-workspace .profile-about-icon {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     flex-shrink: 0;
     height: 16px;
     margin-top: 1px;
@@ -784,7 +784,7 @@
 }
 
 #page-chat .profile-workspace .profile-about-title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.005em;
@@ -792,7 +792,7 @@
 }
 
 #page-chat .profile-workspace .profile-about-text {
-    color: #7a7a7a;
+    color: var(--theme-text-muted, #7a7a7a);
     font-size: 12px;
     font-weight: 400;
     line-height: 1.5;
@@ -822,7 +822,7 @@
 }
 
 #page-chat .profile-workspace .profile-field label {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.06em;
@@ -839,7 +839,7 @@
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 10px;
     box-shadow: none;
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 14px;
     font-weight: 400;
     letter-spacing: 0.005em;
@@ -855,8 +855,8 @@
 #page-chat .profile-workspace .profile-field input:focus,
 #page-chat .profile-workspace .profile-field textarea:focus,
 #page-chat .profile-workspace .profile-status-control:focus-within {
-    background: color-mix(in srgb, #fff 7%, transparent);
-    border-color: color-mix(in srgb, #fff 11%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 7%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #fff) 11%, transparent);
     box-shadow: none;
     outline: none;
 }
@@ -890,7 +890,7 @@
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 8px;
     box-shadow: none;
-    color: #cfcfcf;
+    color: var(--theme-text-muted, #cfcfcf);
     cursor: pointer;
     flex-shrink: 0;
     font-family: var(--f-ui);
@@ -901,12 +901,12 @@
 }
 
 #page-chat .profile-workspace .profile-field-action:hover:not(:disabled) {
-    background: color-mix(in srgb, #fff 6%, transparent);
-    color: #fff;
+    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
+    color: var(--theme-text, #fff);
 }
 
 #page-chat .profile-workspace .profile-field-hint {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-size: 12px;
     line-height: 1.4;
     margin: 6px 0 0;
@@ -953,7 +953,7 @@
     appearance: none;
     background: transparent;
     border: 0;
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     color-scheme: dark;
     cursor: pointer;
     flex: 1;
@@ -965,7 +965,7 @@
 }
 
 #page-chat .profile-workspace .profile-status-chevron {
-    color: #7a7a7a;
+    color: var(--theme-text-muted, #7a7a7a);
     height: 14px;
     pointer-events: none;
     position: absolute;
@@ -981,7 +981,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-kicker {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.06em;
@@ -1016,8 +1016,8 @@
 
 #page-chat .profile-workspace .profile-preview-bg__grid {
     background-image:
-        linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+        linear-gradient(to right, color-mix(in srgb, var(--theme-text, #ffffff) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in srgb, var(--theme-text, #ffffff) 7%, transparent) 1px, transparent 1px);
     background-size: 40px 40px;
     inset: 0;
     mask-image: radial-gradient(ellipse at 50% 42%, #000 22%, transparent 82%);
@@ -1083,8 +1083,8 @@
 #page-chat .profile-workspace .profile-preview-mini::before {
     background: linear-gradient(
         160deg,
-        rgba(255, 255, 255, 0.07) 0%,
-        rgba(255, 255, 255, 0.02) 28%,
+        color-mix(in srgb, var(--theme-text, #ffffff) 7%, transparent) 0%,
+        color-mix(in srgb, var(--theme-text, #ffffff) 2%, transparent) 28%,
         transparent 52%
     );
     border-radius: inherit;
@@ -1119,7 +1119,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-avatar #uiProfilePreviewInitials {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 36px;
     font-weight: 500;
     letter-spacing: 0;
@@ -1127,7 +1127,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-name {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 18px;
     font-weight: 500;
     letter-spacing: -0.02em;
@@ -1135,14 +1135,14 @@
 }
 
 #page-chat .profile-workspace .profile-preview-handle {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 13px;
     font-weight: 400;
     margin: 4px 0 12px;
 }
 
 #page-chat .profile-workspace .profile-preview-bio {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 13px;
     font-weight: 400;
     line-height: 1.5;
@@ -1154,7 +1154,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-bio.is-placeholder {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-style: normal;
 }
 
@@ -1185,7 +1185,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-status.is-invisible {
-    color: #71717a;
+    color: var(--theme-text-muted, #71717a);
 }
 
 #page-chat .profile-workspace .profile-preview-status.is-invisible .profile-preview-status-dot {
@@ -1193,7 +1193,7 @@
 }
 
 #page-chat .profile-workspace .profile-preview-note {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-size: 12px;
     margin: 12px 0 0;
     text-align: center;
@@ -1206,7 +1206,7 @@
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 8px;
     box-shadow: none;
-    color: #cfcfcf;
+    color: var(--theme-text-muted, #cfcfcf);
     cursor: pointer;
     font-family: var(--f-ui);
     font-size: 12px;
@@ -1216,12 +1216,12 @@
 }
 
 #page-chat .profile-workspace .profile-copy-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, #fff 6%, transparent);
-    color: #fff;
+    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
+    color: var(--theme-text, #fff);
 }
 
 #page-chat .profile-workspace .profile-foot {
-    border-top: 1px solid #1a1a1a;
+    border-top: 1px solid var(--theme-border, #1a1a1a);
     justify-content: flex-end;
     padding: 16px 36px 24px;
 }
@@ -1237,7 +1237,7 @@
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 12px;
     box-shadow: none;
-    color: #fff;
+    color: var(--theme-text, #fff);
     font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.01em;
@@ -1245,8 +1245,8 @@
 }
 
 #page-chat .profile-workspace .profile-btn--primary:hover {
-    background: color-mix(in srgb, #fff 6%, transparent);
-    border-color: color-mix(in srgb, #fff 10%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #fff) 10%, transparent);
 }
 
 #page-chat .profile-workspace .profile-id-label,
@@ -1298,7 +1298,7 @@
 }
 
 #page-chat .profile-workspace .profile-sec-kicker {
-    color: #7a7a7a;
+    color: var(--theme-text-muted, #7a7a7a);
     font-family: var(--f-display);
     font-size: 11px;
     font-weight: 500;
@@ -1333,7 +1333,7 @@
 }
 
 #page-chat .profile-workspace .profile-sec-split__pane + .profile-sec-split__pane {
-    border-left: 1px solid #1d1d1d;
+    border-left: 1px solid var(--theme-border, #1d1d1d);
 }
 
 #page-chat .profile-workspace .profile-sec-card {
@@ -1356,18 +1356,18 @@
 
 #page-chat .profile-workspace button.profile-sec-card:hover,
 #page-chat .profile-workspace a.profile-sec-card:hover {
-    background: color-mix(in srgb, #fff 7%, transparent);
-    border-color: color-mix(in srgb, #fff 10%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 7%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #fff) 10%, transparent);
 }
 
 #page-chat .profile-workspace .profile-sec-icon {
     align-items: center;
-    background: color-mix(in srgb, #fff 5%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 5%, transparent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 10px;
-    color: #cfcfcf;
+    color: var(--theme-text-muted, #cfcfcf);
     display: inline-flex;
     flex-shrink: 0;
     height: 40px;
@@ -1409,7 +1409,7 @@
 }
 
 #page-chat .profile-workspace .profile-sec-title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 0.005em;
@@ -1421,7 +1421,7 @@
 }
 
 #page-chat .profile-workspace .profile-sec-text {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 12px;
     font-weight: 400;
     line-height: 1.45;
@@ -1429,7 +1429,7 @@
 }
 
 #page-chat .profile-workspace .profile-sec-meta {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-size: 12px;
     margin: 2px 0 0;
 }
@@ -1443,13 +1443,13 @@
 }
 
 #page-chat .profile-workspace .profile-sec-meta-label {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-size: 11px;
     letter-spacing: 0.02em;
 }
 
 #page-chat .profile-workspace .profile-sec-meta-value {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 13px;
     font-weight: 500;
 }
@@ -1480,13 +1480,13 @@
 }
 
 #page-chat .profile-workspace .profile-sec-key-label {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 13px;
     font-weight: 500;
 }
 
 #page-chat .profile-workspace .profile-sec-key-value {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-family: var(--f-mono);
     font-size: 12px;
     overflow: hidden;
@@ -1495,7 +1495,7 @@
 }
 
 #page-chat .profile-workspace .profile-sec-chevron {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     flex-shrink: 0;
     height: 16px;
     transition: transform 0.15s ease;
@@ -1526,13 +1526,13 @@
 }
 
 #page-chat .profile-workspace .profile-sec-fingerprint .profile-fingerprint {
-    background: color-mix(in srgb, #fff 3%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 3%, transparent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 10px;
     box-shadow: none;
-    color: #cfcfcf;
+    color: var(--theme-text-muted, #cfcfcf);
     font-family: var(--f-mono);
     font-size: 12px;
     letter-spacing: 0.04em;
@@ -1554,7 +1554,7 @@
 
     #page-chat .profile-workspace .profile-sec-split__pane + .profile-sec-split__pane {
         border-left: 0;
-        border-top: 1px solid #1d1d1d;
+        border-top: 1px solid var(--theme-border, #1d1d1d);
     }
 
     #page-chat .profile-workspace .profile-sec-keys-grid {
@@ -1611,7 +1611,7 @@
 }
 
 #page-chat .profile-workspace .profile-privacy-row + .profile-privacy-row {
-    border-top: 1px solid color-mix(in srgb, #fff 3%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--theme-tint, #fff) 3%, transparent);
 }
 
 #page-chat .profile-workspace .profile-privacy-copy {
@@ -1623,14 +1623,14 @@
 }
 
 #page-chat .profile-workspace .profile-privacy-label {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 0.005em;
 }
 
 #page-chat .profile-workspace .profile-privacy-hint {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 12px;
     font-weight: 400;
     line-height: 1.45;
@@ -1654,7 +1654,7 @@
 }
 
 #page-chat .profile-workspace .profile-switch__track {
-    background: color-mix(in srgb, #fff 10%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
     border: 1px solid var(--control-glass-stroke);
     border-radius: 999px;
     display: block;
@@ -1665,7 +1665,7 @@
 }
 
 #page-chat .profile-workspace .profile-switch__track::after {
-    background: #f4f4f5;
+    background: var(--theme-text, #f4f4f5);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
     content: "";
@@ -1716,7 +1716,7 @@
 }
 
 #page-chat .profile-workspace .profile-data-kicker {
-    color: #7a7a7a;
+    color: var(--theme-text-muted, #7a7a7a);
     font-family: var(--f-mono);
     font-size: 11px;
     font-weight: 500;
@@ -1761,7 +1761,7 @@
 }
 
 #page-chat .profile-workspace .profile-data-donut-track {
-    stroke: #1f1f1f;
+    stroke: var(--theme-bg, #1f1f1f);
 }
 
 #page-chat .profile-workspace .profile-data-donut-seg {
@@ -1777,11 +1777,11 @@
 }
 
 #page-chat .profile-workspace .profile-data-donut-seg.is-keys {
-    stroke: #a1a1aa;
+    stroke: var(--theme-text-muted, #a1a1aa);
 }
 
 #page-chat .profile-workspace .profile-data-donut-seg.is-cache {
-    stroke: #3f3f46;
+    stroke: var(--theme-text-muted, #3f3f46);
 }
 
 #page-chat .profile-workspace .profile-data-donut-label {
@@ -1796,7 +1796,7 @@
 }
 
 #page-chat .profile-workspace .profile-data-donut-value {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 22px;
     font-weight: 600;
     letter-spacing: -0.03em;
@@ -1804,7 +1804,7 @@
 }
 
 #page-chat .profile-workspace .profile-data-donut-caption {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 12px;
     font-weight: 400;
     margin-top: 4px;
@@ -1846,13 +1846,13 @@
 }
 
 #page-chat .profile-workspace .profile-data-legend-label {
-    color: #cfcfcf;
+    color: var(--theme-text-muted, #cfcfcf);
     font-size: 14px;
     font-weight: 400;
 }
 
 #page-chat .profile-workspace .profile-data-legend-value {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 14px;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
@@ -1883,21 +1883,21 @@
 }
 
 #page-chat .profile-workspace .profile-data-action + .profile-data-action {
-    border-top: 1px solid color-mix(in srgb, #fff 3%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--theme-tint, #fff) 3%, transparent);
 }
 
 #page-chat .profile-workspace .profile-data-action:hover {
-    background: color-mix(in srgb, #fff 5%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 5%, transparent);
 }
 
 #page-chat .profile-workspace .profile-data-action-icon {
     align-items: center;
-    background: color-mix(in srgb, #fff 5%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 5%, transparent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 10px;
-    color: #cfcfcf;
+    color: var(--theme-text-muted, #cfcfcf);
     display: inline-flex;
     flex-shrink: 0;
     height: 40px;
@@ -1919,27 +1919,27 @@
 }
 
 #page-chat .profile-workspace .profile-data-action-title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 14px;
     font-weight: 500;
 }
 
 #page-chat .profile-workspace .profile-data-action-hint {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 12px;
     font-weight: 400;
     line-height: 1.4;
 }
 
 #page-chat .profile-workspace .profile-data-action-meta {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     flex-shrink: 0;
     font-size: 13px;
     font-variant-numeric: tabular-nums;
 }
 
 #page-chat .profile-workspace .profile-data-action-chevron {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     flex-shrink: 0;
     height: 16px;
     width: 16px;
@@ -2231,7 +2231,7 @@
     align-items: center;
     background: linear-gradient(
         145deg,
-        color-mix(in srgb, var(--accent) 88%, #fff) 0%,
+        color-mix(in srgb, var(--accent) 88%, var(--theme-text, #fff)) 0%,
         var(--accent-strong, var(--accent)) 100%
     );
     border: 1.5px solid color-mix(in srgb, var(--accent) 30%, transparent);
@@ -2258,7 +2258,7 @@
 
 .profile-preview-avatar span,
 .profile-avatar-initials {
-    color: #fff;
+    color: var(--theme-text, #fff);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--track-snug);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
@@ -2353,7 +2353,7 @@
     align-items: center;
     background: color-mix(in srgb, var(--text) 42%, transparent);
     border-radius: 50%;
-    color: #fff;
+    color: var(--theme-text, #fff);
     display: flex;
     inset: 0;
     justify-content: center;
@@ -2696,14 +2696,14 @@
     background: var(--accent);
     border-color: transparent;
     box-shadow: 0 2px 8px var(--accent-20);
-    color: #fff;
+    color: var(--theme-text, #fff);
     font-size: var(--text-meta);
     font-weight: var(--weight-semibold);
     padding: 8px 16px;
 }
 
 .profile-btn--primary:hover {
-    background: var(--accent-strong, color-mix(in srgb, var(--accent) 85%, #000));
+    background: var(--accent-strong, color-mix(in srgb, var(--accent) 85%, var(--theme-section, #000)));
 }
 
 .profile-btn--ghost {
@@ -2857,314 +2857,11 @@
 }
 
 #page-chat .profile-workspace .profile-appearance-lead {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 13px;
     line-height: 1.5;
     margin: -4px 0 0;
     max-width: 54ch;
-}
-
-#page-chat .profile-workspace .appearance-preview {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-}
-
-#page-chat .profile-workspace .appearance-preview__stage {
-    background: var(--settings-inner-fill);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: 1px solid var(--settings-inner-stroke);
-    border-radius: 18px;
-    box-shadow: none;
-    isolation: isolate;
-    min-height: 320px;
-    overflow: hidden;
-    position: relative;
-}
-
-#page-chat .profile-workspace .appearance-preview__wallpaper,
-#page-chat .profile-workspace .appearance-preview__dim {
-    inset: 0;
-    pointer-events: none;
-    position: absolute;
-}
-
-#page-chat .profile-workspace .appearance-preview__wallpaper {
-    background-color: #000;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    transition: background 0.35s ease;
-    z-index: 0;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="mist"] .appearance-preview__wallpaper {
-    background: #10131a;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="ember"] .appearance-preview__wallpaper {
-    background: #120e0c;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="aurora"] .appearance-preview__wallpaper {
-    background: #0b1118;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="tide"] .appearance-preview__wallpaper {
-    background: #071018;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="sage"] .appearance-preview__wallpaper {
-    background: #0c1210;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="cobalt"] .appearance-preview__wallpaper {
-    background: #080c16;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="rose"] .appearance-preview__wallpaper {
-    background: #120c10;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="dusk"] .appearance-preview__wallpaper {
-    background: #0e0c16;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="graphite"] .appearance-preview__wallpaper {
-    background: #101114;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-wallpaper="void"] .appearance-preview__wallpaper {
-    background: #000;
-}
-
-#page-chat .profile-workspace .appearance-preview__dim {
-    background: #000;
-    opacity: calc(var(--preview-dim, 80) / 100);
-    transition: opacity 0.28s ease;
-    z-index: 1;
-}
-
-#page-chat .profile-workspace .appearance-preview__shell {
-    display: grid;
-    gap: 8px;
-    grid-template-columns: 28px minmax(88px, 132px) minmax(0, 1fr);
-    inset: 0;
-    padding: 14px;
-    position: absolute;
-    z-index: 2;
-}
-
-#page-chat .profile-workspace .appearance-preview__rail,
-#page-chat .profile-workspace .appearance-preview__left,
-#page-chat .profile-workspace .appearance-preview__header,
-#page-chat .profile-workspace .appearance-preview__composer,
-#page-chat .profile-workspace .appearance-preview__bubble,
-#page-chat .profile-workspace .appearance-preview__search,
-#page-chat .profile-workspace .appearance-preview__chat-row {
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    transition:
-        background 0.28s ease,
-        border-color 0.28s ease,
-        opacity 0.28s ease;
-}
-
-#page-chat .profile-workspace .appearance-preview__rail,
-#page-chat .profile-workspace .appearance-preview__left,
-#page-chat .profile-workspace .appearance-preview__header,
-#page-chat .profile-workspace .appearance-preview__composer {
-    background: color-mix(in srgb, #111 calc(12% + var(--preview-glass, 50) * 0.48%), transparent);
-}
-
-#page-chat .profile-workspace .appearance-preview__rail {
-    align-items: center;
-    border: 1px solid color-mix(in srgb, #fff 5%, transparent);
-    border-radius: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 0;
-}
-
-#page-chat .profile-workspace .appearance-preview__rail-dot {
-    background: color-mix(in srgb, #fff 18%, transparent);
-    border-radius: 50%;
-    height: 8px;
-    width: 8px;
-}
-
-#page-chat .profile-workspace .appearance-preview__left {
-    border: 1px solid color-mix(in srgb, #fff 5%, transparent);
-    border-radius: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-    overflow: hidden;
-    padding: 10px;
-}
-
-#page-chat .profile-workspace .appearance-preview__search {
-    background: color-mix(in srgb, #1a1a1a 34%, transparent);
-    border: 1px solid color-mix(in srgb, #fff 4%, transparent);
-    border-radius: 999px;
-    height: 18px;
-}
-
-#page-chat .profile-workspace .appearance-preview__chat-row {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: 10px;
-    display: flex;
-    gap: 8px;
-    padding: 6px;
-}
-
-#page-chat .profile-workspace .appearance-preview__chat-row.is-active {
-    background: color-mix(in srgb, #fff 6%, transparent);
-}
-
-#page-chat .profile-workspace .appearance-preview__avatar,
-#page-chat .profile-workspace .appearance-preview__header-avatar {
-    background: linear-gradient(145deg, #3f3f46, #18181b);
-    border-radius: 50%;
-    flex-shrink: 0;
-    height: 22px;
-    width: 22px;
-}
-
-#page-chat .profile-workspace .appearance-preview__chat-lines {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-
-#page-chat .profile-workspace .appearance-preview__line {
-    background: color-mix(in srgb, #fff 14%, transparent);
-    border-radius: 999px;
-    display: block;
-    height: 4px;
-}
-
-#page-chat .profile-workspace .appearance-preview__line.is-name {
-    width: 58%;
-}
-
-#page-chat .profile-workspace .appearance-preview__line.is-snip {
-    opacity: 0.55;
-    width: 78%;
-}
-
-#page-chat .profile-workspace .appearance-preview__main {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-}
-
-#page-chat .profile-workspace .appearance-preview__header {
-    align-items: center;
-    border: 1px solid color-mix(in srgb, #fff 5%, transparent);
-    border-radius: 999px;
-    display: flex;
-    gap: 8px;
-    padding: 7px 10px;
-}
-
-#page-chat .profile-workspace .appearance-preview__header-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-}
-
-#page-chat .profile-workspace .appearance-preview__header-name {
-    color: #f4f4f5;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.2;
-}
-
-#page-chat .profile-workspace .appearance-preview__header-meta {
-    color: color-mix(in srgb, #fff 45%, transparent);
-    font-size: 9px;
-    letter-spacing: 0.02em;
-}
-
-#page-chat .profile-workspace .appearance-preview__thread {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 8px;
-    justify-content: flex-end;
-    min-height: 0;
-    padding: 4px 2px 0;
-}
-
-#page-chat .profile-workspace .appearance-preview__bubble {
-    border: 1px solid color-mix(in srgb, #fff 5%, transparent);
-    border-radius: 14px;
-    color: #f4f4f5;
-    font-size: 11px;
-    line-height: 1.35;
-    max-width: 78%;
-    padding: 8px 10px;
-    width: fit-content;
-}
-
-#page-chat .profile-workspace .appearance-preview__bubble.is-other {
-    align-self: flex-start;
-    background: color-mix(in srgb, #1a1a1a calc(20% + var(--preview-glass, 50) * 0.55%), transparent);
-    border-bottom-left-radius: 5px;
-}
-
-#page-chat .profile-workspace .appearance-preview__bubble.is-own {
-    align-self: flex-end;
-    background: color-mix(in srgb, #3f3f46 calc(25% + var(--preview-glass, 50) * 0.55%), transparent);
-    border-bottom-right-radius: 5px;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-density="compact"] .appearance-preview__thread {
-    gap: 5px;
-}
-
-#page-chat .profile-workspace .appearance-preview[data-appearance-density="compact"] .appearance-preview__bubble {
-    font-size: 10px;
-    padding: 6px 8px;
-}
-
-#page-chat .profile-workspace .appearance-preview__composer {
-    align-items: center;
-    border: 1px solid color-mix(in srgb, #fff 5%, transparent);
-    border-radius: 999px;
-    display: flex;
-    gap: 8px;
-    justify-content: space-between;
-    padding: 7px 8px 7px 12px;
-}
-
-#page-chat .profile-workspace .appearance-preview__composer-field {
-    color: color-mix(in srgb, #fff 38%, transparent);
-    font-size: 11px;
-}
-
-#page-chat .profile-workspace .appearance-preview__composer-send {
-    background: color-mix(in srgb, #fff 88%, transparent);
-    border-radius: 50%;
-    height: 18px;
-    width: 18px;
-}
-
-#page-chat .profile-workspace .appearance-preview__note {
-    color: #7a7a7a;
-    font-size: 12px;
-    margin: 0;
 }
 
 #page-chat .profile-workspace .appearance-option-card {
@@ -3184,32 +2881,9 @@
     margin-top: 10px;
 }
 
-#page-chat .profile-workspace .appearance-level-row {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-#page-chat .profile-workspace .appearance-level-row > .appearance-option-card {
-    margin-top: 0;
-    min-width: 0;
-}
-
 #page-chat .profile-workspace .appearance-option-card--level {
     gap: 0;
     padding: 12px 14px 14px;
-}
-
-#page-chat .profile-workspace .appearance-option-card--level nexa-level-slider {
-    display: block;
-    width: 100%;
-    max-width: none;
-}
-
-@media (max-width: 720px) {
-    #page-chat .profile-workspace .appearance-level-row {
-        grid-template-columns: 1fr;
-    }
 }
 
 #page-chat .profile-workspace .appearance-option-head {
@@ -3228,155 +2902,17 @@
 }
 
 #page-chat .profile-workspace .appearance-option-title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 14px;
     font-weight: 500;
     margin: 0;
 }
 
 #page-chat .profile-workspace .appearance-option-hint {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 12px;
     line-height: 1.45;
     margin: 0;
-}
-
-#page-chat .profile-workspace .appearance-option-badge {
-    background: color-mix(in srgb, #fff 8%, transparent);
-    border: 1px solid color-mix(in srgb, #fff 6%, transparent);
-    border-radius: 999px;
-    color: #d4d4d8;
-    flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    padding: 4px 10px;
-}
-
-#page-chat .profile-workspace .appearance-slider-value,
-.appearance-slider-value {
-    color: #f4f4f5;
-    flex-shrink: 0;
-    font-family: var(--f-mono);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    min-width: 3.2em;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-#page-chat .profile-workspace .appearance-slider,
-.appearance-slider {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-    position: relative;
-    width: 100%;
-}
-
-#page-chat .profile-workspace .appearance-slider__ticks,
-.appearance-slider__ticks {
-    display: flex;
-    justify-content: space-between;
-    left: 7px;
-    pointer-events: none;
-    position: absolute;
-    right: 7px;
-    top: 11px;
-    z-index: 0;
-}
-
-#page-chat .profile-workspace .appearance-slider__ticks span,
-.appearance-slider__ticks span {
-    background: color-mix(in srgb, #fff 22%, transparent);
-    border-radius: 1px;
-    display: block;
-    height: 8px;
-    width: 1.5px;
-}
-
-#page-chat .profile-workspace .appearance-slider__input,
-.appearance-slider__input {
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    cursor: pointer;
-    display: block;
-    height: 28px;
-    margin: 0;
-    position: relative;
-    width: 100%;
-    z-index: 1;
-}
-
-#page-chat .profile-workspace .appearance-slider__input:focus-visible,
-.appearance-slider__input:focus-visible {
-    outline: none;
-}
-
-#page-chat .profile-workspace .appearance-slider__input::-webkit-slider-runnable-track,
-.appearance-slider__input::-webkit-slider-runnable-track {
-    background: color-mix(in srgb, #fff 8%, transparent);
-    border: 1px solid color-mix(in srgb, #fff 6%, transparent);
-    border-radius: 999px;
-    height: 6px;
-}
-
-#page-chat .profile-workspace .appearance-slider__input::-moz-range-track,
-.appearance-slider__input::-moz-range-track {
-    background: color-mix(in srgb, #fff 8%, transparent);
-    border: 1px solid color-mix(in srgb, #fff 6%, transparent);
-    border-radius: 999px;
-    height: 6px;
-}
-
-#page-chat .profile-workspace .appearance-slider__input::-webkit-slider-thumb,
-.appearance-slider__input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    background: #f4f4f5;
-    border: 2px solid #0a0a0a;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px color-mix(in srgb, #fff 18%, transparent);
-    height: 18px;
-    margin-top: -7px;
-    transition: transform 0.12s ease;
-    width: 18px;
-}
-
-#page-chat .profile-workspace .appearance-slider__input::-moz-range-thumb,
-.appearance-slider__input::-moz-range-thumb {
-    background: #f4f4f5;
-    border: 2px solid #0a0a0a;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px color-mix(in srgb, #fff 18%, transparent);
-    height: 18px;
-    width: 18px;
-}
-
-#page-chat .profile-workspace .appearance-slider__input:hover::-webkit-slider-thumb,
-.appearance-slider__input:hover::-webkit-slider-thumb,
-#page-chat .profile-workspace .appearance-slider__input:active::-webkit-slider-thumb,
-.appearance-slider__input:active::-webkit-slider-thumb {
-    transform: scale(1.08);
-}
-
-#page-chat .profile-workspace .appearance-slider__input:focus-visible::-webkit-slider-thumb,
-.appearance-slider__input:focus-visible::-webkit-slider-thumb,
-#page-chat .profile-workspace .appearance-slider__input:focus-visible::-moz-range-thumb,
-.appearance-slider__input:focus-visible::-moz-range-thumb {
-    box-shadow: 0 0 0 3px color-mix(in srgb, #7dd3fc 35%, transparent);
-}
-
-#page-chat .profile-workspace .appearance-slider__ends,
-.appearance-slider__ends {
-    color: #7a7a7a;
-    display: flex;
-    font-size: 11px;
-    justify-content: space-between;
-    letter-spacing: 0.02em;
 }
 
 #page-chat .profile-workspace .appearance-chip-row {
@@ -3392,7 +2928,7 @@
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 999px;
     box-shadow: none;
-    color: #a1a1aa;
+    color: var(--theme-text-muted, #a1a1aa);
     cursor: pointer;
     font-family: var(--f-ui);
     font-size: 12.5px;
@@ -3406,179 +2942,15 @@
 
 #page-chat .profile-workspace .appearance-chip:hover,
 #page-chat .profile-workspace .appearance-chip:focus-visible {
-    background: color-mix(in srgb, #fff 7%, transparent);
-    color: #f4f4f5;
+    background: color-mix(in srgb, var(--theme-text, #fff) 7%, transparent);
+    color: var(--theme-text, #f4f4f5);
     outline: none;
 }
 
 #page-chat .profile-workspace .appearance-chip.is-active {
-    background: color-mix(in srgb, #fff 10%, transparent);
-    border-color: color-mix(in srgb, #fff 12%, transparent);
-    color: #fff;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-grid {
-    display: flex;
-    gap: 10px;
-    margin: 0 -4px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    padding: 2px 4px 10px;
-    scroll-padding-inline: 4px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-color: color-mix(in srgb, #fff 18%, transparent) transparent;
-    scrollbar-width: thin;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-grid::-webkit-scrollbar {
-    height: 6px;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-grid::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, #fff 16%, transparent);
-    border-radius: 999px;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card {
-    align-items: stretch;
-    background: var(--settings-inner-fill);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: 1px solid var(--settings-inner-stroke);
-    border-radius: 14px;
-    box-shadow: none;
-    cursor: pointer;
-    display: flex;
-    flex: 0 0 132px;
-    flex-direction: column;
-    gap: 10px;
-    overflow: hidden;
-    padding: 8px;
-    scroll-snap-align: start;
-    text-align: left;
-    transition:
-        border-color 0.18s ease,
-        transform 0.18s ease,
-        background 0.18s ease;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card:hover:not(:disabled),
-#page-chat .profile-workspace .appearance-wallpaper-card:focus-visible:not(:disabled) {
-    border-color: color-mix(in srgb, #fff 12%, transparent);
-    outline: none;
-    transform: translateY(-1px);
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card.is-active {
-    border-color: color-mix(in srgb, #7dd3fc 55%, transparent);
-    box-shadow:
-        var(--glass-inset-highlight),
-        0 0 0 1px color-mix(in srgb, #7dd3fc 25%, transparent);
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch {
-    aspect-ratio: 16 / 10;
-    background: #111;
-    background-position: center;
-    background-size: cover;
-    border-radius: 10px;
-    display: block;
-    width: 100%;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--void {
-    background: #000000;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 4%, transparent);
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--mist {
-    background: #10131a;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--ember {
-    background: #120e0c;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--aurora {
-    background: #0b1118;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--tide {
-    background: #071018;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--sage {
-    background: #0c1210;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--cobalt {
-    background: #080c16;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--rose {
-    background: #120c10;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--dusk {
-    background: #0e0c16;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--graphite {
-    background: #101114;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--upload {
-    align-items: center;
-    background: color-mix(in srgb, #fff 4%, transparent);
-    border: 1px dashed color-mix(in srgb, #fff 12%, transparent);
-    color: #a1a1aa;
-    display: flex;
-    justify-content: center;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__swatch--upload .ui-icon {
-    height: 18px;
-    width: 18px;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 0 2px 2px;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__label {
-    color: #f4f4f5;
-    font-size: 13px;
-    font-weight: 500;
-}
-
-#page-chat .profile-workspace .appearance-wallpaper-card__sub {
-    color: #8a8a8a;
-    font-size: 11px;
-}
-
-@media (max-width: 720px) {
-    #page-chat .profile-workspace .appearance-preview__shell {
-        grid-template-columns: 22px minmax(0, 1fr);
-        grid-template-rows: auto 1fr;
-    }
-
-    #page-chat .profile-workspace .appearance-preview__left {
-        display: none;
-    }
-
-    #page-chat .profile-workspace .appearance-preview__stage {
-        min-height: 280px;
-    }
+    background: color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #fff) 12%, transparent);
+    color: var(--theme-text, #fff);
 }
 
 /* ── Identity (Profile) — header card · page header · rows card ──────────── */
@@ -3622,23 +2994,23 @@
 #page-chat .profile-workspace .ps-btn--ghost {
     background: var(--ps-field-bg);
     border: 1px solid var(--ps-line);
-    color: #d4d4d8;
+    color: var(--theme-text-muted, #d4d4d8);
 }
 
 #page-chat .profile-workspace .ps-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]) {
     background: #1a1d27;
-    border-color: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    border-color: color-mix(in srgb, var(--theme-tint, #ffffff) 14%, transparent);
+    color: var(--theme-text, #fff);
 }
 
 #page-chat .profile-workspace .ps-btn--primary {
-    background: #f4f4f5;
-    border: 1px solid #f4f4f5;
-    color: #0a0a0a;
+    background: var(--theme-text, #f4f4f5);
+    border: 1px solid var(--theme-tint, #f4f4f5);
+    color: var(--theme-bg, #0a0a0a);
 }
 
 #page-chat .profile-workspace .ps-btn--primary:hover:not(:disabled) {
-    background: #fff;
+    background: var(--theme-text, #fff);
 }
 
 #page-chat .profile-workspace .ps-btn:active:not(:disabled) {
@@ -3653,18 +3025,32 @@
 }
 
 #page-chat .profile-workspace .ps-btn:focus-visible {
-    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--theme-tint, #fff) 45%, transparent);
     outline-offset: 2px;
 }
 
 /* 1. Header card — ambient banner tinted by the avatar (js: syncHeaderAmbient).
-   Stack: dark card (#0d0f14) · progressive glow that starts at the avatar and
-   dissipates to the right (z 1) · a light even scrim so the name and handle
-   stay fully legible on top of it (z 1, above the glow) · content (z 2). */
+   The glow uses the avatar's own palette: --ps-ambient-glow (main colour),
+   -2 and -3 (next colours of the photo, or shades of the main one).
+   Stack: card base · glow that is richest at the RIGHT edge and fades out
+   toward the left (z 1) · a scrim that shields the text column on the left
+   and clears by the middle (z 1, above the glow) · content (z 2). */
 @property --ps-ambient-glow {
     syntax: '<color>';
     inherits: true;
     initial-value: #4a5578;
+}
+
+@property --ps-ambient-glow-2 {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #3d4a6b;
+}
+
+@property --ps-ambient-glow-3 {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #5a6690;
 }
 
 #page-chat .profile-workspace .ps-header {
@@ -3680,31 +3066,82 @@
     overflow: hidden;
     padding: 20px 24px;
     position: relative;
-    transition: --ps-ambient-glow 0.5s ease;
+    transition:
+        --ps-ambient-glow 0.5s ease,
+        --ps-ambient-glow-2 0.5s ease,
+        --ps-ambient-glow-3 0.5s ease;
 }
 
-/* Glow: strongest at the avatar, easing out across the card. Bleeds past the
-   edges so the blur doesn't leave a dark rim (the card clips it). */
+/* Glow: right → left, in the avatar's colours. The main colour pools at the
+   right edge; the second and third bloom above and below it, and a wash that
+   blends main → second fades out before the text column. Bleeds past the
+   edges so the blur doesn't leave a dark rim (the card clips it).
+   Strength is theme-dependent (--amb-*): a delicate glow on dark, a barely-
+   there pastel on the light themes (below). */
+#page-chat .profile-workspace .ps-header {
+    --amb-edge: 30%;
+    --amb-mid: 10%;
+    --amb-mid-at: 50%;
+    --amb-end: 90%;
+    --amb-pool: 30%;
+    --amb-bloom: 22%;
+}
+
+html[data-theme^="light"] #page-chat .profile-workspace .ps-header {
+    --amb-edge: 12%;
+    --amb-mid: 3%;
+    --amb-end: 85%;
+    --amb-pool: 12%;
+    --amb-bloom: 9%;
+}
+
 #page-chat .profile-workspace .ps-header::before {
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--ps-ambient-glow) 35%, transparent) 0%,
-        color-mix(in srgb, var(--ps-ambient-glow) 18%, transparent) 45%,
-        color-mix(in srgb, var(--ps-ambient-glow) 5%, transparent) 80%,
-        transparent 100%
-    );
+    background:
+        radial-gradient(
+            circle at 90% 50%,
+            color-mix(in srgb, var(--ps-ambient-glow) var(--amb-pool), transparent) 0%,
+            transparent 55%
+        ),
+        radial-gradient(
+            ellipse 45% 90% at 72% 0%,
+            color-mix(in srgb, var(--ps-ambient-glow-2) var(--amb-bloom), transparent) 0%,
+            transparent 100%
+        ),
+        radial-gradient(
+            ellipse 40% 90% at 80% 100%,
+            color-mix(in srgb, var(--ps-ambient-glow-3) var(--amb-bloom), transparent) 0%,
+            transparent 100%
+        ),
+        linear-gradient(
+            270deg,
+            color-mix(in srgb, var(--ps-ambient-glow) var(--amb-edge), transparent) 0%,
+            color-mix(in srgb, var(--ps-ambient-glow-2) var(--amb-mid), transparent) var(--amb-mid-at),
+            transparent var(--amb-end)
+        );
     content: "";
-    filter: blur(24px);
-    inset: -24px;
+    filter: blur(32px);
+    inset: -32px;
     pointer-events: none;
     position: absolute;
     z-index: 1;
 }
 
-/* Scrim: an even dark veil over the glow — keeps text contrast without
-   flattening the colour. */
+/* Light themes: multiply the pastel into the white card, so it tints rather
+   than washes the surface. */
+html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
+    mix-blend-mode: multiply;
+}
+
+/* Scrim: the card's own colour over the left (text) side only, clearing by
+   the middle — name, handle and bio stay fully legible while the right keeps
+   the full colour. */
 #page-chat .profile-workspace .ps-header::after {
-    background: color-mix(in srgb, var(--ps-banner-base) 30%, transparent);
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--ps-banner-base) 70%, transparent) 0%,
+        color-mix(in srgb, var(--ps-banner-base) 40%, transparent) 40%,
+        transparent 70%
+    );
     content: "";
     inset: 0;
     pointer-events: none;
@@ -3722,10 +3159,10 @@
 #page-chat .profile-workspace .ps-header__avatar.profile-avatar-zone {
     align-items: center;
     background: #151822;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid color-mix(in srgb, var(--theme-tint, #ffffff) 10%, transparent);
     border-radius: 50%;
     box-shadow: none;
-    color: #d4d4d8;
+    color: var(--theme-text-muted, #d4d4d8);
     cursor: pointer;
     display: flex;
     flex: none;
@@ -3755,7 +3192,7 @@
 
 #page-chat .profile-workspace .ps-header__name {
     align-items: center;
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     display: flex;
     font-size: 22px;
     font-weight: 700;
@@ -3782,7 +3219,7 @@
 }
 
 #page-chat .profile-workspace .ps-header__link {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     font-size: 13px;
     margin: 0;
     overflow: hidden;
@@ -3793,7 +3230,7 @@
 /* Bio (or status), up to two lines. */
 #page-chat .profile-workspace .ps-header__bio {
     -webkit-box-orient: vertical;
-    color: rgba(255, 255, 255, 0.7);
+    color: color-mix(in srgb, var(--theme-text, #ffffff) 70%, transparent);
     display: -webkit-box;
     font-size: 13px;
     -webkit-line-clamp: 2;
@@ -3819,7 +3256,7 @@
 }
 
 #page-chat .profile-workspace .ps-pagehead__title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 20px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -3828,7 +3265,7 @@
 }
 
 #page-chat .profile-workspace .ps-pagehead__sub {
-    color: var(--text-tertiary, #71717a);
+    color: var(--text-tertiary, var(--theme-text-muted, #71717a));
     font-size: 13px;
     line-height: 1.45;
     margin: 0;
@@ -3861,7 +3298,7 @@
 }
 
 #page-chat .profile-workspace .ps-row__title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font-size: 14px;
     font-weight: 600;
     line-height: 1.35;
@@ -3869,7 +3306,7 @@
 }
 
 #page-chat .profile-workspace .ps-row__desc {
-    color: var(--text-tertiary, #71717a);
+    color: var(--text-tertiary, var(--theme-text-muted, #71717a));
     font-size: 13px;
     line-height: 1.45;
     margin: 0;
@@ -3916,7 +3353,7 @@
     border: 1px solid var(--ps-line);
     border-radius: 8px;
     box-sizing: border-box;
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     font: inherit;
     font-size: 14px;
     transition:
@@ -3932,7 +3369,7 @@
 
 #page-chat .profile-workspace .ps-card input[type="text"]:focus,
 #page-chat .profile-workspace .ps-card textarea:focus {
-    border-color: rgba(255, 255, 255, 0.22);
+    border-color: color-mix(in srgb, var(--theme-tint, #ffffff) 22%, transparent);
     outline: none;
 }
 
@@ -3945,7 +3382,7 @@
 }
 
 #page-chat .profile-workspace .ps-input__count {
-    color: #a1a1aa;
+    color: var(--theme-text-muted, #a1a1aa);
     font-size: 11.5px;
     font-variant-numeric: tabular-nums;
     opacity: 0.5;
@@ -3986,9 +3423,9 @@
 #page-chat .profile-workspace .ps-prefix-input__prefix {
     align-items: center;
     align-self: stretch;
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 4%, transparent);
     border-right: 1px solid var(--ps-line);
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     display: flex;
     flex: none;
     font-size: 13.5px;
@@ -3996,7 +3433,7 @@
 }
 
 #page-chat .profile-workspace .ps-prefix-input__value {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     flex: 1;
     font-size: 14px;
     min-width: 0;
@@ -4028,7 +3465,7 @@
     background: transparent;
     border: 0;
     border-radius: 999px;
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     cursor: pointer;
     font: inherit;
     font-size: 12.5px;
@@ -4044,7 +3481,7 @@
 }
 
 #page-chat .profile-workspace .ps-photo__remove:focus-visible {
-    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--theme-tint, #fff) 45%, transparent);
     outline-offset: 2px;
 }
 
@@ -4055,10 +3492,10 @@
 #page-chat .profile-workspace .ps-dropzone {
     align-items: center;
     background: var(--ps-field-bg);
-    border: 1px dashed rgba(255, 255, 255, 0.16);
+    border: 1px dashed color-mix(in srgb, var(--theme-tint, #ffffff) 16%, transparent);
     border-radius: 12px;
     box-sizing: border-box;
-    color: #a1a1aa;
+    color: var(--theme-text-muted, #a1a1aa);
     cursor: pointer;
     display: flex;
     flex: 1;
@@ -4073,14 +3510,14 @@
         border-color 0.18s ease;
 }
 
+/* Hover / drag-over: only the dashed outline lights up — the fill stays put. */
 #page-chat .profile-workspace .ps-dropzone:hover,
 #page-chat .profile-workspace .ps-dropzone.is-dragover {
-    background: #11141b;
     border-color: color-mix(in srgb, var(--ps-accent) 55%, transparent);
 }
 
 #page-chat .profile-workspace .ps-dropzone:focus-visible {
-    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--theme-tint, #fff) 45%, transparent);
     outline-offset: 2px;
 }
 
@@ -4112,7 +3549,7 @@
 }
 
 #page-chat .profile-workspace .ps-dropzone__hint {
-    color: var(--text-tertiary, #71717a);
+    color: var(--text-tertiary, var(--theme-text-muted, #71717a));
     font-size: 12px;
 }
 
@@ -4179,7 +3616,7 @@
 
 #page-chat .profile-workspace .status-switcher__dot:focus-visible,
 #page-chat .profile-workspace .status-switcher__arrow:focus-visible {
-    outline: 2px solid color-mix(in srgb, #fff 45%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--theme-tint, #fff) 45%, transparent);
     outline-offset: 3px;
 }
 
@@ -4194,5 +3631,395 @@
     #page-chat .profile-workspace .ps-btn {
         animation: none;
         transition: none;
+    }
+}
+
+/* ── Appearance → Theme picker (js/themePicker.js) ───────────────────────────
+   Cards use theme tokens themselves, so the picker reads right in every theme;
+   each card's preview is painted in that theme's own colours (inline). */
+#page-chat .profile-workspace .theme-picker {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    margin-top: 12px;
+}
+
+#page-chat .profile-workspace .theme-card {
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 14px;
+    color: var(--theme-text, #f4f4f5);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font: inherit;
+    gap: 10px;
+    padding: 10px 10px 12px;
+    position: relative;
+    text-align: left;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+#page-chat .profile-workspace .theme-card:hover {
+    border-color: color-mix(in srgb, var(--theme-tint, #ffffff) 22%, transparent);
+}
+
+#page-chat .profile-workspace .theme-card:active {
+    transform: scale(0.98);
+}
+
+#page-chat .profile-workspace .theme-card:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--theme-tint, #ffffff) 45%, transparent);
+    outline-offset: 2px;
+}
+
+#page-chat .profile-workspace .theme-card.is-active {
+    border-color: var(--dock-accent, #afb9cd);
+    box-shadow: 0 0 0 1px var(--dock-accent, #afb9cd);
+}
+
+/* Mini window: page bg, a section panel, one incoming + one outgoing bubble. */
+#page-chat .profile-workspace .theme-card__preview {
+    aspect-ratio: 16 / 10;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    display: block;
+    overflow: hidden;
+    position: relative;
+}
+
+#page-chat .profile-workspace .theme-card__panel {
+    border-right: 1px solid transparent;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 30%;
+}
+
+#page-chat .profile-workspace .theme-card__bubble {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    height: 16%;
+    position: absolute;
+}
+
+#page-chat .profile-workspace .theme-card__bubble--in {
+    left: 38%;
+    top: 22%;
+    width: 36%;
+}
+
+#page-chat .profile-workspace .theme-card__bubble--out {
+    border: 0;
+    right: 8%;
+    top: 52%;
+    width: 40%;
+}
+
+#page-chat .profile-workspace .theme-card__accent {
+    border-radius: 999px;
+    height: 10%;
+    left: 8%;
+    position: absolute;
+    top: 12%;
+    width: 14%;
+}
+
+#page-chat .profile-workspace .theme-card__meta {
+    align-items: baseline;
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    min-width: 0;
+    padding-right: 22px;
+}
+
+#page-chat .profile-workspace .theme-card__name {
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#page-chat .profile-workspace .theme-card__type {
+    color: var(--theme-text-muted, #8a8a8a);
+    flex: none;
+    font-size: 11px;
+}
+
+#page-chat .profile-workspace .theme-card__swatches {
+    display: flex;
+    gap: 4px;
+}
+
+#page-chat .profile-workspace .theme-card__swatch {
+    border: 1px solid color-mix(in srgb, var(--theme-tint, #ffffff) 14%, transparent);
+    border-radius: 999px;
+    height: 14px;
+    width: 14px;
+}
+
+#page-chat .profile-workspace .theme-card__check {
+    bottom: 12px;
+    color: var(--dock-accent, #afb9cd);
+    display: inline-flex;
+    opacity: 0;
+    position: absolute;
+    right: 10px;
+    transform: scale(0.7);
+    transition:
+        opacity 0.18s ease,
+        transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#page-chat .profile-workspace .theme-card__check .ui-icon {
+    height: 16px;
+    width: 16px;
+}
+
+#page-chat .profile-workspace .theme-card.is-active .theme-card__check {
+    opacity: 1;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .profile-workspace .theme-card,
+    #page-chat .profile-workspace .theme-card__check {
+        transition: none;
+    }
+}
+
+/* ── Appearance → Chat preview ────────────────────────────────────────────────
+   A miniature app window painted with --pv-* (set by js/themePicker.js from
+   the active theme, or the hovered one). Fallbacks = Dark Neon. */
+#page-chat .profile-workspace .appearance-preview {
+    --pv-ease: 0.35s ease;
+    display: grid;
+    gap: 10px;
+}
+
+/* Every part of the preview eases between themes: fills, text, strokes and
+   shadows all follow the --pv-* vars on one clock, so hovering a theme card
+   (or leaving it) cross-fades the whole mini app rather than snapping. */
+#page-chat .profile-workspace .appearance-preview,
+#page-chat .profile-workspace .appearance-preview *,
+#page-chat .profile-workspace .appearance-preview *::before,
+#page-chat .profile-workspace .appearance-preview *::after {
+    transition:
+        background-color var(--pv-ease),
+        color var(--pv-ease),
+        border-color var(--pv-ease),
+        box-shadow var(--pv-ease);
+}
+
+#page-chat .profile-workspace .appearance-preview__window {
+    display: grid;
+    grid-template-columns: minmax(120px, 34%) 1fr;
+    height: 248px;
+    overflow: hidden;
+    border: 1px solid var(--pv-border, #1c1c1c);
+    border-radius: 16px;
+    background: var(--pv-bg, #070707);
+    box-shadow: var(--pv-card-shadow, none);
+}
+
+/* Sidebar: search field + chat rows as cards, the open chat as the active pill. */
+#page-chat .profile-workspace .appearance-preview__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 8px;
+    border-right: 1px solid var(--pv-border, #1c1c1c);
+    background: var(--pv-section, #0a0a0a);
+}
+
+#page-chat .profile-workspace .appearance-preview__search {
+    height: 22px;
+    margin-bottom: 2px;
+    border: 1px solid var(--pv-border, #1c1c1c);
+    border-radius: 8px;
+    background: var(--pv-hover, #161616);
+}
+
+#page-chat .profile-workspace .appearance-preview__chat {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px;
+    border: 1px solid var(--pv-border, #1c1c1c);
+    border-radius: 10px;
+    background: var(--pv-card, #121212);
+    box-shadow: var(--pv-card-shadow, none);
+}
+
+#page-chat .profile-workspace .appearance-preview__chat.is-active {
+    border-color: var(--pv-pill, #c7ff00);
+    background: var(--pv-pill, #c7ff00);
+}
+
+#page-chat .profile-workspace .appearance-preview__avatar {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--pv-muted, #737373) 45%, transparent);
+}
+
+#page-chat .profile-workspace .appearance-preview__chat.is-active .appearance-preview__avatar {
+    background: color-mix(in srgb, var(--pv-pill-text, #191b13) 30%, transparent);
+}
+
+#page-chat .profile-workspace .appearance-preview__lines {
+    display: grid;
+    flex: 1;
+    gap: 4px;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .appearance-preview__lines > span {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--pv-text, #fff);
+    opacity: 0.8;
+}
+
+#page-chat .profile-workspace .appearance-preview__lines > .is-snip {
+    width: 70%;
+    background: var(--pv-muted, #737373);
+    opacity: 0.6;
+}
+
+#page-chat .profile-workspace .appearance-preview__chat.is-active .appearance-preview__lines > span {
+    background: var(--pv-pill-text, #191b13);
+}
+
+/* Conversation. */
+#page-chat .profile-workspace .appearance-preview__main {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .appearance-preview__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--pv-border, #1c1c1c);
+    background: var(--pv-section, #0a0a0a);
+}
+
+#page-chat .profile-workspace .appearance-preview__header-copy {
+    display: grid;
+    gap: 1px;
+    line-height: 1.2;
+}
+
+#page-chat .profile-workspace .appearance-preview__header-name {
+    color: var(--pv-text, #fff);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#page-chat .profile-workspace .appearance-preview__header-meta {
+    color: var(--pv-muted, #737373);
+    font-size: 10px;
+}
+
+#page-chat .profile-workspace .appearance-preview__thread {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 10px 12px;
+    overflow: hidden;
+}
+
+#page-chat .profile-workspace .appearance-preview[data-appearance-density="compact"] .appearance-preview__thread {
+    gap: 3px;
+}
+
+#page-chat .profile-workspace .appearance-preview__bubble {
+    max-width: 78%;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+#page-chat .profile-workspace .appearance-preview[data-appearance-density="compact"] .appearance-preview__bubble {
+    padding: 4px 9px;
+}
+
+#page-chat .profile-workspace .appearance-preview__bubble.is-other {
+    align-self: flex-start;
+    border-color: var(--pv-border, #1c1c1c);
+    border-bottom-left-radius: 5px;
+    background: var(--pv-card, #121212);
+    color: var(--pv-text, #fff);
+}
+
+#page-chat .profile-workspace .appearance-preview__bubble.is-own {
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+    background: var(--pv-own, #303c08);
+    color: var(--pv-own-text, #fff);
+}
+
+#page-chat .profile-workspace .appearance-preview__composer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 10px 10px;
+    padding: 5px 5px 5px 12px;
+    border: 1px solid var(--pv-border, #1c1c1c);
+    border-radius: 999px;
+    background: var(--pv-card, #121212);
+    box-shadow: var(--pv-card-shadow, none);
+}
+
+#page-chat .profile-workspace .appearance-preview__composer-field {
+    flex: 1;
+    color: var(--pv-muted, #737373);
+    font-size: 11px;
+}
+
+#page-chat .profile-workspace .appearance-preview__composer-send {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--pv-accent, #c7ff00);
+}
+
+#page-chat .profile-workspace .appearance-preview__note {
+    margin: 0;
+    color: var(--text-secondary, #737373);
+    font-size: 12px;
+}
+
+#page-chat .profile-workspace #uiAppearancePreviewName {
+    color: var(--text-primary, #fff);
+    font-weight: 600;
+}
+
+@media (max-width: 520px) {
+    #page-chat .profile-workspace .appearance-preview__window {
+        grid-template-columns: 1fr;
+    }
+
+    #page-chat .profile-workspace .appearance-preview__sidebar {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .profile-workspace .appearance-preview {
+        --pv-ease: 0s linear;
     }
 }

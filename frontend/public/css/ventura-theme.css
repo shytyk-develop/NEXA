@@ -156,7 +156,7 @@ body {
 }
 
 #sendBtn {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 6%, transparent);
     border: none;
     border-radius: 999px;
     color: var(--text);
@@ -166,7 +166,7 @@ body {
 }
 
 #sendBtn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 10%, transparent);
     box-shadow: none;
 }
 
@@ -274,7 +274,7 @@ body {
 
 .message-bubble--own {
     background: var(--bubble-own);
-    border: 1px solid color-mix(in srgb, #fff 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-tint, #fff) 5%, transparent);
     color: var(--bubble-own-text);
 }
 

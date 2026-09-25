@@ -40,8 +40,18 @@ export const DEFAULT_PREFERENCES = {
     messageNotificationSound: true,
 };
 
+/**
+ * Colour theme is owned by the theme engine (public/js/themes.js), which sets
+ * html[data-theme] from nexa_theme_id before first paint. This only re-asserts
+ * the engine's active theme; it must never write its own value (the old fixed
+ * 'dark' here wiped the chosen theme on every preferences apply).
+ */
 export function applyTheme() {
-    document.documentElement.setAttribute('data-theme', 'dark');
+    const engine = window.NexaThemes;
+    const active = engine?.getActiveTheme?.();
+    if (active && document.documentElement.getAttribute('data-theme') !== active.id) {
+        engine.setTheme(active.id);
+    }
 }
 
 export function snapIntensity(value, fallback = 0) {

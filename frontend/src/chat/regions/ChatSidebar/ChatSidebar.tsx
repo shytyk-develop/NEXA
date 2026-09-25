@@ -17,6 +17,7 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getAvatarHue, getDisplayLabel, getInitials } from '../../../../js/profile.js';
 import { resolveContactProfile } from '../../../../js/profileDirectory.js';
+import { attachHoverHighlight } from '../../../../js/hoverHighlight.js';
 import { getPrivacyFlags, isChatMuted } from '../../../../js/privacy.js';
 import { useChatSnapshot } from '../../hooks/useChatEngine';
 import { AsideToggle } from '../../components/AsideToggle';
@@ -24,6 +25,7 @@ import { ExpandableTabs, type ExpandableTabItem } from '../../components/Expanda
 import { Icon } from '../../components/Icon';
 import { FileTree, FileTreeItem, FileTreeList } from '@/components/ui/file-tree';
 import { ScrollBlur } from '@/components/ui/scroll-blur';
+import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
 import {
     openAppSettings,
     openProfile,
@@ -329,7 +331,8 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
 
                 <aside id="uiSidebar" className="sidebar" aria-label="Navigation and contacts">
                     <header className="sidebar-brand">
-                        <img src="/brand/nexa-logo.svg" alt="NEXA" className="sidebar-brand__mark" width={1007} height={176} decoding="async" />
+                        {/* Drawn as a mask so it takes the theme's text colour (see .brand-logo). */}
+                        <span role="img" aria-label="NEXA" className="sidebar-brand__mark brand-logo" />
                     </header>
 
                     <section className="sidebar-chats" aria-label="Chats">
@@ -1093,11 +1096,7 @@ function LibraryList({ children }: { children: ReactNode }) {
                                 height: highlightBounds.height,
                             }}
                             exit={{ opacity: 0 }}
-                            transition={
-                                reduceMotion
-                                    ? { duration: 0 }
-                                    : { type: 'spring', stiffness: 500, damping: 40 }
-                            }
+                            transition={reduceMotion ? instantHoverTransition : listHoverTransition}
                         />
                     ) : null}
                 </AnimatePresence>
@@ -1236,7 +1235,7 @@ function ContactList({ children }: { children: ReactNode }) {
                     {highlightBounds ? (
                         <motion.div
                             key="contact-highlight"
-                            className="contact-list-highlight"
+                            className="contact-list-highlight list-hover-highlight"
                             aria-hidden="true"
                             style={{ position: 'absolute', pointerEvents: 'none', zIndex: 0 }}
                             initial={{
@@ -1254,11 +1253,7 @@ function ContactList({ children }: { children: ReactNode }) {
                                 height: highlightBounds.height,
                             }}
                             exit={{ opacity: 0 }}
-                            transition={
-                                reduceMotion
-                                    ? { duration: 0 }
-                                    : { type: 'spring', stiffness: 500, damping: 40 }
-                            }
+                            transition={reduceMotion ? instantHoverTransition : listHoverTransition}
                         />
                     ) : null}
                 </AnimatePresence>
@@ -1477,8 +1472,12 @@ const SidebarDock = memo(function SidebarDock({
 });
 
 const ProfileNav = memo(function ProfileNav() {
+    // Same sliding hover highlight as the chat list / folder tree.
+    const navRef = useRef<HTMLElement>(null);
+    useEffect(() => attachHoverHighlight(navRef.current, '.profile-nav-btn'), []);
+
     return (
-        <nav id="uiProfileNav" className="profile-nav" hidden aria-hidden="true" aria-label="Settings">
+        <nav ref={navRef} id="uiProfileNav" className="profile-nav" hidden aria-hidden="true" aria-label="Settings">
             <header className="profile-nav-toolbar">
                 <button id="uiProfileNavBackBtn" className="mini-icon-btn profile-nav-back-btn" type="button" title="Back to chats" aria-label="Back to chats">
                     <Icon href="#icon-arrow-left" />

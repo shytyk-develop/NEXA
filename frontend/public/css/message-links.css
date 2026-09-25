@@ -17,11 +17,11 @@
 }
 
 .message-bubble--own .message-link {
-    color: color-mix(in srgb, var(--accent) 70%, #fff);
+    color: color-mix(in srgb, var(--accent) 70%, var(--theme-text, #fff));
     text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
 .message-bubble--own .message-link:hover {
-    color: #fff;
+    color: var(--theme-text, #fff);
 }
 

@@ -140,7 +140,7 @@
 }
 
 #page-chat.is-viewport-peer-narrow .peer-panel {
-    border-left-color: #1a1a1a;
+    border-left-color: var(--theme-border, #1a1a1a);
     box-shadow: -18px 0 48px rgba(0, 0, 0, 0.45);
     height: 100%;
     min-width: 0;
@@ -166,7 +166,7 @@
 }
 
 #page-chat.is-viewport-peer-narrow .peer-panel-shelf {
-    border-left-color: #1a1a1a;
+    border-left-color: var(--theme-border, #1a1a1a);
     position: absolute;
     right: 0;
     top: 0;
@@ -200,7 +200,7 @@
 }
 
 .peer-panel-empty {
-    color: var(--text-tertiary, #6b6b6b);
+    color: var(--text-tertiary, var(--theme-text-muted, #6b6b6b));
     display: none;
     flex: 1;
     flex-direction: column;
@@ -250,7 +250,7 @@
 
 .peer-empty-art {
     align-items: center;
-    color: #d4d4d8;
+    color: var(--theme-text-muted, #d4d4d8);
     display: flex;
     flex-shrink: 0;
     height: 96px;
@@ -274,7 +274,7 @@
 }
 
 .peer-empty-title {
-    color: #f4f4f5;
+    color: var(--theme-text, #f4f4f5);
     flex-shrink: 0;
     font-size: 18px;
     font-weight: 600;
@@ -285,7 +285,7 @@
 }
 
 .peer-empty-copy {
-    color: #8a8a8a;
+    color: var(--theme-text-muted, #8a8a8a);
     flex-shrink: 0;
     font-size: 13px;
     font-weight: 400;
@@ -307,9 +307,9 @@
 .peer-empty-btn {
     align-items: center;
     background: transparent;
-    border: 1px solid #2a2a2a;
+    border: 1px solid var(--theme-border, #2a2a2a);
     border-radius: 999px;
-    color: #d4d4d8;
+    color: var(--theme-text-muted, #d4d4d8);
     cursor: pointer;
     display: inline-flex;
     flex-shrink: 0;
@@ -322,9 +322,9 @@
 }
 
 .peer-empty-btn:hover {
-    background: #101010;
-    border-color: #3a3a3a;
-    color: #f4f4f5;
+    background: var(--theme-section, #101010);
+    border-color: var(--theme-border, #3a3a3a);
+    color: var(--theme-text, #f4f4f5);
 }
 
 .peer-empty-btn .ui-icon {
@@ -422,7 +422,7 @@
 
 #page-chat .peer-avatar.has-photo,
 #page-chat #uiPeerAvatar.has-photo {
-    background: #111;
+    background: var(--theme-section, #111);
 }
 
 #page-chat .peer-avatar .contact-avatar-img,
@@ -435,7 +435,7 @@
 }
 
 .peer-name {
-    color: var(--text, #f4f4f5);
+    color: var(--text, var(--theme-text, #f4f4f5));
     font-family: var(--f-display);
     font-size: 22px;
     font-weight: 650;
@@ -449,7 +449,7 @@
 }
 
 .peer-handle {
-    color: var(--text-secondary, #9a9a9a);
+    color: var(--text-secondary, var(--theme-text-muted, #9a9a9a));
     font-family: var(--f-ui);
     font-size: 13px;
     font-weight: 450;
@@ -459,7 +459,7 @@
 
 .peer-status {
     align-items: center;
-    color: var(--text-secondary, #9a9a9a);
+    color: var(--text-secondary, var(--theme-text-muted, #9a9a9a));
     display: inline-flex;
     font-family: var(--f-ui);
     font-size: 13px;
@@ -495,7 +495,7 @@
 }
 
 .peer-status.is-typing {
-    color: var(--text-secondary, #9a9a9a);
+    color: var(--text-secondary, var(--theme-text-muted, #9a9a9a));
 }
 
 .peer-status.is-typing::before {
@@ -503,7 +503,7 @@
 }
 
 .peer-section {
-    border-top: 1px solid #1a1a1a;
+    border-top: 1px solid var(--theme-border, #1a1a1a);
     padding: 28px 0 22px;
 }
 
@@ -512,7 +512,7 @@
 }
 
 .peer-section-title {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
     font-family: var(--f-ui);
     font-size: 11px;
     font-weight: 600;
@@ -552,7 +552,7 @@
 }
 
 .peer-encrypt-copy {
-    color: #c4c4c4;
+    color: var(--theme-text-muted, #c4c4c4);
     font-family: var(--f-ui);
     font-size: 13.5px;
     font-weight: 400;
@@ -563,9 +563,9 @@
 
 .peer-security-btn {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid color-mix(in srgb, var(--theme-tint, #ffffff) 14%, transparent);
     border-radius: 999px;
-    color: var(--text, #f4f4f5);
+    color: var(--text, var(--theme-text, #f4f4f5));
     cursor: pointer;
     font-family: var(--f-ui);
     font-size: 13px;
@@ -576,8 +576,8 @@
 }
 
 .peer-security-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.22);
+    background: color-mix(in srgb, var(--theme-text, #ffffff) 5%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #ffffff) 22%, transparent);
 }
 
 .peer-security-btn:disabled {
@@ -586,7 +586,7 @@
 }
 
 .peer-bio {
-    color: #c4c4c4;
+    color: var(--theme-text-muted, #c4c4c4);
     font-family: var(--f-ui);
     font-size: 13.5px;
     font-weight: 400;
@@ -598,7 +598,7 @@
 }
 
 .peer-bio.is-placeholder {
-    color: #6e6e6e;
+    color: var(--theme-text-muted, #6e6e6e);
 }
 
 .peer-options {
@@ -611,12 +611,12 @@
 .peer-options-highlight {
     background: color-mix(
         in srgb,
-        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 55%,
+        var(--color-accent, color-mix(in srgb, var(--theme-text, #fff) 8%, transparent)) 55%,
         transparent
     );
     border: 1px solid color-mix(
         in srgb,
-        var(--color-accent, color-mix(in srgb, #fff 8%, transparent)) 45%,
+        var(--color-accent, color-mix(in srgb, var(--theme-tint, #fff) 8%, transparent)) 45%,
         transparent
     );
     border-radius: 4px;
@@ -630,7 +630,7 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: var(--text-secondary, #9a9a9a);
+    color: var(--text-secondary, var(--theme-text-muted, #9a9a9a));
     cursor: pointer;
     display: flex;
     font-family: var(--f-ui);
@@ -655,7 +655,7 @@
 .peer-option:hover:not(:disabled),
 .peer-option:focus-visible:not(:disabled) {
     background: transparent;
-    color: var(--text, #f4f4f5);
+    color: var(--text, var(--theme-text, #f4f4f5));
     outline: none;
 }
 

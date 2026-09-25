@@ -20,6 +20,7 @@ import {
 } from "motion/react";
 import * as React from "react";
 
+import { listHoverTransition } from "@/lib/hoverMotion";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_HIGHLIGHT_COLOR = "var(--color-brand, #3b82f6)";
@@ -521,9 +522,7 @@ function FileTreeHoverHighlight({
           initial={{ opacity: 0 }}
           style={{ position: "absolute", pointerEvents: "none", zIndex: 0 }}
           transition={
-            reduceMotion
-              ? instantTransition
-              : { type: "spring", stiffness: 500, damping: 40 }
+            reduceMotion ? instantTransition : listHoverTransition
           }
         />
       )}
@@ -1244,7 +1243,7 @@ export const FileTree = React.forwardRef<FileTreeHandle, FileTreeProps>(
             style={maxHeight !== undefined ? { maxHeight } : undefined}
           >
             <FileTreeHoverHighlight
-              className="z-0 rounded-lg border border-accent/45 bg-accent/55"
+              className="list-hover-highlight z-0 rounded-lg border border-accent/45 bg-accent/55"
               reduceMotion={reduceMotion}
             />
             {children}

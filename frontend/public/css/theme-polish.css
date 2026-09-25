@@ -63,7 +63,7 @@
 /* ─── Message bubbles ─── */
 .message-bubble--own {
     background: var(--bubble-own);
-    border-color: color-mix(in srgb, #fff 5%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #fff) 5%, transparent);
     box-shadow: var(--shadow-bubble-own);
 }
 
@@ -172,9 +172,9 @@
 }
 
 .overlay-surface.overlay-surface--message-actions {
-    background: rgba(18, 18, 18, 0.58);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: color-mix(in srgb, var(--theme-section, #121212) 58%, transparent);
+    border-color: color-mix(in srgb, var(--theme-tint, #ffffff) 10%, transparent);
     box-shadow:
         0 22px 56px rgba(0, 0, 0, 0.48),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        inset 0 1px 0 color-mix(in srgb, var(--theme-tint, #ffffff) 6%, transparent);
 }

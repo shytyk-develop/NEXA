@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
+import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
 
 type Tab = {
     title: string;
@@ -104,9 +105,7 @@ export function ExpandableTabs({
         onChange?.(index);
     };
 
-    const spring = reduceMotion
-        ? { duration: 0 }
-        : { type: 'spring' as const, stiffness: 500, damping: 40 };
+    const highlightTransition = reduceMotion ? instantHoverTransition : listHoverTransition;
 
     return (
         <nav
@@ -120,7 +119,7 @@ export function ExpandableTabs({
                 {highlightBounds ? (
                     <motion.div
                         key="dock-highlight"
-                        className="expandable-tabs__highlight"
+                        className="expandable-tabs__highlight list-hover-highlight"
                         aria-hidden="true"
                         initial={{
                             opacity: 0,
@@ -137,7 +136,7 @@ export function ExpandableTabs({
                             height: highlightBounds.height,
                         }}
                         exit={{ opacity: 0 }}
-                        transition={spring}
+                        transition={highlightTransition}
                     />
                 ) : null}
             </AnimatePresence>

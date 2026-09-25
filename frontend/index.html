@@ -15,6 +15,8 @@
     <meta name="twitter:description" content="End-to-end encrypted messaging with no install and no phone number.">
     <link rel="icon" type="image/svg+xml" href="/brand/originhub-icon.svg">
     <link rel="apple-touch-icon" href="/brand/originhub-icon.svg">
+    <!-- Theme engine: classic, render-blocking on purpose — applies the saved theme before first paint. -->
+    <script src="/js/themes.js"></script>
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,11 +36,12 @@
     <link rel="stylesheet" href="/css/app-layout.css">
     <link rel="stylesheet" href="/css/peer-panel.css">
     <link rel="stylesheet" href="/css/mobile-chat.css">
+    <link rel="stylesheet" href="/css/themes.css">
     <link rel="stylesheet" href="/css/about-security.css">
     <link rel="stylesheet" href="/css/login-page.css">
     <script>
         (function () {
-            document.documentElement.setAttribute('data-theme', 'dark');
+            // data-theme belongs to the theme engine (/js/themes.js) — don't touch it here.
             try {
                 var p = JSON.parse(localStorage.getItem('originhub_ui_preferences') || '{}');
                 var glass = p.glassIntensity;
@@ -1182,180 +1185,53 @@
 
                     <div id="uiProfileAppearanceLayout" data-profile-section="appearance" class="profile-appearance-layout hidden">
                         <div class="profile-appearance-controls">
+                            <section class="profile-sec-block" aria-labelledby="uiThemePickerTitle">
+                                <h3 id="uiThemePickerTitle" class="profile-sec-kicker">Theme</h3>
+                                <p class="profile-appearance-lead">Pick a colour theme for the whole app. Hover a theme to preview it below.</p>
+                                <!-- Cards rendered by js/themePicker.js from the theme registry. -->
+                                <div id="uiThemePicker" class="theme-picker" role="radiogroup" aria-labelledby="uiThemePickerTitle"></div>
+                            </section>
+
                             <section class="profile-sec-block">
                                 <h3 class="profile-sec-kicker">Chat preview</h3>
-                                <p class="profile-appearance-lead">Tune the look of Nexa. The preview mirrors what you pick — and the live chat updates with it.</p>
-                                <div id="uiAppearancePreview" class="appearance-preview" data-appearance-glass="50" data-appearance-dim="80" data-appearance-density="comfortable" style="--preview-glass: 50; --preview-dim: 80;" aria-label="Messenger appearance preview">
-                                    <div class="appearance-preview__stage">
-                                        <div class="appearance-preview__wallpaper" data-appearance-wallpaper-layer aria-hidden="true"></div>
-                                        <div class="appearance-preview__dim" data-appearance-dim-layer aria-hidden="true"></div>
-                                        <div class="appearance-preview__shell">
-                                            <aside class="appearance-preview__rail" aria-hidden="true">
-                                                <span class="appearance-preview__rail-dot"></span>
-                                                <span class="appearance-preview__rail-dot"></span>
-                                                <span class="appearance-preview__rail-dot"></span>
-                                            </aside>
-                                            <div class="appearance-preview__left">
-                                                <div class="appearance-preview__search"></div>
-                                                <div class="appearance-preview__chat-row is-active">
-                                                    <span class="appearance-preview__avatar"></span>
-                                                    <span class="appearance-preview__chat-lines">
-                                                        <span class="appearance-preview__line is-name"></span>
-                                                        <span class="appearance-preview__line is-snip"></span>
-                                                    </span>
-                                                </div>
-                                                <div class="appearance-preview__chat-row">
-                                                    <span class="appearance-preview__avatar"></span>
-                                                    <span class="appearance-preview__chat-lines">
-                                                        <span class="appearance-preview__line is-name"></span>
-                                                        <span class="appearance-preview__line is-snip"></span>
-                                                    </span>
-                                                </div>
-                                                <div class="appearance-preview__chat-row">
-                                                    <span class="appearance-preview__avatar"></span>
-                                                    <span class="appearance-preview__chat-lines">
-                                                        <span class="appearance-preview__line is-name"></span>
-                                                        <span class="appearance-preview__line is-snip"></span>
-                                                    </span>
-                                                </div>
+                                <!-- Painted in the active theme (or the one under the pointer) by js/themePicker.js. -->
+                                <div id="uiAppearancePreview" class="appearance-preview" data-appearance-density="comfortable" aria-label="Theme preview">
+                                    <div class="appearance-preview__window">
+                                        <aside class="appearance-preview__sidebar" aria-hidden="true">
+                                            <span class="appearance-preview__search"></span>
+                                            <span class="appearance-preview__chat is-active">
+                                                <span class="appearance-preview__avatar"></span>
+                                                <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
+                                            </span>
+                                            <span class="appearance-preview__chat">
+                                                <span class="appearance-preview__avatar"></span>
+                                                <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
+                                            </span>
+                                            <span class="appearance-preview__chat">
+                                                <span class="appearance-preview__avatar"></span>
+                                                <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
+                                            </span>
+                                        </aside>
+                                        <div class="appearance-preview__main">
+                                            <header class="appearance-preview__header">
+                                                <span class="appearance-preview__avatar"></span>
+                                                <span class="appearance-preview__header-copy">
+                                                    <span class="appearance-preview__header-name">Alex</span>
+                                                    <span class="appearance-preview__header-meta">end-to-end encrypted</span>
+                                                </span>
+                                            </header>
+                                            <div class="appearance-preview__thread">
+                                                <div class="appearance-preview__bubble is-other">Hey — still on for tonight?</div>
+                                                <div class="appearance-preview__bubble is-own">Yes. I’ll send the details here.</div>
+                                                <div class="appearance-preview__bubble is-other">Perfect. Only we can read this.</div>
                                             </div>
-                                            <div class="appearance-preview__main">
-                                                <header class="appearance-preview__header">
-                                                    <span class="appearance-preview__header-avatar"></span>
-                                                    <span class="appearance-preview__header-copy">
-                                                        <span class="appearance-preview__header-name">Alex</span>
-                                                        <span class="appearance-preview__header-meta">end-to-end encrypted</span>
-                                                    </span>
-                                                </header>
-                                                <div class="appearance-preview__thread">
-                                                    <div class="appearance-preview__bubble is-other">Hey — still on for tonight?</div>
-                                                    <div class="appearance-preview__bubble is-own">Yes. I’ll send the details here.</div>
-                                                    <div class="appearance-preview__bubble is-other">Perfect. Only we can read this.</div>
-                                                </div>
-                                                <div class="appearance-preview__composer">
-                                                    <span class="appearance-preview__composer-field">Message</span>
-                                                    <span class="appearance-preview__composer-send" aria-hidden="true"></span>
-                                                </div>
+                                            <div class="appearance-preview__composer">
+                                                <span class="appearance-preview__composer-field">Message</span>
+                                                <span class="appearance-preview__composer-send" aria-hidden="true"></span>
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="appearance-preview__note">Changes apply to your messenger immediately and are saved on this device.</p>
-                                </div>
-                            </section>
-
-                            <section class="profile-sec-block">
-                                <h3 class="profile-sec-kicker">Atmosphere</h3>
-                                <div class="appearance-level-row">
-                                    <div class="appearance-option-card appearance-option-card--level" role="group" aria-label="Glass intensity">
-                                        <nexa-level-slider
-                                            id="uiAppearanceGlassLevel"
-                                            inline
-                                            open
-                                            label="Glass"
-                                            axis-start="Clearer"
-                                            axis-end="Deeper"
-                                            hint="Higher glass makes panels, bubbles, and the composer more frosted and opaque. Ultracode is the densest glass."
-                                            value="0"
-                                        ></nexa-level-slider>
-                                    </div>
-                                    <div class="appearance-option-card appearance-option-card--level" role="group" aria-label="Wallpaper dim">
-                                        <nexa-level-slider
-                                            id="uiAppearanceDimLevel"
-                                            inline
-                                            open
-                                            label="Dim"
-                                            axis-start="Softer"
-                                            axis-end="Stronger"
-                                            hint="Higher dim pushes the wallpaper into the background so messages stay readable. Ultracode is the darkest veil."
-                                            value="0"
-                                        ></nexa-level-slider>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <section class="profile-sec-block">
-                                <h3 class="profile-sec-kicker">Wallpaper</h3>
-                                <p class="profile-appearance-lead">Pick a gradient atmosphere for the chat stage. Scroll sideways for more.</p>
-                                <div id="uiAppearanceWallpaperGrid" class="appearance-wallpaper-grid" role="radiogroup" aria-label="Chat wallpaper">
-                                    <button type="button" class="appearance-wallpaper-card is-active" data-appearance-wallpaper="mist" role="radio" aria-checked="true">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--mist" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Mist</span>
-                                            <span class="appearance-wallpaper-card__sub">Soft grain</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="ember" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--ember" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Ember</span>
-                                            <span class="appearance-wallpaper-card__sub">Warm dusk</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="aurora" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--aurora" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Aurora</span>
-                                            <span class="appearance-wallpaper-card__sub">Cool bloom</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="tide" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--tide" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Tide</span>
-                                            <span class="appearance-wallpaper-card__sub">Deep blue</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="sage" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--sage" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Sage</span>
-                                            <span class="appearance-wallpaper-card__sub">Quiet green</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="cobalt" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--cobalt" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Cobalt</span>
-                                            <span class="appearance-wallpaper-card__sub">Night ink</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="rose" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--rose" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Rose</span>
-                                            <span class="appearance-wallpaper-card__sub">Muted blush</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="dusk" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--dusk" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Dusk</span>
-                                            <span class="appearance-wallpaper-card__sub">Violet fall</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="graphite" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--graphite" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Graphite</span>
-                                            <span class="appearance-wallpaper-card__sub">Cool metal</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card" data-appearance-wallpaper="void" role="radio" aria-checked="false">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--void" aria-hidden="true"></span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Void</span>
-                                            <span class="appearance-wallpaper-card__sub">Pure black</span>
-                                        </span>
-                                    </button>
-                                    <button type="button" class="appearance-wallpaper-card appearance-wallpaper-card--upload" data-appearance-wallpaper="custom" role="radio" aria-checked="false" disabled title="Custom wallpaper coming soon">
-                                        <span class="appearance-wallpaper-card__swatch appearance-wallpaper-card__swatch--upload" aria-hidden="true">
-                                            <svg class="ui-icon" aria-hidden="true"><use href="#icon-upload"/></svg>
-                                        </span>
-                                        <span class="appearance-wallpaper-card__meta">
-                                            <span class="appearance-wallpaper-card__label">Upload</span>
-                                            <span class="appearance-wallpaper-card__sub">Soon</span>
-                                        </span>
-                                    </button>
+                                    <p class="appearance-preview__note"><span id="uiAppearancePreviewName">Dark Neon</span> · changes apply immediately and are saved on this device.</p>
                                 </div>
                             </section>
 
@@ -1371,15 +1247,6 @@
                                     <div id="uiAppearanceDensityPicker" class="appearance-chip-row" role="radiogroup" aria-label="Message density">
                                         <button type="button" class="appearance-chip is-active" data-appearance-density="comfortable" role="radio" aria-checked="true">Comfortable</button>
                                         <button type="button" class="appearance-chip" data-appearance-density="compact" role="radio" aria-checked="false">Compact</button>
-                                    </div>
-                                </div>
-                                <div class="appearance-option-card appearance-option-card--static">
-                                    <div class="appearance-option-head">
-                                        <div class="appearance-option-copy">
-                                            <p class="appearance-option-title">Bubble style</p>
-                                            <p class="appearance-option-hint">Matte glass bubbles are the current look. More styles can plug in here later.</p>
-                                        </div>
-                                        <span class="appearance-option-badge">Glass</span>
                                     </div>
                                 </div>
                             </section>

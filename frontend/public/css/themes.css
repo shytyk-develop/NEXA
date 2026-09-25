@@ -1,0 +1,602 @@
+/* ── Theme component layer (Aether & Tasko design system) ─────────────────────
+   Scoped to html[data-theme], which public/js/themes.js always sets (Dark Neon
+   by default). Surfaces that the theme recolours purely through
+   tokens (sidebar, composer, bubbles, settings fields, overlays) need nothing
+   here; this file adds what the themes restyle: card rows, active pills,
+   hover fills and card shadows.
+
+   Tokens: --bg-section · --card-bg · --card-shadow · --border-subtle ·
+           --hover-bg · --active-pill-bg · --active-pill-text · --text-* */
+
+/* ── Sidebar lists: one hover language ─────────────────────────────────────
+   Timing reference: the Inbox rows (Unread / All chats / Muted). Inbox, folder
+   tree, chat list and the dock all use a sliding hover highlight on the same
+   spring (src/lib/hoverMotion.ts); the rows' own background / text / border
+   changes use --sidebar-hover-transition — short, ease-out, no delay — so
+   every list responds identically. The shared highlight (.list-hover-highlight)
+   carries the hover look: hover fill + hairline + card shadow. */
+html[data-theme] {
+    --list-hover-ease: ease-out;
+    --list-hover-duration: 0.15s;
+    --sidebar-hover-transition:
+        background-color var(--list-hover-duration) var(--list-hover-ease),
+        color var(--list-hover-duration) var(--list-hover-ease),
+        border-color var(--list-hover-duration) var(--list-hover-ease),
+        box-shadow var(--list-hover-duration) var(--list-hover-ease);
+}
+
+html[data-theme] #page-chat .list-hover-highlight {
+    background: var(--hover-bg) !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: var(--card-shadow);
+}
+
+/* One corner radius for every interactive list item in both sidebars — Inbox,
+   folder tree, chats, peer-panel Options — and for the hover highlights and
+   selected / active states drawn over them. */
+html[data-theme] {
+    --list-item-radius: 12px;
+}
+
+html[data-theme] #page-chat :is(
+    .list-hover-highlight,
+    .library-list-highlight,
+    .peer-options-highlight,
+    .library-row,
+    .peer-option,
+    .sidebar-file-tree [role="treeitem"],
+    #usersList .contact-row
+) {
+    border-radius: var(--list-item-radius);
+}
+
+/* ── Sidebar: chat list — clean rows, outline only on hover / active ─────── */
+html[data-theme] #page-chat #usersList .contact-row {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--list-item-radius);
+    box-shadow: none;
+    transition:
+        var(--sidebar-hover-transition),
+        margin-left 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        padding-left var(--pick-mode-duration, 240ms) var(--pick-mode-ease, ease);
+}
+
+/* Hover look comes from the sliding highlight underneath; the row itself only
+   takes it when the highlight isn't there (keyboard focus). */
+html[data-theme] #page-chat #usersList .contact-row:focus-visible {
+    background: var(--hover-bg);
+    border-color: var(--border-subtle);
+    box-shadow: var(--card-shadow);
+}
+
+html[data-theme] #page-chat #usersList .contact-row.is-active,
+html[data-theme] #page-chat #usersList .contact-row.is-active:hover {
+    --contact-active-inset: 0px;
+    background: var(--hover-bg);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
+}
+
+/* The active row is outlined in place: no side rail. */
+html[data-theme] #page-chat #usersList .contact-row__rail {
+    display: none;
+}
+
+/* ── Sidebar: Inbox rows, folder tree, dock — active pills ────────────────── */
+html[data-theme] #page-chat .library-row.is-active {
+    background: var(--active-pill-bg);
+    border-radius: var(--list-item-radius);
+    color: var(--active-pill-text);
+}
+
+html[data-theme] #page-chat .library-row.is-active :is(svg, .library-row__count) {
+    color: var(--active-pill-text);
+}
+
+/* Base rule forces a transparent fill with !important. */
+html[data-theme] #page-chat .sidebar-file-tree [role="treeitem"][aria-selected="true"] {
+    background: var(--active-pill-bg) !important;
+    border-radius: var(--list-item-radius);
+    color: var(--active-pill-text);
+}
+
+html[data-theme] #page-chat .sidebar-file-tree [role="treeitem"][aria-selected="true"] svg {
+    color: var(--active-pill-text);
+}
+
+/* Folder action icons (+ add chats, rename, delete). Row hover → primary text. */
+html[data-theme] #page-chat .sidebar-file-tree .file-tree-item-row:hover .folder-item-action:not(.folder-item-action--confirm) {
+    color: var(--text-primary);
+}
+
+/* On the selected folder they sit on the accent pill: same contrast colour as
+   the pill's label (white on Emerald, dark on Lime / Neon); hovering an icon
+   brings it to full strength instead of recolouring it. */
+html[data-theme] #page-chat .sidebar-file-tree .file-tree-item-row:has(> [role="treeitem"][aria-selected="true"]) .folder-item-action:not(.folder-item-action--confirm) {
+    color: var(--active-pill-text) !important;
+    fill: none;
+    opacity: 0.78;
+}
+
+html[data-theme] #page-chat .sidebar-file-tree .file-tree-item-row:has(> [role="treeitem"][aria-selected="true"]) .folder-item-action:not(.folder-item-action--confirm):is(:hover, :focus-visible) {
+    opacity: 1;
+}
+
+html[data-theme] #page-chat .expandable-tabs__btn.is-active,
+html[data-theme] #page-chat .expandable-tabs__btn[aria-current="page"] {
+    background: var(--active-pill-bg);
+    color: var(--active-pill-text);
+}
+
+html[data-theme] #page-chat :is(.expandable-tabs__btn, .library-row, .sidebar-file-tree [role="treeitem"]) {
+    transition: var(--sidebar-hover-transition);
+    transition-delay: 0s;
+}
+
+/* Icons, labels and counters follow the row's colour at the same pace. */
+html[data-theme] #page-chat :is(.expandable-tabs__btn, .library-row, .sidebar-file-tree [role="treeitem"], #usersList .contact-row) :is(svg, .ui-icon, .library-row__count, .contact-name, .contact-subtitle, .contact-time, .contact-handle) {
+    transition: var(--sidebar-hover-transition);
+}
+
+/* ── Folder pick bar (add chats to a folder: Cancel / Save in the dock slot) ─
+   Flat card: hairline only, no drop shadow. Cancel is a quiet text button with
+   the list hover fill; Save is the theme's active pill. */
+html[data-theme] #page-chat .folder-pick-bar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    box-shadow: none !important;
+}
+
+html[data-theme] #page-chat .folder-pick-bar__name {
+    color: var(--text-primary);
+}
+
+html[data-theme] #page-chat .folder-pick-bar__prefix {
+    color: var(--text-secondary);
+}
+
+html[data-theme] #page-chat .folder-pick-bar__count {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+html[data-theme] #page-chat .folder-pick-bar__btn {
+    box-shadow: none;
+    transition: var(--sidebar-hover-transition), transform 0.18s ease;
+}
+
+html[data-theme] #page-chat .folder-pick-bar__btn--cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    padding-inline: 10px;
+}
+
+html[data-theme] #page-chat .folder-pick-bar__btn--cancel:is(:hover, :focus-visible) {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+html[data-theme] #page-chat .folder-pick-bar__btn--save {
+    background: var(--active-pill-bg);
+    color: var(--active-pill-text);
+}
+
+html[data-theme] #page-chat .folder-pick-bar__btn--save:is(:hover, :focus-visible) {
+    background: color-mix(in srgb, var(--active-pill-bg) 86%, var(--text-primary));
+    color: var(--active-pill-text);
+}
+
+html[data-theme] #page-chat .folder-pick-bar__btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+
+/* ── Messages & composer ─────────────────────────────────────────────────── */
+/* Incoming bubbles get card-bg / border / text through tokens; add the hairline
+   explicitly so it's there even where a base rule hides the bubble border. */
+html[data-theme] #page-chat .message-row .message-bubble--other {
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
+}
+
+/* Search matches (<mark class="search-hit">, js/messageLinks.js): an accent
+   chip with the theme's on-accent text — white on Emerald, near-black on Neon,
+   and dark on Lime (white on #8DC400 would be ~2:1). Same chip in incoming and
+   outgoing bubbles, so it reads on the green / lime own-bubble fills too. */
+html[data-theme] #page-chat .message-bubble .search-hit,
+html[data-theme] #page-chat .message-bubble--own .search-hit {
+    background: var(--accent-primary);
+    border-radius: 4px;
+    color: var(--text-on-accent);
+    font-weight: 600;
+    padding: 1px 4px;
+}
+
+/* The match the thread just jumped to: a thin contrasting ring. */
+html[data-theme] #page-chat .message-row.is-highlighted .search-hit {
+    outline: 1px solid var(--text-primary);
+    outline-offset: 1px;
+}
+
+/* ── Paste preview folder (src/components/ui/folder-interaction) ─────────────
+   Glass pocket + frosted front flap from the --glass-* tokens (per theme
+   type, public/js/themes.js); the sheets inside are clean cards with the
+   theme's text, so the preview reads crisp on light themes too. */
+html[data-theme] .folder-interaction__body {
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-stroke);
+    box-shadow: var(--glass-shadow);
+}
+
+html[data-theme] .folder-interaction__grad-fill-start {
+    stop-color: var(--glass-flap-start);
+}
+
+html[data-theme] .folder-interaction__grad-fill-end {
+    stop-color: var(--glass-flap-end);
+}
+
+html[data-theme] :is(.folder-interaction__grad-stroke-start, .folder-interaction__grad-stroke-end) {
+    stop-color: var(--glass-edge);
+}
+
+html[data-theme] .folder-interaction__page {
+    background: var(--glass-sheet);
+    border: 1px solid var(--glass-sheet-border);
+    box-shadow: var(--card-shadow);
+}
+
+html[data-theme] .folder-interaction__page-title {
+    color: var(--glass-sheet-text);
+}
+
+html[data-theme] .folder-interaction__page-text {
+    color: var(--glass-sheet-muted);
+}
+
+html[data-theme] .folder-interaction__line {
+    background: var(--glass-line, var(--hover-bg));
+}
+
+/* Bottom fade of each sheet dissolves into the sheet's own fill. */
+html[data-theme] .folder-interaction__page-fade-step:nth-child(1) {
+    background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--glass-sheet) 12%, transparent));
+}
+
+html[data-theme] .folder-interaction__page-fade-step:nth-child(2) {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--glass-sheet) 12%, transparent), color-mix(in srgb, var(--glass-sheet) 35%, transparent));
+}
+
+html[data-theme] .folder-interaction__page-fade-step:nth-child(3) {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--glass-sheet) 35%, transparent), color-mix(in srgb, var(--glass-sheet) 62%, transparent));
+}
+
+html[data-theme] .folder-interaction__page-fade-step:nth-child(4) {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--glass-sheet) 62%, transparent), color-mix(in srgb, var(--glass-sheet) 92%, transparent));
+}
+
+html[data-theme] .folder-interaction.is-open .folder > div:is(:hover, :focus-visible) .folder-interaction__page {
+    border-color: var(--accent-primary);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 30%, transparent),
+        0 12px 22px -10px rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] .folder-interaction__body {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: var(--card-bg);
+    }
+}
+
+/* Bubbles are flat and static: no drop shadow at rest, and hovering changes
+   nothing (no lift, no shift). The swipe-to-reply drag keeps its transform,
+   and a search hit (.is-highlighted) keeps its outline ring. */
+html[data-theme] #page-chat .message-row:not(.is-highlighted) .message-bubble {
+    box-shadow: none;
+}
+
+html[data-theme] #page-chat .message-row:not(.is-swiping, .is-highlighted) .message-bubble:not(.is-swipe-returning):hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Composer: flat — separated from the thread by a hairline only, never a
+   shadow (in any state). Focus just tints that hairline toward the accent. */
+html[data-theme] #page-chat .chat-main > .input-bar :is(.composer-shell, .composer-reply-bar) {
+    border: 1px solid var(--border-subtle);
+    box-shadow: none !important;
+}
+
+html[data-theme] #page-chat .chat-main > .input-bar .composer-shell {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease;
+}
+
+html[data-theme] #page-chat .chat-main > .input-bar:focus-within .composer-shell {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-subtle));
+}
+
+/* Replying: the reply preview and the input are one capsule. The single outer
+   contour (hairline, 24px corners) moves to the wrapper and stays neutral in
+   every state — replying focuses the input, but the frame never takes the
+   accent. The only accent is the stripe left of the quoted text; inside, the
+   reply bar has no frame of its own (just a faint divider above the input)
+   and both share the card fill. */
+html[data-theme] #page-chat .chat-main > .input-bar .composer-scale-wrap:has(> .composer-reply-bar:not(.hidden)),
+html[data-theme] #page-chat .chat-main > .input-bar:focus-within .composer-scale-wrap:has(> .composer-reply-bar:not(.hidden)) {
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 24px;
+    box-shadow: none !important;
+    outline: none;
+}
+
+html[data-theme] #page-chat .chat-main > .input-bar .composer-reply-bar {
+    background: transparent;
+    border: none !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent) !important;
+    border-radius: 23px 23px 0 0;
+    transition:
+        opacity 0.3s ease,
+        transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html[data-theme] #page-chat .chat-main > .input-bar .composer-shell.has-reply,
+html[data-theme] #page-chat .chat-main > .input-bar:focus-within .composer-shell.has-reply {
+    background: transparent;
+    border: none;
+    border-radius: 0 0 23px 23px;
+}
+
+/* The left indicator: the bar's accent stripe, in the theme accent. */
+html[data-theme] #page-chat .chat-main > .input-bar .composer-reply-accent {
+    background: var(--accent-primary);
+    border-radius: 3px;
+    width: 3px;
+}
+
+html[data-theme] #page-chat .chat-main > .input-bar .composer-reply-label {
+    color: var(--accent-primary);
+}
+
+/* Header capsules: soft lift (barely there on light themes). */
+html[data-theme] #page-chat :is(.chat-header-peer, .chat-header-search-btn) {
+    box-shadow: var(--chrome-shadow);
+}
+
+/* ── Conversation window: solid stage + seamless edge fades ──────────────────
+   The thread sits on the theme's main colour; the top / bottom overlays are a
+   plain bg-main → transparent gradient (eased stops, no backdrop blur and no
+   mask), so there's no blur edge cut off at the sides or a band at the ends. */
+html[data-theme] #page-chat .chat-main,
+html[data-theme] #page-chat .chat-stage {
+    background: var(--bg-main);
+}
+
+html[data-theme] #page-chat :is(.chat-scroll-blur-top, .chat-scroll-blur-bottom) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+html[data-theme] #page-chat .chat-scroll-blur-top {
+    background: linear-gradient(
+        to bottom,
+        var(--bg-main) 0%,
+        color-mix(in srgb, var(--bg-main) 92%, transparent) 30%,
+        color-mix(in srgb, var(--bg-main) 60%, transparent) 60%,
+        color-mix(in srgb, var(--bg-main) 20%, transparent) 85%,
+        transparent 100%
+    );
+}
+
+html[data-theme] #page-chat .chat-scroll-blur-bottom {
+    background: linear-gradient(
+        to top,
+        var(--bg-main) 0%,
+        color-mix(in srgb, var(--bg-main) 92%, transparent) 30%,
+        color-mix(in srgb, var(--bg-main) 60%, transparent) 60%,
+        color-mix(in srgb, var(--bg-main) 20%, transparent) 85%,
+        transparent 100%
+    );
+}
+
+/* ── Settings (Profile, Appearance, Privacy …) & modals ──────────────────── */
+html[data-theme] #page-chat .profile-workspace :is(.ps-card, .ps-header, .theme-card, .profile-sec-card, .profile-privacy-card) {
+    background: var(--card-bg);
+    border-color: var(--border-subtle);
+    box-shadow: var(--card-shadow);
+}
+
+/* Photo dropzone: card fill with a quiet dashed outline; hover / drag-over
+   only turns the outline accent (fill unchanged). Icon + "Click to upload"
+   carry the accent. */
+html[data-theme] #page-chat .profile-workspace .ps-dropzone {
+    background: var(--card-bg);
+    border-color: var(--border-subtle);
+    transition: border-color 0.18s ease;
+}
+
+html[data-theme] #page-chat .profile-workspace .ps-dropzone:is(:hover, .is-dragover) {
+    background: var(--card-bg);
+    border-color: var(--accent-primary) !important;
+}
+
+html[data-theme] #page-chat .profile-workspace .ps-dropzone__icon {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    color: var(--accent-primary);
+}
+
+html[data-theme] #page-chat .profile-workspace .ps-dropzone__text strong {
+    color: var(--accent-primary);
+}
+
+html[data-theme] #page-chat .profile-workspace .ps-dropzone__text {
+    color: var(--text-secondary);
+}
+
+/* Settings: same hover response as the folder tree (--sidebar-hover-transition:
+   background / text / border / shadow, 0.15s ease-out, no delay) for the nav
+   (Appearance … Log out), theme cards, density chips and the Data actions
+   rows. Their text, icons and chevrons fade on the same clock; the theme
+   card's press scale keeps its own short transform. */
+html[data-theme] #page-chat :is(
+    .profile-nav-btn,
+    .profile-workspace .theme-card,
+    .profile-workspace .appearance-chip,
+    .profile-workspace .profile-data-action
+) {
+    transition: var(--sidebar-hover-transition), transform var(--list-hover-duration) var(--list-hover-ease);
+    transition-delay: 0s;
+}
+
+html[data-theme] #page-chat :is(
+    .profile-nav-btn :is(.profile-nav-icon, .profile-nav-label, .ui-icon),
+    .profile-workspace .theme-card :is(.theme-card__name, .theme-card__type),
+    .profile-workspace .profile-data-action :is(.profile-data-action-icon, .profile-data-action-title, .profile-data-action-hint, .profile-data-action-meta, .profile-data-action-chevron)
+) {
+    transition: var(--sidebar-hover-transition), text-shadow var(--list-hover-duration) var(--list-hover-ease);
+}
+
+/* ── Sliding hover highlight (js/hoverHighlight.js) ─────────────────────────
+   The left aside's hover, for Settings: one highlight per list glides to the
+   hovered item on the aside's spring (stiffness 500 / damping 40, baked into
+   linear() — 0.29s, no overshoot), fades in where the pointer enters and out
+   when it leaves. 'under' = the aside's fill beneath transparent rows (nav,
+   Data actions); 'ring' = an outline over opaque cards / chips (themes,
+   density). Items' own hover fills are off so there's one moving highlight. */
+html[data-theme] {
+    --hover-hl-duration: 0.29s;
+    --hover-hl-spring: linear(0, 0.032, 0.107, 0.205, 0.306, 0.411, 0.509, 0.598, 0.675, 0.742, 0.797, 0.843, 0.879, 0.909, 0.933, 0.951, 0.965, 0.976, 0.984, 0.99, 0.994, 0.997, 0.999, 1, 1);
+}
+
+html[data-theme] :is(#uiProfileNav, .profile-data-actions, #uiThemePicker, #uiAppearanceDensityPicker) {
+    position: relative;
+}
+
+html[data-theme] .hover-hl {
+    border-radius: var(--hl-radius, var(--list-item-radius));
+    box-sizing: border-box;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    transition:
+        transform var(--hover-hl-duration) var(--hover-hl-spring),
+        width var(--hover-hl-duration) var(--hover-hl-spring),
+        height var(--hover-hl-duration) var(--hover-hl-spring),
+        border-radius var(--hover-hl-duration) var(--hover-hl-spring),
+        opacity var(--list-hover-duration) var(--list-hover-ease);
+    will-change: transform, width, height;
+}
+
+html[data-theme] .hover-hl.is-visible {
+    opacity: 1;
+}
+
+/* Entering from outside: appear in place (fade only), no glide from afar. */
+html[data-theme] .hover-hl.is-instant {
+    transition: opacity var(--list-hover-duration) var(--list-hover-ease);
+}
+
+html[data-theme] .hover-hl--under {
+    background: var(--hover-bg);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--card-shadow);
+    z-index: 0;
+}
+
+html[data-theme] .hover-hl--ring {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--text-primary) 28%, transparent);
+    z-index: 3;
+}
+
+/* Rows / cards ride above an 'under' highlight; their own hover fills yield
+   to the moving one. */
+html[data-theme] #page-chat :is(.profile-nav-btn, .profile-workspace .profile-data-action) {
+    position: relative;
+    z-index: 1;
+}
+
+html[data-theme] #page-chat .profile-nav-btn:not(.is-active):is(:hover, :focus-visible),
+html[data-theme] #page-chat .profile-workspace .profile-data-action:is(:hover, :focus-visible) {
+    background: transparent;
+}
+
+html[data-theme] #page-chat .profile-workspace .theme-card:not(.is-active):hover,
+html[data-theme] #page-chat .profile-workspace .appearance-chip:not(.is-active):is(:hover, :focus-visible) {
+    background: var(--settings-inner-fill, var(--card-bg));
+    border-color: var(--border-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme] .hover-hl {
+        transition: opacity var(--list-hover-duration) var(--list-hover-ease);
+    }
+}
+
+html[data-theme] #page-chat .profile-nav-btn.is-active {
+    background: var(--active-pill-bg);
+    color: var(--active-pill-text);
+}
+
+/* The active pill replaces the old blue dot. */
+html[data-theme] #page-chat .profile-nav-btn.is-active::after {
+    display: none;
+}
+
+html[data-theme] #page-chat .profile-nav-btn.is-active .ui-icon {
+    color: var(--active-pill-text);
+}
+
+
+html[data-theme] .overlay-surface {
+    background: var(--card-bg);
+    border-color: var(--border-subtle);
+}
+
+html[data-theme] .overlay-surface :is(.overlay-menu-item):hover:not(:disabled) {
+    background: var(--hover-bg);
+}
+
+/* ── Theme switch transition (js/themeManager.js → setThemeAnimated) ─────────
+   View Transitions: the new theme wipes in over a snapshot of the old one, so
+   the default cross-fade is switched off. Fallback: every colour eases while
+   html.nexa-theme-fading is set (350ms). */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+html.nexa-theme-fading,
+html.nexa-theme-fading *,
+html.nexa-theme-fading *::before,
+html.nexa-theme-fading *::after {
+    transition:
+        background-color 0.35s ease,
+        color 0.35s ease,
+        border-color 0.35s ease,
+        box-shadow 0.35s ease,
+        fill 0.35s ease,
+        stroke 0.35s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme] #page-chat #usersList .contact-row,
+    html[data-theme] #page-chat :is(.expandable-tabs__btn, .library-row, .sidebar-file-tree [role="treeitem"]) {
+        transition: none;
+    }
+}
