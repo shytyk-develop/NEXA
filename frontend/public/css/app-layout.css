@@ -2232,7 +2232,9 @@ html[data-wallpaper-dim] {
     justify-content: flex-start;
     min-width: 0;
     opacity: 1;
-    padding: 0 12px 0 8px;
+    /* 44px avatar in the 54px pill: 5px above / below, 6px at the left so it
+       sits in the pill's rounded end with room for the status arc */
+    padding: 0 12px 0 6px;
     pointer-events: none;
     position: relative;
     transform: translateY(0);
@@ -2262,10 +2264,10 @@ html[data-wallpaper-dim] {
 
 #page-chat .chat-header-avatar-wrap {
     flex-shrink: 0;
-    height: 40px;
+    height: 44px;
     pointer-events: auto;
     position: relative;
-    width: 40px;
+    width: 44px;
     z-index: 1;
 }
 
@@ -5159,9 +5161,15 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
 
 #usersList .contact-avatar {
     border-radius: var(--radius-pill);
-    font-size: var(--text-caption);
-    height: 34px;
-    width: 34px;
+    font-size: 15px;
+    height: 42px;
+    width: 42px;
+}
+
+/* Desktop list: a touch more room between the bigger avatar (+ its arc) and
+   the name / preview column (mobile keeps its own sizing, mobile-chat.css) */
+#page-chat:not(.is-viewport-app-stack) #usersList .contact-row {
+    gap: 12px;
 }
 
 /* Chat list item hierarchy */
@@ -5211,6 +5219,74 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
     color: var(--text-secondary);
     font-size: var(--text-meta);
     margin-top: 1px;
+}
+
+/* ── Presence arc around avatars (chat list, chat header) ─────────────────────
+   A 2px SVG stroke (StatusArc.tsx) just outside the avatar, 7:30 → 10:30,
+   with round caps. No arc when online status is hidden (no data-status).
+   Online, everywhere: the theme accent — the same token as the left sidebar's
+   active tab pill (--active-pill-bg: #005218 Emerald, #8DC400 Lime, #C7FF00
+   Neon), so list and header always match. Offline: quiet grey in the list,
+   contrast red in the header. */
+:root {
+    --status-online: var(--active-pill-bg, #ccff00);
+    --status-online-glow: color-mix(in srgb, var(--status-online) 40%, transparent);
+    --status-offline: rgba(255, 255, 255, 0.2);
+    --status-header-offline: #ef4444;
+}
+
+/* A white-alpha grey vanishes on white: dark-alpha on the light themes */
+html[data-theme^="light"] {
+    --status-offline: rgba(0, 0, 0, 0.18);
+}
+
+.avatar-status {
+    border-radius: 50%;
+    display: inline-flex;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.avatar-status__arc {
+    display: none;
+    fill: none;
+    height: calc(100% + 6px);
+    inset: -3px;
+    overflow: visible;
+    pointer-events: none;
+    position: absolute;
+    width: calc(100% + 6px);
+    z-index: 1;
+}
+
+.avatar-status[data-status] .avatar-status__arc {
+    display: block;
+}
+
+/* Round caps: the arc's ends are soft instead of knife-edge points */
+.avatar-status__arc path {
+    stroke: var(--arc-color);
+    stroke-linecap: round;
+    stroke-width: 2px;
+    transition: stroke 0.25s ease;
+    vector-effect: non-scaling-stroke;
+}
+
+.avatar-status[data-status="online"] {
+    --arc-color: var(--status-online);
+}
+
+.avatar-status[data-status="online"] .avatar-status__arc {
+    filter: drop-shadow(0 0 4px var(--status-online-glow));
+}
+
+.avatar-status[data-status="offline"] {
+    --arc-color: var(--status-offline);
+}
+
+/* Chat header: online is the shared accent arc above; offline is a clear red */
+.avatar-status--header[data-status="offline"] {
+    --arc-color: var(--status-header-offline);
 }
 
 /* Presence dot (the .contact-presence element is the dot) */

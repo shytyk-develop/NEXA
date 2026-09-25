@@ -4,6 +4,7 @@ import { getPrivacyFlags } from '../../../../js/privacy.js';
 import { GooeyText, GOOEY_DOTS } from '../../../components/ui/GooeyText';
 import { useChatSnapshot } from '../../hooks/useChatEngine';
 import { Icon } from '../../components/Icon';
+import { StatusArc } from '../../components/StatusArc';
 
 export function ChatHeader() {
     const snap = useChatSnapshot();
@@ -29,13 +30,13 @@ export function ChatHeader() {
                             className={`chat-header-peer__identity${active ? '' : ' hidden'}`}
                             aria-hidden={active ? 'false' : 'true'}
                         >
-                            <div className="chat-header-avatar-wrap">
+                            {/* Presence arc (contrast green / red here — see .avatar-status--header) */}
+                            <div
+                                className="chat-header-avatar-wrap avatar-status avatar-status--header"
+                                data-status={showPresence ? (online ? 'online' : 'offline') : undefined}
+                            >
                                 <div id="chatHeaderAvatar" className="chat-header-avatar contact-avatar" aria-hidden="true" />
-                                <span
-                                    className={`chat-header-presence ${online ? 'is-online' : 'is-offline'}`}
-                                    hidden={!showPresence}
-                                    aria-hidden="true"
-                                />
+                                <StatusArc />
                             </div>
                             <div className="header-left__meta">
                                 <span

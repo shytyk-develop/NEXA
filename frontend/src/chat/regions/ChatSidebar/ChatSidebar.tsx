@@ -23,6 +23,7 @@ import { useChatSnapshot } from '../../hooks/useChatEngine';
 import { AsideToggle } from '../../components/AsideToggle';
 import { ExpandableTabs, type ExpandableTabItem } from '../../components/ExpandableTabs';
 import { Icon } from '../../components/Icon';
+import { StatusArc } from '../../components/StatusArc';
 import { FileTree, FileTreeItem, FileTreeList } from '@/components/ui/file-tree';
 import { ScrollBlur } from '@/components/ui/scroll-blur';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
@@ -1324,7 +1325,8 @@ function ContactRow({
     const profile = resolveContactProfile(user.username, user, myUsername);
     const label = getDisplayLabel(user.username, profile);
     const hasDisplayName = Boolean(profile.displayName?.trim());
-    const presenceClass = online == null ? 'presence-neutral' : online ? 'is-online' : 'is-offline';
+    // Presence arc around the avatar (hidden when online status is turned off)
+    const presence = online == null ? undefined : online ? 'online' : 'offline';
     const time = formatSidebarTime(user.last_message_at);
     const preview = truncateSidebarPreview(user.last_message_preview);
     // Kept mounted in pick mode (CSS fades it out) so nothing pops.
@@ -1372,16 +1374,19 @@ function ContactRow({
                     <Check size={12} strokeWidth={3} />
                 </motion.span>
             </span>
-            <div
-                className={`contact-avatar${profile.avatarDataUrl ? ' has-photo' : ''}`}
-                style={{ ['--avatar-hue' as string]: String(getAvatarHue(user.username)) }}
-            >
-                {profile.avatarDataUrl ? (
-                    <img src={profile.avatarDataUrl} alt="" className="contact-avatar-img" loading="lazy" />
-                ) : (
-                    getInitials(label)
-                )}
-            </div>
+            <span className="avatar-status" data-status={presence}>
+                <div
+                    className={`contact-avatar${profile.avatarDataUrl ? ' has-photo' : ''}`}
+                    style={{ ['--avatar-hue' as string]: String(getAvatarHue(user.username)) }}
+                >
+                    {profile.avatarDataUrl ? (
+                        <img src={profile.avatarDataUrl} alt="" className="contact-avatar-img" loading="lazy" />
+                    ) : (
+                        getInitials(label)
+                    )}
+                </div>
+                <StatusArc />
+            </span>
             <div className="contact-meta">
                 <div className="contact-name-row">
                     <div className={`contact-name${hasDisplayName ? ' has-display-name' : ''}`}>{label}</div>
@@ -1399,7 +1404,6 @@ function ContactRow({
                             <span className="typing-dots" aria-label="Typing"><span /><span /><span /></span>
                         ) : (preview || 'Secure channel')}
                     </div>
-                    <div className={`contact-presence ${presenceClass}`} data-presence-dot="true" aria-hidden="true" />
                 </div>
             </div>
             {showBadge ? (
