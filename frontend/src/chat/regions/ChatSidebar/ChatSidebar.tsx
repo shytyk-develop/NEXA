@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, createContext, useContext, type MouseEvent, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, createContext, useContext, type MouseEvent, type ReactNode } from 'react';
 import {
     Bell,
     Check,
@@ -30,6 +30,7 @@ import { ScrollBlur } from '@/components/ui/scroll-blur';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
 import {
     openAppSettings,
+    currentAppView,
     openProfile,
     showChatsView,
 } from '../../../../js/ui.js';
@@ -338,8 +339,7 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
 
                 <aside id="uiSidebar" className="sidebar" aria-label="Navigation and contacts">
                     <SidebarHeader toggleId="uiSidebarHeaderToggle">
-                        {/* Drawn as a mask so it takes the theme's text colour (see .brand-logo). */}
-                        <span role="img" aria-label="NEXA" className="sidebar-brand__mark brand-logo" />
+                        <SidebarHeaderTitle owner="aside" />
                     </SidebarHeader>
 
                     <section className="sidebar-chats" aria-label="Chats">
@@ -1575,6 +1575,82 @@ const SidebarDock = memo(function SidebarDock({
  * logo) and the settings nav ("Settings"); the label replays a short fade-in
  * whenever its view is shown, so switching views reads as NEXA ⇄ Settings.
  */
+type AppView = 'chats' | 'settings' | 'identity';
+type HeaderTitleKey = 'nexa' | 'settings' | 'profile';
+
+const HEADER_TITLE_FOR: Record<AppView, HeaderTitleKey> = { chats: 'nexa', settings: 'settings', identity: 'profile' };
+const HEADER_TITLE_TRANSITION = { duration: 0.15, ease: 'easeOut' } as const;
+
+/** The app view (js/ui.js setAppView announces changes). */
+function useAppView(): AppView {
+    const [view, setView] = useState<AppView>(() => (currentAppView() as AppView) || 'chats');
+    useEffect(() => {
+        const onView = (event: Event) => {
+            const next = (event as CustomEvent<{ view: AppView }>).detail?.view;
+            if (next) setView(next);
+        };
+        window.addEventListener('nexa:app-view', onView);
+        return () => window.removeEventListener('nexa:app-view', onView);
+    }, []);
+    return view;
+}
+
+/**
+ * The title currently on screen. Two headers exist — the chat list's and the
+ * settings nav's — and only one is visible; the hidden one keeps showing this,
+ * so when a view switch reveals it, it morphs from what was just on screen
+ * (Settings → Profile) instead of popping in with the new title.
+ */
+let shownHeaderTitle: HeaderTitleKey = 'nexa';
+const headerTitleListeners = new Set<() => void>();
+const headerTitleStore = {
+    subscribe(listener: () => void) {
+        headerTitleListeners.add(listener);
+        return () => {
+            headerTitleListeners.delete(listener);
+        };
+    },
+    get: () => shownHeaderTitle,
+    set(next: HeaderTitleKey) {
+        if (next === shownHeaderTitle) return;
+        shownHeaderTitle = next;
+        headerTitleListeners.forEach((listener) => listener());
+    },
+};
+
+/** NEXA in Chats, "Settings" in Settings, "Profile" on the Profile page — cross-faded. */
+function SidebarHeaderTitle({ owner }: { owner: 'aside' | 'settings' }) {
+    const view = useAppView();
+    const lastShown = useSyncExternalStore(headerTitleStore.subscribe, headerTitleStore.get);
+    const reduce = useReducedMotion() === true;
+    const visible = owner === 'settings' ? view === 'settings' : view !== 'settings';
+    const title: HeaderTitleKey = visible ? HEADER_TITLE_FOR[view] : lastShown;
+
+    useEffect(() => {
+        if (visible) headerTitleStore.set(title);
+    }, [visible, title]);
+
+    return (
+        <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+                key={title}
+                className="left-sidebar-header__swap"
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                transition={HEADER_TITLE_TRANSITION}
+            >
+                {title === 'nexa' ? (
+                    // Drawn as a mask so it takes the theme's text colour (see .brand-logo).
+                    <span role="img" aria-label="NEXA" className="sidebar-brand__mark brand-logo" />
+                ) : (
+                    <span className="left-sidebar-header__title">{title === 'settings' ? 'Settings' : 'Profile'}</span>
+                )}
+            </motion.span>
+        </AnimatePresence>
+    );
+}
+
 function SidebarHeader({ toggleId, children }: { toggleId: string; children: ReactNode }) {
     return (
         <header className="sidebar-brand left-sidebar-header">
@@ -1628,7 +1704,7 @@ const ProfileNav = memo(function ProfileNav() {
             </header>
             {/* Same header as the chat list's (shape, cutout, hide button), titled */}
             <SidebarHeader toggleId="uiSettingsHeaderToggle">
-                <span className="left-sidebar-header__title">Settings</span>
+                <SidebarHeaderTitle owner="settings" />
             </SidebarHeader>
             {/* You: avatar + status, name, @handle → the Profile page (filled by profileSettings.js) */}
             <button id="uiProfileNavCard" className="profile-nav-card" type="button" aria-label="Open your profile">

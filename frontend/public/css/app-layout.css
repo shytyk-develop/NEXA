@@ -3853,11 +3853,10 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
     position: relative;
 }
 
-/* Label: NEXA logo (chat list) or "Settings" (settings nav). A hidden view
-   restarts its animations when shown, so each switch replays this fade-in. */
+/* Label: NEXA in Chats, "Settings" in Settings, "Profile" on the Profile page.
+   The swap between them is animated in React (ChatSidebar SidebarHeaderTitle). */
 .left-sidebar-header__label {
     align-items: center;
-    animation: sidebar-header-label-in 0.15s ease-out both;
     display: flex;
     /* Same box for the logo and "Settings": the header can't size to its label */
     height: 26px;
@@ -3867,21 +3866,10 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
     z-index: 2;
 }
 
-@keyframes sidebar-header-label-in {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .left-sidebar-header__label {
-        animation: none;
-    }
+.left-sidebar-header__swap {
+    align-items: center;
+    display: flex;
+    min-width: 0;
 }
 
 .left-sidebar-header__title {

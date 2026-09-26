@@ -2184,7 +2184,7 @@ export function openSettings() {
 }
 
 /** Current app view from #page-chat's classes: 'chats' | 'identity' | 'settings'. */
-function currentAppView() {
+export function currentAppView() {
     const page = DOM.pageChat || document.getElementById('page-chat');
     if (page?.classList.contains('is-app-view-settings')) return 'settings';
     if (page?.classList.contains('is-app-view-identity')) return 'identity';
@@ -2267,6 +2267,8 @@ function setAppView(view) {
     }
     DOM.pageChat?.classList.toggle('is-app-view-identity', isIdentity);
     DOM.pageChat?.classList.toggle('is-app-view-settings', isSettings);
+    // The sidebar headers (NEXA / Settings / Profile) follow the view.
+    window.dispatchEvent(new CustomEvent('nexa:app-view', { detail: { view } }));
     if (DOM.profilePanel) {
         DOM.profilePanel.classList.toggle('hidden', !isProfileSurface);
         DOM.profilePanel.setAttribute('aria-hidden', isProfileSurface ? 'false' : 'true');
