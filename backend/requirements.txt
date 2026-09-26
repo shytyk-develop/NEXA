@@ -11,3 +11,4 @@ alembic
 SQLAlchemy
 qrcode
 pillow
+psycopg[binary]>=3.1.0
