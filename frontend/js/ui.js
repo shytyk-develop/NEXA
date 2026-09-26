@@ -350,7 +350,7 @@ function initPeerPanelCollapse() {
             if (!(target instanceof Element)) return;
 
             // Edge tab (reopens when collapsed) or the header cutout button
-            if (target.closest('#uiSidebarToggle, #uiSidebarHeaderToggle')) {
+            if (target.closest('#uiSidebarToggle, #uiSidebarHeaderToggle, #uiSettingsHeaderToggle')) {
                 const sidebar = document.getElementById('uiSidebar') || DOM.sidebar;
                 if (!sidebar) return;
                 const next = !sidebar.classList.contains('is-collapsed');
@@ -373,6 +373,11 @@ function initPeerPanelCollapse() {
 
             if (target.closest('#uiRailChats')) {
                 showChatsView();
+                return;
+            }
+            // Settings nav → the "you" card opens the Profile page.
+            if (target.closest('#uiProfileNavCard')) {
+                openProfile('identity');
                 return;
             }
             if (target.closest('#uiRailProfile')) {

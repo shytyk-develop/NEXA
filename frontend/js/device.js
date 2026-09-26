@@ -34,8 +34,12 @@ export function detectDeviceInfo({ includeBrowser = false } = {}) {
     } else if (/Macintosh|Mac OS X/i.test(ua) || /Mac/i.test(platformHint)) {
         name = 'Mac';
         platform = 'macos';
+        // Browsers freeze the UA at "Mac OS X 10_15_7" on every newer macOS, so
+        // that value says nothing; enrichDeviceInfo() reads the real version
+        // from Client Hints where the browser has them (Chromium).
         const ver = ua.match(/Mac OS X (\d+[._]\d+(?:[._]\d+)?)/);
-        osVersion = ver ? `macOS ${ver[1].replace(/_/g, '.')}` : 'macOS';
+        const real = ver && !/^10[._]15[._]7$/.test(ver[1]) ? ver[1].replace(/_/g, '.') : '';
+        osVersion = real ? `macOS ${real}` : 'macOS';
     } else if (/Windows/i.test(ua) || /Win/i.test(platformHint)) {
         name = 'Windows PC';
         platform = 'windows';
@@ -91,7 +95,8 @@ export async function enrichDeviceInfo(info) {
         if (plat.includes('mac')) {
             next.name = 'Mac';
             next.platform = 'macos';
-            next.osVersion = version ? `macOS ${version}` : next.osVersion;
+            // platformVersion is the real macOS version ("26.2.0" → macOS 26.2).
+            next.osVersion = version ? `macOS ${trimVersion(version)}` : next.osVersion;
         } else if (plat.includes('win')) {
             next.name = 'Windows PC';
             next.platform = 'windows';
@@ -110,6 +115,11 @@ export async function enrichDeviceInfo(info) {
     } catch {
         return info;
     }
+}
+
+/** "26.2.0" → "26.2", "15.0.0" → "15". */
+function trimVersion(version) {
+    return String(version).replace(/(\.0)+$/, '');
 }
 
 function windowsLabelFromPlatformVersion(version) {

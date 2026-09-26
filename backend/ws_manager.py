@@ -84,8 +84,16 @@ class ConnectionManager:
         device_name: Optional[str] = None,
         platform: Optional[str] = None,
         os_version: Optional[str] = None,
-    ):
+        issued_at=None,
+    ) -> bool:
+        """Join a socket. False (socket closed) when this device's session was
+        terminated after the token was issued."""
         parsed_device_id = database.parse_device_id(device_id)
+        if parsed_device_id and await asyncio.to_thread(
+            database.is_device_session_revoked_db, username, parsed_device_id, issued_at
+        ):
+            await self._close_terminated(websocket)
+            return False
         sockets = self.username_to_websockets.setdefault(username, set())
 
         if parsed_device_id:
@@ -215,6 +223,25 @@ class ConnectionManager:
                 await self._send_json(ws, payload)
             except Exception:
                 await self.disconnect(ws)
+
+    async def _close_terminated(self, websocket: WebSocket):
+        """Tell a terminated device to sign out, then close (1008: no reconnect)."""
+        try:
+            await self._send_json(websocket, {"type": "session_terminated"})
+        except Exception:
+            pass
+        await self.disconnect(websocket)
+        try:
+            await websocket.close(code=1008, reason="Session terminated")
+        except Exception:
+            pass
+
+    async def terminate_device(self, username: str, device_id: str):
+        """Kick every live socket of one of the user's devices."""
+        for ws in list(self.username_to_websockets.get(username, set())):
+            if self.active_connections.get(ws, {}).get("device_id") == device_id:
+                await self._close_terminated(ws)
+        await self.broadcast_users_list()
 
     async def _send_json(self, websocket: WebSocket, payload: dict):
         await websocket.send_text(json.dumps(payload))

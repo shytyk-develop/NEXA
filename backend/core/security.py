@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import jwt
@@ -12,9 +12,28 @@ USERNAME_RE = re.compile(r"^[a-z0-9_]{3,32}$")
 
 
 def create_access_token(username: str) -> str:
-    expiration = datetime.utcnow() + timedelta(hours=24)
-    payload = {"sub": username, "exp": expiration}
+    now = datetime.utcnow()
+    # iat: a terminated device session only rejects tokens issued before it.
+    payload = {"sub": username, "iat": now, "exp": now + timedelta(hours=24)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def token_issued_at(authorization: Optional[str]) -> Optional[datetime]:
+    """UTC issue time of a Bearer token (None for tokens minted before iat)."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    return issued_at_from_token(authorization[len("Bearer "):].strip())
+
+
+def issued_at_from_token(token: str) -> Optional[datetime]:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None
+    iat = payload.get("iat")
+    if not isinstance(iat, (int, float)):
+        return None
+    return datetime.fromtimestamp(iat, tz=timezone.utc)
 
 
 def normalize_username(username: str) -> str:

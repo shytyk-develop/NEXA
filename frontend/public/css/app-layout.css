@@ -190,6 +190,14 @@ html[data-wallpaper-dim] {
     flex: 0 0 auto;
 }
 
+/* Settings view, sidebar collapsed: #chat-root shrinks to the 0-wide capsule,
+   so let the reopen tab spill out and sit above the profile workspace (a later
+   sibling at the same z-index) instead of being clipped / covered by it. */
+#page-chat:not(.is-viewport-app-stack).is-sidebar-collapsed:has(#uiChatWorkspace[hidden]) #chat-root {
+    overflow: visible;
+    z-index: 2;
+}
+
 #page-chat.is-viewport-app-stack #chat-root {
     display: contents;
 }
@@ -3845,6 +3853,48 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
     position: relative;
 }
 
+/* Label: NEXA logo (chat list) or "Settings" (settings nav). A hidden view
+   restarts its animations when shown, so each switch replays this fade-in. */
+.left-sidebar-header__label {
+    align-items: center;
+    animation: sidebar-header-label-in 0.15s ease-out both;
+    display: flex;
+    /* Same box for the logo and "Settings": the header can't size to its label */
+    height: 26px;
+    line-height: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes sidebar-header-label-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .left-sidebar-header__label {
+        animation: none;
+    }
+}
+
+.left-sidebar-header__title {
+    color: var(--text-primary, var(--theme-text, #f4f4f5));
+    font-family: var(--f-display);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    user-select: none;
+    white-space: nowrap;
+}
+
 #page-chat:not(.is-viewport-app-stack) .left-sidebar-header .sidebar-brand__mark {
     height: 22px;
     max-height: 22px;
@@ -3929,15 +3979,16 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
     display: none;
 }
 
-/* While the header button is on screen the edge tab (and its stroke notch)
-   stays away; it returns once collapsed, to reopen the sidebar. */
-#page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:has(.sidebar:not([hidden])) .aside-toggle--start {
+/* Open sidebar: the header's round button hides it (chat list and settings
+   both carry that header), so the edge tab — and its stroke notch — never
+   shows, hover included. It only returns once collapsed, to reopen it. */
+#page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule .aside-toggle--start {
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden;
 }
 
-#page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule:has(.sidebar:not([hidden]))::after {
+#page-chat:not(.is-viewport-app-stack):not(.is-sidebar-collapsed) .left-capsule::after {
     display: none;
 }
 

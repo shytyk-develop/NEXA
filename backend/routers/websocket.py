@@ -3,7 +3,7 @@ import json
 import jwt
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from core.security import JWT_ALGORITHM, JWT_SECRET, USERNAME_RE, normalize_username
+from core.security import JWT_ALGORITHM, JWT_SECRET, USERNAME_RE, issued_at_from_token, normalize_username
 from ws_manager import manager
 
 router = APIRouter()
@@ -19,6 +19,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         token_username = normalize_username(payload.get("sub", ""))
+        token_issued_at = issued_at_from_token(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         print("❌ Handshake blocked: invalid or expired token signature")
         await websocket.close(code=1008, reason="Invalid token")
@@ -41,7 +42,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                     await websocket.close(code=1008, reason="Identity theft detected")
                     return
 
-                await manager.register_user(
+                joined = await manager.register_user(
                     websocket,
                     username,
                     data["public_key"],
@@ -50,7 +51,10 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                     device_name=data.get("device_name"),
                     platform=data.get("platform"),
                     os_version=data.get("os_version"),
+                    issued_at=token_issued_at,
                 )
+                if not joined:
+                    return
                 await manager.broadcast_users_list()
 
             elif data["type"] == "message":

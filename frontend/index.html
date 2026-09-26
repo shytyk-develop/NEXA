@@ -861,6 +861,7 @@
         <symbol id="icon-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></symbol>
         <symbol id="icon-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></symbol>
         <symbol id="icon-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></symbol>
+        <symbol id="icon-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
         <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></symbol>
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
         <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></symbol>
@@ -1079,6 +1080,11 @@
                         <h2 id="uiProfileTitle">Profile</h2>
                         <p id="uiProfileHeadSub" class="profile-head-sub">Manage your identity. Visible only to you.</p>
                     </div>
+                    <!-- Privacy: how many of the four sharing switches are on (js). -->
+                    <span id="uiPrivacySummary" class="pv-summary" aria-live="polite">
+                        <span class="pv-summary__bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                        <span id="uiPrivacySummaryText">4/4 sharing</span>
+                    </span>
                     <button id="uiCloseProfileBtn" class="mini-icon-btn profile-close-btn" type="button" title="Close profile" aria-label="Close profile"><svg class="ui-icon" aria-hidden="true"><use href="#icon-x"/></svg></button>
                 </header>
                 <div class="profile-body">
@@ -1184,41 +1190,79 @@
                         </div>
                     </div>
 
+                    <!-- Appearance — images/Group 47.png: Theme + Message density on the left,
+                         the live Chat preview on the right; centred in the panel. -->
                     <div id="uiProfileAppearanceLayout" data-profile-section="appearance" class="profile-appearance-layout hidden">
-                        <div class="profile-appearance-controls">
-                            <section class="profile-sec-block" aria-labelledby="uiThemePickerTitle">
-                                <h3 id="uiThemePickerTitle" class="profile-sec-kicker">Theme</h3>
-                                <p class="profile-appearance-lead">Pick a colour theme for the whole app. Hover a theme to preview it below.</p>
-                                <!-- Cards rendered by js/themePicker.js from the theme registry. -->
-                                <div id="uiThemePicker" class="theme-picker" role="radiogroup" aria-labelledby="uiThemePickerTitle"></div>
-                            </section>
+                        <div class="appearance-grid">
+                            <div class="appearance-col">
+                                <section class="appearance-card appearance-card--theme" aria-labelledby="uiThemePickerTitle">
+                                    <h3 id="uiThemePickerTitle" class="appearance-kicker">Theme</h3>
+                                    <p class="appearance-lead">Pick a colour theme for the whole app. Hover to preview.</p>
+                                    <!-- Rows rendered by js/themePicker.js from the theme registry. -->
+                                    <div id="uiThemePicker" class="theme-picker" role="radiogroup" aria-labelledby="uiThemePickerTitle"></div>
+                                </section>
 
-                            <section class="profile-sec-block">
-                                <h3 class="profile-sec-kicker">Chat preview</h3>
+                                <section class="appearance-card appearance-card--density" aria-labelledby="uiAppearanceDensityTitle">
+                                    <h3 id="uiAppearanceDensityTitle" class="appearance-kicker">Message density</h3>
+                                    <p class="appearance-lead">Comfortable spacing for reading, or a tighter thread when you want more on screen.</p>
+                                    <div id="uiAppearanceDensityPicker" class="appearance-segment" role="radiogroup" aria-labelledby="uiAppearanceDensityTitle">
+                                        <button type="button" class="appearance-chip is-active" data-appearance-density="comfortable" role="radio" aria-checked="true">
+                                            <svg class="appearance-chip__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h10"/></svg>
+                                            Comfortable
+                                        </button>
+                                        <button type="button" class="appearance-chip" data-appearance-density="compact" role="radio" aria-checked="false">
+                                            <svg class="appearance-chip__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5h10M3 7.33h10M3 9.67h10M3 12h10" transform="translate(0 -0.5)"/></svg>
+                                            Compact
+                                        </button>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <section class="appearance-card appearance-card--preview" aria-labelledby="uiAppearancePreviewTitle">
+                                <div class="appearance-card__head">
+                                    <h3 id="uiAppearancePreviewTitle" class="appearance-kicker">Chat preview</h3>
+                                    <!-- "Previewing" while another theme's card is hovered (js/themePicker.js). -->
+                                    <span class="appearance-status-pill" aria-live="polite">
+                                        <span class="appearance-status-pill__dot" aria-hidden="true"></span>
+                                        <span class="appearance-status-pill__label is-active-label">Active theme</span>
+                                        <span class="appearance-status-pill__label is-browse-label">Previewing</span>
+                                    </span>
+                                </div>
                                 <!-- Painted in the active theme (or the one under the pointer) by js/themePicker.js. -->
                                 <div id="uiAppearancePreview" class="appearance-preview" data-appearance-density="comfortable" aria-label="Theme preview">
                                     <div class="appearance-preview__window">
                                         <aside class="appearance-preview__sidebar" aria-hidden="true">
-                                            <span class="appearance-preview__search"></span>
+                                            <span class="appearance-preview__search">
+                                                <svg class="ui-icon"><use href="#icon-search"/></svg>
+                                                Search
+                                            </span>
                                             <span class="appearance-preview__chat is-active">
                                                 <span class="appearance-preview__avatar"></span>
                                                 <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
                                             </span>
-                                            <span class="appearance-preview__chat">
-                                                <span class="appearance-preview__avatar"></span>
-                                                <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
-                                            </span>
-                                            <span class="appearance-preview__chat">
-                                                <span class="appearance-preview__avatar"></span>
-                                                <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
-                                            </span>
+                                                <span class="appearance-preview__chat">
+                                                    <span class="appearance-preview__avatar"></span>
+                                                    <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
+                                                </span>
+                                                <span class="appearance-preview__chat">
+                                                    <span class="appearance-preview__avatar"></span>
+                                                    <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
+                                                </span>
+                                                <span class="appearance-preview__chat">
+                                                    <span class="appearance-preview__avatar"></span>
+                                                    <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
+                                                </span>
+                                                <span class="appearance-preview__chat">
+                                                    <span class="appearance-preview__avatar"></span>
+                                                    <span class="appearance-preview__lines"><span class="is-name"></span><span class="is-snip"></span></span>
+                                                </span>
                                         </aside>
                                         <div class="appearance-preview__main">
                                             <header class="appearance-preview__header">
-                                                <span class="appearance-preview__avatar"></span>
+                                                <span class="appearance-preview__avatar appearance-preview__avatar--peer">A</span>
                                                 <span class="appearance-preview__header-copy">
                                                     <span class="appearance-preview__header-name">Alex</span>
-                                                    <span class="appearance-preview__header-meta">end-to-end encrypted</span>
+                                                    <span class="appearance-preview__header-meta"><svg class="ui-icon"><use href="#icon-lock"/></svg>end-to-end encrypted</span>
                                                 </span>
                                             </header>
                                             <div class="appearance-preview__thread">
@@ -1228,123 +1272,140 @@
                                             </div>
                                             <div class="appearance-preview__composer">
                                                 <span class="appearance-preview__composer-field">Message</span>
-                                                <span class="appearance-preview__composer-send" aria-hidden="true"></span>
+                                                <span class="appearance-preview__composer-send" aria-hidden="true"><svg class="ui-icon"><use href="#icon-arrow-up"/></svg></span>
                                             </div>
                                         </div>
                                     </div>
                                     <p class="appearance-preview__note"><span id="uiAppearancePreviewName">Dark Neon</span> · changes apply immediately and are saved on this device.</p>
                                 </div>
                             </section>
-
-                            <section class="profile-sec-block">
-                                <h3 class="profile-sec-kicker">Chat layout</h3>
-                                <div class="appearance-option-card" role="group" aria-label="Message density">
-                                    <div class="appearance-option-head">
-                                        <div class="appearance-option-copy">
-                                            <p class="appearance-option-title">Message density</p>
-                                            <p class="appearance-option-hint">Comfortable spacing for reading, or a tighter thread when you want more on screen.</p>
-                                        </div>
-                                    </div>
-                                    <div id="uiAppearanceDensityPicker" class="appearance-chip-row" role="radiogroup" aria-label="Message density">
-                                        <button type="button" class="appearance-chip is-active" data-appearance-density="comfortable" role="radio" aria-checked="true">Comfortable</button>
-                                        <button type="button" class="appearance-chip" data-appearance-density="compact" role="radio" aria-checked="false">Compact</button>
-                                    </div>
-                                </div>
-                            </section>
                         </div>
                     </div>
 
-                    <div data-profile-section="security" class="profile-security-layout hidden">
-                        <section class="profile-sec-block">
-                            <h3 class="profile-sec-kicker">Encryption</h3>
-                            <div class="profile-sec-split">
-                                <div class="profile-sec-split__pane">
-                                    <span class="profile-sec-icon" aria-hidden="true">
-                                        <svg class="ui-icon"><use href="#icon-lock"/></svg>
-                                    </span>
-                                    <div class="profile-sec-copy">
-                                        <p class="profile-sec-title">End-to-end encrypted</p>
-                                        <p class="profile-sec-text">All messages and files are encrypted locally on your device.</p>
-                                    </div>
-                                </div>
-                                <div class="profile-sec-split__pane profile-sec-split__pane--verified">
-                                    <span class="profile-sec-orbit" aria-hidden="true">
-                                        <svg class="profile-sec-orbit-ring" viewBox="0 0 56 56" focusable="false">
-                                            <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" stroke-opacity="0.22" stroke-dasharray="2 5"/>
-                                            <circle cx="28" cy="28" r="16" fill="none" stroke="currentColor" stroke-opacity="0.14"/>
+                    <!-- Security — images/Group 45.png: hero + device identity, the three key
+                         cards, Manage devices; centred like Appearance. -->
+                    <div data-profile-section="security" class="profile-security-layout security-page hidden">
+                        <div class="security-grid">
+                            <section class="sec-card sec-hero" aria-labelledby="uiSecHeroTitle">
+                                <div class="sec-hero__copy">
+                                    <span class="sec-pill"><span class="sec-pill__dot" aria-hidden="true"></span>Encryption active</span>
+                                    <h3 id="uiSecHeroTitle" class="sec-hero__title">End-to-end<br>encrypted</h3>
+                                    <p class="sec-hero__text">All messages and files are encrypted locally on your device.</p>
+                                    <p class="sec-hero__status">
+                                        <svg class="sec-hero__badge" viewBox="0 0 20 20" aria-hidden="true">
+                                            <rect x="3.5" y="3.5" width="13" height="13" rx="3.5"/>
+                                            <rect x="3.5" y="3.5" width="13" height="13" rx="3.5" transform="rotate(45 10 10)"/>
+                                            <path class="sec-hero__badge-check" d="m6.8 10.2 2.2 2.2 4.2-4.6"/>
                                         </svg>
-                                        <svg class="ui-icon"><use href="#icon-lock"/></svg>
-                                    </span>
-                                    <div class="profile-sec-copy">
-                                        <p id="uiProfileSecVerified" class="profile-sec-title is-verified">Verified</p>
-                                        <p id="uiProfileSecVerifiedHint" class="profile-sec-text">Your keys are active and trusted.</p>
+                                        <span id="uiProfileSecVerified" class="sec-hero__verified is-verified">Verified</span>
+                                        <span id="uiProfileSecVerifiedHint" class="sec-hero__hint">Your keys are active and trusted.</span>
+                                    </p>
+                                </div>
+                                <div class="sec-hero__art" aria-hidden="true">
+                                    <svg class="sec-hero__rings" viewBox="-200 -200 400 400">
+                                        <circle class="is-outer" r="172"/>
+                                        <circle class="is-solid" r="132"/>
+                                        <circle class="is-solid" r="100"/>
+                                        <circle class="is-dashed" r="70"/>
+                                    </svg>
+                                    <span class="sec-hero__lock"><svg class="ui-icon"><use href="#icon-lock"/></svg></span>
+                                </div>
+                            </section>
+
+                            <section class="sec-card sec-device" aria-labelledby="uiSecDeviceTitle">
+                                <div class="sec-card__head">
+                                    <div>
+                                        <h4 class="sec-kicker">Device identity</h4>
+                                        <p id="uiSecDeviceTitle" class="sec-card__title">This device</p>
+                                    </div>
+                                    <span class="sec-pill sec-pill--sm"><span class="sec-pill__dot is-ring" aria-hidden="true"></span><span id="uiProfileDeviceActive">Active now</span></span>
+                                </div>
+                                <svg class="sec-device__art" viewBox="0 0 140 86" aria-hidden="true">
+                                    <rect class="is-body" x="17" y="1" width="106" height="72" rx="8"/>
+                                    <rect class="is-screen" x="23" y="7" width="94" height="60" rx="4"/>
+                                    <circle class="is-ring" cx="70" cy="37" r="10"/>
+                                    <circle class="is-dot" cx="70" cy="37" r="4"/>
+                                    <path class="is-base" d="M2 76h136l-5 8H7z"/>
+                                </svg>
+                                <div class="sec-device__tiles">
+                                    <div class="sec-tile">
+                                        <span class="sec-tile__label">Platform</span>
+                                        <span id="uiProfileDeviceName" class="sec-tile__value">—</span>
+                                    </div>
+                                    <div class="sec-tile">
+                                        <span class="sec-tile__label">System</span>
+                                        <span id="uiProfileDeviceOs" class="sec-tile__value">—</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="sec-card sec-key" aria-labelledby="uiSecIdentityKicker">
+                                <div class="sec-card__head">
+                                    <h4 id="uiSecIdentityKicker" class="sec-kicker">Identity key</h4>
+                                    <!-- Opens the full fingerprint below the key cards. -->
+                                    <button id="uiProfileKeysToggle" class="sec-arrow-btn" type="button" title="Show full fingerprint" aria-label="Show full fingerprint" aria-expanded="false" aria-controls="uiProfileFingerprintPanel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg></button>
+                                </div>
+                                <p class="sec-key__label">Asymmetric key pair</p>
+                                <p id="uiProfileKeyIdentity" class="sec-key__value">RSA-OAEP-2048</p>
+                                <span class="sec-key__bar" aria-hidden="true"><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                            </section>
+
+                            <section class="sec-card sec-key" aria-labelledby="uiSecCipherKicker">
+                                <div class="sec-card__head">
+                                    <h4 id="uiSecCipherKicker" class="sec-kicker">Message cipher</h4>
+                                    <span class="sec-arrow-btn" title="Every message is sealed with its own AES-GCM-256 key" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg></span>
+                                </div>
+                                <p class="sec-key__label">Symmetric encryption</p>
+                                <p id="uiProfileKeyCipher" class="sec-key__value">AES-GCM-256</p>
+                                <span class="sec-key__bar" aria-hidden="true"><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i></span>
+                            </section>
+
+                            <section class="sec-card sec-fp" aria-labelledby="uiSecFpKicker">
+                                <div class="sec-fp__copy">
+                                    <h4 id="uiSecFpKicker" class="sec-kicker">Fingerprint</h4>
+                                    <p class="sec-key__label">Safety code</p>
+                                    <p id="uiProfileKeyFpShort" class="sec-key__value">—</p>
+                                    <!-- .is-copied (js) swaps the icon + label for 2s; both labels share one
+                                         grid cell, so the button keeps its width. -->
+                                    <button id="uiProfileCopyFingerprint" class="sec-copy-btn" type="button">
+                                        <span class="sec-copy-btn__icons" aria-hidden="true">
+                                            <svg class="ui-icon is-copy"><use href="#icon-copy"/></svg>
+                                            <svg class="is-check" viewBox="0 0 16 16"><path d="m3.5 8.4 2.9 2.9 6.1-6.6"/></svg>
+                                        </span>
+                                        <span class="sec-copy-btn__labels">
+                                            <span class="is-copy">Copy code</span>
+                                            <span class="is-check" aria-hidden="true">Copied!</span>
+                                        </span>
+                                    </button>
+                                </div>
+                                <!-- 8×8 cells drawn from the fingerprint (js/profileSettings.js). -->
+                                <span id="uiProfileFpGrid" class="sec-fp__grid" aria-hidden="true"></span>
+                            </section>
+
+                            <!-- Opens / closes with a height + fade (.is-open, js toggleFingerprintPanel). -->
+                            <div id="uiProfileFingerprintPanel" class="sec-fp-wrap" aria-hidden="true" inert>
+                                <div class="sec-fp-wrap__clip">
+                                    <div class="sec-card sec-fp-panel">
+                                        <h4 class="sec-kicker">Full fingerprint</h4>
+                                        <p id="uiProfileFingerprint" class="sec-fp-panel__value">Loading…</p>
                                     </div>
                                 </div>
                             </div>
-                        </section>
 
-                        <section class="profile-sec-block">
-                            <h3 class="profile-sec-kicker">Device identity</h3>
-                            <div class="profile-sec-card profile-sec-device">
-                                <span class="profile-sec-icon" aria-hidden="true">
-                                    <svg class="ui-icon"><use href="#icon-laptop"/></svg>
+                            <section class="sec-card sec-manage" aria-labelledby="uiSecManageTitle">
+                                <span class="sec-manage__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="13" height="10" rx="1.5"/><path d="M6 19h6M9 15v4"/><rect x="16.5" y="8" width="5" height="11" rx="1.2"/></svg>
                                 </span>
-                                <div class="profile-sec-copy">
-                                    <p class="profile-sec-title">This device</p>
-                                    <p id="uiProfileDeviceName" class="profile-sec-text">—</p>
-                                    <p id="uiProfileDeviceOs" class="profile-sec-meta">—</p>
+                                <div class="sec-manage__copy">
+                                    <p id="uiSecManageTitle" class="sec-card__title">Manage devices</p>
+                                    <p class="sec-manage__text">View and manage all devices connected to your account.</p>
                                 </div>
-                                <div class="profile-sec-device-meta">
-                                    <span class="profile-sec-meta-label">Last active</span>
-                                    <span id="uiProfileDeviceActive" class="profile-sec-meta-value">Now</span>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="profile-sec-block">
-                            <h3 class="profile-sec-kicker">Encryption keys</h3>
-                            <button id="uiProfileKeysToggle" class="profile-sec-card profile-sec-keys" type="button" aria-expanded="false" aria-controls="uiProfileFingerprintPanel">
-                                <span class="profile-sec-icon" aria-hidden="true">
-                                    <svg class="ui-icon"><use href="#icon-shield"/></svg>
-                                </span>
-                                <div class="profile-sec-keys-grid">
-                                    <div class="profile-sec-key">
-                                        <span class="profile-sec-key-label">Identity key</span>
-                                        <span id="uiProfileKeyIdentity" class="profile-sec-key-value">RSA-OAEP-2048</span>
-                                    </div>
-                                    <div class="profile-sec-key">
-                                        <span class="profile-sec-key-label">Message cipher</span>
-                                        <span id="uiProfileKeyCipher" class="profile-sec-key-value">AES-GCM-256</span>
-                                    </div>
-                                    <div class="profile-sec-key">
-                                        <span class="profile-sec-key-label">Fingerprint</span>
-                                        <span id="uiProfileKeyFpShort" class="profile-sec-key-value">—</span>
-                                    </div>
-                                </div>
-                                <svg class="profile-sec-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
-                            </button>
-                            <div id="uiProfileFingerprintPanel" class="profile-sec-fingerprint hidden" hidden>
-                                <div class="profile-fingerprint-head">
-                                    <h4 class="profile-block-title">Full fingerprint</h4>
-                                    <button id="uiProfileCopyFingerprint" class="profile-field-action" type="button">Copy</button>
-                                </div>
-                                <p id="uiProfileFingerprint" class="profile-fingerprint">Loading…</p>
-                            </div>
-                        </section>
-
-                        <section class="profile-sec-block">
-                            <h3 class="profile-sec-kicker">Manage devices</h3>
-                            <button id="uiProfileManageDevices" class="profile-sec-card profile-sec-action" type="button">
-                                <span class="profile-sec-icon" aria-hidden="true">
-                                    <svg class="ui-icon"><use href="#icon-smartphone"/></svg>
-                                </span>
-                                <div class="profile-sec-copy">
-                                    <p class="profile-sec-title">Manage devices</p>
-                                    <p class="profile-sec-text">View and manage all devices connected to your account.</p>
-                                </div>
-                                <svg class="profile-sec-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
-                            </button>
-                        </section>
+                                <button id="uiProfileManageDevices" class="sec-cta" type="button">
+                                    Open devices
+                                    <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+                                </button>
+                            </section>
+                        </div>
                     </div>
 
                     <div data-profile-section="devices" class="profile-security-layout hidden">
@@ -1359,155 +1420,215 @@
                         <p id="uiProfileDevicesEmpty" class="profile-sec-text" hidden>No other devices are signed in.</p>
                     </div>
 
-                    <div data-profile-section="privacy" class="profile-privacy-layout hidden">
-                        <section class="profile-sec-block">
-                            <h3 class="profile-sec-kicker">Presence</h3>
-                            <div class="profile-privacy-card">
-                                <label class="profile-privacy-row" for="uiPrefShowOnline">
-                                    <span class="profile-privacy-copy">
-                                        <span class="profile-privacy-label">Show online status</span>
-                                        <span class="profile-privacy-hint" data-privacy-hint="showOnlineStatus"></span>
-                                    </span>
-                                    <span class="profile-switch">
-                                        <input id="uiPrefShowOnline" type="checkbox" data-pref-key="showOnlineStatus">
+                    <!-- Privacy — images/Group 48.png: three presence cards, then Links and
+                         How encryption works. Each card's picture reacts to its switch
+                         (.is-on on the card, js/profileSettings.js syncPrivacyCards). -->
+                    <div data-profile-section="privacy" class="profile-privacy-layout privacy-page hidden">
+                        <div class="privacy-grid">
+                            <section class="sec-card pv-card" data-pv-card="showOnlineStatus">
+                                <div class="pv-card__head">
+                                    <h4 class="sec-kicker">Presence</h4>
+                                    <span class="profile-switch pv-switch">
+                                        <input id="uiPrefShowOnline" type="checkbox" data-pref-key="showOnlineStatus" aria-label="Show online status">
                                         <span class="profile-switch__track" aria-hidden="true"></span>
                                     </span>
-                                </label>
-                                <label class="profile-privacy-row" for="uiPrefReadReceipts">
-                                    <span class="profile-privacy-copy">
-                                        <span class="profile-privacy-label">Read receipts</span>
-                                        <span class="profile-privacy-hint" data-privacy-hint="readReceipts"></span>
-                                    </span>
-                                    <span class="profile-switch">
-                                        <input id="uiPrefReadReceipts" type="checkbox" data-pref-key="readReceipts">
-                                        <span class="profile-switch__track" aria-hidden="true"></span>
-                                    </span>
-                                </label>
-                                <label class="profile-privacy-row" for="uiPrefTypingIndicators">
-                                    <span class="profile-privacy-copy">
-                                        <span class="profile-privacy-label">Typing indicators</span>
-                                        <span class="profile-privacy-hint" data-privacy-hint="typingIndicators"></span>
-                                    </span>
-                                    <span class="profile-switch">
-                                        <input id="uiPrefTypingIndicators" type="checkbox" data-pref-key="typingIndicators">
-                                        <span class="profile-switch__track" aria-hidden="true"></span>
-                                    </span>
-                                </label>
-                            </div>
-                        </section>
-
-                        <section class="profile-sec-block">
-                            <h3 class="profile-sec-kicker">Links</h3>
-                            <div class="profile-privacy-card">
-                                <label class="profile-privacy-row" for="uiPrefLinkWarnings">
-                                    <span class="profile-privacy-copy">
-                                        <span class="profile-privacy-label">Warn before opening links</span>
-                                        <span class="profile-privacy-hint" id="uiPrefLinkWarningsHint"></span>
-                                    </span>
-                                    <span class="profile-switch">
-                                        <input id="uiPrefLinkWarnings" type="checkbox">
-                                        <span class="profile-switch__track" aria-hidden="true"></span>
-                                    </span>
-                                </label>
-                            </div>
-                        </section>
-
-                        <section class="profile-sec-block">
-                            <h3 class="profile-sec-kicker">How encryption works</h3>
-                            <a id="uiProfileAboutSecurity" class="profile-sec-card profile-sec-action" href="/about-security" data-link>
-                                <span class="profile-sec-icon" aria-hidden="true">
-                                    <svg class="ui-icon"><use href="#icon-shield"/></svg>
-                                </span>
-                                <div class="profile-sec-copy">
-                                    <p class="profile-sec-title">How NEXA stays private</p>
-                                    <p class="profile-sec-text">Learn how your messages are locked before they leave your device.</p>
                                 </div>
-                                <svg class="profile-sec-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
-                            </a>
-                        </section>
-                    </div>
+                                <div class="pv-art pv-art--online" aria-hidden="true">
+                                    <span class="pv-avatar">
+                                        <!-- Head + rounded shoulders, centred with an even gap to the circle's edge. -->
+                                        <svg viewBox="0 0 56 56"><circle cx="28" cy="21" r="7.5"/><path d="M16 41a12 10 0 0 1 24 0v1a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2z"/></svg>
+                                        <span class="pv-avatar__dot"></span>
+                                    </span>
+                                    <span class="pv-online__copy">
+                                        <span class="pv-online__name">You</span>
+                                        <span class="pv-swap pv-online__state"><span class="is-on">Online</span><span class="is-off">Hidden</span></span>
+                                    </span>
+                                </div>
+                                <p class="sec-card__title">Show online status</p>
+                                <p class="pv-card__hint" data-privacy-hint="showOnlineStatus"></p>
+                            </section>
 
-                    <div id="uiProfileDataLayout" data-profile-section="data" class="profile-data-layout hidden">
-                        <section class="profile-data-block">
-                            <h3 class="profile-data-kicker">Storage overview</h3>
-                            <div class="profile-data-overview">
-                                <div class="profile-data-donut-wrap">
-                                    <svg class="profile-data-donut" viewBox="0 0 120 120" aria-hidden="true">
-                                        <circle class="profile-data-donut-track" cx="60" cy="60" r="46" pathLength="100"/>
-                                        <circle id="uiProfileDonutMessages" class="profile-data-donut-seg is-messages" cx="60" cy="60" r="46" pathLength="100"/>
-                                        <circle id="uiProfileDonutKeys" class="profile-data-donut-seg is-keys" cx="60" cy="60" r="46" pathLength="100"/>
-                                        <circle id="uiProfileDonutCache" class="profile-data-donut-seg is-cache" cx="60" cy="60" r="46" pathLength="100"/>
-                                    </svg>
-                                    <div class="profile-data-donut-label">
-                                        <span id="uiProfileStorageUsed" class="profile-data-donut-value">—</span>
-                                        <span class="profile-data-donut-caption">Total</span>
+                            <section class="sec-card pv-card" data-pv-card="readReceipts">
+                                <div class="pv-card__head">
+                                    <h4 class="sec-kicker">Presence</h4>
+                                    <span class="profile-switch pv-switch">
+                                        <input id="uiPrefReadReceipts" type="checkbox" data-pref-key="readReceipts" aria-label="Read receipts">
+                                        <span class="profile-switch__track" aria-hidden="true"></span>
+                                    </span>
+                                </div>
+                                <div class="pv-art pv-art--receipts" aria-hidden="true">
+                                    <span class="pv-bubble"><i></i><i></i></span>
+                                    <span class="pv-receipt">
+                                        <svg viewBox="0 0 20 12"><path class="is-first" d="m1.5 6.5 3.2 3.2L11 3"/><path class="is-second" d="m8.5 9 .7.7L15.5 3"/></svg>
+                                        <span class="pv-swap"><span class="is-on">Read</span><span class="is-off">Sent</span></span>
+                                    </span>
+                                </div>
+                                <p class="sec-card__title">Read receipts</p>
+                                <p class="pv-card__hint" data-privacy-hint="readReceipts"></p>
+                            </section>
+
+                            <section class="sec-card pv-card" data-pv-card="typingIndicators">
+                                <div class="pv-card__head">
+                                    <h4 class="sec-kicker">Presence</h4>
+                                    <span class="profile-switch pv-switch">
+                                        <input id="uiPrefTypingIndicators" type="checkbox" data-pref-key="typingIndicators" aria-label="Typing indicators">
+                                        <span class="profile-switch__track" aria-hidden="true"></span>
+                                    </span>
+                                </div>
+                                <div class="pv-art pv-art--typing" aria-hidden="true">
+                                    <span class="pv-typing"><i></i><i></i><i></i></span>
+                                    <span class="pv-swap pv-typing__label"><span class="is-on">Visible while you type</span><span class="is-off">Hidden while you type</span></span>
+                                </div>
+                                <p class="sec-card__title">Typing indicators</p>
+                                <p class="pv-card__hint" data-privacy-hint="typingIndicators"></p>
+                            </section>
+                        </div>
+
+                        <div class="privacy-grid privacy-grid--second">
+                            <section class="sec-card pv-card pv-links" data-pv-card="linkWarnings">
+                                <div class="pv-links__main">
+                                    <div class="pv-card__head">
+                                        <h4 class="sec-kicker">Links</h4>
+                                        <span class="profile-switch pv-switch">
+                                        <input id="uiPrefLinkWarnings" type="checkbox" aria-label="Warn before opening links">
+                                        <span class="profile-switch__track" aria-hidden="true"></span>
+                                    </span>
+                                    </div>
+                                    <div class="pv-links__copy">
+                                        <p class="sec-card__title">Warn before opening links</p>
+                                        <p class="pv-card__hint" id="uiPrefLinkWarningsHint"></p>
                                     </div>
                                 </div>
-                                <ul class="profile-data-legend">
-                                    <li>
-                                        <span class="profile-data-dot is-messages" aria-hidden="true"></span>
-                                        <span class="profile-data-legend-label">Messages</span>
-                                        <span id="uiProfileHistorySize" class="profile-data-legend-value">—</span>
-                                    </li>
-                                    <li>
-                                        <span class="profile-data-dot is-keys" aria-hidden="true"></span>
-                                        <span class="profile-data-legend-label">Encryption keys</span>
-                                        <span id="uiProfileKeysSize" class="profile-data-legend-value">—</span>
-                                    </li>
-                                    <li>
-                                        <span class="profile-data-dot is-cache" aria-hidden="true"></span>
-                                        <span class="profile-data-legend-label">Profile &amp; cache</span>
-                                        <span id="uiProfileMetaSize" class="profile-data-legend-value">—</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </section>
-                        <section class="profile-data-block">
-                            <h3 class="profile-data-kicker">Actions</h3>
-                            <div class="profile-data-actions">
-                                <button id="uiProfileExportDataBtn" class="profile-data-action" type="button">
-                                    <span class="profile-data-action-icon" aria-hidden="true">
-                                        <svg class="ui-icon"><use href="#icon-upload"/></svg>
+                                <div class="pv-art pv-art--links" aria-hidden="true">
+                                    <span class="pv-hold">
+                                        <svg class="pv-hold__ring" viewBox="0 0 64 64"><circle class="is-track" cx="32" cy="32" r="28"/><circle class="is-arc" cx="32" cy="32" r="28" pathLength="100"/></svg>
+                                        <span class="pv-hold__core">
+                                            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+                                        </span>
                                     </span>
-                                    <span class="profile-data-action-copy">
-                                        <span class="profile-data-action-title">Export chat history</span>
-                                        <span class="profile-data-action-hint">Download your data.</span>
+                                    <span class="pv-swap pv-hold__label"><span class="is-on">Hold to open</span><span class="is-off">Opens directly</span></span>
+                                </div>
+                            </section>
+
+                            <section class="sec-card pv-card pv-crypto">
+                                <div class="pv-card__head">
+                                    <h4 class="sec-kicker">How encryption works</h4>
+                                    <a id="uiProfileAboutSecurity" class="sec-cta sec-cta--sm" href="/about-security" data-link>
+                                        Learn how
+                                        <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+                                    </a>
+                                </div>
+                                <div class="pv-flow" aria-hidden="true">
+                                    <span class="pv-flow__end">
+                                        <span class="pv-flow__tile"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+                                        <span class="pv-flow__caption">Your device</span>
                                     </span>
-                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+                                    <span class="pv-flow__line"><i></i></span>
+                                    <span class="pv-flow__mid">
+                                        <span class="pv-flow__lock"><svg class="ui-icon"><use href="#icon-lock"/></svg>9f2c·a41e·07bd</span>
+                                        <span class="pv-flow__caption">Locked in transit</span>
+                                    </span>
+                                    <span class="pv-flow__line"><i></i></span>
+                                    <span class="pv-flow__end">
+                                        <span class="pv-flow__tile"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/></svg></span>
+                                        <span class="pv-flow__caption">Their device</span>
+                                    </span>
+                                </div>
+                                <p class="sec-card__title">How Nexa stays private</p>
+                                <p class="pv-card__hint">Learn how your messages are locked before they leave your device.</p>
+                            </section>
+                        </div>
+                    </div>
+
+                    <!-- Data & storage — images/Group 46.png: storage overview (total, legend,
+                         100-cell map) + Export, then Clear cache / Clear chat history /
+                         Delete account. The two destructive ones confirm in a drawer
+                         with a 6-digit code (src/settings/DangerDrawer.tsx). -->
+                    <div id="uiProfileDataLayout" data-profile-section="data" class="profile-data-layout data-page hidden">
+                        <div class="data-grid">
+                            <section class="sec-card dt-overview" aria-labelledby="uiDataOverviewKicker">
+                                <div class="dt-overview__main">
+                                    <h4 id="uiDataOverviewKicker" class="sec-kicker">Storage overview</h4>
+                                    <p id="uiProfileStorageUsed" class="dt-total"><span class="dt-total__num">—</span><span class="dt-total__unit"></span></p>
+                                    <p class="dt-total__caption">Total stored locally on this device</p>
+                                    <ul id="uiDataLegend" class="dt-legend">
+                                        <li><button type="button" class="dt-legend__row" data-dt-cat="messages" aria-pressed="false">
+                                            <span class="dt-legend__dot is-messages" aria-hidden="true"></span>
+                                            <span class="dt-legend__label">Messages</span>
+                                            <span id="uiProfileHistoryPct" class="dt-legend__pct">—</span>
+                                            <span id="uiProfileHistorySize" class="dt-legend__value">—</span>
+                                        </button></li>
+                                        <li><button type="button" class="dt-legend__row" data-dt-cat="keys" aria-pressed="false">
+                                            <span class="dt-legend__dot is-keys" aria-hidden="true"></span>
+                                            <span class="dt-legend__label">Encryption keys</span>
+                                            <span id="uiProfileKeysPct" class="dt-legend__pct">—</span>
+                                            <span id="uiProfileKeysSize" class="dt-legend__value">—</span>
+                                        </button></li>
+                                        <li><button type="button" class="dt-legend__row" data-dt-cat="cache" aria-pressed="false">
+                                            <span class="dt-legend__dot is-cache" aria-hidden="true"></span>
+                                            <span class="dt-legend__label">Profile &amp; cache</span>
+                                            <span id="uiProfileMetaPct" class="dt-legend__pct">—</span>
+                                            <span id="uiProfileMetaSize" class="dt-legend__value">—</span>
+                                        </button></li>
+                                    </ul>
+                                </div>
+                                <div class="dt-map">
+                                    <!-- 100 cells, one per 1% of the total, coloured by category (js). -->
+                                    <div id="uiDataCells" class="dt-cells" aria-hidden="true"></div>
+                                    <div class="dt-map__foot">
+                                        <span id="uiDataCellSize">1 cell ≈ —</span>
+                                        <span>Tap a category to highlight</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="sec-card dt-export" aria-labelledby="uiDataExportTitle">
+                                <div class="sec-card__head">
+                                    <span class="dt-export__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-upload"/></svg></span>
+                                    <h4 class="sec-kicker">Export</h4>
+                                </div>
+                                <p id="uiDataExportTitle" class="dt-export__title">Export chat<br>history</p>
+                                <p class="dt-card__hint">Download your data.</p>
+                                <button id="uiProfileExportDataBtn" class="dt-export__btn" type="button">
+                                    <span class="pv-swap dt-export__labels">
+                                        <span class="is-idle">Download export <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg></span>
+                                        <span class="is-done" aria-hidden="true">Downloaded <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.9 2.9 6.1-6.6"/></svg></span>
+                                    </span>
                                 </button>
-                                <button id="uiProfileClearHistoryBtn" class="profile-data-action is-danger" type="button">
-                                    <span class="profile-data-action-icon" aria-hidden="true">
-                                        <svg class="ui-icon"><use href="#icon-trash"/></svg>
-                                    </span>
-                                    <span class="profile-data-action-copy">
-                                        <span class="profile-data-action-title">Clear chat history</span>
-                                        <span class="profile-data-action-hint">Permanently delete all chats on this device.</span>
-                                    </span>
-                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
-                                </button>
-                                <button id="uiProfileClearCacheBtn" class="profile-data-action" type="button">
-                                    <span class="profile-data-action-icon" aria-hidden="true">
-                                        <svg class="ui-icon"><use href="#icon-hexagon"/></svg>
-                                    </span>
-                                    <span class="profile-data-action-copy">
-                                        <span class="profile-data-action-title">Clear cache</span>
-                                        <span class="profile-data-action-hint">Free up space on this device.</span>
-                                    </span>
-                                    <span id="uiProfileCacheSize" class="profile-data-action-meta">—</span>
-                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
-                                </button>
-                                <button id="uiProfileDeleteAccountBtn" class="profile-data-action is-danger" type="button">
-                                    <span class="profile-data-action-icon" aria-hidden="true">
-                                        <svg class="ui-icon"><use href="#icon-trash"/></svg>
-                                    </span>
-                                    <span class="profile-data-action-copy">
-                                        <span class="profile-data-action-title">Delete account</span>
-                                        <span class="profile-data-action-hint">Permanently delete your account and all data.</span>
-                                    </span>
-                                    <svg class="profile-data-action-chevron ui-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
-                                </button>
-                            </div>
-                        </section>
+                            </section>
+                        </div>
+
+                        <div class="data-grid data-grid--actions">
+                            <section class="sec-card dt-action" aria-labelledby="uiDataCacheTitle">
+                                <div class="sec-card__head">
+                                    <span class="dt-action__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-hexagon"/></svg></span>
+                                    <span id="uiProfileCacheSize" class="dt-action__size">—</span>
+                                </div>
+                                <p id="uiDataCacheTitle" class="dt-action__title">Clear cache</p>
+                                <p class="dt-card__hint">Free up space on this device.</p>
+                                <button id="uiProfileClearCacheBtn" class="dt-action__btn" type="button">Clear cache</button>
+                            </section>
+
+                            <section class="sec-card dt-action is-danger" aria-labelledby="uiDataHistoryTitle">
+                                <div class="sec-card__head">
+                                    <span class="dt-action__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-trash"/></svg></span>
+                                    <span class="sec-kicker dt-action__tag">Irreversible</span>
+                                </div>
+                                <p id="uiDataHistoryTitle" class="dt-action__title">Clear chat history</p>
+                                <p class="dt-card__hint">Permanently delete all chats on this device.</p>
+                                <button id="uiProfileClearHistoryBtn" class="dt-action__btn" type="button">Clear history</button>
+                            </section>
+
+                            <section class="sec-card dt-action is-danger" aria-labelledby="uiDataDeleteTitle">
+                                <div class="sec-card__head">
+                                    <span class="dt-action__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-trash"/></svg></span>
+                                    <span class="sec-kicker dt-action__tag">Danger zone</span>
+                                </div>
+                                <p id="uiDataDeleteTitle" class="dt-action__title">Delete account</p>
+                                <p class="dt-card__hint">Permanently delete your account and all data.</p>
+                                <button id="uiProfileDeleteAccountBtn" class="dt-action__btn" type="button">Delete account</button>
+                            </section>
+                        </div>
                     </div>
                 </div>
                 <footer class="profile-foot">

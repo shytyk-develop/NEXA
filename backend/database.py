@@ -909,6 +909,67 @@ def list_user_sessions_db(username: str) -> list:
         release_connection(conn)
 
 
+def terminate_user_session_db(username: str, device_id: str) -> bool:
+    """Drop a device's session and mark it revoked (tokens issued before now
+    are refused for it). False when the user has no such session."""
+    parsed_id = parse_device_id(device_id)
+    if not parsed_id:
+        return False
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM user_sessions WHERE username = %s AND device_id = %s",
+            (username, parsed_id),
+        )
+        if cursor.rowcount == 0:
+            conn.rollback()
+            return False
+        cursor.execute(
+            """
+            INSERT INTO revoked_device_sessions (username, device_id, revoked_at)
+            VALUES (%s, %s, NOW())
+            ON CONFLICT (username, device_id) DO UPDATE SET revoked_at = NOW()
+            """,
+            (username, parsed_id),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def is_device_session_revoked_db(username: str, device_id: str, issued_at) -> bool:
+    """Was this device terminated after the token (issued_at, UTC) was minted?
+    A token minted later (a fresh sign-in) clears the revocation."""
+    parsed_id = parse_device_id(device_id)
+    if not parsed_id:
+        return False
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT revoked_at FROM revoked_device_sessions WHERE username = %s AND device_id = %s",
+            (username, parsed_id),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return False
+        if issued_at is not None and issued_at > row[0]:
+            cursor.execute(
+                "DELETE FROM revoked_device_sessions WHERE username = %s AND device_id = %s",
+                (username, parsed_id),
+            )
+            conn.commit()
+            return False
+        return True
+    finally:
+        release_connection(conn)
+
+
 def list_apns_targets_db(username: str) -> list:
     conn = get_connection()
     cursor = conn.cursor()

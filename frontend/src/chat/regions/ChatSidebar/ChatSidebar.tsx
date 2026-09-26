@@ -331,39 +331,10 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
                 </div>
 
                 <aside id="uiSidebar" className="sidebar" aria-label="Navigation and contacts">
-                    <header className="sidebar-brand left-sidebar-header">
+                    <SidebarHeader toggleId="uiSidebarHeaderToggle">
                         {/* Drawn as a mask so it takes the theme's text colour (see .brand-logo). */}
                         <span role="img" aria-label="NEXA" className="sidebar-brand__mark brand-logo" />
-                        {/* Aside-coloured cutout in the header's top-right corner holding the
-                            hide button — same build as the right panel's cover cutout. The
-                            edge tab (#uiSidebarToggle) only returns once collapsed. */}
-                        <span className="left-sidebar-header__notch" aria-hidden="true">
-                            <span className="left-sidebar-header__joint left-sidebar-header__joint--top" />
-                            <span className="left-sidebar-header__joint left-sidebar-header__joint--side" />
-                        </span>
-                        <button
-                            id="uiSidebarHeaderToggle"
-                            className="left-sidebar-collapse-btn"
-                            type="button"
-                            aria-controls="uiSidebar"
-                            aria-label="Hide contacts"
-                            title="Hide contacts"
-                        >
-                            <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                aria-hidden="true"
-                            >
-                                <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
-                                <line x1="15" y1="3" x2="15" y2="21" />
-                                <path d="M7 8h2M7 12h2M7 16h2" />
-                            </svg>
-                        </button>
-                    </header>
+                    </SidebarHeader>
 
                     <section className="sidebar-chats" aria-label="Chats">
                         <SidebarLibrary
@@ -1504,6 +1475,48 @@ const SidebarDock = memo(function SidebarDock({
     );
 });
 
+/**
+ * The left sidebar's header: a rounded block with the hide button in a
+ * top-right cutout (see .left-sidebar-header). Used by the chat list (NEXA
+ * logo) and the settings nav ("Settings"); the label replays a short fade-in
+ * whenever its view is shown, so switching views reads as NEXA ⇄ Settings.
+ */
+function SidebarHeader({ toggleId, children }: { toggleId: string; children: ReactNode }) {
+    return (
+        <header className="sidebar-brand left-sidebar-header">
+            <span className="left-sidebar-header__label">{children}</span>
+            {/* Aside-coloured cutout holding the hide button. The edge tab
+                (#uiSidebarToggle) only returns once collapsed. */}
+            <span className="left-sidebar-header__notch" aria-hidden="true">
+                <span className="left-sidebar-header__joint left-sidebar-header__joint--top" />
+                <span className="left-sidebar-header__joint left-sidebar-header__joint--side" />
+            </span>
+            <button
+                id={toggleId}
+                className="left-sidebar-collapse-btn"
+                type="button"
+                aria-controls="uiSidebar"
+                aria-label="Hide sidebar"
+                title="Hide sidebar"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                >
+                    <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+                    <line x1="15" y1="3" x2="15" y2="21" />
+                    <path d="M7 8h2M7 12h2M7 16h2" />
+                </svg>
+            </button>
+        </header>
+    );
+}
+
 const ProfileNav = memo(function ProfileNav() {
     // Same sliding hover highlight as the chat list / folder tree.
     const navRef = useRef<HTMLElement>(null);
@@ -1519,25 +1532,79 @@ const ProfileNav = memo(function ProfileNav() {
                     <p className="profile-nav-toolbar-title">Settings</p>
                 </div>
             </header>
-            <p className="profile-nav-kicker">Settings</p>
+            {/* Same header as the chat list's (shape, cutout, hide button), titled */}
+            <SidebarHeader toggleId="uiSettingsHeaderToggle">
+                <span className="left-sidebar-header__title">Settings</span>
+            </SidebarHeader>
+            {/* You: avatar + status, name, @handle → the Profile page (filled by profileSettings.js) */}
+            <button id="uiProfileNavCard" className="profile-nav-card" type="button" aria-label="Open your profile">
+                <span className="profile-nav-card__avatar-wrap">
+                    <span id="uiProfileNavAvatar" className="contact-avatar profile-nav-card__avatar" aria-hidden="true" />
+                    <span id="uiProfileNavStatus" className="profile-nav-card__status" data-status="available" aria-hidden="true" />
+                </span>
+                <span className="profile-nav-card__copy">
+                    <span id="uiProfileNavName" className="profile-nav-card__name" />
+                    <span id="uiProfileNavHandle" className="profile-nav-card__handle" />
+                </span>
+                <span className="profile-nav-card__chev" aria-hidden="true">
+                    <svg className="ui-icon" aria-hidden="true"><use href="#icon-chevron-right" /></svg>
+                </span>
+            </button>
+            <p className="profile-nav-kicker">Preferences</p>
             <button type="button" className="profile-nav-btn is-active" data-profile-nav="appearance" aria-current="page">
-                <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-palette" /></svg>
-                <span className="profile-nav-copy"><span className="profile-nav-label">Appearance</span></span>
+                <span className="profile-nav-tile" aria-hidden="true">
+                    <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-palette" /></svg>
+                </span>
+                <span className="profile-nav-copy">
+                    <span className="profile-nav-label">Appearance</span>
+                    <span className="profile-nav-sub">Theme & chat look</span>
+                </span>
+                <span className="profile-nav-trail">
+                    <svg className="profile-nav-arrow ui-icon" aria-hidden="true"><use href="#icon-arrow-right" /></svg>
+                </span>
             </button>
             <button type="button" className="profile-nav-btn" data-profile-nav="security">
-                <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-shield" /></svg>
-                <span className="profile-nav-copy"><span className="profile-nav-label">Security</span></span>
+                <span className="profile-nav-tile" aria-hidden="true">
+                    <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-shield" /></svg>
+                </span>
+                <span className="profile-nav-copy">
+                    <span className="profile-nav-label">Security</span>
+                    <span className="profile-nav-sub">Keys & devices</span>
+                </span>
+                <span className="profile-nav-trail">
+                    <svg className="profile-nav-arrow ui-icon" aria-hidden="true"><use href="#icon-arrow-right" /></svg>
+                </span>
             </button>
             <button type="button" className="profile-nav-btn" data-profile-nav="privacy">
-                <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-eye" /></svg>
-                <span className="profile-nav-copy"><span className="profile-nav-label">Privacy</span></span>
+                <span className="profile-nav-tile" aria-hidden="true">
+                    <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-eye" /></svg>
+                </span>
+                <span className="profile-nav-copy">
+                    <span className="profile-nav-label">Privacy</span>
+                    <span className="profile-nav-sub">Visibility & links</span>
+                </span>
+                <span className="profile-nav-trail">
+                    <svg className="profile-nav-arrow ui-icon" aria-hidden="true"><use href="#icon-arrow-right" /></svg>
+                </span>
             </button>
             <button type="button" className="profile-nav-btn" data-profile-nav="data">
-                <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-database" /></svg>
-                <span className="profile-nav-copy"><span className="profile-nav-label">Data</span></span>
+                <span className="profile-nav-tile" aria-hidden="true">
+                    <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-database" /></svg>
+                </span>
+                <span className="profile-nav-copy">
+                    <span className="profile-nav-label">Data</span>
+                    <span className="profile-nav-sub">Storage & exports</span>
+                </span>
+                <span className="profile-nav-trail">
+                    <span id="uiProfileNavDataSize" className="profile-nav-meta" />
+                    <svg className="profile-nav-arrow ui-icon" aria-hidden="true"><use href="#icon-arrow-right" /></svg>
+                </span>
             </button>
+            <hr className="profile-nav-divider" />
             <button id="uiProfileLogoutBtn" className="profile-nav-btn profile-nav-btn--logout" type="button">
-                <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-logout" /></svg>
+                <span className="profile-nav-tile" aria-hidden="true">
+                    <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-logout" /></svg>
+                </span>
                 <span className="profile-nav-copy"><span className="profile-nav-label">Log out</span></span>
             </button>
             <div className="profile-nav-foot">

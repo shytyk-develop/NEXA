@@ -88,6 +88,12 @@ const CHECK_DRAW_DURATION = 0.25;
 const LABEL_STAGGER = 0.12;
 /** Seconds the ring takes to unwind when resetting to idle */
 const RING_RESET_DURATION = 0.3;
+/**
+ * Seconds a released (unfinished) hold takes to empty the ring. A plain
+ * ease-out, not a spring: a spring's long settling tail left the ring
+ * hanging at a sliver for a beat after the release.
+ */
+const RING_RELEASE_DURATION = 0.15;
 
 /** Lucide check, drawn manually so the stroke can animate its pathLength */
 const CHECK_PATH = 'M20 6 9 17l-5-5';
@@ -211,13 +217,9 @@ export function HoldToConfirmButton({
             setArmed(false);
             if (confirmedRef.current) return;
             animationRef.current?.stop();
-            animationRef.current = animate(
-                progress,
-                0,
-                shouldReduceMotion ? { duration: 0.15, ease: 'linear' } : SNAPPY_SPRING,
-            );
+            animationRef.current = animate(progress, 0, { duration: RING_RELEASE_DURATION, ease: 'easeOut' });
         },
-        [progress, shouldReduceMotion],
+        [progress],
     );
 
     const handlePointerDown = useCallback(
@@ -359,7 +361,8 @@ export function HoldToConfirmButton({
                     width={ring}
                     height={ring}
                     className="hold-confirm__progress"
-                    style={{ opacity: ringOpacity }}
+                    // −90°: the arc starts at 12 o'clock and fills clockwise.
+                    style={{ opacity: ringOpacity, rotate: -90 }}
                 >
                     <circle
                         cx={ring / 2}

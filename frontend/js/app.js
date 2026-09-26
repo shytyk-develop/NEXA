@@ -263,6 +263,11 @@ const engine = createChatEngine(state, {
     onConversationDeleted: (data) => handleConversationDeletedEvent(data),
     onReactionSync: (data) => handleReactionSyncEvent(data),
     onSharedMessageSaved: (data) => handleSharedMessageSaved(data),
+    onSessionTerminated: () => {
+        if (!state.token) return;
+        handleLogout();
+        showToast('This device was signed out from another device.', 'info');
+    },
     onProfileUpdated: (data) => handleProfileUpdated(data),
     onUsersList: () => refreshContactList(),
     onPresence: (data) => {

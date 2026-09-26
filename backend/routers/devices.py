@@ -4,7 +4,7 @@ from fastapi import APIRouter, Header, HTTPException, Query
 
 import database
 from core.schemas import DeviceUpsertRequest, MutedPartnersRequest
-from core.security import USERNAME_RE, get_current_username, normalize_username
+from core.security import USERNAME_RE, get_current_username, normalize_username, token_issued_at
 from ws_manager import manager
 
 router = APIRouter()
@@ -13,6 +13,8 @@ router = APIRouter()
 @router.put("/api/me/device")
 async def upsert_my_device(req: DeviceUpsertRequest, authorization: Optional[str] = Header(default=None)):
     current_username = get_current_username(authorization)
+    if database.is_device_session_revoked_db(current_username, req.device_id, token_issued_at(authorization)):
+        raise HTTPException(status_code=401, detail="Session terminated")
     session = database.upsert_user_session_db(
         current_username,
         req.device_id,
@@ -48,6 +50,27 @@ async def list_my_devices(
         session["this_device"] = bool(current_id and sid == current_id)
         devices.append(session)
     return {"devices": devices}
+
+
+@router.delete("/api/me/devices/{device_id}")
+async def terminate_my_device(
+    device_id: str,
+    authorization: Optional[str] = Header(default=None),
+    current_device_id: Optional[str] = Query(default=None),
+):
+    """Terminate another device's session: its row goes, its live sockets are
+    told to sign out, and its current token can't bring it back (see
+    revoked_device_sessions). This device signs out with Log out instead."""
+    current_username = get_current_username(authorization)
+    target = database.parse_device_id(device_id)
+    if not target:
+        raise HTTPException(status_code=422, detail="Invalid device_id")
+    if target == database.parse_device_id(current_device_id):
+        raise HTTPException(status_code=400, detail="Use Log out to end this device's session")
+    if not database.terminate_user_session_db(current_username, target):
+        raise HTTPException(status_code=404, detail="No such session")
+    await manager.terminate_device(current_username, target)
+    return {"terminated": target}
 
 
 @router.put("/api/me/muted")

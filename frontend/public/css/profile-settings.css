@@ -2830,38 +2830,256 @@
     }
 }
 
-/* ─── Appearance ─── */
+/* ─── Appearance — images/Group 47.png ───────────────────────────────────────
+   Header without a bar (round back / close), then a centred two-column grid:
+   Theme + Message density stacked on the left, the Chat preview on the right,
+   both columns ending on one line. Stacks into one column when narrow. */
+#page-chat .profile-workspace:has(:is(.profile-appearance-layout, .security-page, .privacy-page, .data-page):not(.hidden)) {
+    --appearance-max: 1150px;
+}
+
+#page-chat:not(.is-viewport-profile-stack) .profile-workspace:has(:is(.profile-appearance-layout, .security-page, .privacy-page, .data-page):not(.hidden)) .profile-head {
+    align-self: center;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    box-sizing: border-box;
+    gap: 14px;
+    margin: 28px auto 0;
+    max-width: var(--appearance-max);
+    padding: 0;
+    width: calc(100% - 64px);
+}
+
+#page-chat:not(.is-viewport-profile-stack) .profile-workspace:has(:is(.profile-appearance-layout, .security-page, .privacy-page, .data-page):not(.hidden)) .profile-head h2 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+#page-chat:not(.is-viewport-profile-stack) .profile-workspace:has(:is(.profile-appearance-layout, .security-page, .privacy-page, .data-page):not(.hidden)) .profile-head-sub {
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+#page-chat:not(.is-viewport-profile-stack) .profile-workspace:has(:is(.profile-appearance-layout, .security-page, .privacy-page, .data-page):not(.hidden)) :is(.profile-back-btn, .profile-close-btn) {
+    background: var(--settings-capsule-bg);
+    border: 1px solid var(--settings-capsule-stroke);
+    border-radius: 50%;
+    color: var(--theme-text, #f4f4f5);
+    flex: none;
+    height: 42px;
+    width: 42px;
+}
+
+#page-chat:not(.is-viewport-profile-stack) .profile-workspace:has(:is(.profile-appearance-layout, .security-page, .privacy-page, .data-page):not(.hidden)) .profile-back-btn .ui-icon {
+    height: 18px;
+    width: 18px;
+}
+
+#page-chat:not(.is-viewport-profile-stack) .profile-workspace:has(:is(.profile-appearance-layout, .security-page, .privacy-page, .data-page):not(.hidden)) .profile-body {
+    padding-top: 30px;
+}
+
 #page-chat .profile-workspace .profile-appearance-layout {
+    align-self: center;
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    max-width: 880px;
+    max-width: var(--appearance-max, 1150px);
     min-width: 0;
     width: 100%;
 }
 
-#page-chat .profile-workspace .profile-appearance-controls {
+#page-chat .profile-workspace .appearance-grid {
+    align-items: stretch;
+    display: grid;
+    gap: 18px;
+    grid-template-columns: minmax(300px, 372px) minmax(0, 1fr);
+}
+
+#page-chat .profile-workspace .appearance-col {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+}
+
+@container (max-width: 820px) {
+    #page-chat .profile-workspace .appearance-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+#page-chat .profile-workspace .appearance-card {
     background: var(--settings-capsule-bg);
     backdrop-filter: var(--settings-capsule-blur);
     -webkit-backdrop-filter: var(--settings-capsule-blur);
     border: 1px solid var(--settings-capsule-stroke);
-    border-radius: var(--settings-capsule-radius);
+    border-radius: 28px;
     box-shadow:
         var(--glass-inset-highlight),
         var(--nexa-surface-shadow);
     display: flex;
     flex-direction: column;
-    gap: 22px;
     min-width: 0;
-    padding: 20px 18px;
+    padding: 26px 24px 24px;
 }
 
-#page-chat .profile-workspace .profile-appearance-lead {
+/* Message density fills the rest of the column; the segment sits at its foot. */
+#page-chat .profile-workspace .appearance-card--density {
+    flex: 1;
+}
+
+#page-chat .profile-workspace .appearance-card--preview {
+    padding-top: 22px;
+}
+
+#page-chat .profile-workspace .appearance-card__head {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+#page-chat .profile-workspace .appearance-kicker {
     color: var(--theme-text-muted, #8a8a8a);
-    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    line-height: 1.2;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+#page-chat .profile-workspace .appearance-lead {
+    color: var(--theme-text-muted, #8a8a8a);
+    font-size: 12.5px;
     line-height: 1.5;
-    margin: -4px 0 0;
-    max-width: 54ch;
+    margin: 10px 0 0;
+}
+
+/* "Active theme" · "Previewing" (another theme's card is hovered). */
+#page-chat .profile-workspace .appearance-status-pill {
+    align-items: center;
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 999px;
+    color: var(--theme-text, #f4f4f5);
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 500;
+    gap: 8px;
+    height: 30px;
+    padding: 0 12px 0 11px;
+}
+
+#page-chat .profile-workspace .appearance-status-pill__dot {
+    background: var(--accent-primary, #c7ff00);
+    border-radius: 50%;
+    height: 7px;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    width: 7px;
+}
+
+#page-chat .profile-workspace .appearance-card.is-browsing .appearance-status-pill__dot {
+    opacity: 0.45;
+}
+
+#page-chat .profile-workspace .appearance-card:not(.is-browsing) .is-browse-label,
+#page-chat .profile-workspace .appearance-card.is-browsing .is-active-label {
+    display: none;
+}
+
+/* Message density: a pill track with a sliding accent thumb. */
+#page-chat .profile-workspace .appearance-segment {
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 999px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: auto;
+    padding: 4px;
+    position: relative;
+}
+
+#page-chat .profile-workspace .appearance-card--density .appearance-lead {
+    margin-bottom: 40px;
+}
+
+#page-chat .profile-workspace .appearance-segment::before {
+    background: var(--accent-primary, #c7ff00);
+    border-radius: 999px;
+    bottom: 4px;
+    content: "";
+    left: 4px;
+    position: absolute;
+    top: 4px;
+    transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+    width: calc(50% - 4px);
+}
+
+#page-chat .profile-workspace .appearance-segment:has([data-appearance-density="compact"].is-active)::before {
+    transform: translateX(100%);
+}
+
+#page-chat .profile-workspace .appearance-segment .appearance-chip {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: var(--theme-text, #f4f4f5);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--f-ui);
+    font-size: 13px;
+    font-weight: 500;
+    gap: 8px;
+    height: 36px;
+    justify-content: center;
+    padding: 0 14px;
+    position: relative;
+    transition: color 0.22s ease, opacity 0.18s ease;
+    z-index: 1;
+}
+
+#page-chat .profile-workspace .appearance-segment .appearance-chip:not(.is-active) {
+    opacity: 0.82;
+}
+
+#page-chat .profile-workspace .appearance-segment .appearance-chip:not(.is-active):hover {
+    opacity: 1;
+}
+
+#page-chat .profile-workspace .appearance-segment .appearance-chip:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--theme-tint, #fff) 40%, transparent);
+    outline-offset: 2px;
+}
+
+#page-chat .profile-workspace .appearance-segment .appearance-chip.is-active {
+    color: var(--text-on-accent, #0b0b0b);
+    font-weight: 600;
+}
+
+#page-chat .profile-workspace .appearance-chip__icon {
+    fill: none;
+    height: 15px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.5;
+    width: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .profile-workspace .appearance-segment::before {
+        transition: none;
+    }
 }
 
 #page-chat .profile-workspace .appearance-option-card {
@@ -3634,41 +3852,1818 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     }
 }
 
-/* ── Appearance → Theme picker (js/themePicker.js) ───────────────────────────
-   Cards use theme tokens themselves, so the picker reads right in every theme;
-   each card's preview is painted in that theme's own colours (inline). */
-#page-chat .profile-workspace .theme-picker {
-    display: grid;
-    gap: 12px;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    margin-top: 12px;
+/* ── Security — images/Group 45.png ──────────────────────────────────────────
+   Three columns centred like Appearance: the hero (2 cols) + device identity,
+   the three key cards, then Manage devices across. Cards share the settings
+   capsule look; accents follow the theme. */
+#page-chat .profile-workspace .profile-security-layout.security-page {
+    align-self: center;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    container-type: inline-size;
+    display: flex;
+    max-width: var(--appearance-max, 1150px);
+    padding: 0;
 }
 
-#page-chat .profile-workspace .theme-card {
+#page-chat .profile-workspace .security-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#page-chat .profile-workspace .sec-card {
+    background: var(--settings-capsule-bg);
+    backdrop-filter: var(--settings-capsule-blur);
+    -webkit-backdrop-filter: var(--settings-capsule-blur);
+    border: 1px solid var(--settings-capsule-stroke);
+    border-radius: 28px;
+    box-shadow:
+        var(--glass-inset-highlight),
+        var(--nexa-surface-shadow);
+    color: var(--theme-text, #f4f4f5);
+    min-width: 0;
+    padding: 24px;
+    position: relative;
+}
+
+#page-chat .profile-workspace .sec-kicker {
+    color: var(--theme-text-muted, #8a8a8a);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    line-height: 1.2;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+#page-chat .profile-workspace .sec-card__head {
+    align-items: flex-start;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+#page-chat .profile-workspace .sec-card__title {
+    color: var(--theme-text, #f4f4f5);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 12px 0 0;
+}
+
+#page-chat .profile-workspace .sec-pill {
+    align-items: center;
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 999px;
+    color: var(--theme-text, #f4f4f5);
+    display: inline-flex;
+    flex: none;
+    font-size: 12px;
+    font-weight: 500;
+    gap: 8px;
+    height: 30px;
+    padding: 0 13px 0 12px;
+    width: max-content;
+}
+
+#page-chat .profile-workspace .sec-pill--sm {
+    font-size: 11px;
+    gap: 7px;
+    height: 28px;
+    padding: 0 11px 0 7px;
+}
+
+#page-chat .profile-workspace .sec-pill__dot {
+    background: var(--accent-primary, #c7ff00);
+    border-radius: 50%;
+    height: 7px;
+    width: 7px;
+}
+
+#page-chat .profile-workspace .sec-pill__dot.is-ring {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary, #c7ff00) 28%, transparent);
+    height: 8px;
+    margin-left: 3px;
+    width: 8px;
+}
+
+/* Hero: copy on the left, the lock + rings on the right (clipped by the card). */
+#page-chat .profile-workspace .sec-hero {
+    display: flex;
+    grid-column: span 2;
+    min-height: 256px;
+    overflow: hidden;
+    padding: 32px;
+}
+
+#page-chat .profile-workspace .sec-hero__copy {
+    display: flex;
+    flex-direction: column;
+    max-width: 440px;
+    justify-content: center;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+#page-chat .profile-workspace .sec-hero__title {
+    color: var(--theme-text, #f4f4f5);
+    font-family: var(--f-ui);
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    margin: 22px 0 18px;
+}
+
+#page-chat .profile-workspace .sec-hero__text {
+    color: var(--theme-text-muted, #8a8a8a);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+#page-chat .profile-workspace .sec-hero__status {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 13px;
+    gap: 8px;
+    margin: 14px 0 0;
+}
+
+#page-chat .profile-workspace .sec-hero__badge {
+    fill: var(--accent-primary, #c7ff00);
+    flex: none;
+    height: 18px;
+    margin-right: 4px;
+    width: 18px;
+}
+
+#page-chat .profile-workspace .sec-hero__badge-check {
+    fill: none;
+    stroke: var(--text-on-accent, #0b0b0b);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+#page-chat .profile-workspace .sec-hero__verified {
+    color: var(--theme-text-muted, #8a8a8a);
+    font-weight: 600;
+}
+
+#page-chat .profile-workspace .sec-hero__verified.is-verified {
+    color: var(--accent-primary, #c7ff00);
+}
+
+/* Keys not loaded: the badge goes quiet. */
+#page-chat .profile-workspace .sec-hero__status:not(:has(.is-verified)) .sec-hero__badge {
+    fill: color-mix(in srgb, var(--theme-text-muted, #8a8a8a) 45%, transparent);
+}
+
+#page-chat .profile-workspace .sec-hero__hint {
+    color: var(--theme-text-muted, #8a8a8a);
+}
+
+#page-chat .profile-workspace .sec-hero__art {
+    height: 400px;
+    pointer-events: none;
+    position: absolute;
+    right: -72px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 400px;
+}
+
+#page-chat .profile-workspace .sec-hero__rings {
+    fill: none;
+    height: 100%;
+    inset: 0;
+    position: absolute;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .sec-hero__rings circle {
+    stroke-width: 1;
+    /* The circles sit on the viewBox origin (0, 0): spin around it. */
+    transform-origin: 0 0;
+}
+
+#page-chat .profile-workspace .sec-hero__rings .is-solid {
+    stroke: color-mix(in srgb, var(--theme-tint, #ffffff) 7%, transparent);
+}
+
+#page-chat .profile-workspace .sec-hero__rings .is-dashed {
+    animation: sec-ring-spin 60s linear infinite;
+    stroke: color-mix(in srgb, var(--accent-primary, #c7ff00) 55%, transparent);
+    stroke-dasharray: 2 4;
+}
+
+#page-chat .profile-workspace .sec-hero__rings .is-outer {
+    animation: sec-ring-spin 120s linear infinite reverse;
+    stroke: color-mix(in srgb, var(--accent-primary, #c7ff00) 35%, transparent);
+    stroke-dasharray: 2 5;
+}
+
+@keyframes sec-ring-spin {
+    to { transform: rotate(360deg); }
+}
+
+#page-chat .profile-workspace .sec-hero__lock {
+    align-items: center;
+    background: var(--accent-primary, #c7ff00);
+    border-radius: 50%;
+    box-shadow: 0 0 48px color-mix(in srgb, var(--accent-primary, #c7ff00) 22%, transparent);
+    color: var(--text-on-accent, #0b0b0b);
+    display: flex;
+    height: 86px;
+    justify-content: center;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 86px;
+}
+
+#page-chat .profile-workspace .sec-hero__lock .ui-icon {
+    height: 32px;
+    stroke-width: 1.8;
+    width: 32px;
+}
+
+/* Device identity: laptop in the theme, Platform / System tiles. */
+#page-chat .profile-workspace .sec-device {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+}
+
+#page-chat .profile-workspace .sec-device__art {
+    align-self: center;
+    height: 86px;
+    margin: 12px 0 14px;
+    width: 140px;
+}
+
+#page-chat .profile-workspace .sec-device__art .is-body {
+    fill: var(--settings-inner-fill);
+    stroke: color-mix(in srgb, var(--theme-tint, #ffffff) 16%, transparent);
+    stroke-width: 1.5;
+}
+
+#page-chat .profile-workspace .sec-device__art .is-screen {
+    fill: color-mix(in srgb, var(--bg-main, #070707) 80%, transparent);
+}
+
+#page-chat .profile-workspace .sec-device__art .is-ring {
+    fill: none;
+    stroke: var(--accent-primary, #c7ff00);
+    stroke-dasharray: 2 2.5;
+    stroke-width: 1.2;
+}
+
+#page-chat .profile-workspace .sec-device__art .is-dot {
+    fill: var(--accent-primary, #c7ff00);
+}
+
+#page-chat .profile-workspace .sec-device__art .is-base {
+    fill: var(--settings-inner-fill);
+    stroke: color-mix(in srgb, var(--theme-tint, #ffffff) 16%, transparent);
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+}
+
+#page-chat .profile-workspace .sec-device__tiles {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: auto;
+}
+
+#page-chat .profile-workspace .sec-tile {
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px 12px;
+}
+
+#page-chat .profile-workspace .sec-tile__label {
+    color: var(--theme-text-muted, #8a8a8a);
+    font-size: 11px;
+}
+
+#page-chat .profile-workspace .sec-tile__value {
+    color: var(--theme-text, #f4f4f5);
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Key cards: kicker + ↗, label, big mono value, strength segments. */
+#page-chat .profile-workspace .sec-key {
+    display: flex;
+    flex-direction: column;
+    min-height: 170px;
+    transition: border-color 0.2s ease;
+}
+
+/* Both key cards outline in the accent on hover only. */
+#page-chat .profile-workspace .sec-key:hover,
+#page-chat .profile-workspace .sec-key:focus-within {
+    border-color: color-mix(in srgb, var(--accent-primary, #c7ff00) 80%, transparent);
+}
+
+#page-chat .profile-workspace .sec-arrow-btn {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 50%;
+    color: var(--theme-text, #f4f4f5);
+    display: inline-flex;
+    flex: none;
+    height: 32px;
+    justify-content: center;
+    margin: -8px -4px 0 0;
+    padding: 0;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 32px;
+}
+
+#page-chat .profile-workspace button.sec-arrow-btn {
+    cursor: pointer;
+}
+
+#page-chat .profile-workspace button.sec-arrow-btn:hover,
+#page-chat .profile-workspace button.sec-arrow-btn:focus-visible {
+    background: var(--settings-inner-fill);
+    border-color: color-mix(in srgb, var(--theme-tint, #ffffff) 22%, transparent);
+    outline: none;
+}
+
+#page-chat .profile-workspace .sec-arrow-btn.is-open {
+    transform: rotate(90deg);
+}
+
+#page-chat .profile-workspace .sec-arrow-btn svg {
+    fill: none;
+    height: 14px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+    width: 14px;
+}
+
+#page-chat .profile-workspace .sec-key__label {
+    color: var(--theme-text, #f4f4f5);
+    font-size: 14px;
+    margin: 22px 0 6px;
+}
+
+#page-chat .profile-workspace .sec-key__value {
+    color: var(--theme-text, #f4f4f5);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#page-chat .profile-workspace .sec-key__bar {
+    display: flex;
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+#page-chat .profile-workspace .sec-key__bar i {
+    background: color-mix(in srgb, var(--theme-tint, #ffffff) 9%, transparent);
+    border-radius: 999px;
+    flex: 1;
+    height: 5px;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .sec-key__bar i.is-lit {
+    background: var(--accent-primary, #c7ff00);
+}
+
+/* Fingerprint: safety code + copy, and its 8×8 cell pattern. */
+#page-chat .profile-workspace .sec-fp {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+}
+
+#page-chat .profile-workspace .sec-fp__copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .sec-fp .sec-key__label {
+    margin-top: 16px;
+}
+
+#page-chat .profile-workspace .sec-copy-btn {
+    align-items: center;
+    align-self: flex-start;
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 999px;
+    color: var(--theme-text, #f4f4f5);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--f-ui);
+    font-size: 12px;
+    font-weight: 500;
+    gap: 6px;
+    height: 32px;
+    margin-top: 14px;
+    padding: 0 13px 0 11px;
+    transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+#page-chat .profile-workspace .sec-copy-btn:hover,
+#page-chat .profile-workspace .sec-copy-btn:focus-visible {
+    background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
+    outline: none;
+}
+
+#page-chat .profile-workspace .sec-copy-btn:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+/* Copy → Copied!: icons and labels cross-fade in place; the pill tints green. */
+#page-chat .profile-workspace .sec-copy-btn {
+    --sec-copied: var(--color-success, #34d399);
+    transition:
+        background-color 0.22s ease,
+        border-color 0.22s ease,
+        color 0.22s ease,
+        transform 0.18s ease;
+}
+
+#page-chat .profile-workspace .sec-copy-btn:active {
+    transform: scale(0.96);
+}
+
+#page-chat .profile-workspace .sec-copy-btn.is-copied {
+    background: color-mix(in srgb, var(--sec-copied) 15%, transparent);
+    border-color: color-mix(in srgb, var(--sec-copied) 30%, transparent);
+    color: var(--sec-copied);
+}
+
+#page-chat .profile-workspace .sec-copy-btn__icons,
+#page-chat .profile-workspace .sec-copy-btn__labels {
+    display: inline-grid;
+}
+
+#page-chat .profile-workspace .sec-copy-btn__icons > *,
+#page-chat .profile-workspace .sec-copy-btn__labels > * {
+    grid-area: 1 / 1;
+    transition:
+        opacity 0.2s ease,
+        transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#page-chat .profile-workspace .sec-copy-btn__icons svg {
+    height: 13px;
+    width: 13px;
+}
+
+#page-chat .profile-workspace .sec-copy-btn__icons .is-check {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+
+#page-chat .profile-workspace .sec-copy-btn__labels > * {
+    text-align: center;
+}
+
+#page-chat .profile-workspace .sec-copy-btn .is-check {
+    opacity: 0;
+    transform: scale(0.5);
+}
+
+#page-chat .profile-workspace .sec-copy-btn__labels .is-check {
+    transform: translateY(6px);
+}
+
+#page-chat .profile-workspace .sec-copy-btn.is-copied .is-copy {
+    opacity: 0;
+    transform: scale(0.5);
+}
+
+#page-chat .profile-workspace .sec-copy-btn.is-copied .sec-copy-btn__labels .is-copy {
+    transform: translateY(-6px);
+}
+
+#page-chat .profile-workspace .sec-copy-btn.is-copied .is-check {
+    opacity: 1;
+    transform: none;
+}
+
+#page-chat .profile-workspace .sec-fp__grid {
+    background: color-mix(in srgb, var(--bg-main, #070707) 55%, transparent);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 16px;
+    display: grid;
+    flex: none;
+    gap: 3px;
+    grid-template-columns: repeat(8, 10px);
+    padding: 12px;
+}
+
+#page-chat .profile-workspace .sec-fp__grid i {
+    background: color-mix(in srgb, var(--theme-tint, #ffffff) 8%, transparent);
+    border-radius: 2.5px;
+    height: 10px;
+    transition: background-color 0.3s ease;
+}
+
+#page-chat .profile-workspace .sec-fp__grid i.is-on {
+    background: var(--accent-primary, #c7ff00);
+}
+
+/* Full fingerprint: a full-width row that grows from nothing (0fr → 1fr) as
+   the card fades and lifts in; closing plays it back. While it's closed the
+   next card pulls up over the empty row's grid gap, on the same clock. */
+#page-chat .profile-workspace .sec-fp-wrap {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-rows: 0fr;
+    transition:
+        grid-template-rows 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0.26s;
+    visibility: hidden;
+}
+
+#page-chat .profile-workspace .sec-fp-wrap.is-open {
+    grid-template-rows: 1fr;
+    transition:
+        grid-template-rows 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0s;
+    visibility: visible;
+}
+
+#page-chat .profile-workspace .sec-fp-wrap + .sec-card {
+    transition: margin-top 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#page-chat .profile-workspace .sec-fp-wrap:not(.is-open) + .sec-card {
+    margin-top: -18px;
+}
+
+#page-chat .profile-workspace .sec-fp-wrap__clip {
+    min-height: 0;
+    overflow: hidden;
+}
+
+#page-chat .profile-workspace .sec-fp-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+    transition:
+        opacity 0.22s ease-out,
+        transform 0.22s ease-out;
+}
+
+#page-chat .profile-workspace .sec-fp-wrap.is-open .sec-fp-panel {
+    opacity: 1;
+    transform: none;
+}
+
+#page-chat .profile-workspace .sec-fp-panel__value {
+    color: var(--theme-text, #f4f4f5);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Manage devices: across the grid, CTA on the right. */
+#page-chat .profile-workspace .sec-manage {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    grid-column: 1 / -1;
+    padding: 22px 24px;
+}
+
+#page-chat .profile-workspace .sec-manage__icon {
+    align-items: center;
     background: var(--settings-inner-fill);
     border: 1px solid var(--settings-inner-stroke);
     border-radius: 14px;
     color: var(--theme-text, #f4f4f5);
+    display: inline-flex;
+    flex: none;
+    height: 50px;
+    justify-content: center;
+    width: 50px;
+}
+
+#page-chat .profile-workspace .sec-manage__icon svg {
+    fill: none;
+    height: 20px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+    width: 20px;
+}
+
+#page-chat .profile-workspace .sec-manage__copy {
+    flex: 1;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .sec-manage .sec-card__title {
+    margin: 0 0 3px;
+}
+
+#page-chat .profile-workspace .sec-manage__text {
+    color: var(--theme-text-muted, #8a8a8a);
+    font-size: 12.5px;
+    margin: 0;
+}
+
+#page-chat .profile-workspace .sec-cta {
+    align-items: center;
+    background: var(--accent-primary, #c7ff00);
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-on-accent, #0b0b0b);
     cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font-family: var(--f-ui);
+    font-size: 14px;
+    font-weight: 600;
+    gap: 8px;
+    height: 42px;
+    padding: 0 20px;
+    transition: filter 0.18s ease, transform 0.18s ease;
+}
+
+#page-chat .profile-workspace .sec-cta:hover,
+#page-chat .profile-workspace .sec-cta:focus-visible {
+    filter: brightness(1.06);
+    outline: none;
+}
+
+#page-chat .profile-workspace .sec-cta:active {
+    transform: scale(0.97);
+}
+
+#page-chat .profile-workspace .sec-cta .ui-icon {
+    height: 15px;
+    width: 15px;
+}
+
+/* Entrance: the cards rise in, one after another. */
+#page-chat .profile-workspace .security-page:not(.is-ready) .sec-card:not(.sec-fp-panel) {
+    opacity: 0;
+}
+
+#page-chat .profile-workspace .security-page.is-ready .sec-card:not(.sec-fp-panel) {
+    animation: profile-section-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#page-chat .profile-workspace .security-page.is-ready .sec-card:nth-child(2) { animation-delay: 0.05s; }
+#page-chat .profile-workspace .security-page.is-ready .sec-card:nth-child(3) { animation-delay: 0.1s; }
+#page-chat .profile-workspace .security-page.is-ready .sec-card:nth-child(4) { animation-delay: 0.14s; }
+#page-chat .profile-workspace .security-page.is-ready .sec-card:nth-child(5) { animation-delay: 0.18s; }
+#page-chat .profile-workspace .security-page.is-ready .sec-card:nth-child(n + 6) { animation-delay: 0.22s; }
+
+/* Narrower panel: hero across, then two columns; phones: one column. */
+@container (max-width: 940px) {
+    #page-chat .profile-workspace .security-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #page-chat .profile-workspace .sec-fp {
+        grid-column: 1 / -1;
+    }
+}
+
+@container (max-width: 620px) {
+    #page-chat .profile-workspace .security-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #page-chat .profile-workspace .sec-hero {
+        grid-column: auto;
+    }
+
+    #page-chat .profile-workspace .sec-hero__art {
+        opacity: 0.35;
+        right: -180px;
+    }
+
+    #page-chat .profile-workspace .sec-manage {
+        flex-wrap: wrap;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .profile-workspace .sec-hero__rings circle,
+    #page-chat .profile-workspace .security-page.is-ready .sec-card {
+        animation: none;
+    }
+
+    #page-chat .profile-workspace .sec-fp-wrap,
+    #page-chat .profile-workspace .sec-fp-wrap + .sec-card,
+    #page-chat .profile-workspace .sec-fp-panel,
+    #page-chat .profile-workspace .sec-copy-btn * {
+        transition: none !important;
+    }
+
+    #page-chat .profile-workspace .security-page:not(.is-ready) .sec-card {
+        opacity: 1;
+    }
+}
+
+/* ── Privacy — images/Group 48.png ───────────────────────────────────────────
+   Three presence cards, then Links + How encryption works; centred like
+   Appearance / Security (shares .sec-card / .sec-kicker / .sec-cta). Each
+   card carries .is-on from its switch (js syncPrivacyCards) and its picture
+   eases between the two states. */
+#page-chat .profile-workspace .profile-privacy-layout.privacy-page {
+    --pv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --pv-accent: var(--accent-primary, #c7ff00);
+    --pv-muted: var(--theme-text-muted, #8a8a8a);
+    align-self: center;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
+    gap: 18px;
+    max-width: var(--appearance-max, 1150px);
+    min-width: 0;
+    padding: 0;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .privacy-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#page-chat .profile-workspace .privacy-grid--second {
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
+}
+
+@container (max-width: 900px) {
+    #page-chat .profile-workspace .privacy-grid,
+    #page-chat .profile-workspace .privacy-grid--second {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+#page-chat .profile-workspace .pv-card {
+    display: flex;
+    flex-direction: column;
+}
+
+#page-chat .profile-workspace .pv-card .sec-card__title {
+    margin-top: 0;
+}
+
+#page-chat .profile-workspace .pv-card__head {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin: -4px 0 16px;
+}
+
+#page-chat .profile-workspace .pv-card__hint {
+    color: var(--pv-muted);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 4px 0 0;
+}
+
+/* Switch: the theme's accent track, a dark knob (overrides .profile-switch). */
+#page-chat .profile-workspace .pv-switch .profile-switch__track {
+    border-color: transparent;
+    height: 26px;
+    transition: background-color 0.24s ease;
+    width: 46px;
+}
+
+#page-chat .profile-workspace .pv-switch .profile-switch__track::after {
+    transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1), background-color 0.24s ease;
+}
+
+#page-chat .profile-workspace .pv-switch input:checked + .profile-switch__track {
+    background: var(--pv-accent);
+}
+
+#page-chat .profile-workspace .pv-switch input:checked + .profile-switch__track::after {
+    background: var(--bg-main, #0b0b0b);
+    box-shadow: none;
+}
+
+#page-chat .profile-workspace .pv-switch input:focus-visible + .profile-switch__track {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pv-accent) 30%, transparent);
+}
+
+/* The picture box. */
+#page-chat .profile-workspace .pv-art {
+    align-items: center;
+    background: color-mix(in srgb, var(--bg-main, #070707) 45%, transparent);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 18px;
+    display: flex;
+    height: 112px;
+    justify-content: center;
+    margin-bottom: 24px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Two labels in one cell: the state's own one shows (fade + small lift). */
+#page-chat .profile-workspace .pv-swap {
+    display: inline-grid;
+}
+
+#page-chat .profile-workspace .pv-swap > * {
+    grid-area: 1 / 1;
+    transition: opacity 0.22s ease, transform 0.3s var(--pv-ease);
+    white-space: nowrap;
+}
+
+#page-chat .profile-workspace .pv-card:not(.is-on) .pv-swap > .is-on,
+#page-chat .profile-workspace .pv-card.is-on .pv-swap > .is-off {
+    opacity: 0;
+    transform: translateY(4px);
+}
+
+/* Online status: avatar + status dot; off → the dot drains grey, avatar dims. */
+#page-chat .profile-workspace .pv-art--online {
+    gap: 14px;
+}
+
+#page-chat .profile-workspace .pv-avatar {
+    background: color-mix(in srgb, var(--theme-text, #fff) 9%, transparent);
+    border-radius: 50%;
+    height: 54px;
+    position: relative;
+    transition: opacity 0.3s ease;
+    width: 54px;
+}
+
+#page-chat .profile-workspace .pv-avatar svg {
+    border-radius: 50%;
+    fill: color-mix(in srgb, var(--theme-text, #fff) 16%, transparent);
+    height: 100%;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .pv-avatar__dot {
+    background: var(--pv-muted);
+    border: 3px solid color-mix(in srgb, var(--bg-main, #070707) 90%, transparent);
+    border-radius: 50%;
+    bottom: -1px;
+    height: 17px;
+    position: absolute;
+    right: -3px;
+    transform: scale(0.75);
+    transition: background-color 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    width: 17px;
+}
+
+#page-chat .profile-workspace .pv-card.is-on .pv-avatar__dot {
+    background: var(--pv-accent);
+    transform: scale(1);
+}
+
+#page-chat .profile-workspace .pv-card:not(.is-on) .pv-avatar {
+    opacity: 0.6;
+}
+
+#page-chat .profile-workspace .pv-online__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#page-chat .profile-workspace .pv-online__name {
+    color: var(--theme-text, #f4f4f5);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#page-chat .profile-workspace .pv-online__state {
+    font-size: 11.5px;
+}
+
+#page-chat .profile-workspace .pv-online__state .is-on {
+    color: var(--pv-accent);
+}
+
+#page-chat .profile-workspace .pv-online__state .is-off {
+    color: var(--pv-muted);
+}
+
+/* Read receipts: an outgoing bubble, ✓✓ Read; off → one grey ✓ Sent. */
+#page-chat .profile-workspace .pv-art--receipts {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    padding: 0 18px;
+}
+
+#page-chat .profile-workspace .pv-bubble {
+    background: color-mix(in srgb, var(--pv-accent) 16%, transparent);
+    border-radius: 12px 12px 4px 12px;
+    display: flex;
+    gap: 8px;
+    padding: 13px 12px;
+    width: min(200px, 80%);
+}
+
+#page-chat .profile-workspace .pv-bubble i {
+    background: color-mix(in srgb, var(--pv-accent) 42%, transparent);
+    border-radius: 999px;
+    height: 5px;
+}
+
+#page-chat .profile-workspace .pv-bubble i:first-child { flex: 2.3; }
+#page-chat .profile-workspace .pv-bubble i:last-child { flex: 1; }
+
+#page-chat .profile-workspace .pv-receipt {
+    align-items: center;
+    color: var(--pv-muted);
+    display: inline-flex;
+    font-size: 11.5px;
+    gap: 6px;
+    transition: color 0.3s ease;
+}
+
+#page-chat .profile-workspace .pv-card.is-on .pv-receipt {
+    color: var(--pv-accent);
+}
+
+#page-chat .profile-workspace .pv-receipt svg {
+    fill: none;
+    height: 11px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+    width: 18px;
+}
+
+/* The second check draws in when receipts go on, and wipes out when off. */
+#page-chat .profile-workspace .pv-receipt .is-second {
+    stroke-dasharray: 12;
+    stroke-dashoffset: 12;
+    transition: stroke-dashoffset 0.4s var(--pv-ease);
+}
+
+#page-chat .profile-workspace .pv-card.is-on .pv-receipt .is-second {
+    stroke-dashoffset: 0;
+    transition-delay: 0.08s;
+}
+
+#page-chat .profile-workspace .pv-receipt .pv-swap {
+    justify-items: start;
+}
+
+/* Typing: three dots bouncing while on; off → they settle and dim. */
+#page-chat .profile-workspace .pv-art--typing {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 18px;
+}
+
+#page-chat .profile-workspace .pv-typing {
+    background: color-mix(in srgb, var(--theme-text, #fff) 7%, transparent);
+    border-radius: 12px;
+    display: inline-flex;
+    gap: 5px;
+    padding: 13px 14px;
+}
+
+#page-chat .profile-workspace .pv-typing i {
+    background: var(--pv-muted);
+    border-radius: 50%;
+    height: 6px;
+    opacity: 0.45;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    width: 6px;
+}
+
+#page-chat .profile-workspace .pv-card.is-on .pv-typing i {
+    animation: pv-typing-bounce 1.2s ease-in-out infinite;
+    background: color-mix(in srgb, var(--pv-accent) 55%, var(--pv-muted));
+    opacity: 1;
+}
+
+#page-chat .profile-workspace .pv-card.is-on .pv-typing i:nth-child(2) { animation-delay: 0.15s; }
+#page-chat .profile-workspace .pv-card.is-on .pv-typing i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes pv-typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-3px); }
+}
+
+#page-chat .profile-workspace .pv-typing__label {
+    font-size: 11.5px;
+}
+
+#page-chat .profile-workspace .pv-typing__label .is-on {
+    color: var(--pv-accent);
+}
+
+#page-chat .profile-workspace .pv-typing__label .is-off {
+    color: var(--pv-muted);
+}
+
+/* Links: copy on the left, the hold ring on the right. */
+#page-chat .profile-workspace .pv-links {
+    display: grid;
+    gap: 22px;
+    grid-template-columns: minmax(0, 1fr) 152px;
+}
+
+#page-chat .profile-workspace .pv-links__main {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .pv-links__copy {
+    padding-bottom: 4px;
+}
+
+#page-chat .profile-workspace .pv-art--links {
+    flex-direction: column;
+    gap: 12px;
+    height: auto;
+    margin: 0;
+    min-height: 172px;
+}
+
+#page-chat .profile-workspace .pv-hold {
+    height: 62px;
+    position: relative;
+    width: 62px;
+}
+
+#page-chat .profile-workspace .pv-hold__ring {
+    fill: none;
+    height: 100%;
+    transform: rotate(-90deg);
+    width: 100%;
+}
+
+#page-chat .profile-workspace .pv-hold__ring .is-track {
+    stroke: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
+    stroke-width: 3;
+}
+
+/* On: the arc fills to ~80% (the hold in progress); off: it empties. */
+#page-chat .profile-workspace .pv-hold__ring .is-arc {
+    stroke: var(--pv-accent);
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    stroke-linecap: round;
+    stroke-width: 3;
+    transition: stroke-dashoffset 0.7s var(--pv-ease);
+}
+
+#page-chat .profile-workspace .pv-card.is-on .pv-hold__ring .is-arc {
+    stroke-dashoffset: 22;
+}
+
+#page-chat .profile-workspace .pv-hold__core {
+    align-items: center;
+    background: color-mix(in srgb, var(--theme-text, #fff) 7%, transparent);
+    border-radius: 50%;
+    color: var(--theme-text, #f4f4f5);
+    display: flex;
+    inset: 11px;
+    justify-content: center;
+    position: absolute;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#page-chat .profile-workspace .pv-card:not(.is-on) .pv-hold__core {
+    transform: scale(0.9);
+}
+
+#page-chat .profile-workspace .pv-hold__core svg {
+    fill: none;
+    height: 15px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.8;
+    width: 15px;
+}
+
+#page-chat .profile-workspace .pv-hold__label {
+    font-size: 11.5px;
+}
+
+#page-chat .profile-workspace .pv-hold__label .is-on {
+    color: var(--pv-accent);
+}
+
+#page-chat .profile-workspace .pv-hold__label .is-off {
+    color: var(--pv-muted);
+}
+
+/* How encryption works: device → sealed code → device. */
+#page-chat .profile-workspace .sec-cta--sm {
+    font-size: 13.5px;
+    height: 34px;
+    margin: -4px 0;
+    padding: 0 16px;
+    text-decoration: none;
+}
+
+#page-chat .profile-workspace .pv-flow {
+    align-items: flex-start;
+    display: flex;
+    gap: 14px;
+    margin: 4px 0 24px;
+}
+
+#page-chat .profile-workspace .pv-flow__end,
+#page-chat .profile-workspace .pv-flow__mid {
+    align-items: center;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#page-chat .profile-workspace .pv-flow__tile {
+    align-items: center;
+    background: color-mix(in srgb, var(--bg-main, #070707) 45%, transparent);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 12px;
+    color: var(--theme-text, #f4f4f5);
+    display: flex;
+    height: 46px;
+    justify-content: center;
+    width: 46px;
+}
+
+#page-chat .profile-workspace .pv-flow__tile svg {
+    fill: none;
+    height: 18px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+    width: 18px;
+}
+
+#page-chat .profile-workspace .pv-flow__caption {
+    color: var(--pv-muted);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+/* The dashed line carries a small dot across, over and over. */
+#page-chat .profile-workspace .pv-flow__line {
+    border-top: 1px dashed color-mix(in srgb, var(--theme-text, #fff) 16%, transparent);
+    flex: 1;
+    margin-top: 23px;
+    min-width: 24px;
+    position: relative;
+}
+
+#page-chat .profile-workspace .pv-flow__line i {
+    animation: pv-flow-travel 2.8s ease-in-out infinite;
+    background: var(--pv-accent);
+    border-radius: 50%;
+    height: 5px;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    top: -3px;
+    width: 5px;
+}
+
+#page-chat .profile-workspace .pv-flow__line:last-of-type i {
+    animation-delay: 1.4s;
+}
+
+@keyframes pv-flow-travel {
+    0% { left: 0; opacity: 0; }
+    15% { opacity: 1; }
+    45% { left: calc(100% - 5px); opacity: 1; }
+    55%, 100% { left: calc(100% - 5px); opacity: 0; }
+}
+
+#page-chat .profile-workspace .pv-flow__lock {
+    align-items: center;
+    background: var(--pv-accent);
+    border-radius: 999px;
+    color: var(--text-on-accent, #0b0b0b);
+    display: inline-flex;
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 8px;
+    height: 46px;
+    padding: 0 20px;
+}
+
+#page-chat .profile-workspace .pv-flow__lock .ui-icon {
+    height: 14px;
+    stroke-width: 2;
+    width: 14px;
+}
+
+/* Header pill: one bar per sharing switch, "3/4 sharing". Privacy only. */
+#page-chat .profile-workspace .pv-summary {
+    display: none;
+}
+
+#page-chat:not(.is-viewport-profile-stack) .profile-workspace:has(.privacy-page:not(.hidden)) .pv-summary {
+    align-items: center;
+    background: var(--settings-capsule-bg);
+    border: 1px solid var(--settings-capsule-stroke);
+    border-radius: 999px;
+    color: var(--theme-text, #f4f4f5);
+    display: inline-flex;
+    flex: none;
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 12px;
+    gap: 10px;
+    height: 42px;
+    padding: 0 16px 0 14px;
+}
+
+#page-chat .profile-workspace .pv-summary__bars {
+    display: inline-flex;
+    gap: 3px;
+}
+
+#page-chat .profile-workspace .pv-summary__bars i {
+    background: color-mix(in srgb, var(--theme-text, #fff) 14%, transparent);
+    border-radius: 999px;
+    height: 6px;
+    transition: background-color 0.3s ease;
+    width: 11px;
+}
+
+#page-chat .profile-workspace .pv-summary__bars i.is-lit {
+    background: var(--accent-primary, #c7ff00);
+}
+
+/* Entrance: cards rise in one after another (like Security). */
+#page-chat .profile-workspace .privacy-page:not(.is-ready) .sec-card {
+    opacity: 0;
+}
+
+#page-chat .profile-workspace .privacy-page.is-ready .sec-card {
+    animation: profile-section-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#page-chat .profile-workspace .privacy-page.is-ready .privacy-grid .sec-card:nth-child(2) { animation-delay: 0.05s; }
+#page-chat .profile-workspace .privacy-page.is-ready .privacy-grid .sec-card:nth-child(3) { animation-delay: 0.1s; }
+#page-chat .profile-workspace .privacy-page.is-ready .privacy-grid--second .sec-card:nth-child(1) { animation-delay: 0.14s; }
+#page-chat .profile-workspace .privacy-page.is-ready .privacy-grid--second .sec-card:nth-child(2) { animation-delay: 0.18s; }
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .profile-workspace .privacy-page *,
+    #page-chat .profile-workspace .privacy-page.is-ready .sec-card {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    #page-chat .profile-workspace .privacy-page:not(.is-ready) .sec-card {
+        opacity: 1;
+    }
+}
+
+/* ── Data & storage — images/Group 46.png ────────────────────────────────────
+   Storage overview (2 cols) + Export, then Clear cache / Clear chat history /
+   Delete account; centred like the other settings pages. The overview's
+   100-cell map fills in on open and highlights a category from the legend. */
+#page-chat .profile-workspace .profile-data-layout.data-page {
+    --dt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --dt-accent: var(--accent-primary, #c7ff00);
+    --dt-danger: var(--color-danger, #ef4444);
+    --dt-muted: var(--theme-text-muted, #8a8a8a);
+    align-self: center;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: var(--appearance-max, 1150px);
+    min-width: 0;
+    padding: 0;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .data-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#page-chat .profile-workspace .dt-overview {
+    align-items: center;
+    display: flex;
+    gap: 32px;
+    grid-column: span 2;
+    justify-content: space-between;
+    padding: 30px;
+}
+
+@container (max-width: 900px) {
+    #page-chat .profile-workspace .data-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #page-chat .profile-workspace .dt-overview {
+        flex-wrap: wrap;
+        grid-column: auto;
+    }
+}
+
+#page-chat .profile-workspace .dt-overview__main {
+    flex: 1;
+    max-width: 330px;
+    min-width: 0;
+}
+
+/* The total: a big number, its unit small and muted beside it. */
+#page-chat .profile-workspace .dt-total {
+    align-items: baseline;
+    color: var(--theme-text, #f4f4f5);
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 6px;
+}
+
+#page-chat .profile-workspace .dt-total__num {
+    font-family: var(--f-ui);
+    font-size: 64px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1;
+}
+
+#page-chat .profile-workspace .dt-total__unit {
+    color: var(--dt-muted);
+    font-size: 22px;
+    font-weight: 500;
+}
+
+#page-chat .profile-workspace .dt-total__caption {
+    color: var(--dt-muted);
+    font-size: 13px;
+    margin: 0 0 14px;
+}
+
+/* Legend: dot · label · share · size; a row dims the others' cells. */
+#page-chat .profile-workspace .dt-legend {
+    display: grid;
+    gap: 2px;
+    list-style: none;
+    margin: 0 -10px;
+    padding: 0;
+}
+
+#page-chat .profile-workspace .dt-legend__row {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    color: var(--theme-text, #f4f4f5);
+    cursor: pointer;
+    display: grid;
     font: inherit;
     gap: 10px;
-    padding: 10px 10px 12px;
+    grid-template-columns: 9px minmax(0, 1fr) auto 76px;
+    padding: 9px 10px;
+    text-align: left;
+    transition: background-color 0.18s ease, opacity 0.25s ease;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .dt-legend__row:hover,
+#page-chat .profile-workspace .dt-legend__row[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--theme-text, #fff) 5%, transparent);
+}
+
+#page-chat .profile-workspace .dt-legend__row:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--theme-tint, #fff) 35%, transparent);
+    outline-offset: -2px;
+}
+
+#page-chat .profile-workspace .dt-legend__row.is-dim {
+    opacity: 0.45;
+}
+
+#page-chat .profile-workspace .dt-legend__dot {
+    border-radius: 2.5px;
+    height: 9px;
+    width: 9px;
+}
+
+#page-chat .profile-workspace .is-messages { --dt-cat: var(--dt-accent); }
+#page-chat .profile-workspace .is-keys { --dt-cat: var(--theme-text, #f4f4f5); }
+#page-chat .profile-workspace .is-cache { --dt-cat: color-mix(in srgb, var(--theme-text, #fff) 28%, transparent); }
+
+#page-chat .profile-workspace .dt-legend__dot {
+    background: var(--dt-cat);
+}
+
+#page-chat .profile-workspace .dt-legend__label {
+    font-size: 13px;
+}
+
+#page-chat .profile-workspace .dt-legend__pct {
+    color: var(--dt-muted);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 11px;
+}
+
+#page-chat .profile-workspace .dt-legend__value {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    text-align: right;
+}
+
+/* The map: 20 × 5 cells; they light up on a sweep (per-cell delay from js). */
+#page-chat .profile-workspace .dt-map {
+    flex: none;
+    min-width: 0;
+}
+
+#page-chat .profile-workspace .dt-cells {
+    display: grid;
+    gap: 3px;
+    grid-template-columns: repeat(20, 14px);
+}
+
+#page-chat .profile-workspace .dt-cells i {
+    aspect-ratio: 1;
+    background: color-mix(in srgb, var(--theme-text, #fff) 7%, transparent);
+    border-radius: 3px;
+    transition:
+        background-color 0.35s ease,
+        opacity 0.25s ease,
+        transform 0.35s var(--dt-ease);
+}
+
+#page-chat .profile-workspace .dt-cells i[class] {
+    background: var(--dt-cat);
+}
+
+/* Legend focus: the category's cells stay, the rest step back. */
+#page-chat .profile-workspace .dt-cells[data-focus] i {
+    opacity: 0.22;
+    transition-delay: 0ms !important;
+}
+
+#page-chat .profile-workspace .dt-cells[data-focus="messages"] i.is-messages,
+#page-chat .profile-workspace .dt-cells[data-focus="keys"] i.is-keys,
+#page-chat .profile-workspace .dt-cells[data-focus="cache"] i.is-cache {
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+#page-chat .profile-workspace .dt-map__foot {
+    color: var(--dt-muted);
+    display: flex;
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 10.5px;
+    gap: 16px;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+/* Export */
+#page-chat .profile-workspace .dt-export {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+}
+
+#page-chat .profile-workspace .dt-export__icon {
+    align-items: center;
+    background: var(--dt-accent);
+    border-radius: 14px;
+    color: var(--text-on-accent, #0b0b0b);
+    display: inline-flex;
+    height: 48px;
+    justify-content: center;
+    width: 48px;
+}
+
+#page-chat .profile-workspace .dt-export__icon .ui-icon {
+    height: 19px;
+    stroke-width: 2;
+    width: 19px;
+}
+
+#page-chat .profile-workspace .dt-export__title {
+    color: var(--theme-text, #f4f4f5);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin: 30px 0 10px;
+}
+
+#page-chat .profile-workspace .dt-card__hint {
+    color: var(--dt-muted);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 0;
+}
+
+#page-chat .profile-workspace .dt-export__btn {
+    align-items: center;
+    background: var(--dt-accent);
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-on-accent, #0b0b0b);
+    cursor: pointer;
+    display: flex;
+    font-family: var(--f-ui);
+    font-size: 14px;
+    font-weight: 600;
+    height: 46px;
+    justify-content: center;
+    margin-top: auto;
+    transition: filter 0.18s ease, transform 0.18s ease;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .dt-export__title + .dt-card__hint {
+    margin-bottom: 30px;
+}
+
+#page-chat .profile-workspace .dt-export__btn:hover,
+#page-chat .profile-workspace .dt-export__btn:focus-visible {
+    filter: brightness(1.06);
+    outline: none;
+}
+
+#page-chat .profile-workspace .dt-export__btn:active {
+    transform: scale(0.98);
+}
+
+#page-chat .profile-workspace .dt-export__labels > span {
+    align-items: center;
+    display: inline-flex;
+    gap: 7px;
+    justify-content: center;
+}
+
+#page-chat .profile-workspace .dt-export__labels .ui-icon,
+#page-chat .profile-workspace .dt-export__labels svg {
+    fill: none;
+    height: 14px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 14px;
+}
+
+/* Download → "Downloaded ✓": the arrow drops out as the check comes in. */
+#page-chat .profile-workspace .dt-export__btn:not(.is-done) .dt-export__labels > .is-done,
+#page-chat .profile-workspace .dt-export__btn.is-done .dt-export__labels > .is-idle {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+#page-chat .profile-workspace .dt-export__btn.is-done .dt-export__labels > .is-idle {
+    transform: translateY(-8px);
+}
+
+#page-chat .profile-workspace .dt-export__btn:not(.is-done):hover .dt-export__labels .is-idle .ui-icon {
+    animation: dt-nudge 0.9s var(--dt-ease) infinite;
+}
+
+@keyframes dt-nudge {
+    50% { transform: translateY(2px); }
+}
+
+/* Action cards */
+#page-chat .profile-workspace .dt-action {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+}
+
+#page-chat .profile-workspace .dt-action__icon {
+    align-items: center;
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 12px;
+    color: var(--theme-text, #f4f4f5);
+    display: inline-flex;
+    height: 38px;
+    justify-content: center;
+    width: 38px;
+}
+
+#page-chat .profile-workspace .dt-action__icon .ui-icon {
+    height: 16px;
+    width: 16px;
+}
+
+#page-chat .profile-workspace .dt-action.is-danger .dt-action__icon {
+    background: color-mix(in srgb, var(--dt-danger) 12%, transparent);
+    border-color: color-mix(in srgb, var(--dt-danger) 20%, transparent);
+    color: var(--dt-danger);
+}
+
+#page-chat .profile-workspace .dt-action__size {
+    color: var(--theme-text, #f4f4f5);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    line-height: 38px;
+}
+
+#page-chat .profile-workspace .dt-action__tag {
+    color: var(--dt-danger);
+    line-height: 38px;
+}
+
+#page-chat .profile-workspace .dt-action__title {
+    color: var(--theme-text, #f4f4f5);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 16px 0 4px;
+}
+
+#page-chat .profile-workspace .dt-action.is-danger .dt-action__title {
+    color: var(--dt-danger);
+}
+
+#page-chat .profile-workspace .dt-action__btn {
+    background: transparent;
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 999px;
+    color: var(--theme-text, #f4f4f5);
+    cursor: pointer;
+    font-family: var(--f-ui);
+    font-size: 13px;
+    font-weight: 500;
+    height: 38px;
+    margin-top: 18px;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.18s ease;
+    width: 100%;
+}
+
+#page-chat .profile-workspace .dt-action__btn:hover:not(:disabled),
+#page-chat .profile-workspace .dt-action__btn:focus-visible {
+    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
+    outline: none;
+}
+
+#page-chat .profile-workspace .dt-action__btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+#page-chat .profile-workspace .dt-action__btn:disabled {
+    color: var(--dt-muted);
+    cursor: default;
+}
+
+#page-chat .profile-workspace .dt-action__btn.is-done {
+    border-color: color-mix(in srgb, var(--dt-accent) 40%, transparent);
+    color: var(--dt-accent);
+}
+
+#page-chat .profile-workspace .dt-action.is-danger .dt-action__btn {
+    border-color: color-mix(in srgb, var(--dt-danger) 22%, transparent);
+    color: var(--dt-danger);
+    font-weight: 600;
+}
+
+#page-chat .profile-workspace .dt-action.is-danger .dt-action__btn:hover,
+#page-chat .profile-workspace .dt-action.is-danger .dt-action__btn:focus-visible {
+    background: color-mix(in srgb, var(--dt-danger) 10%, transparent);
+    border-color: color-mix(in srgb, var(--dt-danger) 40%, transparent);
+}
+
+/* Entrance: cards rise in one after another. */
+#page-chat .profile-workspace .data-page:not(.is-ready) .sec-card {
+    opacity: 0;
+}
+
+#page-chat .profile-workspace .data-page.is-ready .sec-card {
+    animation: profile-section-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#page-chat .profile-workspace .data-page.is-ready .data-grid:first-child .sec-card:nth-child(2) { animation-delay: 0.06s; }
+#page-chat .profile-workspace .data-page.is-ready .data-grid--actions .sec-card:nth-child(1) { animation-delay: 0.1s; }
+#page-chat .profile-workspace .data-page.is-ready .data-grid--actions .sec-card:nth-child(2) { animation-delay: 0.14s; }
+#page-chat .profile-workspace .data-page.is-ready .data-grid--actions .sec-card:nth-child(3) { animation-delay: 0.18s; }
+
+@media (prefers-reduced-motion: reduce) {
+    #page-chat .profile-workspace .data-page *,
+    #page-chat .profile-workspace .data-page.is-ready .sec-card {
+        animation: none !important;
+        transition-delay: 0ms !important;
+    }
+
+    #page-chat .profile-workspace .data-page:not(.is-ready) .sec-card {
+        opacity: 1;
+    }
+}
+
+/* ── Appearance → Theme picker (js/themePicker.js) ───────────────────────────
+   One row per theme: a mini window in that theme's own colours (inline), the
+   name + type, its palette, and a radio ring that fills with the accent. */
+#page-chat .profile-workspace .theme-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 22px;
+    position: relative;
+}
+
+#page-chat .profile-workspace .theme-card {
+    align-items: center;
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    border-radius: 18px;
+    color: var(--theme-text, #f4f4f5);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: 14px;
+    min-width: 0;
+    padding: 11px 16px 11px 11px;
     position: relative;
     text-align: left;
     transition:
-        border-color 0.18s ease,
-        box-shadow 0.18s ease,
+        border-color 0.2s ease,
+        background-color 0.2s ease,
         transform 0.18s ease;
-}
-
-#page-chat .profile-workspace .theme-card:hover {
-    border-color: color-mix(in srgb, var(--theme-tint, #ffffff) 22%, transparent);
+    width: 100%;
 }
 
 #page-chat .profile-workspace .theme-card:active {
-    transform: scale(0.98);
+    transform: scale(0.99);
 }
 
 #page-chat .profile-workspace .theme-card:focus-visible {
@@ -3677,70 +5672,98 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
 }
 
 #page-chat .profile-workspace .theme-card.is-active {
-    border-color: var(--dock-accent, #afb9cd);
-    box-shadow: 0 0 0 1px var(--dock-accent, #afb9cd);
+    background: color-mix(in srgb, var(--accent-primary, #c7ff00) 4%, var(--settings-inner-fill));
+    border-color: var(--accent-primary, #c7ff00);
 }
 
-/* Mini window: page bg, a section panel, one incoming + one outgoing bubble. */
+/* Mini window: page bg, a sidebar panel, three bubbles. */
 #page-chat .profile-workspace .theme-card__preview {
-    aspect-ratio: 16 / 10;
     border: 1px solid transparent;
     border-radius: 9px;
     display: block;
+    flex: none;
+    height: 66px;
     overflow: hidden;
     position: relative;
+    width: 100px;
 }
 
 #page-chat .profile-workspace .theme-card__panel {
     border-right: 1px solid transparent;
     bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     left: 0;
+    padding: 8px 6px;
     position: absolute;
     top: 0;
-    width: 30%;
-}
-
-#page-chat .profile-workspace .theme-card__bubble {
-    border: 1px solid transparent;
-    border-radius: 6px;
-    height: 16%;
-    position: absolute;
-}
-
-#page-chat .profile-workspace .theme-card__bubble--in {
-    left: 38%;
-    top: 22%;
-    width: 36%;
-}
-
-#page-chat .profile-workspace .theme-card__bubble--out {
-    border: 0;
-    right: 8%;
-    top: 52%;
-    width: 40%;
+    width: 29%;
 }
 
 #page-chat .profile-workspace .theme-card__accent {
     border-radius: 999px;
-    height: 10%;
-    left: 8%;
+    height: 5px;
+    margin-bottom: 1px;
+    width: 18px;
+}
+
+#page-chat .profile-workspace .theme-card__line {
+    border-radius: 999px;
+    height: 3px;
+    opacity: 0.45;
+    width: 18px;
+}
+
+#page-chat .profile-workspace .theme-card__line--short {
+    width: 14px;
+}
+
+#page-chat .profile-workspace .theme-card__bubble {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    height: 10px;
     position: absolute;
+}
+
+#page-chat .profile-workspace .theme-card__bubble--in {
+    left: 37%;
     top: 12%;
-    width: 14%;
+    width: 34%;
+}
+
+#page-chat .profile-workspace .theme-card__bubble--out {
+    border: 0;
+    right: 6%;
+    top: 38%;
+    width: 36%;
+}
+
+#page-chat .profile-workspace .theme-card__bubble--in2 {
+    left: 37%;
+    top: 64%;
+    width: 27%;
+}
+
+#page-chat .profile-workspace .theme-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
 }
 
 #page-chat .profile-workspace .theme-card__meta {
     align-items: baseline;
     display: flex;
-    gap: 6px;
-    justify-content: space-between;
+    gap: 7px;
     min-width: 0;
-    padding-right: 22px;
 }
 
 #page-chat .profile-workspace .theme-card__name {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
+    letter-spacing: -0.01em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -3749,58 +5772,80 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
 #page-chat .profile-workspace .theme-card__type {
     color: var(--theme-text-muted, #8a8a8a);
     flex: none;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 #page-chat .profile-workspace .theme-card__swatches {
     display: flex;
-    gap: 4px;
+    gap: 6px;
 }
 
 #page-chat .profile-workspace .theme-card__swatch {
-    border: 1px solid color-mix(in srgb, var(--theme-tint, #ffffff) 14%, transparent);
-    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--theme-tint, #ffffff) 12%, transparent);
+    border-radius: 50%;
+    height: 15px;
+    width: 15px;
+}
+
+#page-chat .profile-workspace .theme-card__radio {
+    align-items: center;
+    border: 1.5px solid color-mix(in srgb, var(--theme-tint, #ffffff) 22%, transparent);
+    border-radius: 50%;
+    color: var(--text-on-accent, #0b0b0b);
+    display: inline-flex;
+    flex: none;
+    height: 24px;
+    justify-content: center;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+    width: 24px;
+}
+
+#page-chat .profile-workspace .theme-card__radio svg {
+    fill: none;
     height: 14px;
+    opacity: 0;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    transform: scale(0.6);
+    transition:
+        opacity 0.18s ease,
+        transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
     width: 14px;
 }
 
-#page-chat .profile-workspace .theme-card__check {
-    bottom: 12px;
-    color: var(--dock-accent, #afb9cd);
-    display: inline-flex;
-    opacity: 0;
-    position: absolute;
-    right: 10px;
-    transform: scale(0.7);
-    transition:
-        opacity 0.18s ease,
-        transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+#page-chat .profile-workspace .theme-card.is-active .theme-card__radio {
+    background: var(--accent-primary, #c7ff00);
+    border-color: var(--accent-primary, #c7ff00);
 }
 
-#page-chat .profile-workspace .theme-card__check .ui-icon {
-    height: 16px;
-    width: 16px;
-}
-
-#page-chat .profile-workspace .theme-card.is-active .theme-card__check {
+#page-chat .profile-workspace .theme-card.is-active .theme-card__radio svg {
     opacity: 1;
     transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
     #page-chat .profile-workspace .theme-card,
-    #page-chat .profile-workspace .theme-card__check {
+    #page-chat .profile-workspace .theme-card__radio,
+    #page-chat .profile-workspace .theme-card__radio svg {
         transition: none;
     }
 }
 
 /* ── Appearance → Chat preview ────────────────────────────────────────────────
    A miniature app window painted with --pv-* (set by js/themePicker.js from
-   the active theme, or the hovered one). Fallbacks = Dark Neon. */
+   the active theme, or the hovered one). Fallbacks = Dark Neon. It grows to
+   the card's height, so both columns end on one line. */
 #page-chat .profile-workspace .appearance-preview {
     --pv-ease: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    display: grid;
-    gap: 10px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 22px;
+    min-height: 0;
 }
 
 /* Every part of the preview eases between themes: fills, text, strokes and
@@ -3821,84 +5866,106 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
 }
 
 #page-chat .profile-workspace .appearance-preview__window {
-    display: grid;
-    grid-template-columns: minmax(120px, 34%) 1fr;
-    height: 248px;
-    overflow: hidden;
-    border: 1px solid var(--pv-border, #1c1c1c);
-    border-radius: 16px;
     background: var(--pv-bg, #070707);
+    border: 1px solid var(--pv-border, #1c1c1c);
+    border-radius: 22px;
     box-shadow: var(--pv-card-shadow, none);
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(150px, 32%) 1fr;
+    min-height: 440px;
+    overflow: hidden;
 }
 
-/* Sidebar: search field + chat rows as cards, the open chat as the active pill. */
+/* Sidebar: search field + chat rows, the open chat as the active pill. */
 #page-chat .profile-workspace .appearance-preview__sidebar {
+    background: var(--pv-section, #0a0a0a);
+    border-right: 1px solid var(--pv-border, #1c1c1c);
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 10px 8px;
-    border-right: 1px solid var(--pv-border, #1c1c1c);
-    background: var(--pv-section, #0a0a0a);
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 12px;
 }
 
 #page-chat .profile-workspace .appearance-preview__search {
-    height: 22px;
-    margin-bottom: 2px;
+    align-items: center;
+    background: var(--pv-card, #121212);
     border: 1px solid var(--pv-border, #1c1c1c);
-    border-radius: 8px;
-    background: var(--pv-hover, #161616);
+    border-radius: 12px;
+    color: var(--pv-muted, #737373);
+    display: flex;
+    flex: none;
+    font-size: 11px;
+    gap: 7px;
+    height: 36px;
+    margin-bottom: 4px;
+    padding: 0 12px;
+}
+
+#page-chat .profile-workspace .appearance-preview__search .ui-icon {
+    height: 12px;
+    width: 12px;
 }
 
 #page-chat .profile-workspace .appearance-preview__chat {
-    display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 6px;
-    border: 1px solid var(--pv-border, #1c1c1c);
-    border-radius: 10px;
-    background: var(--pv-card, #121212);
-    box-shadow: var(--pv-card-shadow, none);
+    background: color-mix(in srgb, var(--pv-card, #121212) 70%, transparent);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    display: flex;
+    flex: none;
+    gap: 10px;
+    height: 50px;
+    padding: 0 10px;
 }
 
 #page-chat .profile-workspace .appearance-preview__chat.is-active {
-    border-color: var(--pv-pill, #c7ff00);
     background: var(--pv-pill, #c7ff00);
+    border-color: var(--pv-pill, #c7ff00);
 }
 
 #page-chat .profile-workspace .appearance-preview__avatar {
-    flex: none;
-    width: 20px;
-    height: 20px;
+    background: color-mix(in srgb, var(--pv-muted, #737373) 30%, transparent);
     border-radius: 50%;
-    background: color-mix(in srgb, var(--pv-muted, #737373) 45%, transparent);
+    flex: none;
+    height: 28px;
+    width: 28px;
 }
 
 #page-chat .profile-workspace .appearance-preview__chat.is-active .appearance-preview__avatar {
-    background: color-mix(in srgb, var(--pv-pill-text, #191b13) 30%, transparent);
+    background: color-mix(in srgb, var(--pv-pill-text, #191b13) 28%, transparent);
 }
 
 #page-chat .profile-workspace .appearance-preview__lines {
     display: grid;
     flex: 1;
-    gap: 4px;
+    gap: 5px;
     min-width: 0;
 }
 
 #page-chat .profile-workspace .appearance-preview__lines > span {
-    height: 4px;
+    background: var(--pv-muted, #737373);
     border-radius: 2px;
-    background: var(--pv-text, #fff);
-    opacity: 0.8;
+    height: 4px;
+    opacity: 0.35;
+    width: 64%;
 }
 
 #page-chat .profile-workspace .appearance-preview__lines > .is-snip {
-    width: 70%;
-    background: var(--pv-muted, #737373);
-    opacity: 0.6;
+    opacity: 0.22;
+    width: 48%;
 }
 
 #page-chat .profile-workspace .appearance-preview__chat.is-active .appearance-preview__lines > span {
     background: var(--pv-pill-text, #191b13);
+    opacity: 0.85;
+    width: 94%;
+}
+
+#page-chat .profile-workspace .appearance-preview__chat.is-active .appearance-preview__lines > .is-snip {
+    width: 60%;
 }
 
 /* Conversation. */
@@ -3909,101 +5976,129 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
 }
 
 #page-chat .profile-workspace .appearance-preview__header {
-    display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 12px;
     border-bottom: 1px solid var(--pv-border, #1c1c1c);
-    background: var(--pv-section, #0a0a0a);
+    display: flex;
+    gap: 10px;
+    padding: 12px 18px;
+}
+
+#page-chat .profile-workspace .appearance-preview__avatar--peer {
+    align-items: center;
+    background: var(--pv-card, #121212);
+    border: 1px solid var(--pv-border, #1c1c1c);
+    color: var(--pv-text, #fff);
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 600;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
 }
 
 #page-chat .profile-workspace .appearance-preview__header-copy {
     display: grid;
-    gap: 1px;
-    line-height: 1.2;
+    gap: 2px;
+    line-height: 1.25;
 }
 
 #page-chat .profile-workspace .appearance-preview__header-name {
     color: var(--pv-text, #fff);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
 }
 
 #page-chat .profile-workspace .appearance-preview__header-meta {
+    align-items: center;
     color: var(--pv-muted, #737373);
-    font-size: 10px;
+    display: inline-flex;
+    font-size: 10.5px;
+    gap: 4px;
+}
+
+#page-chat .profile-workspace .appearance-preview__header-meta .ui-icon {
+    height: 10px;
+    width: 10px;
 }
 
 #page-chat .profile-workspace .appearance-preview__thread {
     display: flex;
     flex-direction: column;
+    gap: 12px;
     justify-content: flex-end;
-    gap: 6px;
-    padding: 10px 12px;
     overflow: hidden;
+    padding: 18px 18px 18px;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-density="compact"] .appearance-preview__thread {
-    gap: 3px;
+    gap: 5px;
 }
 
 #page-chat .profile-workspace .appearance-preview__bubble {
-    max-width: 78%;
-    padding: 6px 10px;
     border: 1px solid transparent;
-    border-radius: 14px;
-    font-size: 11px;
+    border-radius: 16px;
+    font-size: 13px;
     line-height: 1.35;
+    max-width: 78%;
+    padding: 10px 16px;
 }
 
 #page-chat .profile-workspace .appearance-preview[data-appearance-density="compact"] .appearance-preview__bubble {
-    padding: 4px 9px;
+    padding: 6px 13px;
 }
 
 #page-chat .profile-workspace .appearance-preview__bubble.is-other {
     align-self: flex-start;
-    border-color: var(--pv-border, #1c1c1c);
-    border-bottom-left-radius: 5px;
     background: var(--pv-card, #121212);
+    border-color: var(--pv-border, #1c1c1c);
     color: var(--pv-text, #fff);
 }
 
 #page-chat .profile-workspace .appearance-preview__bubble.is-own {
     align-self: flex-end;
-    border-bottom-right-radius: 5px;
     background: var(--pv-own, #303c08);
     color: var(--pv-own-text, #fff);
 }
 
 #page-chat .profile-workspace .appearance-preview__composer {
-    display: flex;
     align-items: center;
-    gap: 8px;
-    margin: 0 10px 10px;
-    padding: 5px 5px 5px 12px;
+    background: var(--pv-card, #121212);
     border: 1px solid var(--pv-border, #1c1c1c);
     border-radius: 999px;
-    background: var(--pv-card, #121212);
     box-shadow: var(--pv-card-shadow, none);
+    display: flex;
+    gap: 8px;
+    margin: 0 16px 16px;
+    padding: 5px 5px 5px 18px;
 }
 
 #page-chat .profile-workspace .appearance-preview__composer-field {
-    flex: 1;
     color: var(--pv-muted, #737373);
-    font-size: 11px;
+    flex: 1;
+    font-size: 12px;
 }
 
 #page-chat .profile-workspace .appearance-preview__composer-send {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
+    align-items: center;
     background: var(--pv-accent, #c7ff00);
+    border-radius: 50%;
+    color: var(--pv-on-accent, #0b0b0b);
+    display: inline-flex;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+}
+
+#page-chat .profile-workspace .appearance-preview__composer-send .ui-icon {
+    height: 15px;
+    stroke-width: 2.2;
+    width: 15px;
 }
 
 #page-chat .profile-workspace .appearance-preview__note {
-    margin: 0;
     color: var(--text-secondary, #737373);
     font-size: 12px;
+    margin: 0;
 }
 
 #page-chat .profile-workspace #uiAppearancePreviewName {
@@ -4014,6 +6109,7 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
 @media (max-width: 520px) {
     #page-chat .profile-workspace .appearance-preview__window {
         grid-template-columns: 1fr;
+        min-height: 320px;
     }
 
     #page-chat .profile-workspace .appearance-preview__sidebar {
@@ -4025,4 +6121,265 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     #page-chat .profile-workspace .appearance-preview {
         --pv-ease: 0s linear;
     }
+}
+
+/* ── Settings nav (left sidebar) — images/image 109.png ───────────────────────
+   Header + counter, the "you" card, PREFERENCES rows with an icon tile and a
+   subtitle, a divider, Log out, the E2EE card. The bottom dock is untouched.
+   The active row is the theme's pill (themes.css); here its tile turns dark
+   with an accent icon and the → shows. */
+/* The "you" card */
+#page-chat .profile-nav-card {
+    align-items: center;
+    appearance: none;
+    background: color-mix(in srgb, var(--text-primary, #fff) 4%, transparent);
+    border: 1px solid var(--border-subtle, var(--theme-border, #1c1c1c));
+    border-radius: 18px;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    gap: 12px;
+    padding: 10px 10px 10px 12px;
+    text-align: left;
+    transition: background-color 0.15s ease-out, border-color 0.15s ease-out;
+    width: 100%;
+}
+
+#page-chat .profile-nav-card:hover,
+#page-chat .profile-nav-card:focus-visible {
+    background: color-mix(in srgb, var(--text-primary, #fff) 7%, transparent);
+    outline: none;
+}
+
+#page-chat .profile-nav-card__avatar-wrap {
+    flex: none;
+    position: relative;
+}
+
+#page-chat .profile-nav-card__avatar {
+    align-items: center;
+    border-radius: 50%;
+    display: flex;
+    font-family: var(--f-ui);
+    font-size: 16px;
+    font-weight: 600;
+    height: 40px;
+    justify-content: center;
+    overflow: hidden;
+    width: 40px;
+}
+
+#page-chat .profile-nav-card__avatar .contact-avatar-img {
+    border-radius: inherit;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+/* Status dot: the profile's own status colour, ringed in the card's ground */
+#page-chat .profile-nav-card__status {
+    background: #2bae6c;
+    border: 2px solid var(--nexa-aside-fill, var(--bg-section, #0a0a0a));
+    border-radius: 50%;
+    bottom: -1px;
+    height: 12px;
+    position: absolute;
+    right: -1px;
+    width: 12px;
+}
+
+#page-chat .profile-nav-card__status[data-status="away"] {
+    background: #f5b52e;
+}
+
+#page-chat .profile-nav-card__status[data-status="busy"] {
+    background: var(--color-danger, #f62834);
+}
+
+#page-chat .profile-nav-card__status[data-status="invisible"] {
+    background: color-mix(in srgb, var(--text-primary, #fff) 35%, transparent);
+}
+
+#page-chat .profile-nav-card__copy {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+#page-chat .profile-nav-card__name {
+    color: var(--text-primary, var(--theme-text, #f4f4f5));
+    font-family: var(--f-ui);
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#page-chat .profile-nav-card__handle {
+    color: var(--text-secondary, var(--theme-text-muted, #8a8a8a));
+    font-family: var(--f-mono, ui-monospace, monospace);
+    font-size: 11.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#page-chat .profile-nav-card__chev {
+    align-items: center;
+    border: 1px solid var(--border-subtle, var(--theme-border, #1c1c1c));
+    border-radius: 50%;
+    color: var(--text-secondary, var(--theme-text-muted, #8a8a8a));
+    display: flex;
+    flex: none;
+    height: 30px;
+    justify-content: center;
+    width: 30px;
+}
+
+#page-chat .profile-nav-card__chev .ui-icon {
+    height: 14px;
+    width: 14px;
+}
+
+/* PREFERENCES */
+#page-chat .profile-nav .profile-nav-kicker {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin: 20px 8px 8px;
+}
+
+/* Rows: tile · title + subtitle · trail (meta / →) */
+#page-chat .profile-nav .profile-nav-btn {
+    border-radius: 18px;
+    gap: 12px;
+    padding: 8px 12px 8px 8px;
+}
+
+#page-chat .profile-nav-tile {
+    align-items: center;
+    background: color-mix(in srgb, var(--text-primary, #fff) 5%, transparent);
+    border: 1px solid var(--border-subtle, var(--theme-border, #1c1c1c));
+    border-radius: 12px;
+    display: flex;
+    flex: none;
+    height: 40px;
+    justify-content: center;
+    transition: background-color 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out;
+    width: 40px;
+}
+
+#page-chat .profile-nav .profile-nav-tile .profile-nav-icon {
+    height: 18px;
+    opacity: 1;
+    width: 18px;
+}
+
+#page-chat .profile-nav .profile-nav-copy {
+    flex: 1 1 auto;
+    gap: 2px;
+}
+
+#page-chat .profile-nav .profile-nav-label {
+    color: var(--text-primary, var(--theme-text, #f4f4f5));
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+#page-chat .profile-nav-sub {
+    color: var(--text-secondary, var(--theme-text-muted, #8a8a8a));
+    font-size: 12px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#page-chat .profile-nav-trail {
+    align-items: center;
+    display: flex;
+    flex: none;
+    gap: 8px;
+}
+
+#page-chat .profile-nav-meta {
+    color: var(--text-secondary, var(--theme-text-muted, #8a8a8a));
+    font-family: var(--f-mono, ui-monospace, monospace);
+    font-size: 11px;
+}
+
+#page-chat .profile-nav-arrow {
+    display: none;
+    height: 16px;
+    width: 16px;
+}
+
+/* Active: the theme's pill (themes.css); dark tile, accent icon, → shown */
+#page-chat .profile-nav-btn.is-active .profile-nav-arrow {
+    display: block;
+}
+
+#page-chat .profile-nav-btn.is-active .profile-nav-meta {
+    display: none;
+}
+
+html[data-theme] #page-chat .profile-nav-btn.is-active .profile-nav-label,
+html[data-theme] #page-chat .profile-nav-btn.is-active .profile-nav-arrow {
+    color: var(--active-pill-text, #070707);
+}
+
+html[data-theme] #page-chat .profile-nav-btn.is-active .profile-nav-sub {
+    color: color-mix(in srgb, var(--active-pill-text, #070707) 70%, transparent);
+}
+
+html[data-theme] #page-chat .profile-nav-btn.is-active .profile-nav-tile {
+    background: color-mix(in srgb, var(--active-pill-text, #070707) 92%, transparent);
+    border-color: transparent;
+}
+
+html[data-theme] #page-chat .profile-nav-btn.is-active .profile-nav-tile .ui-icon {
+    color: var(--active-pill-bg, #c7ff00);
+}
+
+/* Divider + Log out (red tile) */
+#page-chat .profile-nav-divider {
+    border: 0;
+    border-top: 1px solid var(--border-subtle, var(--theme-border, #1c1c1c));
+    margin: 14px 8px;
+}
+
+#page-chat .profile-nav-btn--logout .profile-nav-tile {
+    background: color-mix(in srgb, var(--color-danger, #f62834) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-danger, #f62834) 18%, transparent);
+    color: var(--text-danger, #f62834);
+}
+
+#page-chat .profile-nav .profile-nav-btn--logout .profile-nav-label {
+    color: var(--text-danger, #f62834);
+}
+
+/* The settings nav carries the chat list's header (SidebarHeader), titled
+   "Settings", at exactly the same spot: the nav's top padding is undone for
+   it. Specific enough to beat app-layout.css's .left-capsule .profile-nav
+   padding (loaded later) — at equal weight that one won, and the header sat
+   20px lower than NEXA's. */
+#page-chat:not(.is-viewport-app-stack) .left-capsule .left-capsule-shelf > .profile-nav {
+    padding-top: 0;
+}
+
+#page-chat:not(.is-viewport-app-stack) .left-capsule .profile-nav > .left-sidebar-header {
+    flex-shrink: 0;
+    margin: 13px -1px 20px;
+}
+
+/* Mobile keeps its own top toolbar (with the "Settings" title) */
+#page-chat.is-viewport-app-stack .profile-nav .left-sidebar-header,
+#page-chat.is-viewport-profile-stack .profile-nav .left-sidebar-header {
+    display: none;
 }

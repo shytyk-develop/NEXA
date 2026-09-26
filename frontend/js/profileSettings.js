@@ -3,6 +3,7 @@
 import { buildChatTranscript, copyText, downloadTextFile, makeSafeFilename } from './chatActions.js';
 import { describeLinkWarnings, enableLinkWarnings, LINK_WARNINGS_CHANGED, pauseLinkWarnings } from './linkWarnings.js';
 import {
+    applyContactAvatar,
     buildStorageReport,
     clearChatHistory,
     clearLocalCache,
@@ -28,8 +29,8 @@ import { ambientPaletteFromHue, extractAmbientPalette } from './avatarAmbient.js
 import { initThemePicker, syncThemePicker } from './themePicker.js';
 import { attachHoverHighlight } from './hoverHighlight.js';
 import { startPreviewTilt, stopPreviewTilt } from './cardTilt.js';
-import { getDevices, registerDevice } from './api.js';
-import { detectDeviceInfo, devicePayload, getDeviceId } from './device.js';
+import { getDevices, registerDevice, terminateDevice } from './api.js';
+import { detectDeviceInfo, devicePayload, enrichDeviceInfo, getDeviceId } from './device.js';
 
 const PRIVACY_HINTS = {
     showOnlineStatus: {
@@ -189,11 +190,7 @@ function bindShell() {
     });
     $p('uiProfileKeysToggle')?.addEventListener('click', toggleFingerprintPanel);
     $p('uiProfileManageDevices')?.addEventListener('click', () => {
-        if (typeof ctx?.openSettingsSection === 'function') {
-            ctx.openSettingsSection('devices');
-            return;
-        }
-        setSection('devices', { fromUser: true });
+        void openDevicesDrawer();
     });
 
     panel.querySelectorAll('[data-pref-key]').forEach((input) => {
@@ -211,6 +208,8 @@ function bindShell() {
         else pauseLinkWarnings(Infinity);
     });
     window.addEventListener(LINK_WARNINGS_CHANGED, hydrateLinkWarnings);
+    // Each privacy card's picture follows its switch as soon as it flips.
+    panel.querySelector('.privacy-page')?.addEventListener('change', syncPrivacyCards);
 
     $p('uiProfileClearCacheBtn')?.addEventListener('click', clearDrafts);
     $p('uiProfileClearHistoryBtn')?.addEventListener('click', clearHistory);
@@ -220,11 +219,11 @@ function bindShell() {
     bindAppearancePreviewControls();
     initThemePicker($p('uiThemePicker'), $p('uiAppearancePreview'), $p('uiAppearancePreviewName'));
 
-    // Sliding hover highlight, as in the left aside: a fill under the Data
-    // action rows; an outline over the (opaque) theme cards and density chips.
-    attachHoverHighlight(document.querySelector('#uiProfilePanel .profile-data-actions'), '.profile-data-action');
+    // Data: legend rows highlight their share of the storage map.
+    bindDataLegend();
+    // Sliding hover highlight: an outline over the (opaque) theme cards. The
+    // density segment has its own sliding thumb.
     attachHoverHighlight($p('uiThemePicker'), '.theme-card', { mode: 'ring' });
-    attachHoverHighlight($p('uiAppearanceDensityPicker'), '.appearance-chip', { mode: 'ring' });
 }
 
 function syncPreviewTilt(active) {
@@ -248,6 +247,7 @@ export function onProfilePanelOpen(sectionOverride) {
     draftProfile = loadProfile(username);
     avatarPreviewUrl = draftProfile.avatarDataUrl;
     const section = sectionOverride || pendingProfileSection || 'identity';
+    hydrateSettingsNav(username);
     setSection(section);
     pendingProfileSection = 'identity';
     hydrateIdentity(username);
@@ -269,16 +269,46 @@ const PROFILE_SECTION_META = {
     devices: ['Devices', 'Sessions signed into this account.'],
 };
 
+/**
+ * The settings nav's own bits (left sidebar): the "you" card (avatar, status,
+ * name, @handle) and the local data size on the Data row.
+ */
+function hydrateSettingsNav(username) {
+    const profile = username ? loadProfile(username) : null;
+    const avatar = document.getElementById('uiProfileNavAvatar');
+    if (avatar && username) applyContactAvatar(avatar, username, profile);
+    const name = document.getElementById('uiProfileNavName');
+    if (name) name.textContent = username ? getDisplayLabel(username, profile) : 'Not signed in';
+    const handle = document.getElementById('uiProfileNavHandle');
+    if (handle) handle.textContent = username ? `@${username}` : '';
+    const status = document.getElementById('uiProfileNavStatus');
+    if (status) status.dataset.status = sanitizeProfileStatus(profile?.status);
+    const size = document.getElementById('uiProfileNavDataSize');
+    if (size) {
+        const b = username ? getStorageBreakdown(username) : null;
+        size.textContent = b ? formatBytes(b.history + b.keys + b.profile + b.drafts + b.prefs + b.other) : '';
+    }
+}
+
 function setSection(id, { fromUser = false } = {}) {
     const panel = document.getElementById('uiProfilePanel');
     if (!panel) return;
 
-    document.querySelectorAll('[data-profile-nav]').forEach((btn) => {
+    const navButtons = [...document.querySelectorAll('[data-profile-nav]')];
+    navButtons.forEach((btn) => {
         const on = btn.dataset.profileNav === id;
         btn.classList.toggle('is-active', on);
         if (on) btn.setAttribute('aria-current', 'page');
         else btn.removeAttribute('aria-current');
     });
+    // "03/04": which of the listed preferences is open (unchanged for sections
+    // that aren't in the list, e.g. Devices).
+    const count = document.getElementById('uiProfileNavCount');
+    const index = navButtons.findIndex((btn) => btn.dataset.profileNav === id);
+    if (count && index >= 0) {
+        const pad = (n) => String(n).padStart(2, '0');
+        count.textContent = `${pad(index + 1)}/${pad(navButtons.length)}`;
+    }
 
     panel.querySelectorAll('[data-profile-section]').forEach((section) => {
         section.classList.toggle('hidden', section.dataset.profileSection !== id);
@@ -388,6 +418,25 @@ async function hydrateUserId(username) {
     }
 }
 
+/**
+ * Security → Fingerprint: an 8×8 pattern from the first 64 bits of the key
+ * fingerprint (hex), so the same key always draws the same picture. No
+ * fingerprint → every cell off.
+ */
+function renderFingerprintGrid(fp) {
+    const grid = $p('uiProfileFpGrid');
+    if (!grid) return;
+    const hex = String(fp || '').replace(/[^0-9a-f]/gi, '').slice(0, 16).padEnd(16, '0');
+    const cells = [];
+    for (let i = 0; i < 64; i += 1) {
+        const nibble = parseInt(hex[i >> 2], 16) || 0;
+        const cell = document.createElement('i');
+        if (fp && (nibble >> (3 - (i & 3))) & 1) cell.className = 'is-on';
+        cells.push(cell);
+    }
+    grid.replaceChildren(...cells);
+}
+
 async function hydrateSecurity() {
     const fpEl = $p('uiProfileFingerprint');
     const copyFpBtn = $p('uiProfileCopyFingerprint');
@@ -405,6 +454,7 @@ async function hydrateSecurity() {
             fpEl.dataset.raw = '';
         }
         if (shortEl) shortEl.textContent = 'Unavailable';
+        renderFingerprintGrid(null);
         if (verifiedEl) {
             verifiedEl.textContent = 'Unverified';
             verifiedEl.classList.remove('is-verified');
@@ -432,6 +482,7 @@ async function hydrateSecurity() {
             verifiedEl.classList.add('is-verified');
         }
         if (verifiedHint) verifiedHint.textContent = 'Your keys are active and trusted.';
+        renderFingerprintGrid(fp);
         setCopyEnabled(copyFpBtn, true);
     } catch {
         if (fpEl) {
@@ -439,6 +490,7 @@ async function hydrateSecurity() {
             fpEl.dataset.raw = '';
         }
         if (shortEl) shortEl.textContent = 'Error';
+        renderFingerprintGrid(null);
         if (verifiedEl) {
             verifiedEl.textContent = 'Unverified';
             verifiedEl.classList.remove('is-verified');
@@ -455,7 +507,11 @@ function hydrateDeviceIdentity() {
     const info = detectDeviceInfo({ includeBrowser: true });
     if (nameEl) nameEl.textContent = info.name;
     if (osEl) osEl.textContent = info.osVersion || info.os;
-    if (activeEl) activeEl.textContent = 'Now';
+    if (activeEl) activeEl.textContent = 'Active now';
+    // The UA only knows "macOS" (frozen); Client Hints give the real version.
+    enrichDeviceInfo(info).then((rich) => {
+        if (osEl && rich.osVersion) osEl.textContent = rich.osVersion;
+    });
 }
 
 function deviceIconHref(platform) {
@@ -508,6 +564,81 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
+function authToken() {
+    return ctx?.getToken?.() || localStorage.getItem('auth_token') || '';
+}
+
+/**
+ * This account's sessions from the server, after re-registering this device
+ * (enriched like app.js registers it, so the real OS version is kept). Empty
+ * when signed out or offline; `throwOnError` lets the drawer show a failure.
+ */
+async function fetchDeviceSessions({ throwOnError = false } = {}) {
+    const local = await enrichDeviceInfo(detectDeviceInfo());
+    const token = authToken();
+    let devices = [];
+    if (token) {
+        try {
+            await registerDevice(token, devicePayload(local));
+        } catch {
+            /* list can still succeed from a previous join */
+        }
+        try {
+            const payload = await getDevices(token, getDeviceId());
+            devices = Array.isArray(payload?.devices) ? payload.devices : [];
+        } catch (error) {
+            if (throwOnError) throw error;
+            devices = [];
+        }
+    }
+    return { local, devices };
+}
+
+/** Security → "Open devices": the bottom drawer with every session as a card. */
+async function openDevicesDrawer() {
+    const { openDevicesDrawer: open } = await import('../src/settings/DevicesDrawer.tsx');
+    open({
+        load: async () => {
+            const { local, devices } = await fetchDeviceSessions({ throwOnError: true });
+            const currentId = getDeviceId();
+            const list = devices.length ? devices : [{
+                device_id: local.deviceId,
+                device_name: local.name,
+                platform: local.platform,
+                os_version: local.osVersion,
+                online: true,
+                this_device: true,
+            }];
+            return list
+                .map((device) => {
+                    const current = Boolean(device.this_device || device.device_id === currentId);
+                    const online = Boolean(device.online) || current;
+                    return {
+                        id: String(device.device_id),
+                        name: device.device_name || 'Unknown device',
+                        os: device.os_version || 'Unknown OS',
+                        platform: device.platform || 'unknown',
+                        online,
+                        status: formatLastSeen(device.last_seen, online),
+                        current,
+                    };
+                })
+                // This device first, then the rest as the server ordered them (last seen).
+                .sort((a, b) => Number(b.current) - Number(a.current));
+        },
+        terminate: async (id) => {
+            const token = authToken();
+            if (!token) throw new Error('Sign in again to manage devices.');
+            try {
+                await terminateDevice(token, id, getDeviceId());
+            } catch (error) {
+                throw new Error(error?.message || 'Could not terminate that session.');
+            }
+            ctx?.showToast?.('Session terminated. That device has been signed out.', 'success');
+        },
+    });
+}
+
 async function hydrateDevices() {
     const currentHost = $p('uiProfileDevicesCurrent');
     const othersHost = $p('uiProfileDevicesOthers');
@@ -521,22 +652,8 @@ async function hydrateDevices() {
     if (othersWrap) othersWrap.hidden = true;
     if (emptyEl) emptyEl.hidden = true;
 
-    const local = detectDeviceInfo();
-    const token = ctx?.getToken?.() || localStorage.getItem('auth_token') || '';
-    let devices = [];
-    if (token) {
-        try {
-            await registerDevice(token, devicePayload(local));
-        } catch {
-            /* list can still succeed from a previous join */
-        }
-        try {
-            const payload = await getDevices(token, getDeviceId());
-            devices = Array.isArray(payload?.devices) ? payload.devices : [];
-        } catch {
-            devices = [];
-        }
-    }
+    const { local, devices: fetched } = await fetchDeviceSessions();
+    let devices = fetched;
 
     // A newer hydrate started while this one awaited: its rows win (overlapping
     // runs used to append duplicate device rows).
@@ -569,8 +686,11 @@ function toggleFingerprintPanel() {
     const panel = $p('uiProfileFingerprintPanel');
     const toggle = $p('uiProfileKeysToggle');
     if (!panel || !toggle) return;
-    const open = panel.classList.toggle('hidden') === false;
-    panel.hidden = !open;
+    // CSS animates the open / close (height, fade, lift); inert keeps the
+    // closed panel out of the tab order and the accessibility tree.
+    const open = panel.classList.toggle('is-open');
+    panel.inert = !open;
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     toggle.classList.toggle('is-open', open);
 }
@@ -628,76 +748,88 @@ function playSectionIntro(layout) {
     });
 }
 
+/** Bytes per category for the Data page (cache = profile + drafts + prefs + other). */
+function storageValues(username) {
+    if (!username) return { total: 0, messages: 0, keys: 0, cache: 0, drafts: 0 };
+    const b = getStorageBreakdown(username);
+    const cache = b.profile + b.drafts + b.prefs + b.other;
+    return { total: b.history + b.keys + cache, messages: b.history, keys: b.keys, cache, drafts: b.drafts };
+}
+
+/** "390.2 KB" → the big number and its unit, styled apart. */
+function renderTotal(el, bytes) {
+    const [num, unit = ''] = formatBytes(bytes).split(' ');
+    el.innerHTML = `<span class="dt-total__num">${num}</span><span class="dt-total__unit">${unit}</span>`;
+}
+
+function renderPercents(values) {
+    const pct = (part) => (values.total > 0 ? `${((part / values.total) * 100).toFixed(1)}%` : '—');
+    setText('uiProfileHistoryPct', pct(values.messages));
+    setText('uiProfileKeysPct', pct(values.keys));
+    setText('uiProfileMetaPct', pct(values.cache));
+    setText('uiDataCellSize', values.total > 0 ? `1 cell ≈ ${formatBytes(Math.round(values.total / 100))}` : '1 cell ≈ —');
+}
+
+/** Clear cache card: its size, and the button says so when there's nothing to clear. */
+function renderCacheAction(drafts, { counted = false } = {}) {
+    if (!counted) setText('uiProfileCacheSize', formatBytes(drafts));
+    const btn = $p('uiProfileClearCacheBtn');
+    if (!btn || btn.classList.contains('is-done')) return;
+    btn.disabled = drafts <= 0;
+    btn.textContent = drafts > 0 ? 'Clear cache' : 'Nothing to clear';
+}
+
 function hydrateData(username, { animate = false } = {}) {
     if (!username) {
-        setText('uiProfileStorageUsed', '—');
-        setText('uiProfileHistorySize', '—');
-        setText('uiProfileKeysSize', '—');
-        setText('uiProfileMetaSize', '—');
-        setText('uiProfileCacheSize', '—');
-        paintDonut({ messages: 0, keys: 0, cache: 0 }, false);
+        const total = $p('uiProfileStorageUsed');
+        if (total) total.innerHTML = '<span class="dt-total__num">—</span><span class="dt-total__unit"></span>';
+        ['uiProfileHistorySize', 'uiProfileKeysSize', 'uiProfileMetaSize', 'uiProfileCacheSize'].forEach((id) => setText(id, '—'));
+        renderPercents({ total: 0 });
+        paintCells({ total: 0, messages: 0, keys: 0, cache: 0 }, false);
+        renderCacheAction(0);
         return;
     }
 
-    const b = getStorageBreakdown(username);
-    const cache = b.profile + b.drafts + b.prefs + b.other;
-    const values = {
-        total: b.history + b.keys + cache,
-        messages: b.history,
-        keys: b.keys,
-        cache,
-        drafts: b.drafts,
-    };
-
+    const values = storageValues(username);
     if (animate) {
         playDataIntro(username, values);
         return;
     }
 
-    setText('uiProfileStorageUsed', formatBytes(values.total));
+    const total = $p('uiProfileStorageUsed');
+    if (total) renderTotal(total, values.total);
     setText('uiProfileHistorySize', formatBytes(values.messages));
     setText('uiProfileKeysSize', formatBytes(values.keys));
     setText('uiProfileMetaSize', formatBytes(values.cache));
-    setText('uiProfileCacheSize', formatBytes(values.drafts));
-    paintDonut(values, true);
+    renderPercents(values);
+    renderCacheAction(values.drafts);
+    paintCells(values, false);
 }
 
+/** Opening Data: the cards rise, the numbers count up and the cell map fills in. */
 function playDataIntro(username, preset) {
     const layout = $p('uiProfileDataLayout');
     if (!layout) return;
-
-    const values = preset || (username
-        ? (() => {
-            const b = getStorageBreakdown(username);
-            const cache = b.profile + b.drafts + b.prefs + b.other;
-            return {
-                total: b.history + b.keys + cache,
-                messages: b.history,
-                keys: b.keys,
-                cache,
-                drafts: b.drafts,
-            };
-        })()
-        : { total: 0, messages: 0, keys: 0, cache: 0, drafts: 0 });
+    const values = preset || storageValues(username);
 
     dataAnimToken += 1;
     const token = dataAnimToken;
     layout.classList.remove('is-ready');
     void layout.offsetWidth;
-    paintDonut({ messages: 0, keys: 0, cache: 0 }, false);
-    setText('uiProfileStorageUsed', formatBytes(0));
-    setText('uiProfileHistorySize', formatBytes(0));
-    setText('uiProfileKeysSize', formatBytes(0));
-    setText('uiProfileMetaSize', formatBytes(0));
-    setText('uiProfileCacheSize', formatBytes(values.drafts));
+    paintCells({ total: 0, messages: 0, keys: 0, cache: 0 }, false);
+    const total = $p('uiProfileStorageUsed');
+    if (total) renderTotal(total, 0);
+    ['uiProfileHistorySize', 'uiProfileKeysSize', 'uiProfileMetaSize'].forEach((id) => setText(id, formatBytes(0)));
+    renderPercents(values);
+    renderCacheAction(values.drafts);
 
     requestAnimationFrame(() => {
         if (token !== dataAnimToken) return;
         layout.classList.add('is-ready');
         requestAnimationFrame(() => {
             if (token !== dataAnimToken) return;
-            paintDonut(values, true);
-            countUpBytes('uiProfileStorageUsed', values.total, token);
+            paintCells(values, true);
+            countUpBytes('uiProfileStorageUsed', values.total, token, renderTotal);
             countUpBytes('uiProfileHistorySize', values.messages, token);
             countUpBytes('uiProfileKeysSize', values.keys, token);
             countUpBytes('uiProfileMetaSize', values.cache, token);
@@ -705,36 +837,37 @@ function playDataIntro(username, preset) {
     });
 }
 
-function paintDonut(values, animate) {
-    const total = Math.max(values.messages + values.keys + values.cache, 0);
-    const gap = total > 0 ? 1.6 : 0;
-    const usable = Math.max(100 - gap * 3, 0);
-    const parts = [
-        ['uiProfileDonutMessages', values.messages],
-        ['uiProfileDonutKeys', values.keys],
-        ['uiProfileDonutCache', values.cache],
-    ];
-    let offset = 0;
-    parts.forEach(([id, value]) => {
-        const el = $p(id);
-        if (!el) return;
-        const pct = total > 0 ? (value / total) * usable : 0;
-        if (!animate) {
-            el.style.transition = 'none';
-        } else {
-            el.style.transition = '';
-        }
-        el.style.strokeDasharray = `${pct} 100`;
-        el.style.strokeDashoffset = String(-offset);
-        offset += pct + (pct > 0 ? gap : 0);
+const DATA_CELLS = 100;
+
+/**
+ * The storage map: one cell per 1% of the total, messages first, then keys,
+ * then profile & cache (any category with data gets at least one cell).
+ * Animated: cells light up left to right on a short stagger.
+ */
+function paintCells(values, animate) {
+    const host = $p('uiDataCells');
+    if (!host) return;
+    if (host.children.length !== DATA_CELLS) {
+        host.replaceChildren(...Array.from({ length: DATA_CELLS }, () => document.createElement('i')));
+    }
+    const share = (part) => (values.total > 0 && part > 0 ? Math.max(1, Math.round((part / values.total) * DATA_CELLS)) : 0);
+    const messages = share(values.messages);
+    const keys = Math.min(share(values.keys), DATA_CELLS - messages);
+    const cache = values.total > 0 ? DATA_CELLS - messages - keys : 0;
+    const still = !animate || reducedMotion();
+    [...host.children].forEach((cell, index) => {
+        const cat = index < messages ? 'messages' : index < messages + keys ? 'keys' : index < messages + keys + cache ? 'cache' : '';
+        // Row-major grid (20 × 5): stagger by column, then row, so it sweeps left → right.
+        cell.style.transitionDelay = still ? '0ms' : `${(index % 20) * 14 + Math.floor(index / 20) * 22}ms`;
+        cell.className = cat ? `is-${cat}` : '';
     });
 }
 
-function countUpBytes(id, target, token) {
+function countUpBytes(id, target, token, render = (el, bytes) => { el.textContent = formatBytes(bytes); }) {
     const el = $p(id);
     if (!el) return;
     if (reducedMotion()) {
-        el.textContent = formatBytes(target);
+        render(el, target);
         return;
     }
     const duration = 700;
@@ -743,10 +876,45 @@ function countUpBytes(id, target, token) {
         if (token !== dataAnimToken) return;
         const t = Math.min(1, (now - start) / duration);
         const eased = 1 - (1 - t) ** 3;
-        el.textContent = formatBytes(Math.round(target * eased));
+        render(el, Math.round(target * eased));
         if (t < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
+}
+
+/** Legend rows highlight their cells (hover / focus previews, a tap pins it). */
+function bindDataLegend() {
+    const legend = $p('uiDataLegend');
+    const cells = $p('uiDataCells');
+    if (!legend || !cells || legend.dataset.bound) return;
+    legend.dataset.bound = '1';
+    let pinned = '';
+    const show = (cat) => {
+        if (cat) cells.dataset.focus = cat;
+        else delete cells.dataset.focus;
+        legend.querySelectorAll('[data-dt-cat]').forEach((row) => {
+            row.classList.toggle('is-dim', Boolean(cat) && row.dataset.dtCat !== cat);
+        });
+    };
+    legend.addEventListener('click', (event) => {
+        const row = event.target.closest('[data-dt-cat]');
+        if (!row) return;
+        pinned = pinned === row.dataset.dtCat ? '' : row.dataset.dtCat;
+        legend.querySelectorAll('[data-dt-cat]').forEach((r) => r.setAttribute('aria-pressed', String(r.dataset.dtCat === pinned)));
+        show(pinned);
+    });
+    legend.addEventListener('pointerover', (event) => {
+        const row = event.target.closest('[data-dt-cat]');
+        if (row && event.pointerType === 'mouse') show(row.dataset.dtCat);
+    });
+    legend.addEventListener('pointerleave', () => show(pinned));
+    legend.addEventListener('focusin', (event) => {
+        const row = event.target.closest('[data-dt-cat]');
+        if (row?.matches(':focus-visible')) show(row.dataset.dtCat);
+    });
+    legend.addEventListener('focusout', (event) => {
+        if (!legend.contains(event.relatedTarget)) show(pinned);
+    });
 }
 
 function setText(id, value) {
@@ -786,6 +954,8 @@ function readIdentityForm() {
 }
 
 function snapshotSavedIdentity() {
+    // A saved name / avatar / status shows on the settings nav's card too.
+    hydrateSettingsNav(resolveUsername());
     savedIdentity = {
         displayName: sanitizeProfileText(draftProfile?.displayName || '', PROFILE_LIMITS.displayName),
         bio: sanitizeProfileText(draftProfile?.bio || '', PROFILE_LIMITS.bio),
@@ -1064,35 +1234,70 @@ function saveIdentity(silent = false) {
     }
 }
 
+/** Clear cache: the size counts down to 0 B and the button confirms in place. */
 function clearDrafts() {
     const username = resolveUsername();
     if (!username) return;
+    const before = storageValues(username).drafts;
     const n = clearLocalCache(username);
+    const btn = $p('uiProfileClearCacheBtn');
+    const sizeEl = $p('uiProfileCacheSize');
+    if (sizeEl && before > 0 && !reducedMotion()) {
+        const start = performance.now();
+        const tick = (now) => {
+            const t = Math.min(1, (now - start) / 500);
+            sizeEl.textContent = formatBytes(Math.round(before * (1 - t) ** 2));
+            if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+    if (btn) {
+        btn.classList.add('is-done');
+        btn.disabled = true;
+        btn.textContent = n ? 'Cleared' : 'Nothing to clear';
+        window.setTimeout(() => {
+            btn.classList.remove('is-done');
+            renderCacheAction(storageValues(username).drafts, { counted: true });
+        }, 1600);
+    }
     hydrateData(username);
-    ctx?.showToast?.(n ? `Cleared ${n} draft(s).` : 'No drafts to clear.', 'success');
+    if (sizeEl && before > 0 && !reducedMotion()) sizeEl.textContent = formatBytes(before);
 }
 
-async function clearHistory() {
+/**
+ * Clear chat history / Delete account: a bottom drawer walks warning →
+ * 6-digit code → result (src/settings/DangerDrawer.tsx). The action only
+ * runs after the code matches.
+ */
+async function openDangerDrawer(kind) {
     const username = resolveUsername();
-    if (!username) return;
-    if (
-        !window.confirm(
-            'Delete all conversations on the server for every contact? This removes history for you and your partners and cannot be undone.'
-        )
-    ) {
+    if (!username) {
+        ctx?.showToast?.('Sign in to manage your data.', 'error');
         return;
     }
-    try {
-        if (typeof ctx?.onClearAllHistory === 'function') {
-            await ctx.onClearAllHistory();
-        } else {
-            clearChatHistory(username);
-        }
-        hydrateData(username);
-        ctx?.showToast?.('All chat history deleted.', 'success');
-    } catch (err) {
-        ctx?.showToast?.(err?.message || 'Could not clear chat history.', 'error');
-    }
+    const { openDangerDrawer: open } = await import('../src/settings/DangerDrawer.tsx');
+    open({
+        kind,
+        run: async () => {
+            if (kind === 'account') {
+                if (typeof ctx?.onDeleteAccount !== 'function') {
+                    throw new Error('Account deletion isn’t available yet. Your account and data were not changed.');
+                }
+                await ctx.onDeleteAccount();
+                return;
+            }
+            if (typeof ctx?.onClearAllHistory === 'function') {
+                await ctx.onClearAllHistory();
+            } else {
+                clearChatHistory(username);
+            }
+            hydrateData(username);
+        },
+    });
+}
+
+function clearHistory() {
+    void openDangerDrawer('history');
 }
 
 async function exportStorageReport() {
@@ -1117,14 +1322,20 @@ async function exportStorageReport() {
             `nexa-export-${makeSafeFilename(username)}-${stamp}.txt`,
             parts.join('\n')
         );
-        ctx?.showToast?.('Chat history downloaded.', 'success');
+        // The button itself confirms ("Downloaded ✓" for 2s).
+        const btn = $p('uiProfileExportDataBtn');
+        if (btn) {
+            btn.classList.add('is-done');
+            window.clearTimeout(Number(btn.dataset.doneTimer));
+            btn.dataset.doneTimer = String(window.setTimeout(() => btn.classList.remove('is-done'), 2000));
+        }
     } catch {
         ctx?.showToast?.('Export failed.', 'error');
     }
 }
 
 function onDeleteAccount() {
-    ctx?.showToast?.('Account deletion isn’t available yet.', 'info');
+    void openDangerDrawer('account');
 }
 
 function onUsernameEdit() {
@@ -1146,12 +1357,25 @@ async function copyUserId() {
     await copyField(raw);
 }
 
+let fingerprintCopiedTimer = 0;
+
+/** Copy code: the button itself confirms (check + "Copied!" for 2s), no toast. */
 async function copyFingerprint() {
     const raw = $p('uiProfileFingerprint')?.dataset.raw;
-    await copyField(raw);
+    if (!(await copyField(raw, { quiet: true }))) return;
+    const btn = $p('uiProfileCopyFingerprint');
+    if (!btn) return;
+    btn.classList.add('is-copied');
+    btn.setAttribute('aria-label', 'Code copied');
+    window.clearTimeout(fingerprintCopiedTimer);
+    fingerprintCopiedTimer = window.setTimeout(() => {
+        btn.classList.remove('is-copied');
+        btn.removeAttribute('aria-label');
+    }, 2000);
 }
 
-async function copyField(text) {
+/** Copy a field's value; resolves true once it is on the clipboard. */
+async function copyField(text, { quiet = false } = {}) {
     const value = typeof text === 'string' ? text.trim() : '';
     if (
         !value ||
@@ -1163,13 +1387,15 @@ async function copyField(text) {
         value.startsWith('Sign ')
     ) {
         ctx?.showToast?.('Nothing to copy yet.', 'error');
-        return;
+        return false;
     }
     try {
         await copyText(value);
-        ctx?.showToast?.('Copied to clipboard.', 'success');
+        if (!quiet) ctx?.showToast?.('Copied to clipboard.', 'success');
+        return true;
     } catch {
         ctx?.showToast?.('Copy failed.', 'error');
+        return false;
     }
 }
 
@@ -1219,6 +1445,7 @@ function hydrateLinkWarnings() {
     const hint = $p('uiPrefLinkWarningsHint');
     const status = describeLinkWarnings();
     if (input) input.checked = status.state === 'on';
+    syncPrivacyCards();
     if (!hint) return;
     hint.textContent =
         status.state === 'on'
@@ -1226,6 +1453,30 @@ function hydrateLinkWarnings() {
             : status.state === 'paused'
                 ? `Paused until ${linkDateFormat.format(status.until)}.`
                 : 'Off on this device.';
+}
+
+/**
+ * Privacy cards: .is-on mirrors each card's switch (the CSS animates its
+ * picture between the two states), and the header pill counts the switches
+ * that share something ("3/4 sharing", one lit bar per switch).
+ */
+function syncPrivacyCards() {
+    const panel = document.getElementById('uiProfilePanel');
+    if (!panel) return;
+    const cards = [...panel.querySelectorAll('[data-pv-card]')];
+    let on = 0;
+    cards.forEach((card) => {
+        const checked = Boolean(card.querySelector('input[type="checkbox"]')?.checked);
+        card.classList.toggle('is-on', checked);
+        if (checked) on += 1;
+    });
+    const summary = document.getElementById('uiPrivacySummary');
+    if (!summary) return;
+    summary.querySelectorAll('.pv-summary__bars > i').forEach((bar, index) => {
+        bar.classList.toggle('is-lit', index < on);
+    });
+    const text = document.getElementById('uiPrivacySummaryText');
+    if (text) text.textContent = `${on}/${cards.length} sharing`;
 }
 
 export function hydrateProfilePrivacy(preferences) {
@@ -1240,4 +1491,5 @@ export function hydrateProfilePrivacy(preferences) {
         if (el) el.checked = prefs[key] !== false;
     });
     hydrateLinkWarnings();
+    syncPrivacyCards();
 }

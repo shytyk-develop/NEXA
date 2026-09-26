@@ -5,7 +5,6 @@
 // pointer / keyboard focus while browsing.
 
 import { getActiveTheme, getThemes, onThemeChange, setThemeAnimated } from './themeManager.js';
-import { createIcon } from './uiIcon.js';
 
 let host = null;
 let preview = null;
@@ -61,6 +60,8 @@ function paintPreview(theme) {
         if (preview.style.getPropertyValue(key) !== next) preview.style.setProperty(key, next);
     });
     preview.dataset.themeType = theme.type;
+    // The card's "Active theme" pill reads "Previewing" while another theme is shown.
+    preview.closest('.appearance-card')?.classList.toggle('is-browsing', theme.id !== activeTheme()?.id);
     if (previewName) previewName.textContent = theme.name;
 }
 
@@ -105,6 +106,13 @@ function scheduleRevert() {
 }
 
 
+function el(tag, className, style = {}) {
+    const node = document.createElement(tag);
+    node.className = className;
+    Object.assign(node.style, style);
+    return node;
+}
+
 function buildCard(theme) {
     const c = theme.colors;
     const card = document.createElement('button');
@@ -115,57 +123,46 @@ function buildCard(theme) {
     card.setAttribute('aria-checked', 'false');
     card.setAttribute('aria-label', `${theme.name} theme`);
 
-    // Mini preview: page bg · a section panel · an incoming + an outgoing bubble.
-    const preview = document.createElement('span');
-    preview.className = 'theme-card__preview';
+    // Mini window: page bg · a sidebar panel (accent pill + two lines) · an
+    // incoming, an outgoing and another incoming bubble.
+    const preview = el('span', 'theme-card__preview', { background: c['--bg-main'], borderColor: c['--border-subtle'] });
     preview.setAttribute('aria-hidden', 'true');
-    preview.style.background = c['--bg-main'];
-    preview.style.borderColor = c['--border-subtle'];
-
-    const panel = document.createElement('span');
-    panel.className = 'theme-card__panel';
-    panel.style.background = c['--bg-section'];
-    panel.style.borderColor = c['--border-subtle'];
-    const bubbleIn = document.createElement('span');
-    bubbleIn.className = 'theme-card__bubble theme-card__bubble--in';
-    bubbleIn.style.background = c['--bg-section'];
-    bubbleIn.style.borderColor = c['--border-subtle'];
-    const bubbleOut = document.createElement('span');
-    bubbleOut.className = 'theme-card__bubble theme-card__bubble--out';
-    bubbleOut.style.background = c['--accent-secondary'];
-    const dot = document.createElement('span');
-    dot.className = 'theme-card__accent';
-    dot.style.background = c['--accent-primary'];
-    preview.append(panel, bubbleIn, bubbleOut, dot);
+    const panel = el('span', 'theme-card__panel', { background: c['--bg-section'], borderColor: c['--border-subtle'] });
+    panel.append(
+        el('span', 'theme-card__accent', { background: c['--accent-primary'] }),
+        el('span', 'theme-card__line', { background: c['--text-secondary'] }),
+        el('span', 'theme-card__line theme-card__line--short', { background: c['--text-secondary'] }),
+    );
+    const bubble = (side) => el('span', `theme-card__bubble theme-card__bubble--${side}`, side === 'out'
+        ? { background: c['--accent-secondary'] }
+        : { background: c['--bg-section'], borderColor: c['--border-subtle'] });
+    preview.append(panel, bubble('in'), bubble('out'), bubble('in2'));
 
     // Palette swatches: bg-main, bg-section, accent-primary, accent-secondary.
-    const swatches = document.createElement('span');
-    swatches.className = 'theme-card__swatches';
+    const swatches = el('span', 'theme-card__swatches');
     swatches.setAttribute('aria-hidden', 'true');
     ['--bg-main', '--bg-section', '--accent-primary', '--accent-secondary'].forEach((key) => {
-        const sw = document.createElement('span');
-        sw.className = 'theme-card__swatch';
-        sw.style.background = c[key];
+        const sw = el('span', 'theme-card__swatch', { background: c[key] });
         sw.title = `${key.slice(2)} ${c[key]}`;
         swatches.append(sw);
     });
 
-    const meta = document.createElement('span');
-    meta.className = 'theme-card__meta';
-    const name = document.createElement('span');
-    name.className = 'theme-card__name';
+    const meta = el('span', 'theme-card__meta');
+    const name = el('span', 'theme-card__name');
     name.textContent = theme.name;
-    const type = document.createElement('span');
-    type.className = 'theme-card__type';
+    const type = el('span', 'theme-card__type');
     type.textContent = theme.type === 'dark' ? 'Dark' : 'Light';
     meta.append(name, type);
 
-    const check = document.createElement('span');
-    check.className = 'theme-card__check';
-    check.setAttribute('aria-hidden', 'true');
-    check.append(createIcon('icon-check-circle'));
+    const body = el('span', 'theme-card__body');
+    body.append(meta, swatches);
 
-    card.append(preview, meta, swatches, check);
+    // Radio: an empty ring, filled with the accent + a check when active.
+    const radio = el('span', 'theme-card__radio');
+    radio.setAttribute('aria-hidden', 'true');
+    radio.innerHTML = '<svg viewBox="0 0 16 16"><path d="m4 8.2 2.6 2.6L12 5.4"/></svg>';
+
+    card.append(preview, body, radio);
     card.addEventListener('click', () => {
         setThemeAnimated(theme.id).catch((error) => console.error('Theme switch failed:', error));
     });

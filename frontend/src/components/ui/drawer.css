@@ -1,0 +1,81 @@
+/* Drawer (drawer.tsx): bottom sheet on the theme tokens. vaul slides the
+   sheet and fades the overlay itself (transform / opacity on its data attrs). */
+.nexa-drawer__overlay {
+    background: color-mix(in srgb, #000 45%, transparent);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    inset: 0;
+    position: fixed;
+    z-index: 1000;
+}
+
+.nexa-drawer {
+    background: var(--bg-section, #0f0f0f);
+    border: 1px solid var(--border-subtle, #1f1f1f);
+    border-bottom: 0;
+    border-radius: 28px 28px 0 0;
+    bottom: 0;
+    box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.35);
+    color: var(--text-primary, #f4f4f5);
+    display: flex;
+    flex-direction: column;
+    font-family: var(--f-ui, inherit);
+    left: 0;
+    max-height: 80vh;
+    outline: none;
+    position: fixed;
+    right: 0;
+    z-index: 1001;
+}
+
+.nexa-drawer__handle {
+    background: color-mix(in srgb, var(--text-primary, #fff) 18%, transparent);
+    border-radius: 999px;
+    flex: none;
+    height: 5px;
+    margin: 10px auto 0;
+    width: 44px;
+}
+
+.nexa-drawer__header,
+.nexa-drawer__body,
+.nexa-drawer__footer {
+    box-sizing: border-box;
+    margin: 0 auto;
+    max-width: 1040px;
+    width: 100%;
+}
+
+.nexa-drawer__header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 18px 28px 6px;
+}
+
+.nexa-drawer__title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin: 0;
+}
+
+.nexa-drawer__description {
+    color: var(--text-secondary, #8a8a8a);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.nexa-drawer__body {
+    min-height: 0;
+    padding: 12px 0 8px;
+}
+
+.nexa-drawer__footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 12px 28px calc(20px + env(safe-area-inset-bottom, 0px));
+}

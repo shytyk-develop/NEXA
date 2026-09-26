@@ -96,6 +96,16 @@ export async function getDevices(token, deviceId) {
     return getJson(`/api/me/devices${query}`, token);
 }
 
+/**
+ * Terminate another device's session (Settings → Devices drawer). The server
+ * signs that device out and refuses its current token; `currentDeviceId`
+ * guards against ending this one (that's Log out).
+ */
+export async function terminateDevice(token, deviceId, currentDeviceId) {
+    const query = currentDeviceId ? `?current_device_id=${encodeURIComponent(currentDeviceId)}` : '';
+    return deleteJson(`/api/me/devices/${encodeURIComponent(deviceId)}${query}`, token);
+}
+
 export async function syncMuted(token, partners) {
     return putJson('/api/me/muted', { partners: partners || [] }, token);
 }

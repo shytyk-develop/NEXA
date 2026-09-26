@@ -43,6 +43,8 @@ export type ChatEngineDeps = {
     onReactionSync?: (data: any) => void;
     /** A message was saved for everyone in a chat (a reference: ids only). */
     onSharedMessageSaved?: (data: any) => void;
+    /** Another device terminated this one's session: sign out. */
+    onSessionTerminated?: () => void;
     onProfileUpdated?: (data: any) => void;
     onUsersList?: (data: any) => void;
     onPresence?: (data: any) => void;
@@ -539,6 +541,10 @@ export class ChatEngine {
         }
         if (type === 'shared_message_saved') {
             this.deps.onSharedMessageSaved?.(data);
+            return;
+        }
+        if (type === 'session_terminated') {
+            this.deps.onSessionTerminated?.();
             return;
         }
     }
