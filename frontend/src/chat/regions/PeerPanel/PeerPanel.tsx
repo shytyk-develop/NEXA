@@ -732,7 +732,12 @@ function SavedMessages() {
     };
 
     const deleteSelected = () => {
+        const removed = items.filter((item) => selectedIds.has(item.id));
         removeActiveSavedMessages([...selectedIds]);
+        // Shared saves are also removed for this account on the server (js/app.js).
+        runOverlayAction('saved.remove', {
+            items: removed.map((item) => ({ id: item.id, chatMessageId: item.chatMessageId, shared: Boolean(item.shared) })),
+        });
         exitEditMode();
     };
 

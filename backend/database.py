@@ -1050,6 +1050,9 @@ def save_shared_message_db(username: str, message_id: int) -> Optional[dict]:
             VALUES (%s, %s, %s, %s)
             ON CONFLICT (message_id) DO NOTHING
         ''', (msg_id, user_a, user_b, username))
+        # Saving it for everyone again shares it with both again: earlier
+        # per-user removals no longer apply.
+        cursor.execute('DELETE FROM shared_saved_dismissals WHERE message_id = %s', (msg_id,))
         cursor.execute(
             'SELECT saved_by, saved_at FROM shared_saved_messages WHERE message_id = %s',
             (msg_id,),
@@ -1084,8 +1087,12 @@ def get_shared_saved_messages_db(username: str, partner: str) -> list[dict]:
             FROM shared_saved_messages s
             JOIN chat_history h ON h.id = s.message_id
             WHERE s.user_a = %s AND s.user_b = %s
+              AND NOT EXISTS (
+                  SELECT 1 FROM shared_saved_dismissals d
+                  WHERE d.message_id = s.message_id AND d.username = %s
+              )
             ORDER BY s.saved_at DESC
-        ''', (user_a, user_b))
+        ''', (user_a, user_b, username))
         return [
             {
                 "message_id": message_id,
@@ -1099,3 +1106,31 @@ def get_shared_saved_messages_db(username: str, partner: str) -> list[dict]:
     finally:
         release_connection(conn)
 
+
+
+
+def dismiss_shared_saved_message_db(username: str, message_id: int) -> bool:
+    """Remove a shared save from ONE user's Saved Messages (the other
+    participant keeps theirs). False when there's no such share in a chat the
+    user belongs to."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            SELECT 1 FROM shared_saved_messages
+            WHERE message_id = %s AND (user_a = %s OR user_b = %s)
+        ''', (message_id, username, username))
+        if not cursor.fetchone():
+            return False
+        cursor.execute('''
+            INSERT INTO shared_saved_dismissals (message_id, username)
+            VALUES (%s, %s)
+            ON CONFLICT (message_id, username) DO NOTHING
+        ''', (message_id, username))
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)

@@ -36,3 +36,15 @@ async def get_shared_saved(partner: str, authorization: Optional[str] = Header(d
     partner = normalize_username(partner)
     validate_username(partner)
     return database.get_shared_saved_messages_db(current_username, partner)
+
+
+@router.delete("/api/saved-messages/shared/{message_id}")
+async def remove_shared_saved(message_id: int, authorization: Optional[str] = Header(default=None)):
+    """Remove a message saved for everyone from the caller's Saved Messages
+    only — the other participant keeps it. Persists across refreshes and
+    devices (the catch-up list skips it for this user)."""
+    current_username = get_current_username(authorization)
+    if not database.dismiss_shared_saved_message_db(current_username, message_id):
+        raise HTTPException(status_code=404, detail="Shared saved message not found")
+    return {"removed": True, "message_id": message_id}
+

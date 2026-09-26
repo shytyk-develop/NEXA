@@ -180,6 +180,7 @@ import {
     syncMuted,
     saveMessageForEveryone,
     getSharedSavedMessages,
+    removeSharedSavedMessage,
 } from './api.js';
 import {
     detectDeviceInfo,
@@ -979,6 +980,21 @@ registerOverlayActions({
     },
     'message.reply': (payload) => {
         startReplyToMessage(payload);
+    },
+    // Saved Messages edit mode: the cards are already gone locally; a shared
+    // save must also be removed for this account on the server, or opening the
+    // chat (catch-up) would bring it back. The other person keeps theirs.
+    'saved.remove': (payload) => {
+        const shared = (payload?.items || []).filter((item) => item.shared && item.chatMessageId);
+        if (!shared.length || !state.token) return;
+        Promise.allSettled(shared.map((item) => removeSharedSavedMessage(state.token, item.chatMessageId)))
+            .then((results) => {
+                const failed = results.filter((result) => result.status === 'rejected');
+                if (failed.length) {
+                    console.error('Removing shared saved messages failed:', failed);
+                    showToast("Some shared messages couldn't be removed and may come back.", 'error');
+                }
+            });
     },
     'message.save': (payload) => {
         // Quick bar Save: "Save locally" (this account, this device) or, with

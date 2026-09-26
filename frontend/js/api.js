@@ -81,6 +81,11 @@ export async function saveMessageForEveryone(token, messageId) {
     return postJson('/api/saved-messages', { message_id: Number(messageId), save_for_everyone: true }, token);
 }
 
+/** Remove a message saved for everyone from MY Saved Messages only (persists). */
+export async function removeSharedSavedMessage(token, messageId) {
+    return deleteJson(`/api/saved-messages/shared/${encodeURIComponent(messageId)}`, token);
+}
+
 /** Messages saved for everyone in one chat (ids only), to catch up on open. */
 export async function getSharedSavedMessages(token, partner) {
     return getJson(`/api/saved-messages/shared?partner=${encodeURIComponent(partner)}`, token);
