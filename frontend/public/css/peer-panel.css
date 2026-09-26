@@ -1452,6 +1452,35 @@
     padding-top: 2px;
 }
 
+/* Author + (for shared saves) a small "Shared" tag */
+.saved-message-author-row {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    min-width: 0;
+}
+
+.saved-message-shared {
+    align-items: center;
+    background: color-mix(in srgb, var(--accent-primary, #c7ff00) 14%, transparent);
+    border-radius: 6px;
+    color: var(--text-primary, #f4f4f5);
+    display: inline-flex;
+    flex: none;
+    font-family: var(--f-ui);
+    font-size: 10px;
+    font-weight: 600;
+    gap: 3px;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    padding: 1px 6px;
+    white-space: nowrap;
+}
+
+.saved-message-shared svg {
+    flex: none;
+}
+
 .saved-message-author {
     color: var(--text-primary, #f4f4f5);
     font-family: var(--f-ui);

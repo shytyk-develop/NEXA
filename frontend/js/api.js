@@ -72,6 +72,20 @@ export async function registerDevice(token, device) {
     }, token);
 }
 
+/**
+ * Save a message for both people in the chat. Only the message id travels —
+ * the chat is end-to-end encrypted; each side reads the text from its own
+ * history. The server pushes `shared_message_saved` to both.
+ */
+export async function saveMessageForEveryone(token, messageId) {
+    return postJson('/api/saved-messages', { message_id: Number(messageId), save_for_everyone: true }, token);
+}
+
+/** Messages saved for everyone in one chat (ids only), to catch up on open. */
+export async function getSharedSavedMessages(token, partner) {
+    return getJson(`/api/saved-messages/shared?partner=${encodeURIComponent(partner)}`, token);
+}
+
 export async function getDevices(token, deviceId) {
     const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : '';
     return getJson(`/api/me/devices${query}`, token);
@@ -81,10 +95,10 @@ export async function syncMuted(token, partners) {
     return putJson('/api/me/muted', { partners: partners || [] }, token);
 }
 
-async function postJson(path, payload) {
+async function postJson(path, payload, token = null) {
     const res = await fetch(`${API_URL}${path}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? authHeaders(token) : {}) },
         body: JSON.stringify(payload)
     });
 

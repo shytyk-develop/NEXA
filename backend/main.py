@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import auth, devices, history, profile, qr, users, websocket
+from routers import auth, devices, history, profile, qr, saved, users, websocket
 
 app = FastAPI()
 
@@ -25,4 +25,5 @@ app.include_router(users.router)
 app.include_router(profile.router)
 app.include_router(qr.router)
 app.include_router(devices.router)
+app.include_router(saved.router)
 app.include_router(websocket.router)

@@ -35,3 +35,10 @@ class DeviceUpsertRequest(BaseModel):
 
 class MutedPartnersRequest(BaseModel):
     partners: list[str] = []
+
+
+class SaveMessageRequest(BaseModel):
+    message_id: int
+    # False: a personal save — kept on the user's own device, nothing stored here.
+    save_for_everyone: bool = False
+

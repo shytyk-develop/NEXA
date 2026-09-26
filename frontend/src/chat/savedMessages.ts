@@ -18,6 +18,8 @@ export type SavedMessage = {
     isOriginalDeleted?: boolean;
     /** Who deleted it ("You" or the peer's display name). */
     deletedBy?: string;
+    /** Saved for everyone: both people in the chat have it. */
+    shared?: boolean;
 };
 
 type MessageRef = { messageId?: string | null; clientMessageId?: string | null };
@@ -93,8 +95,12 @@ export function setSavedMessagesPeer(username: string | null) {
 
 export function saveMessage(username: string, message: SavedMessage) {
     if (!owner) return;
+    const existing = (byPeer[username] || []).find((item) => item.id === message.id);
     const list = (byPeer[username] || []).filter((item) => item.id !== message.id);
-    byPeer = { ...byPeer, [username]: [message, ...list] };
+    // A re-save keeps what the copy already knew (deleted flag, shared status)
+    // unless the new save says otherwise.
+    const merged = existing ? { ...existing, ...message, shared: message.shared ?? existing.shared } : message;
+    byPeer = { ...byPeer, [username]: [merged, ...list] };
     persist();
     emit();
 }
@@ -123,6 +129,21 @@ export function setSavedMessageDeleted(ref: MessageRef, deletedBy: string | null
     byPeer = next;
     persist();
     emit();
+}
+
+/** Mark an already-saved message as shared, in place (no reordering). */
+export function setSavedMessageShared(username: string, ref: MessageRef) {
+    if (!owner) return;
+    const list = byPeer[username];
+    if (!list?.some((item) => matches(item, ref) && !item.shared)) return;
+    byPeer = { ...byPeer, [username]: list.map((item) => (matches(item, ref) ? { ...item, shared: true } : item)) };
+    persist();
+    emit();
+}
+
+/** Is this chat message already in a chat's saved list? */
+export function hasSavedMessage(username: string, ref: MessageRef) {
+    return (byPeer[username] || []).some((item) => matches(item, ref));
 }
 
 /** Remove several saved messages from the active chat's list (edit mode). */

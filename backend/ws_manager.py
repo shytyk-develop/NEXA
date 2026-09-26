@@ -254,6 +254,13 @@ class ConnectionManager:
         for username in {deleted_by, partner}:
             await self._notify_user(username, payload)
 
+    async def notify_shared_message_saved(self, metadata: dict):
+        """Push shared_message_saved to both participants (all their tabs):
+        a reference only — each client reads the text from its own history."""
+        payload = {"type": "shared_message_saved", **metadata}
+        for username in {metadata["sender"], metadata["receiver"]}:
+            await self._notify_user(username, payload)
+
     async def notify_conversation_deleted(self, deleted_by: str, partner: str):
         payload = {
             "type": "conversation_deleted",

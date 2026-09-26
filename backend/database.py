@@ -1020,3 +1020,82 @@ def _user_row_to_dict(row):
         data["bio"] = row[3] or ""
         data["avatar_data"] = row[4] if row[4] else None
     return data
+
+
+def _pair(a: str, b: str) -> tuple[str, str]:
+    """Order-independent key for a 1-on-1 chat."""
+    return (a, b) if a <= b else (b, a)
+
+
+def save_shared_message_db(username: str, message_id: int) -> Optional[dict]:
+    """Marks a message saved for both participants (a reference only — no
+    content). Idempotent. Returns metadata for WS sync, or None when the
+    message doesn't exist or the user isn't in its chat."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            SELECT id, sender, receiver, client_message_id
+            FROM chat_history
+            WHERE id = %s
+              AND (sender = %s OR receiver = %s)
+        ''', (message_id, username, username))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        msg_id, sender, receiver, client_message_id = row
+        user_a, user_b = _pair(sender, receiver)
+        cursor.execute('''
+            INSERT INTO shared_saved_messages (message_id, user_a, user_b, saved_by)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (message_id) DO NOTHING
+        ''', (msg_id, user_a, user_b, username))
+        cursor.execute(
+            'SELECT saved_by, saved_at FROM shared_saved_messages WHERE message_id = %s',
+            (msg_id,),
+        )
+        saved_by, saved_at = cursor.fetchone()
+        conn.commit()
+        partner = receiver if sender == username else sender
+        return {
+            "message_id": msg_id,
+            "client_message_id": client_message_id,
+            "sender": sender,
+            "receiver": receiver,
+            "partner": partner,
+            "saved_by": saved_by,
+            "saved_at": saved_at.isoformat() if saved_at else None,
+        }
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def get_shared_saved_messages_db(username: str, partner: str) -> list[dict]:
+    """Messages saved for everyone in one chat (references only)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        user_a, user_b = _pair(username, partner)
+        cursor.execute('''
+            SELECT s.message_id, h.client_message_id, h.sender, s.saved_by, s.saved_at
+            FROM shared_saved_messages s
+            JOIN chat_history h ON h.id = s.message_id
+            WHERE s.user_a = %s AND s.user_b = %s
+            ORDER BY s.saved_at DESC
+        ''', (user_a, user_b))
+        return [
+            {
+                "message_id": message_id,
+                "client_message_id": client_message_id,
+                "sender": sender,
+                "saved_by": saved_by,
+                "saved_at": saved_at.isoformat() if saved_at else None,
+            }
+            for message_id, client_message_id, sender, saved_by, saved_at in cursor.fetchall()
+        ]
+    finally:
+        release_connection(conn)
+

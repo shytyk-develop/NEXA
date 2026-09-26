@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent, type MouseEvent } from 'react';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react';
-import { BellOff, Check, ChevronRight, ChevronUp, Eraser, Eye, Lock, Paintbrush, Trash2 } from 'lucide-react';
+import { BellOff, Check, ChevronRight, ChevronUp, Eraser, Eye, Lock, Paintbrush, Trash2, Users } from 'lucide-react';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
 import { cn } from '@/lib/utils';
 import { AsideToggle } from '../../components/AsideToggle';
@@ -602,7 +602,16 @@ function SavedMessageCard({
                     <span className="saved-message-date__month">{MONTH_SHORT.format(date)}</span>
                 </time>
                 <span className="saved-message-body">
-                    <span className="saved-message-author">{item.author}</span>
+                    <span className="saved-message-author-row">
+                        <span className="saved-message-author">{item.author}</span>
+                        {/* Saved for everyone: both people in the chat have it */}
+                        {item.shared ? (
+                            <span className="saved-message-shared" title="Saved for both of you">
+                                <Users size={11} strokeWidth={2.25} aria-hidden="true" />
+                                Shared
+                            </span>
+                        ) : null}
+                    </span>
                     <motion.div
                         ref={previewRef}
                         className={cn('saved-message-expanded-content', expanded && (scrollable || reduceMotion) && 'is-open')}

@@ -110,6 +110,7 @@ import {
 import {
     applyMessageDeleted,
     applyConversationDeleted,
+    findChatHistoryKey,
     logDelete,
     resolveDeletionChatPartner,
 } from './messageDelete.js';
@@ -148,7 +149,13 @@ import {
 } from './smartPaste.js';
 import { getPrivacyFlags, isChatMuted, toggleChatMuted, loadMutedChats } from './privacy.js';
 import { registerShortcuts } from './shortcuts.js';
-import { saveMessage, setSavedMessageDeleted, setSavedMessagesOwner } from '../src/chat/savedMessages.ts';
+import {
+    hasSavedMessage,
+    saveMessage,
+    setSavedMessageDeleted,
+    setSavedMessageShared,
+    setSavedMessagesOwner,
+} from '../src/chat/savedMessages.ts';
 import { getDisplayLabel } from './profile.js';
 import {
     buildChatTranscript,
@@ -171,6 +178,8 @@ import {
     updateProfile,
     registerDevice,
     syncMuted,
+    saveMessageForEveryone,
+    getSharedSavedMessages,
 } from './api.js';
 import {
     detectDeviceInfo,
@@ -252,6 +261,7 @@ const engine = createChatEngine(state, {
     onMessageDeleted: (data) => handleMessageDeletedEvent(data),
     onConversationDeleted: (data) => handleConversationDeletedEvent(data),
     onReactionSync: (data) => handleReactionSyncEvent(data),
+    onSharedMessageSaved: (data) => handleSharedMessageSaved(data),
     onProfileUpdated: (data) => handleProfileUpdated(data),
     onUsersList: () => refreshContactList(),
     onPresence: (data) => {
@@ -605,6 +615,67 @@ function applyActiveChatMessageDeletion(deletion) {
     }
 }
 
+/**
+ * Put a message saved "for everyone" into this chat's Saved Messages. The
+ * server only sends ids (end-to-end encrypted chat): the text comes from our
+ * own decrypted history. Returns false when that message isn't loaded here
+ * yet — opening the chat catches up (syncSharedSavedMessages).
+ */
+function addSharedSavedMessage(partner, { messageId, clientMessageId, savedAt }) {
+    const key = findChatHistoryKey(state.chatHistory, partner) || partner;
+    const history = state.chatHistory[key] || [];
+    const message = history.find((item) =>
+        (messageId != null && item.id != null && String(item.id) === String(messageId)) ||
+        (clientMessageId && item.clientMessageId === clientMessageId)
+    );
+    if (!message?.text) return false;
+    saveMessage(key, {
+        id: String(message.id ?? message.clientMessageId),
+        chatMessageId: message.id != null ? String(message.id) : undefined,
+        clientMessageId: message.clientMessageId || undefined,
+        author: message.type === 'outgoing' ? 'You' : describeDeleter(message.sender),
+        text: message.text,
+        savedAt: savedAt ? Date.parse(savedAt) || Date.now() : Date.now(),
+        shared: true,
+    });
+    return true;
+}
+
+/** WS: a message was saved for everyone (by us in another tab, or by the peer). */
+function handleSharedMessageSaved(data) {
+    const me = state.myUsername ? normalizeUsername(state.myUsername) : '';
+    const partner = normalizeUsername(data.sender) === me ? data.receiver : data.sender;
+    if (!partner) return;
+    const added = addSharedSavedMessage(partner, {
+        messageId: data.message_id,
+        clientMessageId: data.client_message_id,
+        savedAt: data.saved_at,
+    });
+    if (added && data.saved_by && normalizeUsername(data.saved_by) !== me) {
+        showToast(`${describeDeleter(data.saved_by)} saved a message for both of you.`, 'info');
+    }
+}
+
+/** On chat open: pick up messages saved for everyone while we were away. */
+async function syncSharedSavedMessages(partner) {
+    if (!state.token || !partner) return;
+    try {
+        const shared = await getSharedSavedMessages(state.token, partner);
+        (Array.isArray(shared) ? shared : []).forEach((item) => {
+            const ref = { messageId: String(item.message_id), clientMessageId: item.client_message_id };
+            const key = findChatHistoryKey(state.chatHistory, partner) || partner;
+            if (hasSavedMessage(key, ref)) {
+                // Already saved here (e.g. personally): mark it shared, keep its place.
+                setSavedMessageShared(key, ref);
+                return;
+            }
+            addSharedSavedMessage(partner, { messageId: item.message_id, clientMessageId: item.client_message_id, savedAt: item.saved_at });
+        });
+    } catch (err) {
+        console.warn('Shared saved messages sync failed:', err);
+    }
+}
+
 /** "You", or the peer's display name, for a saved copy's "deleted by" note. */
 function describeDeleter(username) {
     if (!username) return 'author';
@@ -910,19 +981,33 @@ registerOverlayActions({
         startReplyToMessage(payload);
     },
     'message.save': (payload) => {
-        // "Save locally" in the quick bar: this account, this device only.
+        // Quick bar Save: "Save locally" (this account, this device) or, with
+        // payload.everyone, for both people in the chat (server + live WS).
         const partner = state.currentTargetUser;
         if (!partner || !payload?.text) return;
+        const everyone = Boolean(payload.everyone && payload.messageId);
         const id = payload.messageId || payload.clientMessageId || `local-${Date.now()}`;
-        saveMessage(partner, {
+        const record = {
             id: String(id),
             chatMessageId: payload.messageId ? String(payload.messageId) : undefined,
             clientMessageId: payload.clientMessageId ? String(payload.clientMessageId) : undefined,
             author: payload.author || partner,
             text: payload.text,
             savedAt: Date.now(),
-        });
-        showToast('Saved to Saved Messages.', 'success');
+        };
+        saveMessage(partner, everyone ? { ...record, shared: true } : record);
+        if (!everyone) {
+            showToast('Saved to Saved Messages.', 'success');
+            return;
+        }
+        saveMessageForEveryone(state.token, payload.messageId)
+            .then(() => showToast('Saved for both of you.', 'success'))
+            .catch((err) => {
+                console.error('Save for everyone failed:', err);
+                // Still saved here — just not shared.
+                saveMessage(partner, { ...record, shared: false });
+                showToast("Couldn't save for everyone — saved for you only.", 'error');
+            });
     },
     'message.react': (payload) => {
         if (!payload?.messageId) return;
@@ -1467,6 +1552,7 @@ async function switchChat(username) {
         return;
     }
     consumePendingMessageJump(result.username);
+    void syncSharedSavedMessages(result.username);
     clearPasteAttachments();
     setComposerValue(result.draft || '');
     setDraftStatus(getComposerValue() ? 'Draft restored locally' : 'End-to-end encrypted');

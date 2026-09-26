@@ -48,6 +48,8 @@ export interface QuickBarMenuProps {
     onDelete?: () => void;
     canSave: boolean;
     onSaveLocal: () => void;
+    /** Save for both people (set once the message has a server id to reference). */
+    onSaveEveryone?: () => void;
     /** Set when the message is synced (reactions need a server id). */
     reactions?: { current: string | null; more: string[]; onPick: (emoji: string) => void };
 }
@@ -176,7 +178,17 @@ function EmojiStrip({
     );
 }
 
-function QuickBarMenu({ canReply, onReply, canCopy, onCopy, onDelete, canSave, onSaveLocal, reactions }: QuickBarMenuProps) {
+function QuickBarMenu({
+    canReply,
+    onReply,
+    canCopy,
+    onCopy,
+    onDelete,
+    canSave,
+    onSaveLocal,
+    onSaveEveryone,
+    reactions,
+}: QuickBarMenuProps) {
     const layoutPrefix = `qb-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
     const reduceMotion = useReducedMotion() === true;
     const [open, setOpen] = useState<Selector | null>(null);
@@ -287,6 +299,11 @@ function QuickBarMenu({ canReply, onReply, canCopy, onCopy, onDelete, canSave, o
     const saveLocally = () => {
         setSaveOption('local');
         onSaveLocal();
+    };
+    const saveForEveryone = () => {
+        if (!onSaveEveryone) return;
+        setSaveOption('everyone');
+        onSaveEveryone();
     };
     const copy = async () => {
         if (await onCopy()) setCopied(true);
@@ -575,20 +592,33 @@ function QuickBarMenu({ canReply, onReply, canCopy, onCopy, onDelete, canSave, o
                                     <span className="message-quickbar__label">Save locally</span>
                                 </span>
                             </motion.button>
-                            {/* Saving for both people needs server + peer sync that
-                                doesn't exist yet: shown, not selectable. */}
+                            {/* Both people get it (server reference + live sync). Needs the
+                                message's server id, so an unsynced one can't be shared yet. */}
                             <motion.button
                                 type="button"
                                 className="qb-select__chip"
                                 data-option="everyone"
-                                aria-pressed={false}
-                                title="Not available yet: saving for both people needs server sync"
-                                disabled
+                                aria-pressed={saveOption === 'everyone'}
+                                title={
+                                    onSaveEveryone
+                                        ? 'Saved for both of you'
+                                        : 'Available once the message has synced'
+                                }
+                                disabled={!onSaveEveryone}
                                 custom={2}
                                 variants={itemVariants}
                                 initial={false}
                                 animate={barState('save')}
+                                onClick={saveForEveryone}
                             >
+                                {saveOption === 'everyone' && (
+                                    <motion.span
+                                        layoutId={`${layoutPrefix}-save-option`}
+                                        transition={springTransition}
+                                        className="qb-select__chip-bg"
+                                        style={{ borderRadius: 999 }}
+                                    />
+                                )}
                                 <span className="qb-select__chip-label">
                                     <SpriteIcon id="icon-users" />
                                     <span className="message-quickbar__label">For everyone</span>

@@ -41,6 +41,8 @@ export type ChatEngineDeps = {
     onMessageDeleted?: (data: any) => void;
     onConversationDeleted?: (data: any) => void;
     onReactionSync?: (data: any) => void;
+    /** A message was saved for everyone in a chat (a reference: ids only). */
+    onSharedMessageSaved?: (data: any) => void;
     onProfileUpdated?: (data: any) => void;
     onUsersList?: (data: any) => void;
     onPresence?: (data: any) => void;
@@ -533,6 +535,10 @@ export class ChatEngine {
         }
         if (type === 'reaction_sync') {
             this.deps.onReactionSync?.(data);
+            return;
+        }
+        if (type === 'shared_message_saved') {
+            this.deps.onSharedMessageSaved?.(data);
             return;
         }
     }

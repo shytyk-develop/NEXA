@@ -112,6 +112,10 @@ function buildActionsPanel(payload) {
         onDelete: canDelete ? () => pick('message.delete', { ...payload, confirmed: true }) : undefined,
         canSave: Boolean(payload?.text),
         onSaveLocal: () => pickAfterClose('message.save', payload),
+        // Sharing references the message on the server: only once it has an id.
+        onSaveEveryone: payload?.messageId
+            ? () => pickAfterClose('message.save', { ...payload, everyone: true })
+            : undefined,
         // Reactions need a synced server id; until then there's no 🙂.
         reactions: payload.messageId
             ? {
