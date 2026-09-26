@@ -96,6 +96,20 @@ html[data-theme] #page-chat .library-row.is-active {
     color: var(--active-pill-text);
 }
 
+/* Inbox list: the fill is one sliding pill (.library-list-active, ChatSidebar
+   LibraryList) instead of each row fading its own — rows keep only colour. */
+html[data-theme] #page-chat .library-list .library-row.is-active {
+    background: transparent;
+}
+
+html[data-theme] #page-chat .library-list-active {
+    background: var(--active-pill-bg);
+    border-radius: var(--list-item-radius);
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
 html[data-theme] #page-chat .library-row.is-active :is(svg, .library-row__count) {
     color: var(--active-pill-text);
 }

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, createContext, useContext, type MouseEvent, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, createContext, useContext, type MouseEvent, type ReactNode } from 'react';
 import {
     Bell,
     Check,
@@ -44,6 +44,11 @@ type HighlightBounds = {
 
 const ContactHighlightContext = createContext<((element: HTMLElement | null) => void) | null>(null);
 const LibraryHighlightContext = createContext<((element: HTMLElement | null) => void) | null>(null);
+/** The Inbox list's active pill: the active row reports itself (null when it stops being active). */
+const LibraryActiveContext = createContext<((element: HTMLElement | null, row: HTMLElement) => void) | null>(null);
+
+/** One spring for the Inbox active pill: rapid clicks just retarget it. */
+const LIBRARY_PILL_SPRING = { type: 'spring', stiffness: 500, damping: 35, mass: 0.5 } as const;
 
 type ChatSidebarProps = {
     onSelectChat?: (username: string) => void;
@@ -620,7 +625,7 @@ function SidebarLibrary({
                     count={unreadCount}
                     active={active === 'unread'}
                     Icon={Bell}
-                    onClick={() => onSelect(active === 'unread' ? 'all' : 'unread')}
+                    onClick={() => onSelect('unread')}
                 />
                 <LibraryRow
                     label="All chats"
@@ -633,7 +638,7 @@ function SidebarLibrary({
                     count={mutedCount}
                     active={active === 'muted'}
                     Icon={VolumeX}
-                    onClick={() => onSelect(active === 'muted' ? 'all' : 'muted')}
+                    onClick={() => onSelect('muted')}
                 />
             </LibraryList>
 
@@ -1054,6 +1059,48 @@ function LibraryList({ children }: { children: ReactNode }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
     const reduceMotion = useReducedMotion() === true;
+    // Active pill: ONE element that slides to the active row. Each row used to
+    // fade its own fill, so fast clicking left two half-lit rows and the pill
+    // looked stuck between items; one spring target can't desync.
+    const [activeBounds, setActiveBounds] = useState<HighlightBounds | null>(null);
+    const activeRowRef = useRef<HTMLElement | null>(null);
+
+    const measure = useCallback((element: HTMLElement): HighlightBounds | null => {
+        const container = containerRef.current;
+        if (!container) return null;
+        const containerRect = container.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
+        return {
+            top: rect.top - containerRect.top + container.scrollTop,
+            left: rect.left - containerRect.left + container.scrollLeft,
+            width: rect.width,
+            height: rect.height,
+        };
+    }, []);
+
+    const setActiveRow = useCallback((element: HTMLElement | null, row: HTMLElement) => {
+        if (element) {
+            activeRowRef.current = element;
+            setActiveBounds(measure(element));
+            return;
+        }
+        // A row that stopped being active only clears the pill if it still owns it.
+        if (activeRowRef.current === row) {
+            activeRowRef.current = null;
+            setActiveBounds(null);
+        }
+    }, [measure]);
+
+    // Keep the pill on its row when the sidebar resizes.
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return undefined;
+        const observer = new ResizeObserver(() => {
+            if (activeRowRef.current) setActiveBounds(measure(activeRowRef.current));
+        });
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [measure]);
 
     const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
         const container = containerRef.current;
@@ -1071,12 +1118,14 @@ function LibraryList({ children }: { children: ReactNode }) {
     }, []);
 
     return (
+        <LibraryActiveContext.Provider value={setActiveRow}>
         <LibraryHighlightContext.Provider value={setHighlightFromElement}>
             <div
                 ref={containerRef}
                 className="library-list"
                 onMouseLeave={() => setHighlightBounds(null)}
             >
+
                 <AnimatePresence>
                     {highlightBounds ? (
                         <motion.div
@@ -1102,9 +1151,24 @@ function LibraryList({ children }: { children: ReactNode }) {
                         />
                     ) : null}
                 </AnimatePresence>
+                {/* After the hover highlight: the active pill stays on top of it. */}
+                <AnimatePresence initial={false}>
+                    {activeBounds ? (
+                        <motion.div
+                            key="library-active"
+                            className="library-list-active"
+                            aria-hidden="true"
+                            initial={{ opacity: 0, ...activeBounds }}
+                            animate={{ opacity: 1, ...activeBounds }}
+                            exit={{ opacity: 0 }}
+                            transition={reduceMotion ? { duration: 0 } : LIBRARY_PILL_SPRING}
+                        />
+                    ) : null}
+                </AnimatePresence>
                 {children}
             </div>
         </LibraryHighlightContext.Provider>
+        </LibraryActiveContext.Provider>
     );
 }
 
@@ -1126,9 +1190,21 @@ function LibraryRow({
     onClick: () => void;
 }) {
     const setHighlightFromElement = useContext(LibraryHighlightContext);
+    const setActiveRow = useContext(LibraryActiveContext);
+    const rowRef = useRef<HTMLButtonElement>(null);
+
+    // Report to the list's single active pill (layout effect: same frame as the click).
+    useLayoutEffect(() => {
+        const row = rowRef.current;
+        if (!row || !setActiveRow) return undefined;
+        if (!active) return undefined;
+        setActiveRow(row, row);
+        return () => setActiveRow(null, row);
+    }, [active, setActiveRow]);
 
     return (
         <button
+            ref={rowRef}
             type="button"
             className={['library-row', active ? 'is-active' : ''].filter(Boolean).join(' ')}
             aria-expanded={expandable ? open : undefined}
