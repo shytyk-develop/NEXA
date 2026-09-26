@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { ShieldAlert } from 'lucide-react';
 
 import {
     Drawer,
@@ -33,7 +34,6 @@ type Step = 'warn' | 'code' | 'busy' | 'done' | 'failed';
 const COPY: Record<DangerKind, {
     title: string;
     description: string;
-    points: string[];
     action: string;
     busy: string;
     done: string;
@@ -41,12 +41,7 @@ const COPY: Record<DangerKind, {
 }> = {
     history: {
         title: 'Clear chat history?',
-        description: 'Every conversation is deleted — on this device and on the server.',
-        points: [
-            'Removes the history for you and your chat partners.',
-            'Saved messages and your account stay.',
-            'This can’t be undone.',
-        ],
+        description: 'Every conversation will be deleted — on all your devices. This action can’t be undone.',
         action: 'Clear history',
         busy: 'Clearing history…',
         done: 'Chat history cleared',
@@ -54,12 +49,7 @@ const COPY: Record<DangerKind, {
     },
     account: {
         title: 'Delete your account?',
-        description: 'Your account and everything in it are removed for good.',
-        points: [
-            'Your profile and all your conversations are removed.',
-            'You’re signed out on every device.',
-            'This can’t be undone.',
-        ],
+        description: 'Your account and all your data will be deleted — on all your devices. This action can’t be undone.',
         action: 'Delete account',
         busy: 'Deleting account…',
         done: 'Account deleted',
@@ -76,10 +66,11 @@ function makeCode() {
     return String(buf[0] % 1_000_000).padStart(6, '0');
 }
 
+/** Trash can (Group 51): lid, handle, body with two slats. */
 function TrashIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+            <path d="M3.5 6h17M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6M5.5 6l.9 13a2 2 0 0 0 2 1.9h7.2a2 2 0 0 0 2-1.9l.9-13M10 10.5v6M14 10.5v6" />
         </svg>
     );
 }
@@ -95,21 +86,6 @@ function DangerDrawer({ source, open, onOpenChange }: {
     const [otpStatus, setOtpStatus] = useState<OtpStatus>('idle');
     const [failure, setFailure] = useState('');
     const otpRef = useRef<OtpInputHandle>(null);
-    const [bodyHeight, setBodyHeight] = useState<number | 'auto'>('auto');
-    // The sheet eases to each step's height instead of jumping. A callback ref:
-    // vaul remounts the content on every open, and the observer must follow the
-    // new node (a stale one reports 0 and would collapse the sheet).
-    const observerRef = useRef<ResizeObserver | null>(null);
-    const bodyRef = useCallback((el: HTMLDivElement | null) => {
-        observerRef.current?.disconnect();
-        observerRef.current = null;
-        if (!el) return;
-        const observer = new ResizeObserver(() => {
-            if (el.offsetHeight > 0) setBodyHeight(el.offsetHeight);
-        });
-        observer.observe(el);
-        observerRef.current = observer;
-    }, []);
     const kind = source?.kind ?? 'history';
     const copy = COPY[kind];
 
@@ -117,7 +93,6 @@ function DangerDrawer({ source, open, onOpenChange }: {
     useEffect(() => {
         if (!open) return;
         setStep('warn');
-        setBodyHeight('auto');
         setCode(makeCode());
         setOtpStatus('idle');
         setFailure('');
@@ -167,53 +142,60 @@ function DangerDrawer({ source, open, onOpenChange }: {
     return (
         <Drawer open={open} onOpenChange={(next) => !locked && onOpenChange(next)} dismissible={!locked}>
             <DrawerContent className={cn('danger-drawer', `is-${kind}`)}>
-                <motion.div
-                    className="danger-drawer__viewport"
-                    animate={{ height: bodyHeight }}
-                    transition={reduce ? { duration: 0 } : { duration: 0.32, ease: EASE }}
-                >
-                    <div ref={bodyRef}>
+                {/* One fixed-height sheet for every step (danger-drawer.css): steps
+                    swap inside it, content centred, actions pinned to the bottom. */}
+                <div className="danger-drawer__stage">
                         <AnimatePresence mode="wait" initial={false}>
                             {step === 'warn' && (
-                                <motion.div key="warn" {...slide} transition={{ duration: 0.24, ease: EASE }}>
-                                    <DrawerHeader className="danger-drawer__header">
+                                <motion.div key="warn" className="danger-drawer__step" {...slide} transition={{ duration: 0.24, ease: EASE }}>
+                                    <DrawerHeader className="danger-drawer__header is-warn">
                                         <span className="danger-drawer__icon"><TrashIcon /></span>
                                         <DrawerTitle>{copy.title}</DrawerTitle>
                                         <DrawerDescription>{copy.description}</DrawerDescription>
                                     </DrawerHeader>
-                                    <ul className="danger-drawer__points">
-                                        {copy.points.map((point, index) => (
-                                            <motion.li
-                                                key={point}
-                                                initial={reduce ? false : { opacity: 0, y: 6 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.08 + index * 0.05, duration: 0.3, ease: EASE }}
-                                            >
-                                                {point}
-                                            </motion.li>
-                                        ))}
-                                    </ul>
                                     <DrawerFooter className="danger-drawer__footer">
                                         <button type="button" className="danger-drawer__btn" onClick={() => onOpenChange(false)}>
                                             Cancel
                                         </button>
                                         <button type="button" className="danger-drawer__btn is-danger" onClick={() => setStep('code')}>
-                                            Continue
+                                            Confirm
                                         </button>
                                     </DrawerFooter>
                                 </motion.div>
                             )}
 
                             {(step === 'code' || step === 'busy') && (
-                                <motion.div key="code" {...slide} transition={{ duration: 0.24, ease: EASE }}>
-                                    <DrawerHeader className="danger-drawer__header">
-                                        <DrawerTitle>Enter the code to confirm</DrawerTitle>
-                                        <DrawerDescription>
-                                            Type the six digits below — {copy.action.toLowerCase()} runs only once they match.
+                                <motion.div key="code" className="danger-drawer__step" {...slide} transition={{ duration: 0.24, ease: EASE }}>
+                                    <DrawerHeader className="danger-drawer__header is-code">
+                                        <DrawerTitle>Enter code to confirm</DrawerTitle>
+                                        <DrawerDescription className="sr-only">
+                                            Type the six digits shown — {copy.action.toLowerCase()} runs only once they match.
                                         </DrawerDescription>
                                     </DrawerHeader>
                                     <div className="danger-drawer__code-wrap">
-                                        <p className="danger-drawer__code" aria-label={`Code ${code.split('').join(' ')}`}>
+                                        {/* Wrong code: the digits shake and flush red; right: a green pulse. */}
+                                        <motion.p
+                                            className={cn(
+                                                'danger-drawer__code',
+                                                otpStatus === 'error' && 'is-error',
+                                                otpStatus === 'success' && 'is-success',
+                                            )}
+                                            aria-label={`Code ${code.split('').join(' ')}`}
+                                            animate={
+                                                reduce
+                                                    ? undefined
+                                                    : otpStatus === 'error'
+                                                        ? { x: [0, -10, 9, -7, 5, -2, 0], scale: 1 }
+                                                        : otpStatus === 'success'
+                                                            ? { x: 0, scale: [1, 1.08, 1] }
+                                                            : { x: 0, scale: 1 }
+                                            }
+                                            transition={
+                                                otpStatus === 'error'
+                                                    ? { duration: 0.42, ease: 'easeOut' }
+                                                    : { duration: 0.36, ease: EASE }
+                                            }
+                                        >
                                             {code.split('').map((digit, index) => (
                                                 <motion.span
                                                     key={`${code}-${index}`}
@@ -225,7 +207,7 @@ function DangerDrawer({ source, open, onOpenChange }: {
                                                     {digit}
                                                 </motion.span>
                                             ))}
-                                        </p>
+                                        </motion.p>
                                         <OtpInput
                                             ref={otpRef}
                                             length={6}
@@ -234,7 +216,7 @@ function DangerDrawer({ source, open, onOpenChange }: {
                                             autoFocus
                                             disabled={locked}
                                             label="Confirmation code"
-                                            hint="Paste or type the code above."
+                                            hint="Paste or type code above."
                                             errorMessage="That code doesn’t match. Try again."
                                             successMessage="Code accepted."
                                             className="danger-drawer__otp"
@@ -257,7 +239,7 @@ function DangerDrawer({ source, open, onOpenChange }: {
                             )}
 
                             {(step === 'done' || step === 'failed') && (
-                                <motion.div key={step} {...slide} transition={{ duration: 0.24, ease: EASE }}>
+                                <motion.div key={step} className="danger-drawer__step" {...slide} transition={{ duration: 0.24, ease: EASE }}>
                                     <DrawerHeader className="danger-drawer__header is-result">
                                         <motion.span
                                             className={cn('danger-drawer__result', step === 'done' ? 'is-done' : 'is-failed')}
@@ -275,22 +257,21 @@ function DangerDrawer({ source, open, onOpenChange }: {
                                                     />
                                                 </svg>
                                             ) : (
-                                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5h.01" /></svg>
+                                                <ShieldAlert aria-hidden="true" strokeWidth={1.6} />
                                             )}
                                         </motion.span>
                                         <DrawerTitle>{step === 'done' ? copy.done : 'Nothing was changed'}</DrawerTitle>
                                         <DrawerDescription>{step === 'done' ? copy.doneHint : failure}</DrawerDescription>
                                     </DrawerHeader>
                                     <DrawerFooter className="danger-drawer__footer is-single">
-                                        <button type="button" className="danger-drawer__btn" onClick={() => onOpenChange(false)}>
+                                        <button type="button" className="danger-drawer__btn is-close" onClick={() => onOpenChange(false)}>
                                             Close
                                         </button>
                                     </DrawerFooter>
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                    </div>
-                </motion.div>
+                </div>
             </DrawerContent>
         </Drawer>
     );

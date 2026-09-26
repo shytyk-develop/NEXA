@@ -4181,10 +4181,37 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     transition: border-color 0.2s ease;
 }
 
-/* Both key cards outline in the accent on hover only. */
-#page-chat .profile-workspace .sec-key:hover,
-#page-chat .profile-workspace .sec-key:focus-within {
-    border-color: color-mix(in srgb, var(--accent-primary, #c7ff00) 80%, transparent);
+/* Identity key opens the full fingerprint: the whole card is the target and
+   outlines in the accent on hover. Message cipher is information only —
+   no hover, no pointer, no arrow. */
+#page-chat .profile-workspace .sec-key--action {
+    cursor: pointer;
+}
+
+/* Same head height with or without the ↗, so both cards' labels line up. */
+#page-chat .profile-workspace .sec-key .sec-card__head {
+    min-height: 24px;
+}
+
+#page-chat .profile-workspace .sec-key--action:hover,
+#page-chat .profile-workspace .sec-key--action:focus-within {
+    border-color: color-mix(in srgb, var(--accent-primary, #ccff00) 60%, transparent);
+}
+
+#page-chat .profile-workspace .sec-key--action:hover .sec-arrow-btn {
+    background: var(--settings-inner-fill);
+    border-color: color-mix(in srgb, var(--accent-primary, #ccff00) 45%, transparent);
+    color: var(--accent-primary, #ccff00);
+}
+
+/* Fingerprint: anywhere over the card lights it softly (the code is copyable). */
+#page-chat .profile-workspace .sec-fp {
+    transition: border-color 0.2s ease;
+}
+
+#page-chat .profile-workspace .sec-fp:hover,
+#page-chat .profile-workspace .sec-fp:has(.sec-copy-btn:focus-visible) {
+    border-color: color-mix(in srgb, var(--accent-primary, #ccff00) 40%, transparent);
 }
 
 #page-chat .profile-workspace .sec-arrow-btn {
@@ -4303,9 +4330,11 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     transition: background-color 0.18s ease, border-color 0.18s ease;
 }
 
-#page-chat .profile-workspace .sec-copy-btn:hover,
-#page-chat .profile-workspace .sec-copy-btn:focus-visible {
-    background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
+#page-chat .profile-workspace .sec-copy-btn:hover:not(:disabled):not(.is-copied),
+#page-chat .profile-workspace .sec-copy-btn:focus-visible:not(.is-copied) {
+    background: color-mix(in srgb, var(--accent-primary, #ccff00) 8%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary, #ccff00) 40%, transparent);
+    color: var(--accent-primary, #ccff00);
     outline: none;
 }
 
@@ -4316,7 +4345,8 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
 
 /* Copy → Copied!: icons and labels cross-fade in place; the pill tints green. */
 #page-chat .profile-workspace .sec-copy-btn {
-    --sec-copied: var(--color-success, #34d399);
+    /* Copied: the brand accent, like Download export / Export saved. */
+    --sec-copied: var(--accent-primary, #ccff00);
     transition:
         background-color 0.22s ease,
         border-color 0.22s ease,
@@ -4332,6 +4362,7 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     background: color-mix(in srgb, var(--sec-copied) 15%, transparent);
     border-color: color-mix(in srgb, var(--sec-copied) 30%, transparent);
     color: var(--sec-copied);
+    font-weight: 500;
 }
 
 #page-chat .profile-workspace .sec-copy-btn__icons,
@@ -5428,6 +5459,11 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     margin: 0;
 }
 
+/* Holds the animated export button (src/settings/ExportButton.tsx). */
+#page-chat .profile-workspace .dt-export__mount {
+    margin-top: auto;
+}
+
 #page-chat .profile-workspace .dt-export__btn {
     align-items: center;
     background: var(--dt-accent);
@@ -5628,6 +5664,31 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     #page-chat .profile-workspace .data-page:not(.is-ready) .sec-card {
         opacity: 1;
     }
+}
+
+/* ── Settings tab switches ───────────────────────────────────────────────────
+   A nav click swaps sections with one short fade + 6px slide (.is-quick, set
+   by js setSection) instead of replaying the cards' staggered rise, so fast
+   clicking through Appearance → Security → Privacy → Data never lags. */
+@keyframes settings-section-in {
+    from {
+        opacity: 0;
+        transform: translateX(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+#page-chat .profile-workspace [data-profile-section].is-quick {
+    animation: settings-section-in 0.12s ease-out both;
+}
+
+#page-chat .profile-workspace [data-profile-section].is-quick :is(.sec-card, .appearance-card, .profile-sec-block, .profile-privacy-row, .profile-sec-kicker),
+#page-chat .profile-workspace .profile-identity-layout.is-quick > * {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
 /* ── Appearance → Theme picker (js/themePicker.js) ───────────────────────────

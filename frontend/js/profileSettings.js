@@ -87,12 +87,46 @@ export function initProfileSettings(context) {
 /** rAF ids of the refresh in flight — a newer request cancels it. */
 let queuedRefresh = [0, 0];
 
+/** Settings sections worth reopening on (Devices is reached from Security). */
+const SETTINGS_SECTIONS = new Set(['appearance', 'security', 'privacy', 'data']);
+const LAST_SECTION_KEY = 'nexa:settings-section';
+
+function readLastSettingsSection() {
+    try {
+        const saved = localStorage.getItem(LAST_SECTION_KEY);
+        return SETTINGS_SECTIONS.has(saved) ? saved : 'appearance';
+    } catch {
+        return 'appearance';
+    }
+}
+
+let lastSettingsSection = readLastSettingsSection();
+
+/** The Settings section to open on: wherever the user left it (else Appearance). */
+export function getLastSettingsSection() {
+    return lastSettingsSection;
+}
+
+function rememberSettingsSection(id) {
+    if (!SETTINGS_SECTIONS.has(id) || id === lastSettingsSection) return;
+    lastSettingsSection = id;
+    try {
+        localStorage.setItem(LAST_SECTION_KEY, id);
+    } catch {
+        /* private mode: remembered for this session only */
+    }
+}
+
 export function queueProfilePanelRefresh(section = 'identity') {
     // Latest request wins: rapid tab switches (Profile → Settings → Profile)
     // used to leave older refreshes queued two frames out, which then painted
     // a stale section over the current one (flicker). Cancel before queueing.
     const target = section || 'identity';
     pendingProfileSection = target;
+    // Show the right section in this same frame (the panel was just unhidden):
+    // the hydrate below lands two frames later, and until then the previously
+    // open section used to show through (a flash of Appearance / Profile).
+    showSection(target);
     cancelAnimationFrame(queuedRefresh[0]);
     cancelAnimationFrame(queuedRefresh[1]);
     queuedRefresh[0] = requestAnimationFrame(() => {
@@ -100,7 +134,9 @@ export function queueProfilePanelRefresh(section = 'identity') {
             // The user may have left Profile / Settings in the meantime.
             const page = document.getElementById('page-chat');
             if (page && !page.matches('.is-app-view-identity, .is-app-view-settings')) return;
-            onProfilePanelOpen(target);
+            // A nav click in these two frames moved pendingProfileSection on:
+            // the latest choice wins, not the one this refresh was queued with.
+            onProfilePanelOpen(pendingProfileSection || target);
         });
     });
 }
@@ -189,6 +225,12 @@ function bindShell() {
         setSection('security', { fromUser: true });
     });
     $p('uiProfileKeysToggle')?.addEventListener('click', toggleFingerprintPanel);
+    // The whole Identity key card opens the full fingerprint (the ↗ button is
+    // its keyboard / screen-reader handle, and handles its own clicks).
+    document.querySelector('#uiProfilePanel [data-sec-toggle="fingerprint"]')?.addEventListener('click', (event) => {
+        if (event.target.closest('#uiProfileKeysToggle')) return;
+        toggleFingerprintPanel();
+    });
     $p('uiProfileManageDevices')?.addEventListener('click', () => {
         void openDevicesDrawer();
     });
@@ -221,6 +263,7 @@ function bindShell() {
 
     // Data: legend rows highlight their share of the storage map.
     bindDataLegend();
+    mountExportButton();
     // Sliding hover highlight: an outline over the (opaque) theme cards. The
     // density segment has its own sliding thumb.
     attachHoverHighlight($p('uiThemePicker'), '.theme-card', { mode: 'ring' });
@@ -290,9 +333,13 @@ function hydrateSettingsNav(username) {
     }
 }
 
-function setSection(id, { fromUser = false } = {}) {
+/**
+ * The synchronous part of a section switch: which section is visible, which
+ * nav row is lit, the header title. No hydration, no intro.
+ */
+function showSection(id) {
     const panel = document.getElementById('uiProfilePanel');
-    if (!panel) return;
+    if (!panel) return null;
 
     const navButtons = [...document.querySelectorAll('[data-profile-nav]')];
     navButtons.forEach((btn) => {
@@ -319,6 +366,28 @@ function setSection(id, { fromUser = false } = {}) {
     const subEl = document.getElementById('uiProfileHeadSub');
     if (titleEl) titleEl.textContent = meta[0];
     if (subEl) subEl.textContent = meta[1];
+    rememberSettingsSection(id);
+    return panel;
+}
+
+function setSection(id, { fromUser = false } = {}) {
+    const panel = showSection(id);
+    if (!panel) return;
+    // A tab click: this is now the section to (re)open on, even if a queued
+    // refresh from opening Settings is still two frames out.
+    if (fromUser) pendingProfileSection = id;
+
+    // Tab switches get a short fade-in of the whole section (.is-quick)
+    // instead of the cards rising one by one — fast clicking stays snappy.
+    const current = panel.querySelector(`[data-profile-section="${CSS.escape(id)}"]`);
+    panel.querySelectorAll('[data-profile-section].is-quick').forEach((section) => {
+        if (section !== current || !fromUser) section.classList.remove('is-quick');
+    });
+    if (fromUser && current && !reducedMotion()) {
+        current.classList.remove('is-quick');
+        void current.offsetWidth; // restart the fade on repeat clicks
+        current.classList.add('is-quick');
+    }
 
     const foot = panel.querySelector('.profile-foot');
     if (foot) foot.classList.add('hidden');
@@ -1300,12 +1369,16 @@ function clearHistory() {
     void openDangerDrawer('history');
 }
 
-async function exportStorageReport() {
+function canExport() {
+    if (resolveUsername()) return true;
+    ctx?.showToast?.('Sign in to export your data.', 'error');
+    return false;
+}
+
+/** Builds the export (storage report + every chat transcript) and downloads it. */
+function downloadExport() {
     const username = resolveUsername();
-    if (!username) {
-        ctx?.showToast?.('Sign in to export your data.', 'error');
-        return;
-    }
+    if (!username) return false;
     try {
         const history = loadHistory(username);
         const parts = [buildStorageReport(username), ''];
@@ -1322,16 +1395,41 @@ async function exportStorageReport() {
             `nexa-export-${makeSafeFilename(username)}-${stamp}.txt`,
             parts.join('\n')
         );
-        // The button itself confirms ("Downloaded ✓" for 2s).
-        const btn = $p('uiProfileExportDataBtn');
-        if (btn) {
-            btn.classList.add('is-done');
-            window.clearTimeout(Number(btn.dataset.doneTimer));
-            btn.dataset.doneTimer = String(window.setTimeout(() => btn.classList.remove('is-done'), 2000));
-        }
+        return true;
     } catch {
         ctx?.showToast?.('Export failed.', 'error');
+        return false;
     }
+}
+
+/** Fallback while the animated button loads: export straight away. */
+function exportStorageReport() {
+    if (canExport()) downloadExport();
+}
+
+/**
+ * Export card: swap the plain button for the three-phase animated one
+ * (src/settings/ExportButton.tsx); the card's icon follows its phase.
+ */
+function mountExportButton() {
+    const host = $p('uiDataExportMount');
+    if (!host || host.dataset.mounted) return;
+    host.dataset.mounted = '1';
+    const card = host.closest('.dt-export');
+    import('../src/settings/ExportButton.tsx')
+        .then(({ mountExportButton: mount }) => {
+            mount(host, {
+                canExport,
+                download: downloadExport,
+                onPhase: (phase) => {
+                    if (card) card.dataset.exportPhase = phase;
+                },
+            });
+        })
+        .catch(() => {
+            // The plain button keeps working.
+            delete host.dataset.mounted;
+        });
 }
 
 function onDeleteAccount() {

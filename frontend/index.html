@@ -1339,7 +1339,7 @@
                                 </div>
                             </section>
 
-                            <section class="sec-card sec-key" aria-labelledby="uiSecIdentityKicker">
+                            <section class="sec-card sec-key sec-key--action" data-sec-toggle="fingerprint" aria-labelledby="uiSecIdentityKicker">
                                 <div class="sec-card__head">
                                     <h4 id="uiSecIdentityKicker" class="sec-kicker">Identity key</h4>
                                     <!-- Opens the full fingerprint below the key cards. -->
@@ -1350,10 +1350,9 @@
                                 <span class="sec-key__bar" aria-hidden="true"><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i class="is-lit"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
                             </section>
 
-                            <section class="sec-card sec-key" aria-labelledby="uiSecCipherKicker">
+                            <section class="sec-card sec-key sec-key--static" aria-labelledby="uiSecCipherKicker">
                                 <div class="sec-card__head">
                                     <h4 id="uiSecCipherKicker" class="sec-kicker">Message cipher</h4>
-                                    <span class="sec-arrow-btn" title="Every message is sealed with its own AES-GCM-256 key" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg></span>
                                 </div>
                                 <p class="sec-key__label">Symmetric encryption</p>
                                 <p id="uiProfileKeyCipher" class="sec-key__value">AES-GCM-256</p>
@@ -1589,12 +1588,15 @@
                                 </div>
                                 <p id="uiDataExportTitle" class="dt-export__title">Export chat<br>history</p>
                                 <p class="dt-card__hint">Download your data.</p>
-                                <button id="uiProfileExportDataBtn" class="dt-export__btn" type="button">
-                                    <span class="pv-swap dt-export__labels">
-                                        <span class="is-idle">Download export <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg></span>
-                                        <span class="is-done" aria-hidden="true">Downloaded <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.9 2.9 6.1-6.6"/></svg></span>
-                                    </span>
-                                </button>
+                                <!-- src/settings/ExportButton.tsx replaces this with the animated button. -->
+                                <div id="uiDataExportMount" class="dt-export__mount">
+                                    <button id="uiProfileExportDataBtn" class="dt-export__btn" type="button">
+                                        <span class="pv-swap dt-export__labels">
+                                            <span class="is-idle">Download export <svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg></span>
+                                            <span class="is-done" aria-hidden="true">Downloaded <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.9 2.9 6.1-6.6"/></svg></span>
+                                        </span>
+                                    </button>
+                                </div>
                             </section>
                         </div>
 

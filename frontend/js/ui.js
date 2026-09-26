@@ -14,7 +14,7 @@ import {
     appendLinkedTextContent,
     handleExternalLinkClick,
 } from './messageLinks.js';
-import { hydrateAppearanceControls, hydrateProfilePrivacy, onProfilePanelClose, queueProfilePanelRefresh } from './profileSettings.js';
+import { getLastSettingsSection, hydrateAppearanceControls, hydrateProfilePrivacy, onProfilePanelClose, queueProfilePanelRefresh } from './profileSettings.js';
 import { getPrivacyFlags, isChatMuted } from './privacy.js';
 import {
     applyContactAvatar,
@@ -385,7 +385,7 @@ function initPeerPanelCollapse() {
                 return;
             }
             if (target.closest('#uiDockSettings')) {
-                openAppSettings('appearance');
+                openAppSettings();
                 return;
             }
 
@@ -2201,12 +2201,15 @@ function isRepeatViewRequest(view) {
     return !isAppStackViewport() && !isProfileStackViewport() && currentAppView() === view;
 }
 
-/** Open the in-app settings surface (Appearance / Security / …), not the interface modal. */
-export function openAppSettings(section = 'appearance', { force = false } = {}) {
+/**
+ * Open the in-app settings surface (Appearance / Security / …), not the
+ * interface modal. Without a section it reopens where the user left off.
+ */
+export function openAppSettings(section, { force = false } = {}) {
     if (!force && isRepeatViewRequest('settings')) return;
     closeOverlay();
     setAppView('settings');
-    queueProfilePanelRefresh(section);
+    queueProfilePanelRefresh(section || getLastSettingsSection());
     if (isProfileStackViewport()) {
         setProfileDrillLevel('nav');
     }

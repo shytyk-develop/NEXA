@@ -1,0 +1,122 @@
+/* Export button (ExportButton.tsx): accent pill → packing (progress wash +
+   spinner) → a calm tinted "Export saved!". Fixed width and
+   height, so the label morphs never move the card. */
+.export-btn {
+    --export-accent: var(--accent-primary, #ccff00);
+    --export-ink: var(--text-on-accent, #0b0b0b);
+    align-items: center;
+    background: var(--export-accent);
+    border: 0;
+    border-radius: 999px;
+    color: var(--export-ink);
+    cursor: pointer;
+    display: flex;
+    font-family: var(--f-ui);
+    font-size: 14px;
+    font-weight: 600;
+    height: 46px;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    transition:
+        background-color 0.4s ease,
+        box-shadow 0.5s ease,
+        color 0.3s ease;
+    width: 100%;
+}
+
+.export-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--export-accent) 55%, transparent);
+    outline-offset: 3px;
+}
+
+.export-btn[data-state="preparing"],
+.export-btn[data-state="downloading"] {
+    cursor: progress;
+}
+
+/* Saved: a calm tinted pill — dark fill, accent text + hairline, faint halo —
+   noticeable without shouting over the card. */
+.export-btn[data-state="completed"] {
+    background: color-mix(in srgb, var(--export-accent) 12%, var(--bg-section, #111));
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--export-accent) 35%, transparent),
+        0 0 18px color-mix(in srgb, var(--export-accent) 12%, transparent);
+    color: var(--export-accent);
+    cursor: default;
+}
+
+.export-btn__progress {
+    background: color-mix(in srgb, var(--export-ink) 14%, transparent);
+    inset: 0 auto 0 0;
+    pointer-events: none;
+    position: absolute;
+}
+
+.export-btn__content {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+    position: relative;
+    white-space: nowrap;
+}
+
+.export-btn__arrow,
+.export-btn__check {
+    display: inline-flex;
+}
+
+.export-btn__arrow svg {
+    height: 15px;
+    width: 15px;
+}
+
+.export-btn__check svg {
+    height: 16px;
+    width: 16px;
+}
+
+.export-btn__spin {
+    animation: export-spin 0.8s linear infinite;
+    height: 16px;
+    width: 16px;
+}
+
+@keyframes export-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* The card's icon tile hops and pulses while the export is packing. */
+#page-chat .profile-workspace .dt-export[data-export-phase="preparing"] .dt-export__icon,
+#page-chat .profile-workspace .dt-export[data-export-phase="downloading"] .dt-export__icon {
+    animation: export-icon-hop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+#page-chat .profile-workspace .dt-export[data-export-phase="completed"] .dt-export__icon {
+    animation: export-icon-done 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes export-icon-hop {
+    0%, 100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary, #ccff00) 45%, transparent);
+        transform: translateY(0) scale(1);
+    }
+    40% {
+        box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-primary, #ccff00) 0%, transparent);
+        transform: translateY(-5px) scale(1.06);
+    }
+}
+
+@keyframes export-icon-done {
+    50% { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .export-btn__spin {
+        animation-duration: 2.4s;
+    }
+
+    #page-chat .profile-workspace .dt-export[data-export-phase] .dt-export__icon {
+        animation: none;
+    }
+}

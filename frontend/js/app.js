@@ -1691,7 +1691,7 @@ DOM.railProfile?.addEventListener('click', (event) => {
 DOM.dockSettings?.addEventListener('click', (event) => {
     event.preventDefault();
     closeComposeSearch({ immediate: true });
-    openAppSettings('appearance');
+    openAppSettings();
 });
     DOM.dockNewChat?.addEventListener('click', (event) => {
         event.preventDefault();
@@ -1716,7 +1716,10 @@ DOM.dockSettings?.addEventListener('click', (event) => {
         openShortcuts();
     });
     DOM.copyUsernameBtn?.addEventListener('click', copyCurrentUsername);
-    document.getElementById('uiProfileLogoutBtn')?.addEventListener('click', handleLogout);
+    // Settings nav: the slide-to-log-out control fires this after its countdown.
+    window.addEventListener('nexa:logout', () => {
+        if (state.token || state.myUsername) handleLogout();
+    });
     DOM.chatMenuBtn?.addEventListener('click', (event) => openChatMenu(event));
     DOM.composerMenuBtn?.addEventListener('click', (event) => openComposerMenu(event));
     DOM.emojiBtn?.addEventListener('click', (event) => {

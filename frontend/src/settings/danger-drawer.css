@@ -1,54 +1,250 @@
-/* Danger drawer (DangerDrawer.tsx): warning → code → result, one narrow
-   column in the bottom sheet (drawer.css). The viewport eases between the
-   steps' heights; the steps slide + blur across. */
-.danger-drawer .nexa-drawer__header,
-.danger-drawer .nexa-drawer__footer,
-.danger-drawer__points,
-.danger-drawer__code-wrap {
-    max-width: 460px;
+/* Danger drawer (DangerDrawer.tsx) — images/Group 51.png (warning) and
+   Group 50.png (code): one 512 × 440 sheet for every step, content centred,
+   pill buttons at the foot. The steps slide + blur across inside it.
+   Dark themes get the exact values; light themes derive them from tokens. */
+.danger-drawer {
+    --dz-height: 360px;
+    --dz-bg: var(--bg-section, #0e0e0e);
+    --dz-text: var(--text-primary, #fff);
+    --dz-muted: var(--text-secondary, #8c8c8c);
+    --dz-quiet: color-mix(in srgb, var(--text-primary, #fff) 7%, var(--dz-bg));
+    --dz-quiet-hover: color-mix(in srgb, var(--text-primary, #fff) 11%, var(--dz-bg));
+    --dz-quiet-text: color-mix(in srgb, var(--text-primary, #fff) 78%, transparent);
+    --dz-red: #dc1f2e;
+    --dz-red-hover: #c81a28;
+    --dz-red-icon: #e8193c;
+    --dz-bad: #f23b47;
+    --dz-good: #22c55e;
+    --dz-cell: color-mix(in srgb, var(--text-primary, #fff) 4%, var(--dz-bg));
+    --dz-cell-line: color-mix(in srgb, var(--text-primary, #fff) 9%, transparent);
 }
 
-.danger-drawer__viewport {
-    overflow: hidden;
+:root[data-theme^="dark"] .danger-drawer {
+    --dz-bg: #0e0e0e;
+    --dz-text: #fff;
+    --dz-muted: #969696;
+    --dz-quiet: #1a1a1a;
+    --dz-quiet-hover: #232323;
+    --dz-quiet-text: #c4c4c4;
+    --dz-cell: #121212;
+    --dz-cell-line: #262626;
+}
+
+.nexa-drawer.danger-drawer {
+    background: var(--dz-bg);
+    border: 0;
+    border-radius: 36px 36px 0 0;
+    box-shadow: 0 -25px 50px -12px rgba(0, 0, 0, 0.6);
+    box-sizing: border-box;
+    height: var(--dz-height);
+    margin: 0 auto;
+    max-height: calc(100vh - 24px);
+    max-width: 512px;
+    min-height: var(--dz-height);
+    padding: 0 40px 18px;
+    text-align: center;
+}
+
+.danger-drawer .nexa-drawer__handle {
+    background: color-mix(in srgb, var(--dz-text) 20%, transparent);
+    height: 4px;
+    margin: 12px auto 0;
+    width: 36px;
+}
+
+.danger-drawer__stage {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+}
+
+.danger-drawer__step {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 0;
+}
+
+.danger-drawer .nexa-drawer__header,
+.danger-drawer .nexa-drawer__footer {
+    max-width: none;
+    padding: 0;
 }
 
 .danger-drawer__header {
     align-items: center;
-    gap: 6px;
-    padding-top: 22px;
+    gap: 0;
     text-align: center;
 }
 
-.danger-drawer__icon,
-.danger-drawer__result {
-    align-items: center;
-    border-radius: 18px;
-    display: inline-flex;
-    height: 52px;
+.danger-drawer .nexa-drawer__title {
+    color: var(--dz-text);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+}
+
+.danger-drawer .nexa-drawer__description {
+    color: var(--dz-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 8px auto 0;
+    max-width: 320px;
+}
+
+/* Warning (Group 51): the red trash disc, title, two lines of copy. */
+.danger-drawer__header.is-warn {
+    flex: 1;
     justify-content: center;
-    margin-bottom: 10px;
-    width: 52px;
+    padding-bottom: 12px;
 }
 
 .danger-drawer__icon {
-    background: color-mix(in srgb, var(--color-danger, #ef4444) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-danger, #ef4444) 22%, transparent);
-    color: var(--color-danger, #ef4444);
+    align-items: center;
+    background: color-mix(in srgb, var(--dz-red) 20%, var(--dz-bg));
+    border: 2px solid color-mix(in srgb, var(--dz-red) 85%, transparent);
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--dz-red-icon);
+    display: flex;
+    height: 72px;
+    justify-content: center;
+    margin-bottom: 18px;
+    width: 72px;
 }
 
-.danger-drawer__icon svg,
-.danger-drawer__result svg {
+.danger-drawer__icon svg {
     fill: none;
-    height: 22px;
+    height: 32px;
     stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 1.7;
-    width: 22px;
+    stroke-width: 2.1;
+    width: 32px;
+}
+
+/* Code (Group 50): title up top, the code big, six cells, a hint. */
+.danger-drawer__header.is-code {
+    padding-top: 22px;
+}
+
+.danger-drawer__code-wrap {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 24px;
+    justify-content: center;
+    padding-bottom: 4px;
+}
+
+.danger-drawer__code {
+    color: var(--dz-text);
+    display: flex;
+    font-family: var(--f-ui);
+    font-size: 40px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    gap: 2px;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    margin: 0;
+    transition: color 0.2s ease, text-shadow 0.3s ease;
+    user-select: all;
+}
+
+.danger-drawer__code.is-error {
+    color: var(--dz-bad);
+    text-shadow: 0 0 24px color-mix(in srgb, var(--dz-bad) 35%, transparent);
+}
+
+.danger-drawer__code.is-success {
+    color: var(--dz-good);
+    text-shadow: 0 0 24px color-mix(in srgb, var(--dz-good) 35%, transparent);
+}
+
+.danger-drawer__code .is-gap {
+    margin-left: 16px;
+}
+
+.danger-drawer__otp [role="group"] {
+    gap: 6px;
+}
+
+.danger-drawer__otp [role="group"] > div,
+.danger-drawer .otp-cell {
+    height: 42px;
+    width: 38px;
+}
+
+.danger-drawer .otp-cell {
+    background: var(--dz-cell);
+    border-color: var(--dz-cell-line);
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.danger-drawer .otp-cell[data-state="active"] {
+    background: var(--dz-cell);
+    border-color: color-mix(in srgb, var(--dz-text) 45%, transparent) !important;
+    box-shadow: none !important;
+}
+
+.danger-drawer .otp-message {
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+.danger-drawer .otp-message.is-hint {
+    color: var(--dz-muted);
+}
+
+.danger-drawer .otp-message.is-error {
+    color: var(--dz-bad);
+}
+
+.danger-drawer .otp-message.is-success {
+    color: var(--dz-good);
+}
+
+.danger-drawer .otp-cell[data-state="error"] {
+    border-color: color-mix(in srgb, var(--dz-bad) 80%, transparent) !important;
+}
+
+.danger-drawer .otp-cell[data-state="success"] {
+    border-color: color-mix(in srgb, var(--dz-good) 80%, transparent) !important;
+}
+
+/* Result: icon, title and message centred above Close. */
+.danger-drawer__header.is-result {
+    flex: 1;
+    justify-content: center;
+    padding-bottom: 12px;
 }
 
 .danger-drawer__result {
+    align-items: center;
     border-radius: 50%;
+    box-sizing: border-box;
+    display: inline-flex;
+    height: 72px;
+    justify-content: center;
+    margin-bottom: 18px;
+    width: 72px;
+}
+
+.danger-drawer__result svg {
+    fill: none;
+    height: 28px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 28px;
 }
 
 .danger-drawer__result.is-done {
@@ -61,101 +257,44 @@
 }
 
 .danger-drawer__result.is-failed {
-    background: color-mix(in srgb, var(--text-primary, #fff) 8%, transparent);
-    color: var(--text-primary, #f4f4f5);
+    background: var(--dz-quiet);
+    border: 2px solid var(--dz-cell-line);
+    color: var(--dz-quiet-text);
 }
 
-.danger-drawer__result.is-failed svg {
-    stroke-width: 2.2;
-}
-
-.danger-drawer__points {
-    box-sizing: border-box;
-    display: grid;
-    gap: 8px;
-    list-style: none;
-    margin: 14px auto 0;
-    padding: 0 28px;
-    width: 100%;
-}
-
-.danger-drawer__points li {
-    background: color-mix(in srgb, var(--text-primary, #fff) 4%, transparent);
-    border: 1px solid var(--border-subtle, #1f1f1f);
-    border-radius: 14px;
-    color: var(--text-secondary, #8a8a8a);
-    font-size: 13px;
-    line-height: 1.45;
-    padding: 10px 14px 10px 34px;
-    position: relative;
-}
-
-.danger-drawer__points li::before {
-    background: var(--color-danger, #ef4444);
-    border-radius: 50%;
-    content: "";
-    height: 6px;
-    left: 15px;
-    position: absolute;
-    top: 17px;
-    width: 6px;
-}
-
-.danger-drawer__code-wrap {
-    align-items: center;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin: 12px auto 0;
-    padding: 0 28px;
-    width: 100%;
-}
-
-/* The code to type: big mono digits in two groups of three. */
-.danger-drawer__code {
-    color: var(--text-primary, #f4f4f5);
-    display: flex;
-    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-    font-size: 30px;
-    font-weight: 600;
-    gap: 6px;
-    letter-spacing: 0.02em;
-    margin: 0;
-    user-select: all;
-}
-
-.danger-drawer__code .is-gap {
-    margin-left: 14px;
-}
-
+/* Footer: two pills side by side, or one centred pill. */
 .danger-drawer__footer {
     display: grid;
-    gap: 10px;
+    gap: 12px;
     grid-template-columns: 1fr 1fr;
-    padding-top: 22px;
 }
 
 .danger-drawer__footer.is-single {
     grid-template-columns: 1fr;
+    justify-items: center;
+}
+
+.danger-drawer__footer.is-single .danger-drawer__btn {
+    max-width: 280px;
+    width: 100%;
 }
 
 .danger-drawer__btn {
-    background: color-mix(in srgb, var(--text-primary, #fff) 6%, transparent);
-    border: 1px solid var(--border-subtle, #1f1f1f);
+    background: var(--dz-quiet);
+    border: 0;
     border-radius: 999px;
-    color: var(--text-primary, #f4f4f5);
+    color: var(--dz-quiet-text);
     cursor: pointer;
     font: inherit;
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 500;
-    height: 44px;
-    transition: background-color 0.18s ease, filter 0.18s ease, transform 0.18s ease;
+    height: 52px;
+    transition: background-color 0.2s ease, transform 0.18s ease;
 }
 
 .danger-drawer__btn:hover,
 .danger-drawer__btn:focus-visible {
-    background: color-mix(in srgb, var(--text-primary, #fff) 11%, transparent);
+    background: var(--dz-quiet-hover);
     outline: none;
 }
 
@@ -165,41 +304,45 @@
 
 .danger-drawer__btn:disabled {
     cursor: default;
-    opacity: 0.5;
+    opacity: 0.6;
 }
 
 .danger-drawer__btn.is-danger {
-    background: var(--color-danger, #ef4444);
-    border-color: transparent;
+    background: var(--dz-red);
     color: #fff;
-    font-weight: 600;
 }
 
 .danger-drawer__btn.is-danger:hover,
 .danger-drawer__btn.is-danger:focus-visible {
-    filter: brightness(1.08);
+    background: var(--dz-red-hover);
 }
 
 .danger-drawer__status {
     align-items: center;
-    color: var(--text-secondary, #8a8a8a);
     display: inline-flex;
-    font-size: 13px;
     gap: 8px;
     justify-content: center;
 }
 
 .danger-drawer__spinner {
     animation: danger-spin 0.8s linear infinite;
-    border: 2px solid color-mix(in srgb, var(--text-primary, #fff) 20%, transparent);
+    border: 2px solid color-mix(in srgb, var(--dz-text) 20%, transparent);
     border-radius: 50%;
-    border-top-color: var(--text-primary, #fff);
+    border-top-color: var(--dz-text);
     height: 14px;
     width: 14px;
 }
 
 @keyframes danger-spin {
     to { transform: rotate(360deg); }
+}
+
+@media (max-width: 540px) {
+    .nexa-drawer.danger-drawer {
+        height: auto;
+        padding-left: 24px;
+        padding-right: 24px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

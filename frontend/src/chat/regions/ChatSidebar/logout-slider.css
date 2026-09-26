@@ -1,0 +1,128 @@
+/* Slide-to-log-out (LogoutSlider.tsx): a dark red track, a red handle that
+   drags along it with a red wash behind, then a countdown notice. Dark themes
+   get the exact values; light themes derive them from the danger tokens. */
+#page-chat .logout-slider {
+    --ls-danger: var(--color-danger, #ef4444);
+    --ls-track: color-mix(in srgb, var(--ls-danger) 8%, var(--bg-section, #111));
+    --ls-handle: #dc2626;
+    align-items: center;
+    background: var(--ls-track);
+    border: 1px solid color-mix(in srgb, var(--ls-danger) 20%, transparent);
+    border-radius: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-shrink: 0;
+    height: 48px;
+    overflow: hidden;
+    padding: 4px;
+    position: relative;
+    user-select: none;
+    width: 100%;
+}
+
+:root[data-theme^="dark"] #page-chat .logout-slider {
+    --ls-track: #1a0c0c;
+}
+
+#page-chat .logout-slider__fill {
+    background: color-mix(in srgb, var(--ls-danger) 30%, transparent);
+    border-radius: 12px;
+    bottom: 4px;
+    left: 4px;
+    pointer-events: none;
+    position: absolute;
+    top: 4px;
+}
+
+#page-chat .logout-slider[data-state="countdown"] .logout-slider__fill {
+    box-shadow: 0 0 24px color-mix(in srgb, var(--ls-danger) 25%, transparent);
+}
+
+#page-chat .logout-slider__hint {
+    color: color-mix(in srgb, var(--ls-danger) 60%, transparent);
+    font-size: 12px;
+    font-weight: 500;
+    left: 56px;
+    pointer-events: none;
+    position: absolute;
+    user-select: none;
+}
+
+#page-chat .logout-slider__handle {
+    align-items: center;
+    background: var(--ls-handle);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--ls-handle) 35%, transparent);
+    color: #fff;
+    cursor: grab;
+    display: flex;
+    flex: none;
+    height: 40px;
+    justify-content: center;
+    position: relative;
+    touch-action: none;
+    width: 40px;
+    z-index: 1;
+}
+
+#page-chat .logout-slider__handle:active {
+    cursor: grabbing;
+}
+
+#page-chat .logout-slider__handle:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ls-danger) 60%, transparent);
+    outline-offset: 2px;
+}
+
+#page-chat .logout-slider__handle .ui-icon {
+    height: 17px;
+    width: 17px;
+}
+
+#page-chat .logout-slider__countdown {
+    align-items: center;
+    display: flex;
+    inset: 0;
+    justify-content: space-between;
+    padding: 0 6px 0 16px;
+    position: absolute;
+    z-index: 2;
+}
+
+#page-chat .logout-slider__count {
+    color: color-mix(in srgb, #fff 92%, var(--ls-danger));
+    display: inline-flex;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1;
+    min-width: 14px;
+}
+
+:root:not([data-theme^="dark"]) #page-chat .logout-slider__count {
+    color: var(--ls-danger);
+}
+
+#page-chat .logout-slider__count > span {
+    display: inline-block;
+}
+
+#page-chat .logout-slider__cancel {
+    background: color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
+    border: 0;
+    border-radius: 10px;
+    color: var(--theme-text, #f4f4f5);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    height: 32px;
+    padding: 0 12px;
+    transition: background-color 0.18s ease;
+}
+
+#page-chat .logout-slider__cancel:hover,
+#page-chat .logout-slider__cancel:focus-visible {
+    background: color-mix(in srgb, var(--theme-text, #fff) 16%, transparent);
+    outline: none;
+}

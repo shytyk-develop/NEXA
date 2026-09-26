@@ -24,6 +24,7 @@ import { AsideToggle } from '../../components/AsideToggle';
 import { ExpandableTabs, type ExpandableTabItem } from '../../components/ExpandableTabs';
 import { Icon } from '../../components/Icon';
 import { StatusArc } from '../../components/StatusArc';
+import { LogoutSlider } from './LogoutSlider';
 import { FileTree, FileTreeItem, FileTreeList } from '@/components/ui/file-tree';
 import { ScrollBlur } from '@/components/ui/scroll-blur';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
@@ -1455,7 +1456,7 @@ const SidebarDock = memo(function SidebarDock({
                                 closeComposeSearch({ immediate: true });
                                 if (tab.rail === 'chats') showChatsView();
                                 else if (tab.rail === 'identity') openProfile('identity');
-                                else if (tab.rail === 'settings') openAppSettings('appearance');
+                                else if (tab.rail === 'settings') openAppSettings();
                             }}
                         />
                 </motion.div>
@@ -1601,12 +1602,8 @@ const ProfileNav = memo(function ProfileNav() {
                 </span>
             </button>
             <hr className="profile-nav-divider" />
-            <button id="uiProfileLogoutBtn" className="profile-nav-btn profile-nav-btn--logout" type="button">
-                <span className="profile-nav-tile" aria-hidden="true">
-                    <svg className="profile-nav-icon ui-icon" aria-hidden="true"><use href="#icon-logout" /></svg>
-                </span>
-                <span className="profile-nav-copy"><span className="profile-nav-label">Log out</span></span>
-            </button>
+            {/* Slide to log out → 3·2·1 countdown (cancellable) → nexa:logout (js/app.js). */}
+            <LogoutSlider />
             <div className="profile-nav-foot">
                 <div className="profile-e2ee-card">
                     <div className="profile-e2ee-head">
