@@ -970,6 +970,185 @@ def is_device_session_revoked_db(username: str, device_id: str, issued_at) -> bo
         release_connection(conn)
 
 
+# --- Auth sessions (refresh-token sessions, alembic 0010) -------------------
+
+def _auth_session_row_to_dict(row) -> dict:
+    return {
+        "id": str(row[0]),
+        "username": row[1],
+        "device_name": row[2] or "",
+        "user_agent": row[3] or "",
+        "ip_address": row[4] or "",
+        "last_active_at": row[5].isoformat() if row[5] else None,
+        "expires_at": row[6].isoformat() if row[6] else None,
+        "created_at": row[7].isoformat() if row[7] else None,
+    }
+
+
+_AUTH_SESSION_COLUMNS = "id, username, device_name, user_agent, ip_address, last_active_at, expires_at, created_at"
+
+
+def create_auth_session_db(
+    session_id: str,
+    username: str,
+    refresh_token_hash: str,
+    device_name: str,
+    user_agent: str,
+    ip_address: str,
+    ttl_seconds: int,
+) -> dict:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            f"""
+            INSERT INTO auth_sessions (id, username, refresh_token_hash, device_name, user_agent, ip_address, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW() + make_interval(secs => %s))
+            RETURNING {_AUTH_SESSION_COLUMNS}
+            """,
+            (
+                session_id,
+                username,
+                refresh_token_hash,
+                sanitize_device_text(device_name, 128),
+                sanitize_device_text(user_agent, 512),
+                sanitize_device_text(ip_address, 64),
+                ttl_seconds,
+            ),
+        )
+        row = cursor.fetchone()
+        conn.commit()
+        return _auth_session_row_to_dict(row)
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def get_auth_session_by_token_hash_db(refresh_token_hash: str) -> Optional[dict]:
+    """The session a refresh token belongs to (whatever its age)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            f"""
+            SELECT {_AUTH_SESSION_COLUMNS}
+            FROM auth_sessions
+            WHERE refresh_token_hash = %s
+            """,
+            (refresh_token_hash,),
+        )
+        row = cursor.fetchone()
+        return _auth_session_row_to_dict(row) if row else None
+    finally:
+        release_connection(conn)
+
+
+def is_auth_session_alive_db(session_id: str, idle_seconds: int) -> Optional[bool]:
+    """True alive, False expired, None no such session."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT expires_at > NOW() AND last_active_at > NOW() - make_interval(secs => %s)
+            FROM auth_sessions WHERE id = %s
+            """,
+            (idle_seconds, session_id),
+        )
+        row = cursor.fetchone()
+        return None if row is None else bool(row[0])
+    finally:
+        release_connection(conn)
+
+
+def touch_auth_session_db(session_id: str, ttl_seconds: int) -> None:
+    """A refresh: the session is active now, and its expiry slides forward."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            UPDATE auth_sessions
+            SET last_active_at = NOW(), expires_at = NOW() + make_interval(secs => %s)
+            WHERE id = %s
+            """,
+            (ttl_seconds, session_id),
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def auth_session_exists_db(session_id: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT 1 FROM auth_sessions WHERE id = %s", (session_id,))
+        return cursor.fetchone() is not None
+    finally:
+        release_connection(conn)
+
+
+def list_auth_sessions_db(username: str) -> list:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            f"""
+            SELECT {_AUTH_SESSION_COLUMNS}
+            FROM auth_sessions
+            WHERE username = %s AND expires_at > NOW()
+            ORDER BY last_active_at DESC
+            """,
+            (username,),
+        )
+        return [_auth_session_row_to_dict(row) for row in cursor.fetchall()]
+    finally:
+        release_connection(conn)
+
+
+def delete_auth_session_db(session_id: str, username: Optional[str] = None) -> bool:
+    """Delete one session (only the user's own when `username` is given)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        if username is None:
+            cursor.execute("DELETE FROM auth_sessions WHERE id = %s", (session_id,))
+        else:
+            cursor.execute("DELETE FROM auth_sessions WHERE id = %s AND username = %s", (session_id, username))
+        deleted = cursor.rowcount > 0
+        conn.commit()
+        return deleted
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def delete_other_auth_sessions_db(username: str, keep_session_id: str) -> int:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM auth_sessions WHERE username = %s AND id <> %s",
+            (username, keep_session_id),
+        )
+        count = cursor.rowcount
+        conn.commit()
+        return count
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
 def list_apns_targets_db(username: str) -> list:
     conn = get_connection()
     cursor = conn.cursor()
