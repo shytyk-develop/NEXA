@@ -1064,6 +1064,10 @@ function LibraryList({ children }: { children: ReactNode }) {
     // looked stuck between items; one spring target can't desync.
     const [activeBounds, setActiveBounds] = useState<HighlightBounds | null>(null);
     const activeRowRef = useRef<HTMLElement | null>(null);
+    // Placements that must not animate: coming back into view (Settings → Chats)
+    // and resizes. Only a click glides the pill.
+    const [instantPill, setInstantPill] = useState(true);
+    const hiddenRef = useRef(false);
 
     const measure = useCallback((element: HTMLElement): HighlightBounds | null => {
         const container = containerRef.current;
@@ -1081,6 +1085,10 @@ function LibraryList({ children }: { children: ReactNode }) {
     const setActiveRow = useCallback((element: HTMLElement | null, row: HTMLElement) => {
         if (element) {
             activeRowRef.current = element;
+            // Hidden (Settings open): nothing to measure — the observer places
+            // the pill, instantly, once the list is visible again.
+            if (!containerRef.current?.offsetWidth) return;
+            setInstantPill(false);
             setActiveBounds(measure(element));
             return;
         }
@@ -1096,7 +1104,16 @@ function LibraryList({ children }: { children: ReactNode }) {
         const container = containerRef.current;
         if (!container) return undefined;
         const observer = new ResizeObserver(() => {
-            if (activeRowRef.current) setActiveBounds(measure(activeRowRef.current));
+            // While hidden every rect is 0 × 0 at the top — measuring then parked
+            // the pill on Unread, and coming back it flew down to All chats.
+            if (!container.offsetWidth) {
+                hiddenRef.current = true;
+                return;
+            }
+            hiddenRef.current = false;
+            if (!activeRowRef.current) return;
+            setInstantPill(true);
+            setActiveBounds(measure(activeRowRef.current));
         });
         observer.observe(container);
         return () => observer.disconnect();
@@ -1161,7 +1178,7 @@ function LibraryList({ children }: { children: ReactNode }) {
                             initial={{ opacity: 0, ...activeBounds }}
                             animate={{ opacity: 1, ...activeBounds }}
                             exit={{ opacity: 0 }}
-                            transition={reduceMotion ? { duration: 0 } : LIBRARY_PILL_SPRING}
+                            transition={reduceMotion || instantPill ? { duration: 0 } : LIBRARY_PILL_SPRING}
                         />
                     ) : null}
                 </AnimatePresence>
