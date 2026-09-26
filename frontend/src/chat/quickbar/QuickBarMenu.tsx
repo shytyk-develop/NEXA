@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 
 /** Backdrop grow / shrink — soft, no overshoot (as in LinkWarningRow). */
 const growSpring = { type: 'spring', bounce: 0, duration: 0.45 } as const;
+/** How long after a selector toggles its backdrop may still be springing. */
+const SELECTOR_MOVE_MS = 600;
 /** Selected-option highlight slide. */
 const springTransition = { type: 'spring', damping: 30, stiffness: 400, mass: 1 } as const;
 /** Options wait for the backdrop to get going, then cascade in. */
@@ -208,6 +210,8 @@ function QuickBarMenu({ canReply, onReply, canCopy, onCopy, onDelete, canSave, o
     const [rowWidth, setRowWidth] = useState(0);
     const [rects, setRects] = useState<Partial<Record<Selector, Rect>>>({});
     const lastOpen = useRef<Selector | null>(null);
+    /** When a selector last opened / closed (the only moves its backdrop springs). */
+    const selectorToggledAt = useRef(0);
 
     // Trigger pills' spots in the row (their backdrops rest there). Layout
     // offsets, not getBoundingClientRect: the panel unfolds from scale(0.97),
@@ -263,10 +267,14 @@ function QuickBarMenu({ canReply, onReply, canCopy, onCopy, onDelete, canSave, o
     }, [open]);
 
     const openSelector = (id: Selector) => {
+        selectorToggledAt.current = performance.now();
         if (id === 'react') setEmoji(reactions?.current ?? null);
         setOpen(id);
     };
-    const cancel = () => setOpen(null);
+    const cancel = () => {
+        selectorToggledAt.current = performance.now();
+        setOpen(null);
+    };
 
     const onBarKeyDown = (event: KeyboardEvent) => {
         // Escape backs out of the selector only, not the whole bubble panel.
@@ -290,7 +298,12 @@ function QuickBarMenu({ canReply, onReply, canCopy, onCopy, onDelete, canSave, o
     };
 
     const fade = reduceMotion ? { duration: 0 } : { duration: TRIGGER_FADE };
-    const widthTransition = reduceMotion || !measured ? { duration: 0 } : growSpring;
+    // Backdrops spring only when a selector opens / closes. Any other re-measure
+    // (the bubble resizing — e.g. shrinking as the panel closes) moves them at
+    // once, glued to their pills: springing those made the solid pills trail
+    // behind the narrowing bubble, as if it wanted to widen again.
+    const selectorMoving = performance.now() - selectorToggledAt.current < SELECTOR_MOVE_MS;
+    const widthTransition = reduceMotion || !measured || !selectorMoving ? { duration: 0 } : growSpring;
     const restTransition = reduceMotion ? { duration: 0 } : REST_EASE;
 
     /**
@@ -503,7 +516,7 @@ function QuickBarMenu({ canReply, onReply, canCopy, onCopy, onDelete, canSave, o
                                 initial={false}
                                 animate={barState('delete')}
                                 onClick={() => {
-                                    setOpen(null);
+                                    cancel();
                                     onDelete();
                                 }}
                             >

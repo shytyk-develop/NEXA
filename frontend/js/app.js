@@ -148,7 +148,8 @@ import {
 } from './smartPaste.js';
 import { getPrivacyFlags, isChatMuted, toggleChatMuted, loadMutedChats } from './privacy.js';
 import { registerShortcuts } from './shortcuts.js';
-import { saveMessage, setSavedMessagesOwner } from '../src/chat/savedMessages.ts';
+import { saveMessage, setSavedMessageDeleted, setSavedMessagesOwner } from '../src/chat/savedMessages.ts';
+import { getDisplayLabel } from './profile.js';
 import {
     buildChatTranscript,
     downloadTextFile,
@@ -185,6 +186,7 @@ import {
     cacheRemoteProfileFromApi,
     clearProfileDirectory,
     ingestUserRecords,
+    resolveContactProfile,
 } from './profileDirectory.js';
 
 let socketConnection = null;
@@ -603,6 +605,14 @@ function applyActiveChatMessageDeletion(deletion) {
     }
 }
 
+/** "You", or the peer's display name, for a saved copy's "deleted by" note. */
+function describeDeleter(username) {
+    if (!username) return 'author';
+    if (state.myUsername && normalizeUsername(username) === normalizeUsername(state.myUsername)) return 'You';
+    const sidebarUser = state.sidebarChats.find((chat) => normalizeUsername(chat.username) === normalizeUsername(username));
+    return getDisplayLabel(username, resolveContactProfile(username, sidebarUser, state.myUsername));
+}
+
 function handleMessageDeletedEvent(data) {
     console.log('[WS RECEIVED]', data);
 
@@ -618,6 +628,12 @@ function handleMessageDeletedEvent(data) {
         partnerKey && data.message_id
             ? markRepliesUnavailable(partnerKey, data.message_id)
             : [];
+
+    // A saved copy outlives the chat message: flag it with who deleted it.
+    setSavedMessageDeleted(
+        { messageId: data.message_id, clientMessageId: data.client_message_id },
+        describeDeleter(data.deleted_by),
+    );
 
     const { changed, partner: affectedKey } = applyMessageDeleted(
         state.chatHistory,
@@ -879,6 +895,14 @@ registerOverlayActions({
         // The quick bar's delete button has its own Confirm step.
         if (payload?.messageId) deleteSingleMessage(payload.messageId, { confirmed: payload.confirmed === true });
     },
+    // Saved Messages → the message in the chat: scroll + a brief accent flash.
+    'message.jump': (payload) => {
+        const found = scrollToMessageById(payload?.messageId ?? null, {
+            clientMessageId: payload?.clientMessageId ?? null,
+            variant: 'saved',
+        });
+        if (!found) showToast('This message is no longer in the loaded chat.', 'info');
+    },
     'message.highlight': (payload) => {
         highlightMessageRow(payload?.messageId || payload?.clientMessageId);
     },
@@ -892,6 +916,8 @@ registerOverlayActions({
         const id = payload.messageId || payload.clientMessageId || `local-${Date.now()}`;
         saveMessage(partner, {
             id: String(id),
+            chatMessageId: payload.messageId ? String(payload.messageId) : undefined,
+            clientMessageId: payload.clientMessageId ? String(payload.clientMessageId) : undefined,
             author: payload.author || partner,
             text: payload.text,
             savedAt: Date.now(),
@@ -1919,6 +1945,7 @@ async function deleteSingleMessage(messageId, { confirmed = false } = {}) {
     };
 
     applyMessageDeleted(state.chatHistory, optimisticEvent, saveChatHistory, state.myUsername);
+    setSavedMessageDeleted({ messageId, clientMessageId }, 'You');
     const affectedReplyIds = markRepliesUnavailable(partner, messageId);
     if (state.currentTargetUser === partner) {
         removeMessageFromDom({ messageId, clientMessageId });
@@ -1933,6 +1960,8 @@ async function deleteSingleMessage(messageId, { confirmed = false } = {}) {
         console.error("Message delete failed:", err);
         state.chatHistory[partner] = snapshot;
         flushChatHistorySave();
+        // The delete didn't happen: the saved copy isn't "deleted" either.
+        setSavedMessageDeleted({ messageId, clientMessageId }, null);
         if (state.currentTargetUser === partner) {
             renderMessagesList(snapshot);
         }

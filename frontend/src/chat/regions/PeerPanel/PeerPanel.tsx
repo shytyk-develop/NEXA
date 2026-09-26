@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FocusEvent, type MouseEvent } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { BellOff, Check, ChevronRight, Eraser, Lock, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent, type MouseEvent } from 'react';
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react';
+import { BellOff, Check, ChevronRight, ChevronUp, Eraser, Eye, Lock, Paintbrush, Trash2 } from 'lucide-react';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
+import { cn } from '@/lib/utils';
 import { AsideToggle } from '../../components/AsideToggle';
 import { Icon } from '../../components/Icon';
 import { runOverlayAction } from '../../../../ui/overlays/overlayManager.js';
@@ -11,6 +12,7 @@ import { ScrollBlur } from '@/components/ui/scroll-blur';
 import {
     getActiveSavedMessages,
     getSavedMessagesPeer,
+    removeActiveSavedMessages,
     subscribeSavedMessages,
     type SavedMessage,
 } from '../../savedMessages';
@@ -374,25 +376,373 @@ function StackedCardsIllustration() {
 }
 
 /** Saved Messages card: rows share one sliding hover highlight (sidebar spring). */
+/** Two lines of the 12px / 1.45 preview — the collapsed height. */
+const PREVIEW_CLAMP_LINES = 2;
+/** Expanded preview cap; longer texts scroll inside the card. */
+const PREVIEW_MAX_PX = 220;
+/** How long a collapse eases the text's and the list's scroll into place. */
+const COLLAPSE_SCROLL_MS = 380;
+
+/** Eased scrollTop tween (ease-out cubic); a newer one on the element wins. */
+const scrollTweens = new WeakMap<HTMLElement, number>();
+function easeScrollTop(element: HTMLElement, to: number, duration: number) {
+    const from = element.scrollTop;
+    const run = (scrollTweens.get(element) ?? 0) + 1;
+    scrollTweens.set(element, run);
+    if (duration <= 0 || Math.abs(from - to) < 1) {
+        element.scrollTop = to;
+        return;
+    }
+    const start = performance.now();
+    const step = (now: number) => {
+        if (scrollTweens.get(element) !== run) return;
+        const t = Math.min(1, (now - start) / duration);
+        element.scrollTop = from + (to - from) * (1 - (1 - t) ** 3);
+        if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+/** Card expand / collapse (the list reflows with the real height each frame). */
+const previewSpring = { type: 'spring' as const, damping: 28, stiffness: 300, mass: 0.8 };
+/** Edit mode's quick moves (checkbox slot, bottom bar morphs): brisk, no overshoot. */
+const editSpring = { type: 'spring' as const, bounce: 0, duration: 0.22 };
+/** Bottom bar morphs (Edit ⇄ Done ⇄ Cancel): a lively spring, a touch of give. */
+const barMorphSpring = { type: 'spring' as const, damping: 25, stiffness: 320, mass: 0.7 };
+/** Delete selected ⇄ Cancel + Confirm Delete: opacity + scale only, no blur. */
+const confirmSpring = { type: 'spring' as const, damping: 25, stiffness: 320, mass: 0.6 };
+
+/**
+ * One saved message. The card area jumps to the message in the chat; the
+ * hover button (only when the text runs past two lines) expands the full text
+ * inline — its real height eases between the 2-line clamp and the full text
+ * (capped, then it scrolls). The "deleted by" note stays under it either way.
+ */
+function SavedMessageCard({
+    item,
+    reduceMotion,
+    editMode,
+    selected,
+    onToggleSelect,
+}: {
+    item: SavedMessage;
+    reduceMotion: boolean;
+    /** Edit mode: a checkbox slides in and a click (anywhere) selects. */
+    editMode: boolean;
+    selected: boolean;
+    onToggleSelect: () => void;
+}) {
+    const liRef = useRef<HTMLLIElement>(null);
+    const textRef = useRef<HTMLParagraphElement>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
+    /** The list's scroll viewport while a collapse is running (per-frame clamp). */
+    const collapseViewport = useRef<HTMLElement | null>(null);
+    const [expanded, setExpanded] = useState(false);
+    // The clamp comes off before growing and back on only after shrinking,
+    // so the ellipsis never snaps mid-motion.
+    const [clamped, setClamped] = useState(true);
+    // Scrollable only once fully open (no scrollbar flashing while it grows).
+    const [scrollable, setScrollable] = useState(false);
+    const [heights, setHeights] = useState<{ collapsed: number; full: number } | null>(null);
+    const date = new Date(item.savedAt);
+
+    // Measure the 2-line height and the full text height (card width changes → re-measure).
+    useLayoutEffect(() => {
+        const text = textRef.current;
+        if (!text) return undefined;
+        const measure = () => {
+            const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 17;
+            // A deleted original's card also carries the "deleted by" line: one
+            // preview line keeps it at the same collapsed card height (76px).
+            const collapsed = Math.round(lineHeight * (item.isOriginalDeleted ? 1 : PREVIEW_CLAMP_LINES));
+            const clampClass = ['is-clamped', 'is-clamped-1'].find((name) => text.classList.contains(name));
+            if (clampClass) text.classList.remove(clampClass);
+            const full = text.scrollHeight;
+            if (clampClass) text.classList.add(clampClass);
+            setHeights((prev) => (prev && prev.collapsed === collapsed && prev.full === full ? prev : { collapsed, full }));
+        };
+        measure();
+        // Re-measure once the width has settled, not on every frame of a resize
+        // (edit mode's checkbox slot animates every card's width: measuring per
+        // frame re-rendered each card and re-aimed its height spring each frame).
+        let timer = 0;
+        const observer = new ResizeObserver(() => {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(measure, 60);
+        });
+        observer.observe(text.parentElement ?? text);
+        return () => {
+            window.clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [item.text, item.isOriginalDeleted]);
+
+    const canExpand = Boolean(heights && heights.full > heights.collapsed + 2);
+    const target = heights
+        ? expanded
+            ? Math.min(heights.full, PREVIEW_MAX_PX)
+            : Math.min(heights.full, heights.collapsed)
+        : undefined;
+
+    const toggle = (event: MouseEvent) => {
+        event.stopPropagation();
+        // A mouse click mustn't leave focus (and so the eye) behind; a keyboard
+        // press (detail 0) keeps it, so the next key still works.
+        if (event.detail > 0) (event.currentTarget as HTMLElement).blur();
+        if (expanded) prepareCollapse();
+        setScrollable(false);
+        if (!expanded) setClamped(false);
+        setExpanded((value) => !value);
+    };
+
+    /**
+     * Collapsing: freeze the text's own scroll right away (before React
+     * re-renders), ease it back to the top, and move the list to where its
+     * scroll will end up once the card has shrunk — over the collapse itself,
+     * so the cards above arrive with it instead of dropping in at the end.
+     */
+    const prepareCollapse = () => {
+        const preview = previewRef.current;
+        if (!preview || !heights) return;
+        preview.style.overflowY = 'hidden';
+        const duration = reduceMotion ? 0 : COLLAPSE_SCROLL_MS;
+        easeScrollTop(preview, 0, duration);
+
+        const viewport = liRef.current?.closest<HTMLElement>('[data-slot="scroll-blur-viewport"]');
+        if (!viewport) return;
+        const shrink = preview.offsetHeight - Math.min(heights.full, heights.collapsed);
+        const endMax = Math.max(0, viewport.scrollHeight - shrink - viewport.clientHeight);
+        if (viewport.scrollTop > endMax) easeScrollTop(viewport, endMax, duration);
+        collapseViewport.current = viewport;
+    };
+
+    // Jumping needs the chat message; a deleted one has none — there the card
+    // area expands / collapses the text instead (so it never feels dead).
+    const onCardClick = (event: MouseEvent) => {
+        if (editMode) {
+            onToggleSelect();
+        } else if (!item.isOriginalDeleted) {
+            runOverlayAction('message.jump', {
+                messageId: item.chatMessageId || item.id,
+                clientMessageId: item.clientMessageId ?? null,
+            });
+        } else if (canExpand) {
+            toggle(event);
+        }
+    };
+
+    return (
+        <li
+            ref={liRef}
+            className="saved-message-item"
+        >
+            <div
+                className={cn(
+                    'saved-message-card',
+                    item.isOriginalDeleted && 'is-deleted',
+                    expanded && 'is-expanded',
+                    editMode && 'is-editing',
+                    selected && 'is-selected',
+                )}
+            >
+                {/* The whole card: jump to the message in the chat (deleted: expand) */}
+                <button
+                    type="button"
+                    className="saved-message-card__open"
+                    aria-label={`${item.author}: ${item.text.slice(0, 80)}`}
+                    role={editMode ? 'checkbox' : undefined}
+                    aria-checked={editMode ? selected : undefined}
+                    aria-disabled={(!editMode && item.isOriginalDeleted && !canExpand) || undefined}
+                    aria-expanded={!editMode && item.isOriginalDeleted && canExpand ? expanded : undefined}
+                    title={
+                        editMode
+                            ? selected
+                                ? 'Deselect'
+                                : 'Select'
+                            : item.isOriginalDeleted
+                            ? canExpand
+                                ? `Deleted in chat — ${expanded ? 'collapse' : 'view the saved text'}`
+                                : `Saved ${formatSavedDate(item.savedAt)} — deleted in chat`
+                            : `Saved ${formatSavedDate(item.savedAt)} — show in chat`
+                    }
+                    onClick={onCardClick}
+                />
+                {/* Edit mode: the checkbox slot opens its real width, so the rest eases over */}
+                <AnimatePresence initial={false}>
+                    {editMode ? (
+                        <motion.span
+                            key="check"
+                            className="saved-message-check-slot"
+                            aria-hidden="true"
+                            initial={{ opacity: 0, x: -12, width: 0, marginRight: -12 }}
+                            animate={{ opacity: 1, x: 0, width: 18, marginRight: 0 }}
+                            exit={{ opacity: 0, x: -12, width: 0, marginRight: -12 }}
+                            transition={reduceMotion ? { duration: 0 } : editSpring}
+                        >
+                            <span className={cn('saved-message-check', selected && 'is-checked')}>
+                                <AnimatePresence initial={false}>
+                                    {selected ? (
+                                        <motion.span
+                                            key="tick"
+                                            className="saved-message-check__tick"
+                                            initial={{ scale: 0.5, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0.5, opacity: 0 }}
+                                            transition={reduceMotion ? { duration: 0 } : { type: 'spring', bounce: 0.3, duration: 0.3 }}
+                                        >
+                                            <Check size={12} strokeWidth={3} />
+                                        </motion.span>
+                                    ) : null}
+                                </AnimatePresence>
+                            </span>
+                        </motion.span>
+                    ) : null}
+                </AnimatePresence>
+                <time className="saved-message-date" dateTime={date.toISOString()}>
+                    <span className="saved-message-date__day">{date.getDate()}</span>
+                    <span className="saved-message-date__month">{MONTH_SHORT.format(date)}</span>
+                </time>
+                <span className="saved-message-body">
+                    <span className="saved-message-author">{item.author}</span>
+                    <motion.div
+                        ref={previewRef}
+                        className={cn('saved-message-expanded-content', expanded && (scrollable || reduceMotion) && 'is-open')}
+                        initial={false}
+                        animate={target != null ? { height: target } : undefined}
+                        transition={reduceMotion ? { duration: 0 } : previewSpring}
+                        onUpdate={() => {
+                            // While collapsing, never let the list hang past its end.
+                            const viewport = collapseViewport.current;
+                            if (!viewport) return;
+                            const max = viewport.scrollHeight - viewport.clientHeight;
+                            if (viewport.scrollTop > max) viewport.scrollTop = max;
+                        }}
+                        onAnimationComplete={() => {
+                            if (previewRef.current) previewRef.current.style.overflowY = '';
+                            collapseViewport.current = null;
+                            if (expanded) setScrollable(true);
+                            else setClamped(true);
+                        }}
+                    >
+                        <p
+                            ref={textRef}
+                            className={cn(
+                                'saved-message-preview',
+                                clamped && (item.isOriginalDeleted ? 'is-clamped-1' : 'is-clamped'),
+                            )}
+                        >
+                            {item.text}
+                        </p>
+                    </motion.div>
+                    {/* The chat message is gone; this saved copy stays */}
+                    {item.isOriginalDeleted ? (
+                        <span className="saved-message-deleted" title={`Deleted in chat by ${item.deletedBy || 'author'}`}>
+                            <Trash2 size={12} strokeWidth={2.2} aria-hidden="true" />
+                            <span className="saved-message-deleted__text">Deleted by {item.deletedBy || 'author'}</span>
+                        </span>
+                    ) : null}
+                </span>
+                <span className="saved-message-actions">
+                    {canExpand && !editMode ? (
+                        <button
+                            type="button"
+                            className="saved-message-expand"
+                            aria-expanded={expanded}
+                            aria-label={expanded ? 'Collapse' : 'View inline'}
+                            title={expanded ? 'Collapse' : 'View inline'}
+                            onClick={toggle}
+                        >
+                            {expanded ? <ChevronUp size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
+                        </button>
+                    ) : null}
+                    <ChevronRight className="saved-message-chevron" size={16} strokeWidth={2} aria-hidden="true" />
+                </span>
+            </div>
+        </li>
+    );
+}
+
 function SavedMessages() {
     const items = useSyncExternalStore(subscribeSavedMessages, getActiveSavedMessages);
+    const peer = useSyncExternalStore(subscribeSavedMessages, getSavedMessagesPeer);
     const listRef = useRef<HTMLUListElement>(null);
-    const [highlightBounds, setHighlightBounds] = useState<HighlightBounds | null>(null);
     const reduceMotion = useReducedMotion() === true;
 
-    // Layout offsets, not getBoundingClientRect: the highlight lives inside the
-    // scrolling list (so it must be in the list's scroll space), and the cards
-    // enter with a small translate (a mid-animation rect put it off by pixels).
-    const setHighlightFromElement = useCallback((element: HTMLElement | null) => {
-        const list = listRef.current;
-        if (!(element && list && list.contains(element))) return;
-        setHighlightBounds({
-            top: element.offsetTop,
-            left: element.offsetLeft,
-            width: element.offsetWidth,
-            height: element.offsetHeight,
-        });
+    // Edit mode: select cards, then delete them in two steps (bar → confirm).
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+    const [confirming, setConfirming] = useState(false);
+
+    const exitEditMode = useCallback(() => {
+        setIsEditMode(false);
+        setSelectedIds(new Set());
+        setConfirming(false);
     }, []);
+
+    // Another chat, or nothing left to edit: leave edit mode.
+    useEffect(() => {
+        exitEditMode();
+    }, [peer, exitEditMode]);
+    useEffect(() => {
+        if (!items.length) exitEditMode();
+        // Drop selections of items that are gone.
+        setSelectedIds((prev) => {
+            const next = new Set([...prev].filter((id) => items.some((item) => item.id === id)));
+            return next.size === prev.size ? prev : next;
+        });
+    }, [items, exitEditMode]);
+
+    // Escape backs out one step: the confirmation, then edit mode.
+    useEffect(() => {
+        if (!isEditMode) return undefined;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            if (confirming) setConfirming(false);
+            else exitEditMode();
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [isEditMode, confirming, exitEditMode]);
+
+    const toggleEditMode = () => {
+        if (isEditMode) exitEditMode();
+        else {
+            setSelectedIds(new Set());
+            setConfirming(false);
+            setIsEditMode(true);
+        }
+    };
+
+    const toggleSelect = (id: string) => {
+        setConfirming(false);
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const deleteSelected = () => {
+        removeActiveSavedMessages([...selectedIds]);
+        exitEditMode();
+    };
+
+    const count = selectedIds.size;
+    // Always there when there's something to manage (it's the Edit entry too).
+    const showBar = items.length > 0;
+    const barGroupId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+    const barSpring = reduceMotion ? { duration: 0 } : barMorphSpring;
+    const confirmTransition = reduceMotion ? { duration: 0 } : confirmSpring;
+    // Label swap: the old one dissolves fast (before the pill reshapes), the
+    // new one blurs in just behind it.
+    const labelFade = reduceMotion
+        ? { initial: false as const }
+        : {
+              initial: { opacity: 0, filter: 'blur(3px)' },
+              animate: { opacity: 1, filter: 'blur(0px)' },
+              exit: { opacity: 0, filter: 'blur(3px)' },
+              transition: { duration: 0.12 },
+          };
 
     return (
         <section className="saved-messages-card" aria-labelledby="uiPeerSavedTitle">
@@ -416,51 +766,18 @@ function SavedMessages() {
                 >
                     <ul
                         ref={listRef}
-                        className="saved-messages-list"
-                        onMouseLeave={() => setHighlightBounds(null)}
+                        className={cn('saved-messages-list', showBar && 'has-bar')}
                     >
-                        <AnimatePresence>
-                            {highlightBounds ? (
-                                <motion.li
-                                    key="saved-highlight"
-                                    className="saved-messages-highlight"
-                                    aria-hidden="true"
-                                    initial={{ opacity: 0, ...highlightBounds }}
-                                    animate={{ opacity: 1, ...highlightBounds }}
-                                    exit={{ opacity: 0 }}
-                                    transition={reduceMotion ? instantHoverTransition : listHoverTransition}
-                                />
-                            ) : null}
-                        </AnimatePresence>
-                        {items.map((item: SavedMessage) => {
-                            const date = new Date(item.savedAt);
-                            return (
-                                <li
-                                    key={item.id}
-                                    className="saved-message-item"
-                                    onMouseEnter={(event) => setHighlightFromElement(event.currentTarget)}
-                                >
-                                    {/* Opens the saved message in the thread (scroll + highlight) */}
-                                    <button
-                                        type="button"
-                                        className="saved-message-card"
-                                        title={`Saved ${formatSavedDate(item.savedAt)} — show in chat`}
-                                        onFocus={(event) => setHighlightFromElement(event.currentTarget.parentElement)}
-                                        onClick={() => runOverlayAction('message.highlight', { messageId: item.id })}
-                                    >
-                                        <time className="saved-message-date" dateTime={date.toISOString()}>
-                                            <span className="saved-message-date__day">{date.getDate()}</span>
-                                            <span className="saved-message-date__month">{MONTH_SHORT.format(date)}</span>
-                                        </time>
-                                        <span className="saved-message-body">
-                                            <span className="saved-message-author">{item.author}</span>
-                                            <span className="saved-message-preview">{item.text}</span>
-                                        </span>
-                                        <ChevronRight className="saved-message-chevron" size={16} strokeWidth={2} aria-hidden="true" />
-                                    </button>
-                                </li>
-                            );
-                        })}
+                        {items.map((item: SavedMessage) => (
+                            <SavedMessageCard
+                                key={item.id}
+                                item={item}
+                                reduceMotion={reduceMotion}
+                                editMode={isEditMode}
+                                selected={selectedIds.has(item.id)}
+                                onToggleSelect={() => toggleSelect(item.id)}
+                            />
+                        ))}
                     </ul>
                 </ScrollBlur>
             ) : (
@@ -478,6 +795,156 @@ function SavedMessages() {
                     </Empty>
                 </div>
             )}
+
+            {/* Bottom control:
+                  idle     a compact [✎ Edit] pill, centred
+                  editing  the pill keeps its size and slides to the left edge as
+                           [Done]; the bar's ground fades in behind it and the
+                           count + [Delete selected] slide in from the right
+                  confirm  [ Cancel | Confirm Delete ]
+                Pill and red button are shared layout elements; labels crossfade. */}
+            <AnimatePresence>
+                {showBar ? (
+                    <motion.div
+                        key="dock"
+                        className={cn('saved-edit-dock', isEditMode && 'is-editing', confirming && 'is-confirming')}
+                        role="group"
+                        aria-label="Manage saved messages"
+                        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: 12 }}
+                        transition={barSpring}
+                    >
+                        <LayoutGroup id={`${barGroupId}-bar`}>
+                            {/* The bar's ground: only while editing */}
+                            <AnimatePresence initial={false}>
+                                {isEditMode ? (
+                                    <motion.span
+                                        key="ground"
+                                        className="saved-edit-dock__ground"
+                                        aria-hidden="true"
+                                        initial={reduceMotion ? false : { opacity: 0, scaleX: 0.55 }}
+                                        animate={{ opacity: 1, scaleX: 1 }}
+                                        exit={{ opacity: 0, scaleX: 0.55 }}
+                                        transition={barSpring}
+                                    />
+                                ) : null}
+                            </AnimatePresence>
+
+                            <AnimatePresence mode="popLayout" initial={false}>
+                                {confirming ? (
+                                    // Confirm: two equal capsules spring in on the same spot
+                                    <motion.div
+                                        key="confirm"
+                                        layout
+                                        className="saved-edit-confirm"
+                                        transition={confirmTransition}
+                                    >
+                                        <motion.button
+                                            type="button"
+                                            className="saved-edit-bar__btn saved-edit-confirm__btn"
+                                            initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9 }}
+                                            transition={confirmTransition}
+                                            onClick={() => setConfirming(false)}
+                                        >
+                                            Cancel
+                                        </motion.button>
+                                        <motion.button
+                                            type="button"
+                                            className="saved-edit-bar__btn saved-edit-bar__btn--danger saved-edit-confirm__btn"
+                                            initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9 }}
+                                            transition={confirmTransition}
+                                            aria-label={`Confirm: delete ${count} saved ${count === 1 ? 'message' : 'messages'}`}
+                                            onClick={deleteSelected}
+                                        >
+                                            Confirm Delete
+                                        </motion.button>
+                                    </motion.div>
+                                ) : (
+                                    // Main row: [✎ Edit] centred, or [Done · N · Delete selected]
+                                    <motion.div
+                                        key="main"
+                                        className="saved-edit-main"
+                                        initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.12 } }}
+                                        transition={confirmTransition}
+                                    >
+                                        <motion.button
+                                            type="button"
+                                            // Position only: the pill slides but is never scaled, so the
+                                            // label inside can't stretch (its size stays fixed by CSS).
+                                            layout="position"
+                                            layoutId={`${barGroupId}-edit-pill`}
+                                            className="saved-edit-pill"
+                                            style={{ borderRadius: 999 }}
+                                            transition={barSpring}
+                                            aria-pressed={isEditMode}
+                                            onClick={toggleEditMode}
+                                        >
+                                            <AnimatePresence mode="popLayout" initial={false}>
+                                                <motion.span
+                                                    key={isEditMode ? 'done' : 'edit'}
+                                                    className="saved-edit-bar__btn-label"
+                                                    {...labelFade}
+                                                >
+                                                    {!isEditMode ? <Paintbrush size={14} strokeWidth={2} aria-hidden="true" /> : null}
+                                                    {isEditMode ? 'Done' : 'Edit'}
+                                                </motion.span>
+                                            </AnimatePresence>
+                                        </motion.button>
+
+                                        <AnimatePresence mode="popLayout" initial={false}>
+                                            {isEditMode ? (
+                                                <motion.span
+                                                    key="count"
+                                                    layout="position"
+                                                    className="saved-edit-bar__count"
+                                                    aria-live="polite"
+                                                    aria-label={`${count} selected`}
+                                                    initial={reduceMotion ? false : { opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: 20, transition: { duration: 0.1 } }}
+                                                    transition={barSpring}
+                                                >
+                                                    {count}
+                                                </motion.span>
+                                            ) : null}
+                                        </AnimatePresence>
+
+                                        <AnimatePresence mode="popLayout" initial={false}>
+                                            {isEditMode ? (
+                                                <motion.button
+                                                    key="danger"
+                                                    type="button"
+                                                    layout="position"
+                                                    className="saved-edit-bar__btn saved-edit-bar__btn--danger"
+                                                    style={{ borderRadius: 999 }}
+                                                    initial={reduceMotion ? false : { opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: 20, transition: { duration: 0.1 } }}
+                                                    transition={barSpring}
+                                                    disabled={count === 0}
+                                                    onClick={() => setConfirming(true)}
+                                                >
+                                                    <span className="saved-edit-bar__btn-label">
+                                                        <Trash2 size={14} strokeWidth={2.25} aria-hidden="true" />
+                                                        Delete selected
+                                                    </span>
+                                                </motion.button>
+                                            ) : null}
+                                        </AnimatePresence>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </LayoutGroup>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
         </section>
     );
 }

@@ -290,8 +290,31 @@ html.is-swiping-message * {
     }
 }
 
+/* Jump from Saved Messages: a faint accent wash that eases out — no border,
+   nothing that lingers (js/ui.js removes the class after 2.4s) */
+.message-bubble.message-jump-pulse::after {
+    animation: jumpPulse 2.4s ease-out forwards;
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+}
+
+@keyframes jumpPulse {
+    0%,
+    25% {
+        background-color: color-mix(in srgb, var(--accent-primary, #ccff00) 10%, transparent);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .message-bubble.message-highlight-pulse::after {
+    .message-bubble.message-highlight-pulse::after,
+    .message-bubble.message-jump-pulse::after {
         animation-duration: 0.6s;
     }
 }
@@ -1086,6 +1109,21 @@ html.is-swiping-message * {
 .message-quickbar.is-open .message-quickbar__body {
     opacity: 1;
     transform: none;
+}
+
+/* Closing: contents fade out softly (200ms, ease-out) while the panel folds
+   and the bubble narrows on a slightly slower clock (340ms, set on the row by
+   js/messageQuickBar.js); hard-clipped meanwhile, so nothing paints past it */
+.message-quickbar.is-closing {
+    clip-path: inset(0);
+    overflow: hidden;
+}
+
+.message-quickbar.is-closing .message-quickbar__body {
+    opacity: 0;
+    transition:
+        opacity 200ms cubic-bezier(0.33, 0, 0.2, 1),
+        transform var(--quickbar-duration) var(--quickbar-ease);
 }
 
 .message-quickbar__actions {

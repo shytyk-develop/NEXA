@@ -8,6 +8,9 @@ import { MORE_REACTIONS, QUICK_REACTIONS } from './messageReactions.js';
 
 /** Keep in sync with `--quickbar-duration` in message-features.css. */
 const ANIM_MS = 280;
+/** Closing runs a little slower than opening (set on the bubble while it
+ *  closes; keep in sync with .message-quickbar.is-closing in the CSS). */
+const CLOSE_MS = 340;
 /** Reactions visible in the open bubble before the strip needs scrolling. */
 const PEEK_REACTIONS = 4.5;
 /** Same spring as the sidebar folder tree's hover highlight (file-tree.tsx). */
@@ -60,7 +63,7 @@ function pick(id, payload) {
  */
 function pickAfterClose(id, payload) {
     closeMessageQuickBar();
-    window.setTimeout(() => runOverlayAction(id, payload), prefersReducedMotion() ? 0 : ANIM_MS);
+    window.setTimeout(() => runOverlayAction(id, payload), prefersReducedMotion() ? 0 : CLOSE_MS);
 }
 
 /**
@@ -257,6 +260,15 @@ function removePanel(panel) {
     panel.remove();
 }
 
+/**
+ * The bubble's exact width (fractional, transform-free). offsetWidth rounds
+ * down: pinning a 216.4px bubble to 216px pushed its time onto a second line
+ * for the open / close, so the bubble jumped a line taller and back.
+ */
+function bubbleWidth(bubble) {
+    return parseFloat(getComputedStyle(bubble).width) || bubble.offsetWidth;
+}
+
 /** Latest width animation per bubble — a stale timer must not undo a newer run. */
 const widthRuns = new WeakMap();
 
@@ -292,7 +304,9 @@ function animateWidth(bubble, from, to, { keep = false } = {}) {
 
     bubble.addEventListener('transitionend', onEnd);
     // transitionend is skipped if the bubble is detached or the transition is interrupted.
-    window.setTimeout(settle, ANIM_MS + 80);
+    // Fallback: transitionend is skipped if detached / interrupted. Long enough
+    // for the slower close too.
+    window.setTimeout(settle, CLOSE_MS + 80);
 }
 
 /** Cancel any in-flight width animation and return the bubble to its natural width. */
@@ -308,7 +322,7 @@ function resetBubbleWidth(bubble) {
  * message like "hi" across the thread. Never narrower than the message itself.
  */
 function computeOpenWidth(bubble, panel, closedWidth) {
-    const fullWidth = bubble.offsetWidth; // max-content with the panel, capped by max-width
+    const fullWidth = bubbleWidth(bubble); // max-content with the panel, capped by max-width
     const strip = panel.querySelector('.message-quickbar__reactions');
     const reaction = strip?.querySelector('.message-quickbar__reaction');
     if (!strip || !reaction) return Math.max(closedWidth, fullWidth);
@@ -325,7 +339,13 @@ export function closeMessageQuickBar() {
 
     if (!bubble.isConnected) return;
 
-    const fromWidth = bubble.offsetWidth;
+    const fromWidth = bubbleWidth(bubble);
+    // Contents out first (a quick fade, hard-clipped to the panel) — before the
+    // bubble has visibly narrowed, so nothing of the full-width menu row (the
+    // Save / 🙂 pills) can show past its shrinking edge.
+    panel.classList.add('is-closing');
+    // The whole close (height fold, bubble width, radius) on the slower clock.
+    row.style.setProperty('--quickbar-duration', `${CLOSE_MS}ms`);
     row.classList.remove('has-quickbar');
     bubble.classList.remove('has-quickbar');
     panel.classList.remove('is-open');
@@ -339,6 +359,8 @@ export function closeMessageQuickBar() {
     whenCollapsed(panel, () => {
         // Reopened on this bubble meanwhile: the open path already removed this panel.
         if (!panel.isConnected || open?.panel === panel) return;
+        panel.classList.remove('is-closing');
+        row.style.removeProperty('--quickbar-duration');
         removePanel(panel);
         resetBubbleWidth(bubble);
         bubble.classList.remove('is-quickbar-layout');
@@ -364,7 +386,7 @@ function whenCollapsed(panel, done) {
     };
     panel.addEventListener('transitionend', onEnd);
     // transitionend is skipped if the panel is detached or the transition is interrupted.
-    window.setTimeout(finish, ANIM_MS + 80);
+    window.setTimeout(finish, CLOSE_MS + 80);
 }
 
 /**
@@ -409,9 +431,11 @@ function openBubblePanel(row, key, build, { followContent = false } = {}) {
     // so the natural width below is measured cleanly.
     const stale = bubble.querySelector(':scope > .message-quickbar');
     if (stale) removePanel(stale);
+    // A close cut short leaves its slower clock on the row: opening runs normal.
+    row.style.removeProperty('--quickbar-duration');
     resetBubbleWidth(bubble);
 
-    const closedWidth = bubble.offsetWidth;
+    const closedWidth = bubbleWidth(bubble);
     const panel = build();
     bubble.append(panel);
     // Text + time keep their natural width instead of spreading across the wider bubble.

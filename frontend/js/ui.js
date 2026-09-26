@@ -1640,31 +1640,41 @@ export function initMessageActions() {
     }, { passive: false });
 }
 
-/** Keep in sync with the .message-highlight-pulse animation in message-features.css. */
-const HIGHLIGHT_PULSE_MS = 1800;
+/** Keep in sync with the pulse animations in message-features.css. */
+const HIGHLIGHT_PULSES = {
+    // Reply link: a neutral wash.
+    reply: { className: 'message-highlight-pulse', ms: 1800 },
+    // Saved Messages jump: a faint accent wash that fades out, no ring.
+    saved: { className: 'message-jump-pulse', ms: 2400 },
+};
 
 /**
- * Smooth-scroll to a message and flash its bubble. Returns false when the message
- * isn't in the rendered thread (e.g. it has since been deleted).
+ * Smooth-scroll to a message and flash its bubble (a temporary pulse, never a
+ * lasting outline). Finds it by server id, or by client id for a message that
+ * hasn't synced. Returns false when it isn't in the rendered thread (e.g. it
+ * has since been deleted).
  */
-export function scrollToMessageById(messageId) {
-    if (messageId == null) return false;
-    const row = DOM.messagesDiv.querySelector(
-        `[data-message-id="${CSS.escape(String(messageId))}"]`
-    );
+export function scrollToMessageById(messageId, { clientMessageId = null, variant = 'reply' } = {}) {
+    const row =
+        (messageId != null &&
+            DOM.messagesDiv.querySelector(`[data-message-id="${CSS.escape(String(messageId))}"]`)) ||
+        (clientMessageId != null &&
+            DOM.messagesDiv.querySelector(`[data-client-message-id="${CSS.escape(String(clientMessageId))}"]`)) ||
+        null;
     if (!row) return false;
     row.scrollIntoView({ block: 'center', behavior: 'smooth' });
 
     const bubble = row.querySelector('.message-bubble');
+    const pulse = HIGHLIGHT_PULSES[variant] || HIGHLIGHT_PULSES.reply;
     if (bubble) {
         // Restart the pulse if it's already running (repeat clicks).
-        bubble.classList.remove('message-highlight-pulse');
+        Object.values(HIGHLIGHT_PULSES).forEach(({ className }) => bubble.classList.remove(className));
         void bubble.offsetWidth;
-        bubble.classList.add('message-highlight-pulse');
+        bubble.classList.add(pulse.className);
         window.clearTimeout(Number(bubble.dataset.pulseTimer));
         bubble.dataset.pulseTimer = String(window.setTimeout(() => {
-            bubble.classList.remove('message-highlight-pulse');
-        }, HIGHLIGHT_PULSE_MS));
+            bubble.classList.remove(pulse.className);
+        }, pulse.ms));
     }
     return true;
 }
