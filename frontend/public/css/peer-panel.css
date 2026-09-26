@@ -463,43 +463,13 @@
     width: 100%;
 }
 
-/* Progressive blur over the bottom of the photo: one full-width layer —
-   strong backdrop blur, masked from full at the bottom to none at its top,
-   plus a card-colour wash so it melts into the card. (A separately filter-blurred band
-   faded out at the sides, so it's gone.) Photos only — pseudo-elements
-   survive applyContactAvatar's replaceChildren(). */
+/* The photo shows clean — no overlay at the bottom. clip-path keeps it on
+   the rounded corners (overflow alone can leave square edges in Chromium /
+   WebKit on composited images). */
 #page-chat #uiPeerAvatar.has-photo {
-    /* overflow alone doesn't clip backdrop-filter at rounded corners in
-       Chromium/WebKit; clip-path (same radius) does, and isolation keeps the
-       overlay's compositing inside the photo. */
     clip-path: inset(0 round calc(var(--peer-card-radius) - 13px));
-    isolation: isolate;
     overflow: hidden !important;
     position: relative;
-}
-
-#page-chat #uiPeerAvatar.has-photo::after {
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-    /* Card-coloured wash (#FFFFFF on the light themes) so the photo's bottom
-       dissolves into the card instead of darkening */
-    background: linear-gradient(
-        to top,
-        color-mix(in srgb, var(--peer-surface) 85%, transparent) 0%,
-        color-mix(in srgb, var(--peer-surface) 45%, transparent) 40%,
-        transparent 100%
-    );
-    border-bottom-left-radius: inherit;
-    border-bottom-right-radius: inherit;
-    bottom: 0;
-    content: "";
-    height: 45%;
-    left: 0;
-    -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 40%, rgba(0, 0, 0, 0) 100%);
-    mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 40%, rgba(0, 0, 0, 0) 100%);
-    pointer-events: none;
-    position: absolute;
-    right: 0;
 }
 
 .profile-title-row {
