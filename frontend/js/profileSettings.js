@@ -304,7 +304,7 @@ export function onProfilePanelOpen(sectionOverride) {
 }
 
 const PROFILE_SECTION_META = {
-    identity: ['Profile', 'Manage your identity. Visible only to you.'],
+    identity: ['Profile settings', 'Manage your identity. Visible only to you.'],
     appearance: ['Appearance', 'Theme and how chats look.'],
     security: ['Security', 'Built with privacy by design.'],
     privacy: ['Privacy', 'Control your visibility and interactions.'],
@@ -442,7 +442,7 @@ function hydrateIdentity(username) {
         setCopyEnabled(editBtn, false);
         setCopyEnabled(copyLinkBtn, false);
     } else {
-        if (usernameEl) usernameEl.textContent = `@${username}`;
+        if (usernameEl) usernameEl.textContent = username;
         if (linkEl) linkEl.textContent = profileLinkFor(username);
         if (hintEl) {
             hintEl.textContent = `@${username} is available`;
@@ -493,17 +493,25 @@ async function hydrateUserId(username) {
  * fingerprint → every cell off.
  */
 function renderFingerprintGrid(fp) {
-    const grid = $p('uiProfileFpGrid');
-    if (!grid) return;
     const hex = String(fp || '').replace(/[^0-9a-f]/gi, '').slice(0, 16).padEnd(16, '0');
-    const cells = [];
-    for (let i = 0; i < 64; i += 1) {
-        const nibble = parseInt(hex[i >> 2], 16) || 0;
-        const cell = document.createElement('i');
-        if (fp && (nibble >> (3 - (i & 3))) & 1) cell.className = 'is-on';
-        cells.push(cell);
-    }
-    grid.replaceChildren(...cells);
+    // Security → Fingerprint and Profile → Identity key draw the same pattern.
+    [$p('uiProfileFpGrid'), $p('uiPfKeyGrid')].forEach((grid) => {
+        if (!grid) return;
+        const cells = [];
+        for (let i = 0; i < 64; i += 1) {
+            const nibble = parseInt(hex[i >> 2], 16) || 0;
+            const cell = document.createElement('i');
+            if (fp && (nibble >> (3 - (i & 3))) & 1) cell.className = 'is-on';
+            cells.push(cell);
+        }
+        grid.replaceChildren(...cells);
+    });
+    // Profile → Identity key: the first 24 hex digits in groups of four.
+    const text = String(fp || '').replace(/\s/g, '').toUpperCase();
+    const groups = text ? text.slice(0, 24).match(/.{1,4}/g).join(' ') : '[KEY FINGERPRINT]';
+    document.querySelectorAll('#uiProfilePanel [data-pf-bind="fingerprint"]').forEach((el) => {
+        el.textContent = groups;
+    });
 }
 
 async function hydrateSecurity() {
@@ -1096,7 +1104,7 @@ function mountStatusSwitcher() {
     const host = $p('uiProfileStatusSwitcher');
     const select = $p('uiProfileStatus');
     if (!host || !select || statusSwitcher) return;
-    import('../src/chat/profile/StatusSwitcher.tsx')
+    import('../src/chat/profile/StatusGrid.tsx')
         .then(({ mountStatusSwitcher: mount }) => {
             statusSwitcher = mount(host, {
                 value: sanitizeProfileStatus(select.value),
@@ -1128,8 +1136,14 @@ function updateCharCounts() {
     const bioCount = $p('uiProfileBioCount');
     const nameLen = [...(draftProfile.displayName || '')].length;
     const bioLen = [...(draftProfile.bio || '')].length;
-    if (nameCount) nameCount.textContent = `${nameLen} / ${PROFILE_LIMITS.displayName}`;
-    if (bioCount) bioCount.textContent = `${bioLen} / ${PROFILE_LIMITS.bio}`;
+    if (nameCount) nameCount.textContent = `${nameLen}/${PROFILE_LIMITS.displayName}`;
+    if (bioCount) bioCount.textContent = `${bioLen} / ${PROFILE_LIMITS.bio} characters`;
+    // Bio ring: how full the bio is (the CSS eases the arc between values).
+    const pct = Math.round((bioLen / PROFILE_LIMITS.bio) * 100);
+    const ring = $p('uiPfBioRing');
+    if (ring) ring.style.strokeDashoffset = String(100 - pct);
+    const pctEl = $p('uiPfBioPct');
+    if (pctEl) pctEl.textContent = String(pct);
 }
 
 function updatePreview(username) {
@@ -1157,6 +1171,7 @@ function updatePreview(username) {
         previewStatus.className = `profile-preview-status is-${status}`;
     }
     if (previewStatusLabel) previewStatusLabel.textContent = statusLabel(status);
+    syncProfileBindings(username, label, status);
 
     const avatarZone = $p('uiProfileAvatarZone');
     const hue = getAvatarHue(username);
@@ -1186,6 +1201,43 @@ function updatePreview(username) {
         }
     }
     syncHeaderAmbient(username);
+}
+
+/** Status names on the Profile page (the status grid's wording). */
+const PROFILE_STATUS_UI = { available: 'Online', away: 'Away', busy: 'Focus', invisible: 'Invisible' };
+const PROFILE_STATUS_ORDER = ['available', 'away', 'busy', 'invisible'];
+
+/**
+ * Profile page mirrors (hero + live preview): every [data-pf-bind] and
+ * [data-pf-status] follows the form as you type or pick a status.
+ */
+function syncProfileBindings(username, label, status) {
+    const panel = document.getElementById('uiProfilePanel');
+    if (!panel) return;
+    const set = (key, value) => panel.querySelectorAll(`[data-pf-bind="${key}"]`).forEach((el) => {
+        if (el.textContent !== value) el.textContent = value;
+    });
+    set('name', label);
+    set('handle', username ? `@${username}` : '@—');
+    set('status-label', PROFILE_STATUS_UI[status] || PROFILE_STATUS_UI.available);
+    set('initials', [...label][0]?.toUpperCase() || '?');
+    panel.querySelectorAll('[data-pf-status]').forEach((el) => {
+        el.dataset.pfStatus = status;
+    });
+    panel.querySelectorAll('[data-pf-bind="avatar-img"]').forEach((img) => {
+        if (avatarPreviewUrl) {
+            img.src = avatarPreviewUrl;
+            img.classList.remove('hidden');
+        } else {
+            img.removeAttribute('src');
+            img.classList.add('hidden');
+        }
+    });
+    const count = $p('uiPfStatusCount');
+    if (count) {
+        const index = Math.max(0, PROFILE_STATUS_ORDER.indexOf(status)) + 1;
+        count.textContent = `0${index} / 0${PROFILE_STATUS_ORDER.length}`;
+    }
 }
 
 function renderAvatar(ringEl, initialsEl, imgEl, username, dataUrl) {
@@ -1440,13 +1492,23 @@ function onUsernameEdit() {
     ctx?.showToast?.('Username is your login and can’t be changed.', 'info');
 }
 
+/** Copy the profile link; the button itself confirms (check + "Copied!" for 2s). */
 async function copyProfileLink() {
     const username = resolveUsername();
     if (!username) {
         ctx?.showToast?.('Not signed in.', 'error');
         return;
     }
-    await copyField(profileLinkFor(username));
+    if (!(await copyField(profileLinkFor(username), { quiet: true }))) return;
+    const btn = $p('uiProfileCopyLink');
+    if (!btn) return;
+    btn.classList.add('is-copied');
+    btn.setAttribute('aria-label', 'Link copied');
+    window.clearTimeout(Number(btn.dataset.copiedTimer));
+    btn.dataset.copiedTimer = String(window.setTimeout(() => {
+        btn.classList.remove('is-copied');
+        btn.removeAttribute('aria-label');
+    }, 2000));
 }
 
 async function copyUserId() {

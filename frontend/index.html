@@ -1080,6 +1080,14 @@
                         <h2 id="uiProfileTitle">Profile</h2>
                         <p id="uiProfileHeadSub" class="profile-head-sub">Manage your identity. Visible only to you.</p>
                     </div>
+                    <!-- Profile: the staged edits' Cancel / Save changes (identity only). -->
+                    <div class="pf-actions">
+                        <button id="uiProfileResetBtn" class="pf-btn" type="button" disabled>Cancel</button>
+                        <button id="uiProfileSaveChangesBtn" class="pf-btn pf-btn--save" type="button" disabled>
+                            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.9 2.9 6.1-6.6"/></svg>
+                            Save changes
+                        </button>
+                    </div>
                     <!-- Privacy: how many of the four sharing switches are on (js). -->
                     <span id="uiPrivacySummary" class="pv-summary" aria-live="polite">
                         <span class="pv-summary__bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
@@ -1088,104 +1096,149 @@
                     <button id="uiCloseProfileBtn" class="mini-icon-btn profile-close-btn" type="button" title="Close profile" aria-label="Close profile"><svg class="ui-icon" aria-hidden="true"><use href="#icon-x"/></svg></button>
                 </header>
                 <div class="profile-body">
-                    <div data-profile-section="identity" class="profile-identity-layout hidden">
-                        <!-- Header card: avatar, name + verified, public link · View profile -->
-                        <header id="uiProfileHeaderCard" class="ps-header">
-                            <div id="uiProfileAvatarZone" class="profile-avatar-zone ps-header__avatar" role="button" tabindex="0" aria-label="Change photo — click or drop an image">
-                                <img id="uiProfileAvatarImg" class="hidden" alt="">
-                                <span id="uiProfileAvatarInitials" class="profile-avatar-initials">?</span>
-                            </div>
-                            <div class="ps-header__copy">
-                                <p class="ps-header__name">
-                                    <span id="uiProfilePreviewName">—</span>
-                                    <svg class="ps-header__verified ui-icon" role="img" aria-label="Verified"><title>Verified — end-to-end encrypted identity</title><use href="#icon-check-circle"/></svg>
-                                </p>
-                                <p id="uiProfileLink" class="ps-header__link">—</p>
-                                <!-- Bio, or the status when there's no bio (js: updatePreview). -->
-                                <p id="uiProfilePreviewBio" class="ps-header__bio is-placeholder">Available</p>
-                            </div>
-                        </header>
-
-                        <!-- Page header: title · Cancel / Save changes -->
-                        <div class="ps-pagehead">
-                            <div class="ps-pagehead__copy">
-                                <h3 class="ps-pagehead__title">Profile Settings</h3>
-                                <p class="ps-pagehead__sub">Update your public profile, company branding and social presence.</p>
-                            </div>
-                            <div class="ps-pagehead__actions">
-                                <button id="uiProfileResetBtn" class="ps-btn ps-btn--ghost" type="button" disabled>Cancel</button>
-                                <button id="uiProfileSaveChangesBtn" class="ps-btn ps-btn--primary" type="button" disabled>Save changes</button>
-                            </div>
-                        </div>
-
-                        <!-- One card; rows split by hairlines. -->
-                        <div class="ps-card">
-                            <section class="ps-row" aria-labelledby="uiPsPublicTitle">
-                                <div class="ps-row__intro">
-                                    <h4 id="uiPsPublicTitle" class="ps-row__title">Public profile</h4>
-                                    <p class="ps-row__desc">This will be displayed on your primary Nexa workspace.</p>
+                    <!-- Profile settings — images/Group 44.png: a 12-column bento — hero +
+                         status, public profile + bio + photo, live preview + identity key.
+                         [data-pf-bind] mirror the form live (js/profileSettings.js). -->
+                    <div data-profile-section="identity" class="profile-identity-layout pf-page hidden">
+                        <div class="pf-grid">
+                            <section id="uiProfileHeaderCard" class="pf-card pf-hero" style="--i: 0" aria-label="Your profile">
+                                <span class="pf-hero__dots" aria-hidden="true"></span>
+                                <div class="pf-hero__avatar-wrap" data-pf-status="available">
+                                    <div id="uiProfileAvatarZone" class="profile-avatar-zone pf-hero__avatar" role="button" tabindex="0" aria-label="Change photo — click or drop an image">
+                                        <img id="uiProfileAvatarImg" class="hidden" alt="">
+                                        <span id="uiProfileAvatarInitials" class="profile-avatar-initials">?</span>
+                                    </div>
+                                    <span class="pf-hero__badge"><i aria-hidden="true"></i><span data-pf-bind="status-label">Online</span></span>
                                 </div>
-                                <div class="ps-row__body">
-                                    <label for="uiProfileDisplayName" class="ps-sr-only">Display name</label>
-                                    <div class="ps-input">
-                                        <input id="uiProfileDisplayName" type="text" maxlength="32" placeholder="Display name" autocomplete="nickname" spellcheck="false">
-                                        <span id="uiProfileNameCount" class="ps-input__count" aria-hidden="true">0 / 32</span>
+                                <div class="pf-hero__copy">
+                                    <h3 class="pf-hero__name">
+                                        <span id="uiProfilePreviewName">—</span>
+                                        <svg class="pf-verified" viewBox="0 0 20 20" role="img" aria-label="Verified">
+                                            <title>Verified — end-to-end encrypted identity</title>
+                                            <rect x="3.5" y="3.5" width="13" height="13" rx="3.5"/>
+                                            <rect x="3.5" y="3.5" width="13" height="13" rx="3.5" transform="rotate(45 10 10)"/>
+                                            <path class="pf-verified__check" d="m6.8 10.2 2.2 2.2 4.2-4.6"/>
+                                        </svg>
+                                    </h3>
+                                    <p class="pf-hero__link"><span class="is-muted">nexa.to/</span><span data-pf-bind="handle">@—</span></p>
+                                    <!-- Bio, or the status when there's no bio (js: updatePreview). -->
+                                    <p id="uiProfilePreviewBio" class="pf-hero__bio is-placeholder">Available</p>
+                                    <div class="pf-hero__tags">
+                                        <span class="pf-tag"><svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg>End-to-end encrypted</span>
+                                        <span class="pf-tag">Primary workspace</span>
                                     </div>
-                                    <div class="ps-prefix-input" role="group" aria-label="Profile link">
-                                        <span class="ps-prefix-input__prefix" aria-hidden="true">nexa.to/</span>
-                                        <span id="uiProfileUsername" class="ps-prefix-input__value">Loading…</span>
-                                        <button id="uiProfileCopyLink" class="profile-field-action" type="button">Copy</button>
-                                    </div>
-                                    <p id="uiProfileUsernameHint" class="profile-field-hint is-ok">Your username is unique.</p>
                                 </div>
                             </section>
 
-                            <section class="ps-row" aria-labelledby="uiPsPhotoTitle">
-                                <div class="ps-row__intro">
-                                    <h4 id="uiPsPhotoTitle" class="ps-row__title">Profile photo</h4>
-                                    <p class="ps-row__desc">Upload a high resolution PNG, JPG or WebP square image.</p>
+                            <section class="pf-card pf-status" style="--i: 1" aria-labelledby="uiPfStatusTitle">
+                                <div class="pf-card__head">
+                                    <div>
+                                        <h4 id="uiPfStatusTitle" class="pf-card__title">Status</h4>
+                                        <p class="pf-card__sub">Set your current availability.</p>
+                                    </div>
+                                    <span id="uiPfStatusCount" class="pf-card__meta">01 / 04</span>
                                 </div>
-                                <div class="ps-row__body ps-photo">
-                                    <button id="uiProfileAvatarUploadBtn" class="ps-dropzone" type="button">
-                                        <span class="ps-dropzone__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-upload"/></svg></span>
-                                        <span class="ps-dropzone__text"><strong>Click to upload</strong> or drag and drop</span>
-                                        <span class="ps-dropzone__hint">PNG, JPG or WebP (max. 512KB)</span>
+                                <!-- Status grid (React island: src/chat/profile/StatusGrid.tsx); the hidden native select stays the source of truth. -->
+                                <div id="uiProfileStatusSwitcher" class="pf-status__host"></div>
+                                <select id="uiProfileStatus" class="ps-select__native" aria-hidden="true" tabindex="-1">
+                                    <option value="available">Online</option>
+                                    <option value="away">Away</option>
+                                    <option value="busy">Focus</option>
+                                    <option value="invisible">Invisible</option>
+                                </select>
+                            </section>
+
+                            <section class="pf-card pf-public" style="--i: 2" aria-labelledby="uiPfPublicTitle">
+                                <h4 id="uiPfPublicTitle" class="pf-card__title">Public profile</h4>
+                                <p class="pf-card__sub">Displayed on your primary Nexa workspace.</p>
+                                <label for="uiProfileDisplayName" class="pf-label">Display name</label>
+                                <div class="pf-field">
+                                    <input id="uiProfileDisplayName" type="text" maxlength="32" placeholder="Display name" autocomplete="nickname" spellcheck="false">
+                                    <span id="uiProfileNameCount" class="pf-field__count" aria-hidden="true">0/32</span>
+                                </div>
+                                <span class="pf-label">Handle</span>
+                                <div class="pf-handle" role="group" aria-label="Profile link">
+                                    <span class="pf-handle__prefix" aria-hidden="true">nexa.to/@</span>
+                                    <span id="uiProfileUsername" class="pf-handle__value">—</span>
+                                    <button id="uiProfileCopyLink" class="pf-copy" type="button">
+                                        <span class="pf-copy__icons" aria-hidden="true">
+                                            <svg class="ui-icon is-copy"><use href="#icon-copy"/></svg>
+                                            <svg class="is-check" viewBox="0 0 16 16"><path d="m3.5 8.4 2.9 2.9 6.1-6.6"/></svg>
+                                        </span>
+                                        <span class="pf-copy__labels">
+                                            <span class="is-copy">Copy</span>
+                                            <span class="is-check" aria-hidden="true">Copied!</span>
+                                        </span>
                                     </button>
-                                    <!-- Only shown while there's a photo to remove. -->
-                                    <button id="uiProfileAvatarRemoveBtn" class="ps-photo__remove" type="button">Remove photo</button>
-                                    <input id="uiProfileAvatarInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
                                 </div>
+                                <p id="uiProfileUsernameHint" class="pf-hint is-ok">Your username is unique.</p>
                             </section>
 
-                            <section class="ps-row" aria-labelledby="uiPsBioTitle">
-                                <div class="ps-row__intro">
-                                    <h4 id="uiPsBioTitle" class="ps-row__title">Bio</h4>
-                                    <p class="ps-row__desc">Briefly describe your company or personal role.</p>
+                            <section class="pf-card pf-bio" style="--i: 3" aria-labelledby="uiPfBioTitle">
+                                <div class="pf-card__head">
+                                    <div>
+                                        <h4 id="uiPfBioTitle" class="pf-card__title">Bio</h4>
+                                        <p class="pf-card__sub">Your company or personal role.</p>
+                                    </div>
+                                    <span class="pf-ring" aria-hidden="true">
+                                        <svg viewBox="0 0 40 40"><circle class="is-track" cx="20" cy="20" r="16"/><circle id="uiPfBioRing" class="is-arc" cx="20" cy="20" r="16" pathLength="100"/></svg>
+                                        <span id="uiPfBioPct">0</span>
+                                    </span>
                                 </div>
-                                <div class="ps-row__body">
-                                    <label for="uiProfileBio" class="ps-sr-only">Bio</label>
-                                    <div class="ps-input ps-input--area">
-                                        <textarea id="uiProfileBio" maxlength="140" rows="4" placeholder="A few words about you" autocomplete="off" spellcheck="true"></textarea>
-                                        <span id="uiProfileBioCount" class="ps-input__count" aria-hidden="true">0 / 140</span>
+                                <label for="uiProfileBio" class="ps-sr-only">Bio</label>
+                                <textarea id="uiProfileBio" class="pf-textarea" maxlength="140" placeholder="A few words about you" autocomplete="off" spellcheck="true"></textarea>
+                                <span id="uiProfileBioCount" class="pf-bio__count" aria-live="polite">0 / 140 characters</span>
+                            </section>
+
+                            <section class="pf-card pf-photo" style="--i: 4" aria-labelledby="uiPfPhotoTitle">
+                                <h4 id="uiPfPhotoTitle" class="pf-card__title">Profile photo</h4>
+                                <p class="pf-card__sub">Square PNG, JPG or WebP.</p>
+                                <button id="uiProfileAvatarUploadBtn" class="pf-drop" type="button">
+                                    <span class="pf-drop__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-upload"/></svg></span>
+                                    <span class="pf-drop__title">Click to upload</span>
+                                    <span class="pf-drop__hint">or drag and drop <br>max. 512 KB</span>
+                                </button>
+                                <button id="uiProfileAvatarRemoveBtn" class="pf-remove" type="button">Remove photo</button>
+                                <input id="uiProfileAvatarInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
+                            </section>
+
+                            <section class="pf-card pf-preview" style="--i: 5" aria-labelledby="uiPfPreviewTitle">
+                                <div class="pf-preview__copy">
+                                    <h4 id="uiPfPreviewTitle" class="pf-card__title">Preview</h4>
+                                    <p class="pf-card__sub">How you appear in your contacts' chat list.</p>
+                                    <p class="pf-preview__live"><i aria-hidden="true"></i>Live · updates as you type</p>
+                                </div>
+                                <div class="pf-preview__list" aria-hidden="true">
+                                    <div class="pf-preview__row is-you" data-pf-status="available">
+                                        <span class="pf-preview__avatar">
+                                            <img data-pf-bind="avatar-img" class="hidden" alt="">
+                                            <span data-pf-bind="initials">?</span>
+                                            <i class="pf-preview__dot"></i>
+                                        </span>
+                                        <span class="pf-preview__text">
+                                            <span class="pf-preview__name" data-pf-bind="name">—</span>
+                                            <span class="pf-preview__meta"><span data-pf-bind="handle">@—</span> · <span data-pf-bind="status-label">Online</span></span>
+                                        </span>
+                                        <span class="pf-preview__time">now</span>
+                                    </div>
+                                    <div class="pf-preview__row is-ghost">
+                                        <span class="pf-preview__avatar"></span>
+                                        <span class="pf-preview__text"><i></i><i></i></span>
                                     </div>
                                 </div>
                             </section>
 
-                            <section class="ps-row" aria-labelledby="uiPsStatusTitle">
-                                <div class="ps-row__intro">
-                                    <h4 id="uiPsStatusTitle" class="ps-row__title">Status</h4>
-                                    <p class="ps-row__desc">Set your current availability profile.</p>
+                            <section class="pf-card pf-key" style="--i: 6" aria-labelledby="uiPfKeyTitle">
+                                <div class="pf-key__copy">
+                                    <h4 id="uiPfKeyTitle" class="pf-card__title pf-key__title">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 8.8-8.8M16 7l3 3M18.5 4.5l2 2"/></svg>
+                                        Identity key
+                                    </h4>
+                                    <p class="pf-card__sub">Compare with a contact in person to verify encryption.</p>
+                                    <p class="pf-key__fp" data-pf-bind="fingerprint">[KEY FINGERPRINT]</p>
                                 </div>
-                                <div class="ps-row__body">
-                                    <!-- Status switcher (React island); the hidden native select stays the source of truth. -->
-                                    <div id="uiProfileStatusSwitcher" class="ps-status"></div>
-                                    <select id="uiProfileStatus" class="ps-select__native" aria-hidden="true" tabindex="-1">
-                                        <option value="available">Available</option>
-                                        <option value="away">Away</option>
-                                        <option value="busy">Busy</option>
-                                        <option value="invisible">Invisible</option>
-                                    </select>
-                                </div>
+                                <!-- The same 8×8 pattern as Security → Fingerprint (js). -->
+                                <span id="uiPfKeyGrid" class="pf-key__grid sec-fp__grid" aria-hidden="true"></span>
                             </section>
                         </div>
                     </div>
