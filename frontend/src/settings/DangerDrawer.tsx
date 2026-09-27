@@ -25,11 +25,18 @@ export type DangerKind = 'history' | 'account';
 
 export type DangerDrawerSource = {
     kind: DangerKind;
-    /** Performs the action; throws with a user-facing message on failure. */
-    run: () => Promise<void>;
+    /**
+     * Performs the action; throws with a user-facing message on failure.
+     * Account deletion gets the password typed in the drawer (the server
+     * checks it); a thrown error with .status 400 keeps the password step open.
+     */
+    run: (password?: string) => Promise<void>;
+    /** After the "done" view has shown for a moment; the drawer closes first. */
+    onDone?: () => void;
 };
 
-type Step = 'warn' | 'code' | 'busy' | 'done' | 'failed';
+/** Clear history confirms with an on-screen code; deleting the account, with the password. */
+type Step = 'warn' | 'code' | 'password' | 'busy' | 'done' | 'failed';
 
 const COPY: Record<DangerKind, {
     title: string;
@@ -86,6 +93,9 @@ function DangerDrawer({ source, open, onOpenChange }: {
     const [otpStatus, setOtpStatus] = useState<OtpStatus>('idle');
     const [failure, setFailure] = useState('');
     const otpRef = useRef<OtpInputHandle>(null);
+    const [password, setPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [shake, setShake] = useState(0);
     const kind = source?.kind ?? 'history';
     const copy = COPY[kind];
 
@@ -96,6 +106,8 @@ function DangerDrawer({ source, open, onOpenChange }: {
         setCode(makeCode());
         setOtpStatus('idle');
         setFailure('');
+        setPassword('');
+        setPasswordError('');
     }, [open, source]);
 
     // Wrong code: OtpInput shakes, then the cells clear for another try.
@@ -108,17 +120,33 @@ function DangerDrawer({ source, open, onOpenChange }: {
         return () => window.clearTimeout(timer);
     }, [otpStatus]);
 
-    const runAction = useCallback(async () => {
+    const runAction = useCallback(async (secret?: string) => {
         if (!source) return;
         setStep('busy');
+        setPasswordError('');
         try {
-            await source.run();
+            await source.run(secret);
             setStep('done');
+            if (source.onDone) {
+                // Let "Account deleted" register, then close and hand over.
+                window.setTimeout(() => {
+                    onOpenChange(false);
+                    source.onDone?.();
+                }, 1400);
+            }
         } catch (error) {
-            setFailure(error instanceof Error && error.message ? error.message : 'Something went wrong. Nothing was changed.');
+            const message = error instanceof Error && error.message ? error.message : 'Something went wrong. Nothing was changed.';
+            // Wrong password: stay on the password step, shake, say so.
+            if (kind === 'account' && (error as { status?: number })?.status === 400) {
+                setPasswordError(message === 'Invalid password' ? 'That password isn’t right.' : message);
+                setShake((n) => n + 1);
+                setStep('password');
+                return;
+            }
+            setFailure(message);
             setStep('failed');
         }
-    }, [source]);
+    }, [source, kind, onOpenChange]);
 
     const onComplete = (value: string) => {
         if (value !== code) {
@@ -157,14 +185,74 @@ function DangerDrawer({ source, open, onOpenChange }: {
                                         <button type="button" className="danger-drawer__btn" onClick={() => onOpenChange(false)}>
                                             Cancel
                                         </button>
-                                        <button type="button" className="danger-drawer__btn is-danger" onClick={() => setStep('code')}>
+                                        <button type="button" className="danger-drawer__btn is-danger" onClick={() => setStep(kind === 'account' ? 'password' : 'code')}>
                                             Confirm
                                         </button>
                                     </DrawerFooter>
                                 </motion.div>
                             )}
 
-                            {(step === 'code' || step === 'busy') && (
+                            {(step === 'password' || (step === 'busy' && kind === 'account')) && (
+                                <motion.div key="password" className="danger-drawer__step" {...slide} transition={{ duration: 0.24, ease: EASE }}>
+                                    <DrawerHeader className="danger-drawer__header is-code">
+                                        <DrawerTitle>Confirm with your password</DrawerTitle>
+                                        <DrawerDescription>Your account and its data are erased right after.</DrawerDescription>
+                                    </DrawerHeader>
+                                    <form
+                                        className="danger-drawer__password-wrap"
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            if (password && !locked) void runAction(password);
+                                        }}
+                                    >
+                                        <motion.input
+                                            key={shake}
+                                            type="password"
+                                            className={cn('danger-drawer__password', passwordError && 'is-error')}
+                                            placeholder="Password"
+                                            autoComplete="current-password"
+                                            autoFocus
+                                            value={password}
+                                            disabled={locked}
+                                            aria-invalid={Boolean(passwordError) || undefined}
+                                            aria-describedby="dangerPasswordMessage"
+                                            onChange={(event) => {
+                                                setPassword(event.target.value);
+                                                if (passwordError) setPasswordError('');
+                                            }}
+                                            animate={shake && !reduce ? { x: [0, -10, 9, -7, 5, -2, 0] } : undefined}
+                                            transition={{ duration: 0.42, ease: 'easeOut' }}
+                                        />
+                                        <p id="dangerPasswordMessage" className={cn('danger-drawer__password-msg', passwordError && 'is-error')} aria-live="polite">
+                                            {passwordError || 'Enter your password to delete the account.'}
+                                        </p>
+                                        <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
+                                    </form>
+                                    <DrawerFooter className="danger-drawer__footer">
+                                        <button type="button" className="danger-drawer__btn" onClick={() => setStep('warn')} disabled={locked}>
+                                            Back
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="danger-drawer__btn is-danger"
+                                            onClick={() => void runAction(password)}
+                                            disabled={locked || !password}
+                                            aria-live="polite"
+                                        >
+                                            {locked ? (
+                                                <span className="danger-drawer__status">
+                                                    <span className="danger-drawer__spinner" aria-hidden="true" />
+                                                    Deleting…
+                                                </span>
+                                            ) : (
+                                                'Delete account'
+                                            )}
+                                        </button>
+                                    </DrawerFooter>
+                                </motion.div>
+                            )}
+
+                            {(step === 'code' || (step === 'busy' && kind !== 'account')) && (
                                 <motion.div key="code" className="danger-drawer__step" {...slide} transition={{ duration: 0.24, ease: EASE }}>
                                     <DrawerHeader className="danger-drawer__header is-code">
                                         <DrawerTitle>Enter code to confirm</DrawerTitle>

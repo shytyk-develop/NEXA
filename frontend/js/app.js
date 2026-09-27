@@ -186,6 +186,9 @@ import {
     logoutRequest,
     verifyEmailRequest,
     resendOtpRequest,
+    setAccessTokenGetter,
+    changePasswordRequest,
+    deleteAccountRequest,
 } from './api.js';
 import {
     detectDeviceInfo,
@@ -902,8 +905,53 @@ initProfileSettings({
             throw new Error(`Could not delete: ${errors.join(', ')}`);
         }
     },
+    // Settings → Security → Password. The private key never leaves the device
+    // unencrypted: re-encrypt this device's copy with the new password so the
+    // server's synced copy opens with it on the next new-device sign-in.
+    onChangePassword: async (oldPassword, newPassword) => {
+        const keys = state.myUsername ? loadKeys(state.myUsername) : null;
+        if (!keys?.privateKey) throw new Error('This device has no key to re-encrypt. Sign in again first.');
+        const encrypted = await encryptPrivateKeyWithPassword(keys.privateKey, newPassword);
+        return changePasswordRequest(oldPassword, newPassword, encrypted);
+    },
+    // Settings → Data → Delete account (password confirmed in the drawer).
+    onDeleteAccount: async (password) => {
+        const username = state.myUsername;
+        await deleteAccountRequest(password);
+        if (username) {
+            deletedAccount = username;
+            wipeLocalAccountData(username);
+        }
+    },
+    // After the drawer has shown "Account deleted": sign out and go to /login.
+    // Signing out flushes the in-memory chat history to storage, so wipe again.
+    onAccountDeleted: () => {
+        handleLogout();
+        if (deletedAccount) wipeLocalAccountData(deletedAccount);
+        deletedAccount = null;
+        navigateTo('/login', handleNavigation);
+    },
     showToast,
 });
+
+/** Set between the server deleting the account and this device signing out. */
+let deletedAccount = null;
+
+/**
+ * An erased account's traces on this device: keys, history, drafts, profile,
+ * saved messages… every localStorage entry named after the username.
+ */
+function wipeLocalAccountData(username) {
+    const escaped = username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`(^|[_:.])${escaped}($|[_:.])`);
+    const doomed = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && pattern.test(key)) doomed.push(key);
+    }
+    doomed.forEach((key) => localStorage.removeItem(key));
+    if (localStorage.getItem('auth_username') === username) localStorage.removeItem('auth_username');
+}
 
 function initComposeSearchRuntime() {
 initComposeSearch({
@@ -2270,6 +2318,7 @@ function tokenSubject(token) {
 
 // The session survives reloads as the HttpOnly refresh cookie: after a silent
 // refresh the in-memory access token is renewed from it.
+setAccessTokenGetter(() => state.token);
 setAuthHandlers({
     onToken: (token) => {
         state.token = token;

@@ -15,6 +15,13 @@ export function setAuthHandlers(handlers) {
     authHandlers = { ...authHandlers, ...handlers };
 }
 
+/** app.js hands in the current in-memory access token (for modules that don't hold it). */
+let accessTokenGetter = () => '';
+
+export function setAccessTokenGetter(getter) {
+    accessTokenGetter = typeof getter === 'function' ? getter : () => '';
+}
+
 let refreshInFlight = null;
 
 /** POST /api/auth/refresh → a new access token (rejects with .status 401 when the session is over). */
@@ -162,6 +169,44 @@ export async function getDevices(token, deviceId) {
 export async function terminateDevice(token, deviceId, currentDeviceId) {
     const query = currentDeviceId ? `?current_device_id=${encodeURIComponent(currentDeviceId)}` : '';
     return deleteJson(`/api/me/devices/${encodeURIComponent(deviceId)}${query}`, token);
+}
+
+/**
+ * New password; the server signs out every other session. `encryptedPrivateKey`
+ * is this device's private key re-encrypted with the new password (E2EE).
+ */
+export async function changePasswordRequest(oldPassword, newPassword, encryptedPrivateKey) {
+    return postJson('/api/auth/change-password', {
+        old_password: oldPassword,
+        new_password: newPassword,
+        encrypted_private_key: encryptedPrivateKey,
+    }, accessTokenGetter());
+}
+
+/** Erase the account (password-confirmed); the server also clears the session cookie. */
+export async function deleteAccountRequest(password) {
+    return apiRequest('/api/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+    }, accessTokenGetter());
+}
+
+/* Chat folders (sidebar → Folders), stored per account on the server. */
+export async function getFolders() {
+    return getJson('/api/folders', accessTokenGetter());
+}
+
+export async function createFolderRequest(folder) {
+    return postJson('/api/folders', folder, accessTokenGetter());
+}
+
+export async function updateFolderRequest(folderId, patch) {
+    return putJson(`/api/folders/${encodeURIComponent(folderId)}`, patch, accessTokenGetter());
+}
+
+export async function deleteFolderRequest(folderId) {
+    return deleteJson(`/api/folders/${encodeURIComponent(folderId)}`, accessTokenGetter());
 }
 
 export async function syncMuted(token, partners) {

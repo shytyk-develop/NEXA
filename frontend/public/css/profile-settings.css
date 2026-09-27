@@ -4575,6 +4575,21 @@ html[data-theme^="light"] #page-chat .profile-workspace .ps-header::before {
     transform: scale(0.97);
 }
 
+/* Secondary CTA (Change password): quiet fill, accent on hover. */
+#page-chat .profile-workspace .sec-cta--quiet {
+    background: var(--settings-inner-fill);
+    border: 1px solid var(--settings-inner-stroke);
+    color: var(--theme-text, #f4f4f5);
+    font-weight: 500;
+}
+
+#page-chat .profile-workspace .sec-cta--quiet:hover,
+#page-chat .profile-workspace .sec-cta--quiet:focus-visible {
+    border-color: color-mix(in srgb, var(--accent-primary, #ccff00) 45%, transparent);
+    color: var(--accent-primary, #ccff00);
+    filter: none;
+}
+
 #page-chat .profile-workspace .sec-cta .ui-icon {
     height: 15px;
     width: 15px;

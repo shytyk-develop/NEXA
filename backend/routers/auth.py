@@ -4,7 +4,7 @@ import re
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 import database
@@ -28,8 +28,23 @@ from core.email_verification import (
     normalize_email,
     send_otp_email,
 )
-from core.schemas import LoginRequest, RegisterRequest, ResendOtpRequest, VerifyEmailRequest
-from core.security import create_access_token, forget_session, normalize_username, validate_username
+from core.schemas import (
+    ChangePasswordRequest,
+    DeleteAccountRequest,
+    LoginRequest,
+    RegisterRequest,
+    ResendOtpRequest,
+    VerifyEmailRequest,
+)
+from core.security import (
+    create_access_token,
+    forget_session,
+    get_current_session,
+    get_current_username,
+    normalize_username,
+    validate_username,
+)
+from ws_manager import manager
 
 router = APIRouter()
 logger = logging.getLogger("nexa.auth")
@@ -223,3 +238,47 @@ async def logout(request: Request, response: Response):
             forget_session(session["id"])
     clear_refresh_cookie(response)
     return {"message": "Logged out"}
+
+
+MIN_PASSWORD_LENGTH = 8
+
+
+@router.post("/api/auth/change-password")
+async def change_password(req: ChangePasswordRequest, authorization: Optional[str] = Header(default=None)):
+    """New password (+ the private key re-encrypted with it by the client);
+    every other session of the account is signed out — their refresh cookies
+    and access tokens stop working and their sockets close. This one stays."""
+    username, current_session = get_current_session(authorization)
+    if not await asyncio.to_thread(database.verify_user_password_db, username, req.old_password):
+        raise HTTPException(status_code=400, detail="Invalid current password")
+    if len(req.new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=422, detail=f"Use at least {MIN_PASSWORD_LENGTH} characters")
+    if req.new_password == req.old_password:
+        raise HTTPException(status_code=400, detail="The new password must be different")
+    if not req.encrypted_private_key.strip():
+        raise HTTPException(status_code=422, detail="Missing the re-encrypted private key")
+
+    revoked = await asyncio.to_thread(
+        database.change_password_db, username, req.new_password, req.encrypted_private_key, current_session
+    )
+    for session_id in revoked:
+        forget_session(session_id)
+    await manager.terminate_other_sessions(username, current_session)
+    return {"message": "Password updated", "revoked_sessions": len(revoked)}
+
+
+@router.delete("/api/account")
+async def delete_account(req: DeleteAccountRequest, response: Response, authorization: Optional[str] = Header(default=None)):
+    """Erase the account after confirming its password: every row tied to it
+    goes (database.delete_account_db), its sockets close, and this browser's
+    session cookie is cleared."""
+    username = get_current_username(authorization)
+    if not await asyncio.to_thread(database.verify_user_password_db, username, req.password):
+        raise HTTPException(status_code=400, detail="Invalid password")
+
+    sessions = await asyncio.to_thread(database.delete_account_db, username)
+    for session_id in sessions:
+        forget_session(session_id)
+    await manager.terminate_user(username)
+    clear_refresh_cookie(response)
+    return {"message": "Account deleted"}

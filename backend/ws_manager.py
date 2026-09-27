@@ -20,6 +20,8 @@ class ConnectionManager:
             "public_key": None,
             "active_chat": None,
             "device_id": None,
+            # The auth session (JWT sid) the socket signed in with, if any.
+            "session_id": None,
         }
 
     async def disconnect(self, websocket: WebSocket):
@@ -85,6 +87,7 @@ class ConnectionManager:
         platform: Optional[str] = None,
         os_version: Optional[str] = None,
         issued_at=None,
+        session_id: Optional[str] = None,
     ) -> bool:
         """Join a socket. False (socket closed) when this device's session was
         terminated after the token was issued."""
@@ -114,6 +117,7 @@ class ConnectionManager:
         self.active_connections[websocket]["public_key"] = public_key
         self.active_connections[websocket]["share_presence"] = share_presence
         self.active_connections[websocket]["device_id"] = parsed_device_id
+        self.active_connections[websocket]["session_id"] = session_id
         profile = await asyncio.to_thread(database.get_user_profile_db, username)
         if profile:
             self.active_connections[websocket]["display_name"] = profile.get("display_name", "")
@@ -235,6 +239,21 @@ class ConnectionManager:
             await websocket.close(code=1008, reason="Session terminated")
         except Exception:
             pass
+
+    async def terminate_other_sessions(self, username: str, keep_session_id: Optional[str]):
+        """Sign out every socket of this user except those of `keep_session_id`
+        (after a password change). Sockets from before sessions have none: out."""
+        for ws in list(self.username_to_websockets.get(username, set())):
+            sid = self.active_connections.get(ws, {}).get("session_id")
+            if not keep_session_id or sid != keep_session_id:
+                await self._close_terminated(ws)
+        await self.broadcast_users_list()
+
+    async def terminate_user(self, username: str):
+        """Close every socket of an account that no longer exists."""
+        for ws in list(self.username_to_websockets.get(username, set())):
+            await self._close_terminated(ws)
+        await self.broadcast_users_list()
 
     async def terminate_device(self, username: str, device_id: str):
         """Kick every live socket of one of the user's devices."""

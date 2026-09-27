@@ -69,3 +69,16 @@ class FolderUpdateRequest(BaseModel):
     icon: Optional[str] = None
     position: Optional[int] = None
     chat_ids: Optional[list[str]] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+    # The private key re-encrypted with the new password, client-side (E2EE:
+    # the server only ever stores it encrypted). Without it, signing in on a
+    # new device with the new password couldn't unlock the key.
+    encrypted_private_key: str
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str

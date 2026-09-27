@@ -20,6 +20,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         token_username = normalize_username(payload.get("sub", ""))
         token_issued_at = issued_at_from_token(token)
+        token_session_id = payload.get("sid")
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         print("❌ Handshake blocked: invalid or expired token signature")
         await websocket.close(code=1008, reason="Invalid token")
@@ -52,6 +53,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                     platform=data.get("platform"),
                     os_version=data.get("os_version"),
                     issued_at=token_issued_at,
+                    session_id=token_session_id,
                 )
                 if not joined:
                     return

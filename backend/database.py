@@ -1722,3 +1722,100 @@ def delete_folder_db(username: str, folder_id: str) -> Optional[str]:
         raise e
     finally:
         release_connection(conn)
+
+
+# --- ACCOUNT LIFECYCLE: password change, account deletion ---
+
+def verify_user_password_db(username: str, password: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT password_hash FROM users WHERE username = %s", (username,))
+        row = cursor.fetchone()
+        return bool(row and row[0] and verify_password(password, row[0]))
+    finally:
+        release_connection(conn)
+
+
+def change_password_db(
+    username: str,
+    new_password: str,
+    new_encrypted_private_key: str,
+    keep_session_id: Optional[str],
+) -> list:
+    """New password hash + the private key re-encrypted with it (the client
+    did that — the server never sees the key), and every other auth session
+    ends. Returns the ended session ids. One transaction."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET password_hash = %s, encrypted_private_key = %s WHERE username = %s",
+            (hash_password(new_password), new_encrypted_private_key, username),
+        )
+        if keep_session_id:
+            cursor.execute(
+                "DELETE FROM auth_sessions WHERE username = %s AND id <> %s RETURNING id",
+                (username, keep_session_id),
+            )
+        else:
+            cursor.execute("DELETE FROM auth_sessions WHERE username = %s RETURNING id", (username,))
+        revoked = [str(row[0]) for row in cursor.fetchall()]
+        conn.commit()
+        return revoked
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def delete_account_db(username: str) -> list:
+    """Erase an account and everything tied to it, in one transaction.
+    Tables keyed by username without a foreign key (message history, offline
+    queue, reactions, read state, shared saves, revoked devices, others'
+    mutes of this user) are cleared explicitly; deleting the users row then
+    cascades the rest (auth / device sessions, folders, email codes, mutes).
+    Returns the auth session ids that ended (for the token cache)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM auth_sessions WHERE username = %s", (username,))
+        sessions = [str(row[0]) for row in cursor.fetchall()]
+        cursor.execute(
+            "DELETE FROM shared_saved_messages WHERE user_a = %s OR user_b = %s OR saved_by = %s",
+            (username, username, username),
+        )
+        cursor.execute("DELETE FROM shared_saved_dismissals WHERE username = %s", (username,))
+        # Reactions by this user, and anyone's reactions on the messages going away
+        # (message_reactions.message_id has no foreign key to cascade).
+        cursor.execute(
+            """
+            DELETE FROM message_reactions
+            WHERE username = %s
+               OR message_id IN (SELECT id FROM chat_history WHERE sender = %s OR receiver = %s)
+            """,
+            (username, username, username),
+        )
+        cursor.execute(
+            "DELETE FROM chat_history WHERE sender = %s OR receiver = %s",
+            (username, username),
+        )
+        cursor.execute(
+            "DELETE FROM offline_messages WHERE sender = %s OR receiver = %s",
+            (username, username),
+        )
+        cursor.execute(
+            "DELETE FROM conversation_read_state WHERE username = %s OR partner = %s",
+            (username, username),
+        )
+        cursor.execute("DELETE FROM revoked_device_sessions WHERE username = %s", (username,))
+        cursor.execute("DELETE FROM muted_chats WHERE partner = %s", (username,))
+        cursor.execute("DELETE FROM users WHERE username = %s", (username,))
+        conn.commit()
+        return sessions
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)

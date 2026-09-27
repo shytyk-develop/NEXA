@@ -350,3 +350,54 @@
         animation-duration: 2.4s;
     }
 }
+
+/* Delete account: the password step (in the code step's place). */
+.danger-drawer__password-wrap {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    padding-bottom: 6px;
+}
+
+.danger-drawer__password {
+    background: var(--dz-cell);
+    border: 1px solid var(--dz-cell-line);
+    border-radius: 14px;
+    box-sizing: border-box;
+    color: var(--dz-text);
+    font: inherit;
+    font-size: 15px;
+    height: 50px;
+    max-width: 320px;
+    outline: none;
+    padding: 0 16px;
+    text-align: center;
+    transition: border-color 0.2s ease;
+    width: 100%;
+}
+
+.danger-drawer__password:focus {
+    border-color: color-mix(in srgb, var(--dz-text) 45%, transparent);
+}
+
+.danger-drawer__password.is-error {
+    border-color: color-mix(in srgb, var(--dz-bad) 80%, transparent);
+}
+
+.danger-drawer__password-msg {
+    color: var(--dz-muted);
+    font-size: 12px;
+    margin: 0;
+    transition: color 0.2s ease;
+}
+
+.danger-drawer__password-msg.is-error {
+    color: var(--dz-bad);
+}
+
+.danger-drawer__btn:disabled.is-danger {
+    opacity: 0.5;
+}

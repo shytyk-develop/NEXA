@@ -25,6 +25,16 @@ import { ExpandableTabs, type ExpandableTabItem } from '../../components/Expanda
 import { Icon } from '../../components/Icon';
 import { StatusArc } from '../../components/StatusArc';
 import { LogoutSlider } from './LogoutSlider';
+import {
+    createFolder as storeCreateFolder,
+    deleteFolder as storeDeleteFolder,
+    getFoldersSnapshot,
+    loadFolders,
+    removeChatFromFolder,
+    renameFolder as storeRenameFolder,
+    setFolderChats as storeSetFolderChats,
+    subscribeFolders,
+} from '../../folders/folderStore';
 import { FileTree, FileTreeItem, FileTreeList } from '@/components/ui/file-tree';
 import { ScrollBlur } from '@/components/ui/scroll-blur';
 import { instantHoverTransition, listHoverTransition } from '@/lib/hoverMotion';
@@ -73,11 +83,8 @@ type FolderTreeState = {
 /*
  * Folder structure: All → Work / Personal (fixed) → one level of subfolders.
  * Subfolders can't contain folders; expanded, they offer "+ Add Chats".
+ * Stored per account on the server (../../folders/folderStore.ts).
  */
-const FOLDER_STORAGE_KEY = 'nexa.sidebar.custom-folders';
-/** Folder id ('work' | 'personal' | custom id) → usernames added to it. */
-const FOLDER_CHATS_STORAGE_KEY = 'nexa.sidebar.folder-chats';
-
 type FolderChats = Record<string, string[]>;
 
 /**
@@ -91,29 +98,6 @@ const PICK_MODE_TRANSITION = { duration: 0.24, ease: [0.16, 1, 0.3, 1] as [numbe
 /** Target of "add chats" mode: which folder, and its name for the banner. */
 type FolderPick = { folderId: string; name: string };
 
-function loadFolderChats(): FolderChats {
-    try {
-        const raw = localStorage.getItem(FOLDER_CHATS_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : null;
-        if (!parsed || typeof parsed !== 'object') return {};
-        const out: FolderChats = {};
-        Object.entries(parsed).forEach(([id, list]) => {
-            if (Array.isArray(list)) out[id] = list.filter((u): u is string => typeof u === 'string');
-        });
-        return out;
-    } catch {
-        return {};
-    }
-}
-
-function saveFolderChats(map: FolderChats) {
-    try {
-        localStorage.setItem(FOLDER_CHATS_STORAGE_KEY, JSON.stringify(map));
-    } catch {
-        /* ignore quota */
-    }
-}
-
 /** Sidebar filter for a folder id. */
 function filterForFolder(folderId: string): LibraryFilter {
     return folderId === 'work' || folderId === 'personal' ? folderId : `folder:${folderId}`;
@@ -124,75 +108,6 @@ function folderIdOfFilter(filter: LibraryFilter): string | null {
     if (filter === 'work' || filter === 'personal') return filter;
     if (filter.startsWith('folder:')) return filter.slice('folder:'.length);
     return null;
-}
-
-/**
- * Subfolders are one level deep. Trees saved when two levels were allowed are
- * flattened (nested folders move up next to their parent), so no folder — or
- * its chats — silently disappears.
- */
-function flattenFolders(folders: CustomFolder[]): CustomFolder[] {
-    const out: CustomFolder[] = [];
-    const visit = (list: CustomFolder[]) => {
-        list.forEach((folder) => {
-            out.push({ id: folder.id, name: folder.name, children: [] });
-            if (Array.isArray(folder.children)) visit(folder.children);
-        });
-    };
-    visit(folders);
-    return out;
-}
-
-function loadFolderTree(): FolderTreeState {
-    try {
-        const raw = localStorage.getItem(FOLDER_STORAGE_KEY);
-        if (!raw) return { work: [], personal: [] };
-        const parsed = JSON.parse(raw);
-        return {
-            work: Array.isArray(parsed?.work) ? flattenFolders(parsed.work) : [],
-            personal: Array.isArray(parsed?.personal) ? flattenFolders(parsed.personal) : [],
-        };
-    } catch {
-        return { work: [], personal: [] };
-    }
-}
-
-function saveFolderTree(tree: FolderTreeState) {
-    try {
-        localStorage.setItem(FOLDER_STORAGE_KEY, JSON.stringify(tree));
-    } catch {
-        /* ignore quota */
-    }
-}
-
-function makeFolderId() {
-    return `fld_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
-}
-
-function insertChild(folders: CustomFolder[], parentId: string | null, child: CustomFolder): CustomFolder[] {
-    if (parentId == null) return [...folders, child];
-    return folders.map((folder) => {
-        if (folder.id === parentId) {
-            return { ...folder, children: [...folder.children, child] };
-        }
-        return { ...folder, children: insertChild(folder.children, parentId, child) };
-    });
-}
-
-function renameFolderInTree(folders: CustomFolder[], id: string, name: string): CustomFolder[] {
-    return folders.map((folder) => {
-        if (folder.id === id) return { ...folder, name };
-        return { ...folder, children: renameFolderInTree(folder.children, id, name) };
-    });
-}
-
-function removeFolderFromTree(folders: CustomFolder[], id: string): CustomFolder[] {
-    return folders
-        .filter((folder) => folder.id !== id)
-        .map((folder) => ({
-            ...folder,
-            children: removeFolderFromTree(folder.children, id),
-        }));
 }
 
 function collectFolderIds(folder: CustomFolder): string[] {
@@ -227,11 +142,12 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
     }, 0);
     const mutedTotal = chats.filter((chat) => Boolean(snap.myUsername && isChatMuted(snap.myUsername, chat.username))).length;
 
-    // Chats explicitly added to folders (Work / Personal / custom), persisted locally.
-    const [folderChats, setFolderChats] = useState<FolderChats>(() => loadFolderChats());
+    // Chats filed into folders (Work / Personal / custom), synced with the server
+    // for the signed-in account (loaded on sign-in, cleared on sign-out).
+    const folderChats: FolderChats = useSyncExternalStore(subscribeFolders, getFoldersSnapshot).chats;
     useEffect(() => {
-        saveFolderChats(folderChats);
-    }, [folderChats]);
+        void loadFolders(snap.myUsername || null);
+    }, [snap.myUsername]);
 
     const chatNames = useMemo(() => new Set(chats.map((chat: any) => chat.username as string)), [chats]);
     /** Chats in a folder that still exist in the chat list. */
@@ -260,7 +176,7 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
     const savePicking = () => {
         if (!picking) return;
         const { folderId } = picking;
-        setFolderChats((prev) => ({ ...prev, [folderId]: [...picked] }));
+        storeSetFolderChats(folderId, [...picked]);
         setPicking(null);
         // Show the folder's contents right away.
         setLibraryFilter(filterForFolder(folderId));
@@ -282,15 +198,11 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
         [folderChats, chatByName],
     );
     const removeFromFolder = useCallback((folderId: string, username: string) => {
-        setFolderChats((prev) => ({ ...prev, [folderId]: (prev[folderId] || []).filter((u) => u !== username) }));
+        removeChatFromFolder(folderId, username);
     }, []);
 
+    // The store already dropped the folders' chats; just leave "add chats" mode for them.
     const onFoldersRemoved = useCallback((ids: string[]) => {
-        setFolderChats((prev) => {
-            const next = { ...prev };
-            ids.forEach((id) => delete next[id]);
-            return next;
-        });
         setPicking((current) => (current && ids.includes(current.folderId) ? null : current));
     }, []);
 
@@ -496,13 +408,9 @@ function SidebarLibrary({
 }) {
     // Default: only All is open — Work / Personal show as collapsed rows.
     const [expandedIds, setExpandedIds] = useState<string[]>(['all']);
-    const [tree, setTree] = useState<FolderTreeState>(() => loadFolderTree());
+    const tree: FolderTreeState = useSyncExternalStore(subscribeFolders, getFoldersSnapshot).tree;
     const [drafting, setDrafting] = useState<{ root: FolderRoot; parentId: string | null } | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);
-
-    useEffect(() => {
-        saveFolderTree(tree);
-    }, [tree]);
 
     const ensureOpen = (id: string) => {
         setExpandedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
@@ -522,13 +430,10 @@ function SidebarLibrary({
             setDrafting(null);
             return;
         }
-        const child: CustomFolder = { id: makeFolderId(), name: trimmed, children: [] };
-        setTree((prev) => ({
-            ...prev,
-            [drafting.root]: insertChild(prev[drafting.root], drafting.parentId, child),
-        }));
+        // Optimistic: the folder shows at once with its final (client-made) id.
+        const id = storeCreateFolder(drafting.root, trimmed.slice(0, 32));
         setDrafting(null);
-        onSelect(`folder:${child.id}`);
+        onSelect(`folder:${id}`);
     };
 
     const cancelDraft = () => setDrafting(null);
@@ -542,10 +447,7 @@ function SidebarLibrary({
         const trimmed = name.trim();
         setRenamingId(null);
         if (!trimmed) return;
-        setTree((prev) => ({
-            work: renameFolderInTree(prev.work, folderId, trimmed),
-            personal: renameFolderInTree(prev.personal, folderId, trimmed),
-        }));
+        storeRenameFolder(folderId, trimmed.slice(0, 32));
     };
 
     const cancelRename = () => setRenamingId(null);
@@ -555,10 +457,7 @@ function SidebarLibrary({
         const target = findFolder(tree[root], folderId);
         const removedIds = target ? collectFolderIds(target) : [folderId];
 
-        setTree((prev) => ({
-            ...prev,
-            [root]: removeFolderFromTree(prev[root], folderId),
-        }));
+        storeDeleteFolder(folderId);
         setExpandedIds((prev) => prev.filter((id) => !removedIds.includes(id)));
         // Their chat assignments go with them.
         onFoldersRemoved(removedIds);

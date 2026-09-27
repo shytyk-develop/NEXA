@@ -234,6 +234,9 @@ function bindShell() {
     $p('uiProfileManageDevices')?.addEventListener('click', () => {
         void openDevicesDrawer();
     });
+    $p('uiProfileChangePasswordBtn')?.addEventListener('click', () => {
+        void openChangePassword();
+    });
 
     panel.querySelectorAll('[data-pref-key]').forEach((input) => {
         input.addEventListener('change', () => {
@@ -669,6 +672,24 @@ async function fetchDeviceSessions({ throwOnError = false } = {}) {
         }
     }
     return { local, devices };
+}
+
+/** Security → Password: the change-password drawer (other devices get signed out). */
+async function openChangePassword() {
+    if (!authToken()) {
+        ctx?.showToast?.('Sign in to change your password.', 'error');
+        return;
+    }
+    const { openPasswordDrawer } = await import('../src/settings/PasswordDrawer.tsx');
+    openPasswordDrawer({
+        submit: async (oldPassword, newPassword) => {
+            if (typeof ctx?.onChangePassword !== 'function') throw new Error('Password change isn’t available here.');
+            await ctx.onChangePassword(oldPassword, newPassword);
+        },
+        onChanged: () => {
+            ctx?.showToast?.('Password updated successfully, other devices logged out', 'success');
+        },
+    });
 }
 
 /** Security → "Open devices": the bottom drawer with every session as a card. */
@@ -1399,12 +1420,13 @@ async function openDangerDrawer(kind) {
     const { openDangerDrawer: open } = await import('../src/settings/DangerDrawer.tsx');
     open({
         kind,
-        run: async () => {
+        run: async (password) => {
             if (kind === 'account') {
                 if (typeof ctx?.onDeleteAccount !== 'function') {
-                    throw new Error('Account deletion isn’t available yet. Your account and data were not changed.');
+                    throw new Error('Account deletion isn’t available here. Nothing was changed.');
                 }
-                await ctx.onDeleteAccount();
+                // The server checks the password; a wrong one throws with status 400.
+                await ctx.onDeleteAccount(password || '');
                 return;
             }
             if (typeof ctx?.onClearAllHistory === 'function') {
@@ -1414,6 +1436,8 @@ async function openDangerDrawer(kind) {
             }
             hydrateData(username);
         },
+        // Account gone: sign out and head to /login once the drawer has closed.
+        onDone: kind === 'account' ? () => ctx?.onAccountDeleted?.() : undefined,
     });
 }
 
