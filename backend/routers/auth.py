@@ -79,10 +79,11 @@ async def _issue_otp(email: str, username: str, cooldown: int = OTP_RESEND_COOLD
     )
     if not stored:
         return False
-    try:
-        await asyncio.to_thread(send_otp_email, email, code)
-    except Exception:
-        logger.exception("Could not send the verification email to %s", email)
+    # send_otp_email logs a provider failure itself and never raises; the
+    # stored code stays valid, so "Resend code" can try again.
+    sent = await asyncio.to_thread(send_otp_email, email, code)
+    if not sent:
+        logger.warning("Verification code for %s stored but not delivered", email)
     return True
 
 
