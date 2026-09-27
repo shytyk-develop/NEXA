@@ -573,8 +573,8 @@ function SidebarLibrary({
                 // Folder expand / collapse animates the height: keep the fades off
                 // the rows while it moves, show them only once it overflows at rest.
                 hideEdgesWhileResizing
-                className="sidebar-folder-scroll max-h-[320px]"
-                viewportClassName="sidebar-folder-scroll__viewport !h-auto max-h-[320px]"
+                className="sidebar-folder-scroll max-h-80"
+                viewportClassName="sidebar-folder-scroll__viewport !h-auto max-h-80"
                 contentClassName="sidebar-folder-scroll__content"
             >
                 <FileTree
@@ -1465,7 +1465,7 @@ const SidebarDock = memo(function SidebarDock({
                             onChange={(index) => {
                                 if (index == null) return;
                                 const tab = DOCK_TABS[index];
-                                if (!tab) return;
+                                if (!tab || tab.type === 'separator') return;
                                 if ('action' in tab && tab.action) {
                                     onOpenSpotlight?.();
                                     return;
