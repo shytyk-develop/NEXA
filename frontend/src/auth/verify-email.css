@@ -1,5 +1,5 @@
-/* Email code step on the login page (VerifyEmail.tsx): the same glassy panel
-   language as the login form — centred, quiet type, a mail tile on top. */
+/* Email code step on the login page (VerifyEmail.tsx): an icon tile, the
+   metallic headline, 3 – 3 code cells and a pair of pill actions. */
 .login-verify {
     animation: login-verify-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -20,15 +20,16 @@
 
 .verify-email__icon {
     align-items: center;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 30px -14px rgba(0, 0, 0, 0.9);
     color: #fff;
     display: inline-flex;
-    height: 52px;
+    height: 62px;
     justify-content: center;
-    margin-bottom: 18px;
-    width: 52px;
+    margin-bottom: 22px;
+    width: 62px;
 }
 
 .verify-email__icon svg {
@@ -41,6 +42,27 @@
     width: 22px;
 }
 
+/* Gradient fill is shared with the login headline (login-page.css). */
+.verify-email__title {
+    font-family: var(--f-display);
+    font-size: clamp(2.5rem, 6vw, 3.3rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.verify-email__sub {
+    color: rgba(255, 255, 255, 0.62);
+    display: flex;
+    flex-direction: column;
+    font-size: 14.5px;
+    gap: 3px;
+    line-height: 1.4;
+    margin: 12px 0 0;
+}
+
 .verify-email__sub strong {
     color: #fff;
     font-weight: 600;
@@ -49,33 +71,172 @@
 .verify-email__otp {
     display: flex;
     justify-content: center;
-    margin-top: 26px;
+    margin-top: 28px;
     width: 100%;
 }
 
-/* The login page is dark glass: code cells to match. */
+.verify-email [role="group"] {
+    align-items: center;
+    gap: 10px;
+}
+
+.verify-email .otp-cell-wrap,
 .verify-email .otp-cell {
-    background: rgba(0, 0, 0, 0.42);
-    border: 1px solid rgba(180, 180, 180, 0.18);
+    height: 66px;
+    width: 54px;
+}
+
+.verify-email .otp-cell {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
     color: #fff;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.verify-email .otp-cell[data-state="filled"] {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.14);
 }
 
 .verify-email .otp-cell[data-state="active"] {
-    background: rgba(0, 0, 0, 0.55);
-    border-color: rgba(255, 255, 255, 0.55) !important;
-    box-shadow: none !important;
+    background: rgba(0, 0, 0, 0.42);
+    border-color: rgba(255, 255, 255, 0.78) !important;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05) !important;
 }
 
 .verify-email .otp-cell__char {
     color: #fff;
+    font-size: 22px;
+    font-weight: 600;
 }
 
 .verify-email .otp-cell__caret {
     background: #fff;
+    height: 22px;
+}
+
+.verify-email .otp-separator {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 1px;
+    flex: none;
+    height: 1.5px;
+    margin: 0 6px;
+    width: 10px;
+}
+
+.verify-email .otp-message {
+    display: block;
+    text-align: center;
 }
 
 .verify-email .otp-message.is-hint {
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.verify-email .otp-cell-wrap + .otp-cell-wrap,
+.verify-email .otp-separator + .otp-cell-wrap {
+    margin-left: 0;
+}
+
+/* The status line under the cells spans the row so it centres. */
+.verify-email__otp > .inline-flex > div[aria-hidden] {
+    margin-top: 14px;
+}
+
+/* ─── Open mailbox · Resend ─── */
+.verify-email__actions {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 26px;
+    width: 100%;
+}
+
+.verify-email__actions.is-single {
+    grid-template-columns: 1fr;
+}
+
+.verify-email__btn {
+    -webkit-backdrop-filter: blur(10px);
+    align-items: center;
+    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.92);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 14.5px;
+    font-weight: 500;
+    gap: 8px;
+    height: 50px;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0 16px;
+    text-decoration: none;
+    transition:
+        background 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease,
+        transform 0.12s ease;
+    white-space: nowrap;
+}
+
+.verify-email__btn svg {
+    fill: none;
+    flex: none;
+    height: 13px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+    width: 13px;
+}
+
+.verify-email__btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.13);
+}
+
+.verify-email__btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.verify-email__btn:focus-visible {
+    outline: 1.5px solid rgba(255, 255, 255, 0.55);
+    outline-offset: 2px;
+}
+
+.verify-email__btn.is-primary {
+    background: linear-gradient(180deg, #f7f7f7, #e2e2e2);
+    border-color: transparent;
+    box-shadow: 0 10px 30px -14px rgba(255, 255, 255, 0.45);
+    color: #0b0b0b;
+    font-weight: 600;
+}
+
+.verify-email__btn.is-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #ffffff, #ececec);
+}
+
+/* Cooling down: the white pill rests as a quiet dark one with the timer. */
+.verify-email__btn.is-primary.is-waiting {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.075);
+    box-shadow: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: default;
+    font-weight: 500;
+}
+
+.verify-email__time {
+    color: rgba(255, 255, 255, 0.85);
+    font-variant-numeric: tabular-nums;
 }
 
 .verify-email__foot {
@@ -86,39 +247,14 @@
     margin-top: 22px;
 }
 
-.verify-email__countdown {
-    color: rgba(255, 255, 255, 0.5);
+.verify-email__spam {
+    color: rgba(255, 255, 255, 0.4);
     font-size: 13px;
     margin: 0;
 }
 
-.verify-email__time {
-    color: #fff;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-variant-numeric: tabular-nums;
-}
-
-.verify-email__resend {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 999px;
-    color: #fff;
-    cursor: pointer;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 16px;
-    transition: background-color 0.2s ease;
-}
-
-.verify-email__resend:hover,
-.verify-email__resend:focus-visible {
-    background: rgba(255, 255, 255, 0.14);
-    outline: none;
-}
-
 .verify-email__notice {
-    color: rgba(190, 255, 170, 0.85);
+    color: rgba(255, 255, 255, 0.78);
     font-size: 12px;
     margin: 0;
 }
@@ -132,11 +268,10 @@
 .verify-email__back {
     background: none;
     border: 0;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.62);
     cursor: pointer;
     font: inherit;
-    font-size: 12.5px;
-    margin-top: 6px;
+    font-size: 13.5px;
     padding: 4px;
     transition: color 0.2s ease;
 }
@@ -147,32 +282,20 @@
     outline: none;
 }
 
-/* Email field: collapsed until the first Register press. */
-.login-field--email {
-    display: grid;
-    grid-template-rows: 0fr;
-    margin-top: -16px;
-    opacity: 0;
-    transition:
-        grid-template-rows 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-        margin-top 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.25s ease;
-}
+@media (max-width: 420px) {
+    .verify-email .otp-cell-wrap,
+    .verify-email .otp-cell {
+        height: 54px;
+        width: 42px;
+    }
 
-.login-field--email.is-open {
-    grid-template-rows: 1fr;
-    margin-top: 0;
-    opacity: 1;
-}
-
-.login-field__reveal {
-    min-height: 0;
-    overflow: hidden;
+    .verify-email__title {
+        white-space: normal;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .login-verify,
-    .login-field--email {
+    .login-verify {
         animation: none;
         transition: none;
     }

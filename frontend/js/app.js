@@ -1280,6 +1280,8 @@ function setAuthPending(isPending) {
     DOM.pageLogin?.classList.toggle('is-loading', isPending);
     DOM.btnLogin.disabled = isPending;
     DOM.btnRegister.disabled = isPending;
+    const loginTab = document.getElementById('uiAuthTabLogin');
+    if (loginTab) loginTab.disabled = isPending;
     if (DOM.btnForgotPassword) DOM.btnForgotPassword.disabled = isPending;
     if (DOM.btnAuthApple) DOM.btnAuthApple.disabled = isPending;
     if (DOM.btnAuthGoogle) DOM.btnAuthGoogle.disabled = isPending;
@@ -1412,19 +1414,77 @@ async function completeSignIn(username, password, resData) {
     finishLoginSetup(username, savedKeysJWK.publicKey, takeRedirectAfterLogin('/chat'));
 }
 
-/** Registration asks for an email: the field opens on the first Register press. */
-function isEmailFieldOpen() {
-    return Boolean(document.getElementById('uiEmailField')?.classList.contains('is-open'));
+/** Log in | Register switch on the login panel; Register adds the email field. */
+let authMode = 'login';
+
+function setAuthMode(mode, { focus = true } = {}) {
+    const previousMode = authMode;
+    authMode = mode === 'register' ? 'register' : 'login';
+    const isRegister = authMode === 'register';
+    const panel = document.querySelector('#page-login .login-panel');
+    if (panel) panel.dataset.authMode = authMode;
+    document.querySelectorAll('#page-login [data-auth-tab]').forEach((tab) => {
+        tab.setAttribute('aria-selected', String(tab.dataset.authTab === authMode));
+    });
+    document.querySelectorAll('#page-login [data-auth-title], #page-login [data-auth-label]').forEach((el) => {
+        const own = el.dataset.authTitle || el.dataset.authLabel;
+        el.setAttribute('aria-hidden', String(own !== authMode));
+    });
+
+    const field = document.getElementById('uiEmailField');
+    const email = document.getElementById('emailInput');
+    field?.classList.toggle('is-open', isRegister);
+    field?.setAttribute('aria-hidden', String(!isRegister));
+    if (email) email.tabIndex = isRegister ? 0 : -1;
+    DOM.passwordInput.autocomplete = isRegister ? 'new-password' : 'current-password';
+    // Log in takes a username or the account's email; Register picks a username.
+    DOM.usernameInput.placeholder = isRegister ? 'Username' : 'Username or Email';
+    DOM.usernameInput.setAttribute('aria-label', DOM.usernameInput.placeholder);
+    DOM.usernameInput.maxLength = isRegister ? 32 : 254;
+    if (isRegister) DOM.usernameInput.value = normalizeUsername(DOM.usernameInput.value);
+    hideAuthMessage();
+    syncAuthSubmitReady();
+    if (previousMode !== authMode) animateSubmitLabelWidth(previousMode);
+
+    if (!focus) return;
+    const target = isRegister && DOM.usernameInput.value ? email : DOM.usernameInput.value ? DOM.passwordInput : DOM.usernameInput;
+    window.setTimeout(() => target?.focus({ preventScroll: true }), isRegister ? 180 : 0);
 }
 
-function openEmailField() {
-    const field = document.getElementById('uiEmailField');
-    const input = document.getElementById('emailInput');
-    if (!field || !input) return;
-    field.classList.add('is-open');
-    field.setAttribute('aria-hidden', 'false');
-    input.tabIndex = 0;
-    window.setTimeout(() => input.focus({ preventScroll: true }), 180);
+/**
+ * Ease the submit's label cell from the old label's width to the new one's,
+ * then hand it back to `auto`. Measured at switch time (fonts are in by
+ * then), so nothing stale is left behind.
+ */
+let submitLabelTimer = 0;
+function animateSubmitLabelWidth(fromMode) {
+    const labels = DOM.btnLogin?.querySelector('.login-submit__labels');
+    if (!labels) return;
+    window.clearTimeout(submitLabelTimer);
+    const from = labels.querySelector(`[data-auth-label="${fromMode}"]`)?.offsetWidth;
+    labels.style.width = '';
+    const to = labels.querySelector(`[data-auth-label="${authMode}"]`)?.offsetWidth;
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!from || !to || from === to || still) return;
+    labels.style.width = `${from}px`;
+    void labels.offsetWidth; // commit the start width before easing
+    labels.style.width = `${to}px`;
+    submitLabelTimer = window.setTimeout(() => { labels.style.width = ''; }, 460);
+}
+
+/** The submit lights up once every field the current tab needs has something in it. */
+function syncAuthSubmitReady() {
+    const email = document.getElementById('emailInput')?.value.trim();
+    const ready = Boolean(DOM.usernameInput.value.trim() && DOM.passwordInput.value && (authMode === 'login' || email));
+    DOM.btnLogin.classList.toggle('is-ready', ready);
+}
+
+function togglePasswordReveal() {
+    const btn = document.getElementById('uiPasswordReveal');
+    const show = DOM.passwordInput.type === 'password';
+    DOM.passwordInput.type = show ? 'text' : 'password';
+    btn?.setAttribute('aria-pressed', String(show));
+    btn?.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
 }
 
 const EMAIL_PATTERN = /^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$/;
@@ -1440,7 +1500,7 @@ async function showEmailVerification(email, username, password, { cooldown = 60 
     const panelTitle = document.querySelector('#page-login .login-panel > .login-panel__title');
     const panelSub = document.querySelector('#page-login .login-panel > .login-panel__sub');
     if (!host) return;
-    DOM.authError?.classList.add('hidden');
+    hideAuthMessage();
 
     const { mountVerifyEmail, unmountVerifyEmail } = await import('../src/auth/VerifyEmail.tsx');
     const restoreForm = () => {
@@ -1477,26 +1537,23 @@ async function showEmailVerification(email, username, password, { cooldown = 60 
 }
 
 async function handleAuth(isLogin) {
-    const username = normalizeUsername(DOM.usernameInput.value.trim());
+    const rawIdentifier = DOM.usernameInput.value.trim();
+    // Log in: "@" means an email address; anything else is a username.
+    const byEmail = isLogin && rawIdentifier.includes('@');
+    const username = byEmail ? rawIdentifier.toLowerCase() : normalizeUsername(rawIdentifier);
     const password = DOM.passwordInput.value.trim();
     DOM.usernameInput.value = username;
 
     if (!username || !password) {
-        showAuthMessage("Please enter both username and password.", true);
+        showAuthMessage(isLogin ? "Please enter your username or email and password." : "Please enter both username and password.", true);
         return;
     }
 
-    if (!isValidUsername(username)) {
-        showAuthMessage(usernamePolicyText(), true);
+    if (byEmail ? !EMAIL_PATTERN.test(username) : !isValidUsername(username)) {
+        showAuthMessage(byEmail ? "Enter a valid email address." : usernamePolicyText(), true);
         return;
     }
 
-    // Register: the email field first (a verification code goes to it).
-    if (!isLogin && !isEmailFieldOpen()) {
-        openEmailField();
-        showAuthMessage("Add your email — we'll send a code to verify it.", false);
-        return;
-    }
     const email = (document.getElementById('emailInput')?.value || '').trim().toLowerCase();
     if (!isLogin && !EMAIL_PATTERN.test(email)) {
         showAuthMessage("Enter a valid email address.", true);
@@ -1512,12 +1569,12 @@ async function handleAuth(isLogin) {
             } catch (err) {
                 // Registered but not verified yet: a fresh code went out — ask for it.
                 if (err?.code === 'email_not_verified' && err.email) {
-                    await showEmailVerification(err.email, username, password);
+                    await showEmailVerification(err.email, byEmail ? '' : username, password);
                     return;
                 }
                 throw err;
             }
-            await completeSignIn(username, password, resData);
+            await completeSignIn(resData.username || username, password, resData);
         } else {
             const keyPair = await generateKeyPair();
             const pubJWK = await exportPublicKey(keyPair.publicKey);
@@ -1546,9 +1603,14 @@ async function handleAuth(isLogin) {
 
 function showAuthMessage(text, isError) {
     DOM.authError.textContent = text;
-    DOM.authError.classList.remove('hidden');
     DOM.authError.classList.toggle('text-red-400', isError);
     DOM.authError.classList.toggle('text-green-400', !isError);
+    document.getElementById('uiAuthMessageReveal')?.classList.add('is-open');
+}
+
+/** Collapse the message (height eases back to 0); the text stays until the next one. */
+function hideAuthMessage() {
+    document.getElementById('uiAuthMessageReveal')?.classList.remove('is-open');
 }
 
 async function loadSidebarChats() {
@@ -1857,8 +1919,13 @@ async function handleSendMessage() {
 window.handleSendMessage = handleSendMessage;
 
 // Event Listeners
-DOM.btnLogin.addEventListener('click', () => handleAuth(true));
-DOM.btnRegister.addEventListener('click', () => handleAuth(false));
+document.querySelectorAll('#page-login [data-auth-tab]').forEach((tab) => {
+    tab.addEventListener('click', () => setAuthMode(tab.dataset.authTab));
+});
+document.getElementById('uiPasswordReveal')?.addEventListener('click', togglePasswordReveal);
+[DOM.usernameInput, DOM.passwordInput, document.getElementById('emailInput')].forEach((input) => {
+    input?.addEventListener('input', syncAuthSubmitReady);
+});
 DOM.btnForgotPassword?.addEventListener('click', () => {
     showAuthMessage(
         'Password recovery is not available yet. Your encryption keys are stored only on this device.',
@@ -1873,13 +1940,15 @@ DOM.btnAuthGoogle?.addEventListener('click', () => {
 });
 document.getElementById('loginForm')?.addEventListener('submit', (event) => {
     event.preventDefault();
-    handleAuth(true);
+    handleAuth(authMode === 'login');
 });
 DOM.usernameInput.addEventListener('input', () => {
-    DOM.usernameInput.value = normalizeUsername(DOM.usernameInput.value);
+    // Register keeps the handle to a-z0-9_ as you type; login may be an email,
+    // so it's normalized on submit instead (handleAuth).
+    if (authMode === 'register') {
+        DOM.usernameInput.value = normalizeUsername(DOM.usernameInput.value);
+    }
 });
-DOM.usernameInput.addEventListener('keydown', handleAuthKeyboard);
-DOM.passwordInput.addEventListener('keydown', handleAuthKeyboard);
 
 function attachChatRuntime() {
     if (chatRuntimeAttached || !DOM.messageInput || !DOM.sendBtn) return;
@@ -2110,13 +2179,6 @@ registerShortcuts({
     focusComposer,
     exportChat: exportCurrentChat
 });
-
-function handleAuthKeyboard(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        handleAuth(true);
-    }
-}
 
 function bindPreferenceToggle(control, key) {
     if (!control) return;
@@ -2374,6 +2436,8 @@ function handleLogout() {
 
     DOM.usernameInput.value = "";
     DOM.passwordInput.value = "";
+    DOM.passwordInput.type = "password";
+    setAuthMode('login', { focus: false });
     if (DOM.contactSearchInput) DOM.contactSearchInput.value = "";
     filterUsers("");
     clearUsersList();

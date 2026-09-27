@@ -123,8 +123,17 @@ async def register(req: RegisterRequest):
 
 @router.post("/api/login")
 async def login(req: LoginRequest, request: Request, response: Response):
-    username = normalize_username(req.username)
-    validate_username(username)
+    # "Username or email": an address signs in to the account it belongs to.
+    identifier = (req.username or "").strip()
+    if "@" in identifier:
+        email = normalize_email(identifier)
+        account = database.get_user_by_email_db(email) if is_valid_email(email) else None
+        if account is None:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+        username = account["username"]
+    else:
+        username = normalize_username(identifier)
+        validate_username(username)
 
     user_keys = database.login_user_db(username, req.password)
     if user_keys is None:
@@ -144,6 +153,7 @@ async def login(req: LoginRequest, request: Request, response: Response):
     access_token = _start_session(request, response, username)
     return {
         "message": "Login successful",
+        "username": username,
         "access_token": access_token,
         "public_key": user_keys["public_key"],
         "encrypted_private_key": user_keys["encrypted_private_key"],

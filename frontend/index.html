@@ -779,38 +779,53 @@
             </header>
 
             <main class="login-main">
-                <div class="login-panel">
-                    <h1 class="login-panel__title">Welcome back</h1>
+                <div class="login-panel" data-auth-mode="login">
+                    <h1 class="login-panel__title">
+                        <span class="login-panel__title-text" data-auth-title="login">Welcome back</span>
+                        <span class="login-panel__title-text" data-auth-title="register" aria-hidden="true">Create account</span>
+                    </h1>
                     <p class="login-panel__sub">Private · End-to-end encrypted</p>
 
                     <form id="loginForm" class="login-form" novalidate>
+                        <div class="auth-tabs" role="tablist" aria-label="Account">
+                            <span class="auth-tabs__thumb" aria-hidden="true"></span>
+                            <button type="button" id="uiAuthTabLogin" class="auth-tabs__tab" role="tab" aria-selected="true" data-auth-tab="login">Log in</button>
+                            <button type="button" id="btnRegister" class="auth-tabs__tab" role="tab" aria-selected="false" data-auth-tab="register">Register</button>
+                        </div>
+
                         <div class="login-fields">
                             <div class="login-field">
-                                <input type="text" id="usernameInput" class="login-input" placeholder="Username" autocomplete="username" spellcheck="false" inputmode="latin" maxlength="32" pattern="[a-z0-9_]{3,32}">
+                                <input type="text" id="usernameInput" class="login-input" placeholder="Username or Email" autocomplete="username" spellcheck="false" autocapitalize="off" maxlength="254" aria-label="Username or Email">
                             </div>
-                            <!-- Registration only: opens on the first Register press (js/app.js). -->
+                            <!-- Register tab only (js/app.js): the code goes to this address. -->
                             <div id="uiEmailField" class="login-field login-field--email" aria-hidden="true">
                                 <div class="login-field__reveal">
-                                    <input type="email" id="emailInput" class="login-input" placeholder="Email" autocomplete="email" spellcheck="false" maxlength="254" tabindex="-1">
+                                    <input type="email" id="emailInput" class="login-input" placeholder="Email" autocomplete="email" spellcheck="false" maxlength="254" tabindex="-1" aria-label="Email">
                                 </div>
                             </div>
 
                             <div class="login-field login-field--password">
-                                <input type="password" id="passwordInput" class="login-input" placeholder="Password" autocomplete="current-password">
-                                <button type="submit" class="login-field__submit" aria-label="Log in">
-                                    <span class="login-field__submit-icon" aria-hidden="true">→</span>
+                                <input type="password" id="passwordInput" class="login-input" placeholder="Password" autocomplete="current-password" aria-label="Password">
+                                <button type="button" id="uiPasswordReveal" class="login-field__reveal-btn" aria-label="Show password" aria-pressed="false">
+                                    <svg class="is-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+                                    <svg class="is-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.6A10 10 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.8M6.6 6.7C3.9 8.4 2.5 12 2.5 12s3.5 6.5 9.5 6.5a9.6 9.6 0 0 0 4.4-1.1"/><path d="M9.9 9.9a2.8 2.8 0 0 0 4.2 4.2"/></svg>
                                 </button>
                             </div>
                         </div>
 
                         <div class="login-forgot-wrap">
-                            <button type="button" id="btnForgotPassword" class="login-forgot">Forgot password?</button>
+                            <div class="login-forgot-wrap__inner">
+                                <button type="button" id="btnForgotPassword" class="login-forgot">Forgot password?</button>
+                            </div>
                         </div>
 
-                        <div class="login-actions">
-                            <button type="button" id="btnRegister" class="login-actions__btn login-actions__btn--ghost">Register</button>
-                            <button type="button" id="btnLogin" class="login-actions__btn login-actions__btn--primary">Log In</button>
-                        </div>
+                        <button type="submit" id="btnLogin" class="login-submit">
+                            <span class="login-submit__labels">
+                                <span class="login-submit__label" data-auth-label="login">Log in</span>
+                                <span class="login-submit__label" data-auth-label="register" aria-hidden="true">Create account</span>
+                            </span>
+                            <svg class="login-submit__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                        </button>
 
                         <div class="login-divider" aria-hidden="true">or</div>
 
@@ -819,7 +834,7 @@
                                 <svg class="login-oauth__icon" viewBox="0 0 24 24" aria-hidden="true">
                                     <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.54.12 2.7.72 3.45 1.84-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
                                 </svg>
-                                <span>Continue with Apple</span>
+                                <span>Apple</span>
                             </button>
                             <button type="button" id="btnAuthGoogle" class="login-oauth__btn">
                                 <svg class="login-oauth__icon login-oauth__icon--google" viewBox="0 0 24 24" aria-hidden="true">
@@ -828,7 +843,7 @@
                                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                                 </svg>
-                                <span>Continue with Google</span>
+                                <span>Google</span>
                             </button>
                         </div>
                     </form>
@@ -836,13 +851,19 @@
                          (src/auth/VerifyEmail.tsx) takes the form's place. -->
                     <div id="uiVerifyEmailMount" class="login-verify" hidden></div>
 
-                    <p class="login-legal">
-                        Your keys stay on this device. Messages are end-to-end encrypted and never readable by the server.
-                    </p>
-
-                    <div id="authError" class="hidden" role="alert"></div>
+                    <!-- Errors / notices open downward (height reveal); the panel above stays put. -->
+                    <div id="uiAuthMessageReveal" class="login-reveal">
+                        <div class="login-reveal__inner">
+                            <div id="authError" role="alert"></div>
+                        </div>
+                    </div>
                 </div>
             </main>
+
+            <p class="login-legal">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></svg>
+                Your keys stay on this device. Messages are end-to-end encrypted and never readable by the server.
+            </p>
         </div>
     </div>
 

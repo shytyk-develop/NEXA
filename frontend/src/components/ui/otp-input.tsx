@@ -3,6 +3,7 @@
 // (.otp-cell* / .otp-message in public/css/peer-panel.css) instead of
 // Tailwind `dark:` classes, since themes here are driven by data-theme.
 import {
+  Fragment,
   useCallback,
   useEffect,
   useId,
@@ -300,6 +301,8 @@ export type OtpInputProps = {
   hint?: string;
   label?: string;
   groupEvery?: number;
+  /** Draw a dash between groups instead of a plain gap. */
+  groupSeparator?: boolean;
   disabled?: boolean;
   autoFocus?: boolean;
   focusOnError?: boolean;
@@ -319,6 +322,7 @@ export function OtpInput({
   hint = "",
   label = "Verification code",
   groupEvery = 3,
+  groupSeparator = false,
   disabled = false,
   autoFocus = false,
   focusOnError = true,
@@ -387,7 +391,11 @@ export function OtpInput({
           const gap = groupEvery > 0 && i > 0 && i % groupEvery === 0;
 
           return (
-            <div key={i} className={`relative h-12 w-10 ${gap ? "ml-3" : ""}`}>
+            <Fragment key={i}>
+            {gap && groupSeparator ? (
+              <span aria-hidden className="otp-separator" />
+            ) : null}
+            <div className={`otp-cell-wrap relative h-12 w-10 ${gap && !groupSeparator ? "ml-3" : ""}`}>
               <input
                 {...getCellProps(i)}
                 aria-label={`${label}, character ${i + 1} of ${length}`}
@@ -462,6 +470,7 @@ export function OtpInput({
                 ) : null}
               </span>
             </div>
+            </Fragment>
           );
         })}
       </motion.div>

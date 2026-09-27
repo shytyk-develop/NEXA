@@ -290,36 +290,71 @@
 }
 
 /* ─── Main form ─── */
+/* Top-anchored, not centred: the headline and the Log in | Register switch
+   keep their Y while fields, errors and notices open below them. */
 .login-main {
-    align-items: center;
+    align-items: flex-start;
     display: flex;
     flex: 1;
     justify-content: center;
-    padding: 120px 20px 48px;
+    padding: clamp(96px, calc(50vh - 300px), 240px) 20px 40px;
 }
 
 .login-panel {
+    /* Fields sit on the glass as darker, softer glass. */
+    --auth-field: rgba(0, 0, 0, 0.3);
+    --auth-field-blur: blur(10px) saturate(120%);
+    --auth-line: rgba(255, 255, 255, 0.08);
+    --auth-line-hover: rgba(255, 255, 255, 0.14);
+    --auth-muted: rgba(255, 255, 255, 0.42);
+    --auth-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    /* Height reveals (email field, forgot link, messages). */
+    --auth-reveal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     animation: loginPanelIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    box-sizing: border-box;
     isolation: isolate;
-    max-width: 28rem;
+    max-width: 480px;
+    padding: 42px 40px 34px;
     position: relative;
     text-align: center;
     width: 100%;
 }
 
+/* Layer blur: a soft dark halo under the card lifts it off the canvas. */
 .login-panel::before {
     background: radial-gradient(
-        ellipse 88% 72% at 50% 42%,
-        rgba(0, 0, 0, 0.78) 0%,
-        rgba(0, 0, 0, 0.42) 46%,
-        transparent 72%
+        ellipse 70% 65% at 50% 50%,
+        rgba(0, 0, 0, 0.75) 0%,
+        rgba(0, 0, 0, 0.35) 55%,
+        transparent 75%
     );
     content: "";
-    filter: blur(10px);
-    inset: -36px -32px -44px;
+    filter: blur(28px);
+    inset: -56px -64px -72px;
     pointer-events: none;
     position: absolute;
     z-index: -1;
+}
+
+/* Clear glass: only a background blur of the canvas and a hairline edge —
+   no fill, sheen or grain. On ::after so it paints above the halo, below content. */
+.login-panel::after {
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 36px;
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: -1;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .login-panel::after {
+        background-color: rgba(14, 14, 14, 0.9);
+    }
 }
 
 @keyframes loginPanelIn {
@@ -334,28 +369,43 @@
     }
 }
 
+/* Metallic headline: bright top, brushed grey bottom. */
 .login-panel__title {
-    background: linear-gradient(
-        180deg,
-        #ffffff 0%,
-        rgba(255, 255, 255, 0.92) 42%,
-        rgba(180, 180, 180, 0.88) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    display: grid;
     font-family: var(--f-display);
-    font-size: clamp(2.35rem, 5.5vw, 3rem);
+    font-size: clamp(2.5rem, 6vw, 3.3rem);
     font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.06;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
     margin: 0;
 }
 
+.login-panel__title-text,
+.verify-email__title {
+    background: linear-gradient(180deg, #ffffff 0%, #e9e9e9 38%, #9a9a9a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.login-panel__title-text {
+    grid-area: 1 / 1;
+    transition:
+        opacity 0.32s var(--auth-ease),
+        transform 0.42s var(--auth-ease),
+        filter 0.32s ease;
+}
+
+.login-panel__title-text[aria-hidden="true"] {
+    filter: blur(6px);
+    opacity: 0;
+    transform: translateY(8px);
+}
+
 .login-panel__sub {
-    color: rgba(255, 255, 255, 0.52);
-    font-size: clamp(0.875rem, 1.8vw, 1rem);
-    font-weight: 300;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 14.5px;
+    font-weight: 400;
     line-height: 1.3;
     margin: 12px 0 0;
 }
@@ -363,8 +413,78 @@
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    margin-top: 40px;
+    margin-top: 30px;
+}
+
+/* Controls on the card are glass too (lighter blur than the card). */
+.auth-tabs,
+.login-input,
+.login-submit,
+.login-oauth__btn {
+    -webkit-backdrop-filter: var(--auth-field-blur);
+    backdrop-filter: var(--auth-field-blur);
+}
+
+/* ─── Log in | Register ─── */
+.auth-tabs {
+    background: var(--auth-field);
+    border: 1px solid var(--auth-line);
+    border-radius: 999px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 50px;
+    padding: 4px;
+    position: relative;
+}
+
+.auth-tabs__thumb {
+    background: linear-gradient(180deg, #f7f7f7, #e6e6e6);
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 18px -8px rgba(255, 255, 255, 0.35);
+    inset: 4px auto 4px 4px;
+    pointer-events: none;
+    position: absolute;
+    transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+    width: calc(50% - 4px);
+}
+
+.login-panel[data-auth-mode="register"] .auth-tabs__thumb {
+    transform: translateX(100%);
+}
+
+.auth-tabs__tab {
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-family: var(--f-ui);
+    font-size: 14.5px;
+    font-weight: 500;
+    position: relative;
+    transition: color 0.3s ease;
+    z-index: 1;
+}
+
+.auth-tabs__tab:hover {
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.auth-tabs__tab[aria-selected="true"] {
+    color: #0b0b0b;
+}
+
+.auth-tabs__tab:focus-visible {
+    outline: 1.5px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+/* ─── Fields ─── */
+.login-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 22px;
 }
 
 .login-field {
@@ -372,24 +492,17 @@
     position: relative;
 }
 
-.login-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
 .login-input {
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-    background: rgba(0, 0, 0, 0.42);
-    border: 1px solid rgba(180, 180, 180, 0.16);
+    background: var(--auth-field);
+    border: 1px solid var(--auth-line);
     border-radius: 999px;
     color: #fff;
     font-family: var(--f-ui);
     font-size: 15px;
+    height: 54px;
     outline: none;
-    padding: 14px 18px;
-    text-align: center;
+    padding: 0 20px;
+    text-align: left;
     transition:
         border-color 0.2s ease,
         background 0.2s ease,
@@ -397,22 +510,26 @@
     width: 100%;
 }
 
+.login-field--password .login-input {
+    padding-right: 62px;
+}
+
 .login-input::placeholder {
-    color: rgba(255, 255, 255, 0.26);
+    color: rgba(255, 255, 255, 0.34);
 }
 
 .login-input:hover {
-    background: rgba(0, 0, 0, 0.52);
-    border-color: rgba(190, 190, 190, 0.22);
+    border-color: var(--auth-line-hover);
 }
 
+/* Neutral focus: a soft white glow, never the global accent outline. */
 .login-page .login-input:focus,
 .login-page .login-input:focus-visible {
-    background: rgba(0, 0, 0, 0.55);
-    border: 1px solid rgba(200, 200, 200, 0.28);
-    box-shadow: none;
-    outline: none;
-    outline-offset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08) !important;
+    outline: none !important;
+    outline-offset: 0 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -429,167 +546,287 @@
     }
 }
 
-.login-field__submit {
+/* Email field: open on the Register tab only. */
+.login-field--email {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: -14px;
+    opacity: 0;
+    transition:
+        grid-template-rows var(--auth-reveal),
+        margin-top var(--auth-reveal),
+        opacity var(--auth-reveal);
+}
+
+.login-field--email.is-open {
+    grid-template-rows: 1fr;
+    margin-top: 0;
+    opacity: 1;
+}
+
+.login-field__reveal {
+    margin: -4px;
+    min-height: 0;
+    overflow: hidden;
+    padding: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-field--email {
+        transition: none;
+    }
+}
+
+/* Eye toggle inside the password pill. */
+.login-field__reveal-btn {
     align-items: center;
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 999px;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.72);
     cursor: pointer;
     display: inline-flex;
-    height: 38px;
+    height: 40px;
     justify-content: center;
     position: absolute;
-    right: 6px;
+    right: 7px;
     top: 50%;
     transform: translateY(-50%);
-    transition: background 0.2s ease;
-    width: 38px;
-    z-index: 1;
+    transition: background 0.2s ease, color 0.2s ease;
+    width: 40px;
 }
 
-.login-field__submit:hover {
-    background: rgba(255, 255, 255, 0.2);
+.login-field__reveal-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
 }
 
-.login-field__submit-icon {
-    display: inline-block;
-    font-size: 18px;
-    line-height: 1;
-    transition: transform 0.28s ease;
+.login-field__reveal-btn:focus-visible {
+    outline: 1.5px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 1px;
 }
 
-.login-field__submit:hover .login-field__submit-icon {
-    transform: translateX(2px);
+.login-field__reveal-btn svg {
+    fill: none;
+    grid-area: 1 / 1;
+    height: 18px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+    transition: opacity 0.18s ease, transform 0.25s var(--auth-ease);
+    width: 18px;
 }
 
+.login-field__reveal-btn {
+    display: inline-grid;
+    place-items: center;
+}
+
+.login-field__reveal-btn .is-hide,
+.login-field__reveal-btn[aria-pressed="true"] .is-show {
+    opacity: 0;
+    transform: scale(0.7);
+}
+
+.login-field__reveal-btn[aria-pressed="true"] .is-hide {
+    opacity: 1;
+    transform: none;
+}
+
+/* Forgot password: login tab only (collapses on Register). */
 .login-forgot-wrap {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition:
+        grid-template-rows var(--auth-reveal),
+        opacity var(--auth-reveal);
+}
+
+.login-forgot-wrap__inner {
     display: flex;
     justify-content: flex-end;
-    margin: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 12px 6px 0;
+}
+
+.login-panel[data-auth-mode="register"] .login-forgot-wrap {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .login-forgot {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.48);
+    color: rgba(255, 255, 255, 0.62);
     cursor: pointer;
     font-family: var(--f-ui);
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.2;
     padding: 0;
-    text-decoration: underline;
-    text-underline-offset: 2px;
     transition: color 0.2s ease;
 }
 
 .login-forgot:hover {
-    color: rgba(255, 255, 255, 0.78);
+    color: #fff;
+}
+
+/* ─── Submit ─── */
+.login-submit {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--auth-line);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    display: flex;
+    font-family: var(--f-ui);
+    font-size: 15px;
+    font-weight: 600;
+    height: 54px;
+    justify-content: center;
+    position: relative;
+    margin-top: 24px;
+    padding: 0 18px;
+    transition:
+        background 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease,
+        transform 0.12s ease;
+}
+
+/* The active label sizes the cell (width: auto at rest); the idle one sits
+   centred on top, out of flow. While the tabs switch, js/app.js eases the
+   cell between the two measured widths, so the arrow glides, then lets go. */
+.login-submit__labels {
+    display: grid;
+    justify-items: center;
+    position: relative;
+    transition: width 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+    white-space: nowrap;
+}
+
+.login-submit__label {
+    grid-area: 1 / 1;
+    transition:
+        opacity 0.28s ease,
+        transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.28s ease;
+}
+
+.login-submit__label[aria-hidden="true"] {
+    filter: blur(4px);
+    inset: 0;
+    margin-inline: auto;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transform: translateY(7px) scale(0.96);
+    width: max-content;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-submit__labels,
+    .login-submit__label {
+        transition: opacity 0.15s ease;
+    }
+}
+
+.login-submit__arrow {
+    fill: none;
+    height: 15px;
+    margin-left: 8px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    transition: transform 0.28s var(--auth-ease);
+    width: 15px;
+}
+
+.login-submit:hover {
+    border-color: var(--auth-line-hover);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.login-submit:hover .login-submit__arrow {
+    transform: translateX(3px);
+}
+
+.login-submit.is-ready {
+    background: linear-gradient(180deg, #f7f7f7, #e2e2e2);
+    border-color: transparent;
+    box-shadow: 0 10px 30px -14px rgba(255, 255, 255, 0.45);
+    color: #0b0b0b;
+}
+
+.login-submit:active {
+    transform: scale(0.985);
+}
+
+.login-submit:focus-visible {
+    outline: 1.5px solid rgba(255, 255, 255, 0.55);
+    outline-offset: 2px;
+}
+
+.login-submit:disabled {
+    cursor: default;
+    opacity: 0.6;
 }
 
 .login-divider {
     align-items: center;
-    color: rgba(255, 255, 255, 0.38);
+    color: rgba(255, 255, 255, 0.34);
     display: flex;
     font-size: 12px;
-    gap: 12px;
-    margin: 0;
+    gap: 14px;
+    margin: 20px 0;
 }
 
 .login-divider::before,
 .login-divider::after {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     content: "";
     flex: 1;
     height: 1px;
 }
 
-.login-actions {
-    display: flex;
-    gap: 12px;
-}
-
-.login-actions__btn {
-    border: none;
-    border-radius: 999px;
-    cursor: pointer;
-    flex: 1;
-    font-family: var(--f-ui);
-    font-size: 14px;
-    font-weight: 600;
-    min-width: 0;
-    padding: 14px 18px;
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        transform 0.12s ease,
-        opacity 0.2s ease;
-}
-
-.login-actions__btn:active {
-    transform: scale(0.98);
-}
-
-.login-actions__btn--ghost {
-    background: rgba(0, 0, 0, 0.38);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.52);
-}
-
-.login-actions__btn--ghost:hover {
-    background: rgba(0, 0, 0, 0.48);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.78);
-}
-
-.login-actions__btn--primary {
-    background: linear-gradient(to bottom right, #f3f4f6, #d1d5db);
-    color: #000;
-}
-
-.login-actions__btn--primary:hover {
-    background: linear-gradient(to bottom right, #e5e7eb, #9ca3af);
-}
-
-.login-actions__btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-}
-
+/* ─── Apple · Google ─── */
 .login-oauth {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 12px;
+    grid-template-columns: 1fr 1fr;
 }
 
 .login-oauth__btn {
     align-items: center;
-    background: rgba(0, 0, 0, 0.38);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--auth-field);
+    border: 1px solid var(--auth-line);
     border-radius: 999px;
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(255, 255, 255, 0.92);
     cursor: pointer;
     display: inline-flex;
     font-family: var(--f-ui);
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 500;
-    gap: 10px;
+    gap: 9px;
+    height: 50px;
     justify-content: center;
-    min-height: 48px;
-    padding: 12px 18px;
+    padding: 0 16px;
     transition:
         background 0.2s ease,
         border-color 0.2s ease,
-        color 0.2s ease,
         transform 0.12s ease,
         opacity 0.2s ease;
-    width: 100%;
 }
 
 .login-oauth__btn:hover {
-    background: rgba(0, 0, 0, 0.5);
-    border-color: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--auth-line-hover);
 }
 
 .login-oauth__btn:active {
@@ -603,39 +840,65 @@
 
 .login-oauth__icon {
     flex-shrink: 0;
-    height: 18px;
-    width: 18px;
+    height: 17px;
+    width: 17px;
 }
 
-.login-oauth__icon--google {
-    height: 18px;
-    width: 18px;
-}
-
+/* Legal line: pinned under everything at the bottom of the page. */
 .login-legal {
-    color: rgba(255, 255, 255, 0.38);
+    color: rgba(255, 255, 255, 0.36);
     font-size: 11px;
     line-height: 1.5;
-    margin: 44px 0 0;
+    margin: 0;
+    padding: 0 20px 22px;
+    text-align: center;
+    text-shadow: 0 0 10px #000, 0 0 3px #000;
 }
 
-.login-legal a {
-    color: rgba(255, 255, 255, 0.38);
-    text-decoration: underline;
-    transition: color 0.2s ease;
+.login-legal svg {
+    display: inline-block;
+    fill: none;
+    height: 12px;
+    margin-right: 6px;
+    vertical-align: -2px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.4;
+    width: 12px;
 }
 
-.login-legal a:hover {
-    color: rgba(255, 255, 255, 0.62);
+/* Messages under the panel: height 0 → auto, pushing only what's below. */
+.login-reveal {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+        grid-template-rows var(--auth-reveal),
+        opacity var(--auth-reveal);
+}
+
+.login-reveal.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.login-reveal__inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-reveal {
+        transition: none;
+    }
 }
 
 #authError {
-    animation: loginErrorIn 0.22s ease;
     border-radius: 999px;
     font-family: var(--f-ui);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
-    margin-top: 20px;
+    margin-top: 12px;
     padding: 10px 14px;
     text-align: center;
 }
@@ -706,10 +969,72 @@
     }
 
     .login-main {
-        padding-top: 108px;
+        padding-top: clamp(96px, calc(50vh - 270px), 150px);
     }
 
-    .login-actions {
-        flex-direction: column;
+    .login-panel {
+        padding: 28px 20px 24px;
+    }
+
+    .login-panel::after {
+        border-radius: 28px;
+    }
+
+}
+
+/* Short desktop windows (≤ 780px tall): a tighter card so the Register form
+   and the legal line still fit without the page scrolling. */
+@media (min-width: 640px) and (max-height: 780px) {
+    .login-main {
+        padding-top: clamp(92px, calc(50vh - 242px), 240px);
+    }
+
+    .login-panel {
+        padding: 26px 34px 22px;
+    }
+
+    /* Controls keep the larger type but the previous heights. */
+    .login-input,
+    .login-submit {
+        height: 48px;
+    }
+
+    .auth-tabs,
+    .login-oauth__btn {
+        height: 44px;
+    }
+
+    .login-fields {
+        gap: 12px;
+    }
+
+    .login-field--email {
+        margin-top: -12px;
+    }
+
+    .login-panel__title,
+    .verify-email__title {
+        font-size: 2.35rem;
+    }
+
+    .login-form {
+        margin-top: 20px;
+    }
+
+    .login-fields {
+        margin-top: 16px;
+    }
+
+    .login-submit {
+        margin-top: 16px;
+    }
+
+    .login-divider {
+        margin: 14px 0;
+    }
+
+    .login-legal {
+        padding-bottom: 14px;
     }
 }
+
