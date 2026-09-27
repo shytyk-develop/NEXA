@@ -4,6 +4,7 @@
 const routes = [
     { path: '/', view: 'start' },
     { path: '/login', view: 'login' },
+    { path: '/reset-password', view: 'reset-password' },
     { path: '/about-security', view: 'about-security' },
     { path: '/chat', view: 'chat' },
     // Settings / Profile views (kept in the URL so a reload reopens them).

@@ -1,0 +1,5 @@
+# Tests: cd backend && ../venv/bin/python -m pytest
+-r requirements.txt
+pytest
+# Throwaway PostgreSQL for the tests (bundled binaries, no install needed)
+pgserver

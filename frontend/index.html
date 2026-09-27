@@ -20,7 +20,7 @@
          Mark it before first paint so a hard reload never flashes the theme's
          (possibly light) body background while app.js boots. -->
     <script>
-        if (location.pathname === '/login') document.documentElement.dataset.surface = 'auth';
+        if (location.pathname === '/login' || location.pathname === '/reset-password') document.documentElement.dataset.surface = 'auth';
     </script>
     <style>
         html {
@@ -869,6 +869,9 @@
                     <!-- After Register (or signing in unverified): the 6-digit email code
                          (src/auth/VerifyEmail.tsx) takes the form's place. -->
                     <div id="uiVerifyEmailMount" class="login-verify" hidden></div>
+                    <!-- "Forgot password?" and /reset-password (src/auth/ForgotPassword.tsx,
+                         ResetPassword.tsx) take the form's place the same way. -->
+                    <div id="uiPasswordFlowMount" class="login-verify" hidden></div>
 
                     <!-- Cold start: shown while an auth request is still unanswered after 3.5s (js/api.js). -->
                     <div id="serverWakeBanner" class="server-wake" role="status" aria-live="polite">

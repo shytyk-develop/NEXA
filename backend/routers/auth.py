@@ -4,7 +4,7 @@ import re
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Header, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 import database
@@ -22,19 +22,26 @@ from core.email_verification import (
     OTP_MAX_ATTEMPTS,
     OTP_RESEND_COOLDOWN_SECONDS,
     OTP_TTL_SECONDS,
+    PASSWORD_RESET_COOLDOWN_SECONDS,
+    PASSWORD_RESET_TTL_SECONDS,
     hash_otp,
+    hash_reset_token,
+    new_reset_token,
     is_valid_email,
     local_time,
     new_otp_code,
     normalize_email,
     send_otp_email,
+    send_password_reset_email,
 )
 from core.schemas import (
     ChangePasswordRequest,
     DeleteAccountRequest,
+    ForgotPasswordRequest,
     LoginRequest,
     RegisterRequest,
     ResendOtpRequest,
+    ResetPasswordRequest,
     VerifyEmailRequest,
 )
 from core.security import (
@@ -42,6 +49,7 @@ from core.security import (
     forget_session,
     get_current_session,
     get_current_username,
+    USERNAME_RE,
     normalize_username,
     validate_username,
 )
@@ -289,6 +297,87 @@ async def change_password(req: ChangePasswordRequest, authorization: Optional[st
         forget_session(session_id)
     await manager.terminate_other_sessions(username, current_session)
     return {"message": "Password updated", "revoked_sessions": len(revoked)}
+
+
+_FORGOT_PASSWORD_REPLY = {"message": "If an account matches, a link to reset its password is on its way to its email."}
+
+_RESET_ERRORS = {
+    "invalid": "This reset link isn't valid. Request a new one.",
+    "used": "This reset link was already used. Request a new one.",
+    "expired": "This reset link has expired. Request a new one.",
+}
+
+
+@router.post("/api/auth/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest, request: Request, background: BackgroundTasks):
+    """Email a reset link (valid 15 minutes, once) to the account named by
+    email or username. Always the same 200, whether or not the account
+    exists (no account probing); the mail goes out after the response, so the
+    timing doesn't tell either. At most one link a minute per account."""
+    identifier = (req.email_or_username or "").strip()
+    if "@" in identifier:
+        identifier = normalize_email(identifier)
+        if not is_valid_email(identifier):
+            return _FORGOT_PASSWORD_REPLY
+    else:
+        identifier = normalize_username(identifier)
+        if not USERNAME_RE.fullmatch(identifier):
+            return _FORGOT_PASSWORD_REPLY
+
+    account = await asyncio.to_thread(database.get_user_for_reset_db, identifier)
+    if account is None:
+        return _FORGOT_PASSWORD_REPLY
+
+    token = new_reset_token()
+    stored = await asyncio.to_thread(
+        database.create_password_reset_token_db,
+        account["username"],
+        hash_reset_token(token),
+        PASSWORD_RESET_TTL_SECONDS,
+        PASSWORD_RESET_COOLDOWN_SECONDS,
+    )
+    if stored:
+        background.add_task(
+            send_password_reset_email,
+            normalize_email(account["email"]),
+            token,
+            device=device_label(request.headers.get("user-agent")),
+            requested_at=local_time(request.headers.get("x-client-timezone")),
+        )
+    return _FORGOT_PASSWORD_REPLY
+
+
+@router.post("/api/auth/reset-password")
+async def reset_password(req: ResetPasswordRequest, request: Request, response: Response):
+    """A valid reset link → new password + the client's new key pair; every
+    session of the account ends (sockets too), and this browser is signed in
+    with a fresh one (cookie + access token, plus the keys login returns)."""
+    token = (req.token or "").strip()
+    if not token or len(token) > 256:
+        raise HTTPException(status_code=400, detail=_RESET_ERRORS["invalid"])
+    if len(req.new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=422, detail=f"Use at least {MIN_PASSWORD_LENGTH} characters")
+    if not req.public_key or not (req.encrypted_private_key or "").strip():
+        raise HTTPException(status_code=422, detail="Missing the new encryption keys")
+
+    status, username, revoked = await asyncio.to_thread(
+        database.reset_password_db, hash_reset_token(token), req.new_password, req.public_key, req.encrypted_private_key
+    )
+    if status != "ok" or not username:
+        raise HTTPException(status_code=400, detail=_RESET_ERRORS.get(status, _RESET_ERRORS["invalid"]))
+
+    for session_id in revoked:
+        forget_session(session_id)
+    await manager.terminate_other_sessions(username, None)
+
+    access_token = _start_session(request, response, username)
+    return {
+        "message": "Password reset",
+        "access_token": access_token,
+        "username": username,
+        "public_key": req.public_key,
+        "encrypted_private_key": req.encrypted_private_key,
+    }
 
 
 @router.delete("/api/account")

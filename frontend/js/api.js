@@ -123,6 +123,25 @@ export async function verifyEmailRequest(email, code) {
     return trackServerWake(postJson('/api/auth/verify-email', { email, code }));
 }
 
+/** Emails a reset link to the account (same reply whether or not it exists). */
+export async function forgotPasswordRequest(emailOrUsername) {
+    return trackServerWake(postJson('/api/auth/forgot-password', { email_or_username: emailOrUsername }));
+}
+
+/**
+ * The emailed link's token + a new password and the key pair made for it →
+ * session cookie + { access_token, username, public_key, encrypted_private_key }.
+ * 400 (.status) when the link is unknown, used or expired.
+ */
+export async function resetPasswordRequest({ token, newPassword, publicKey, encryptedPrivateKey }) {
+    return trackServerWake(postJson('/api/auth/reset-password', {
+        token,
+        new_password: newPassword,
+        public_key: publicKey,
+        encrypted_private_key: encryptedPrivateKey,
+    }));
+}
+
 /** A new code (429 with .retryAfter inside the 60s cooldown). */
 export async function resendOtpRequest(email) {
     return trackServerWake(postJson('/api/auth/resend-otp', { email }));

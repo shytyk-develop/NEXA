@@ -191,6 +191,8 @@ import {
     logoutRequest,
     verifyEmailRequest,
     resendOtpRequest,
+    forgotPasswordRequest,
+    resetPasswordRequest,
     SERVER_WAKE_EVENT,
     setAccessTokenGetter,
     changePasswordRequest,
@@ -1308,7 +1310,7 @@ async function handleNavigation(view, param) {
     closeOverlaysForRouteChange();
     document.querySelectorAll('.route-page').forEach(page => page.classList.add('hidden'));
     // Pre-paint dark surface (index.html) — only while the login page is up.
-    if (view === 'login') document.documentElement.dataset.surface = 'auth';
+    if (view === 'login' || view === 'reset-password') document.documentElement.dataset.surface = 'auth';
     else delete document.documentElement.dataset.surface;
 
     if (view !== 'about-security' && aboutSecurityMounted) {
@@ -1330,8 +1332,9 @@ async function handleNavigation(view, param) {
             await mountStartPage();
         }
     }
-    else if (view === 'login') {
-        if (state.myUsername) {
+    else if (view === 'login' || view === 'reset-password') {
+        // A reset link works signed in too: it names its own account.
+        if (view === 'login' && state.myUsername) {
             navigateTo('/chat', handleNavigation);
             return;
         }
@@ -1345,6 +1348,11 @@ async function handleNavigation(view, param) {
             loginUiMounted = true;
         } else {
             import('./loginCanvas.js').then((mod) => mod.resetLoginBackground(DOM.pageLogin)).catch(() => {});
+        }
+        if (view === 'reset-password') {
+            await showResetPassword();
+        } else {
+            exitPasswordFlow();
         }
     }
     else if (view === 'about-security') {
@@ -1558,6 +1566,101 @@ const EMAIL_PATTERN = /^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$/;
  * The password stays in this closure only, to decrypt the synced private key
  * if this device doesn't have it yet.
  */
+/*
+ * "Forgot password?" and the emailed /reset-password link: their screens
+ * (React) take the login form's place in the panel, like the email code step.
+ */
+let passwordFlowUnmount = null;
+
+function enterPasswordFlow() {
+    const host = document.getElementById('uiPasswordFlowMount');
+    if (!host) return null;
+    hideAuthMessage();
+    document.getElementById('loginForm')?.setAttribute('hidden', '');
+    document.querySelector('#page-login .login-panel > .login-panel__title')?.setAttribute('hidden', '');
+    document.querySelector('#page-login .login-panel > .login-panel__sub')?.setAttribute('hidden', '');
+    host.hidden = false;
+    return host;
+}
+
+function exitPasswordFlow() {
+    const host = document.getElementById('uiPasswordFlowMount');
+    if (!host || host.hidden) return;
+    passwordFlowUnmount?.();
+    passwordFlowUnmount = null;
+    host.hidden = true;
+    document.getElementById('loginForm')?.removeAttribute('hidden');
+    document.querySelector('#page-login .login-panel > .login-panel__title')?.removeAttribute('hidden');
+    document.querySelector('#page-login .login-panel > .login-panel__sub')?.removeAttribute('hidden');
+}
+
+async function loadPasswordFlow() {
+    const [forgot, reset, mount] = await Promise.all([
+        import('../src/auth/ForgotPassword.tsx'),
+        import('../src/auth/ResetPassword.tsx'),
+        import('../src/auth/mountPasswordFlow.tsx'),
+    ]);
+    passwordFlowUnmount = mount.unmountPasswordFlow;
+    return { mountForgotPassword: forgot.mountForgotPassword, mountResetPassword: reset.mountResetPassword };
+}
+
+async function showForgotPassword() {
+    const { mountForgotPassword } = await loadPasswordFlow();
+    const host = enterPasswordFlow();
+    if (!host) return;
+    mountForgotPassword(host, {
+        initialValue: DOM.usernameInput?.value.trim() || '',
+        request: async (emailOrUsername) => {
+            await forgotPasswordRequest(emailOrUsername);
+        },
+        onBack: () => {
+            exitPasswordFlow();
+            if (window.location.pathname !== '/login') replaceTo('/login', handleNavigation);
+        },
+    });
+}
+
+/**
+ * /reset-password?token=…: the token is read once and dropped from the
+ * address bar (it's a credential — no history entry or reload keeps it).
+ * Submitting makes a fresh key pair (the old private key was locked with the
+ * forgotten password), resets, keeps the new keys on this device and signs in.
+ */
+async function showResetPassword() {
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (window.location.search) window.history.replaceState(null, '', '/reset-password');
+
+    const { mountResetPassword } = await loadPasswordFlow();
+    const host = enterPasswordFlow();
+    if (!host) return;
+    mountResetPassword(host, {
+        token,
+        submit: async (password) => {
+            const keyPair = await generateKeyPair();
+            const pubJWK = await exportPublicKey(keyPair.publicKey);
+            const privJWK = await exportPrivateKey(keyPair.privateKey);
+            const encryptedPrivateKey = await encryptPrivateKeyWithPassword(privJWK, password);
+
+            const resData = await resetPasswordRequest({
+                token,
+                newPassword: password,
+                publicKey: pubJWK,
+                encryptedPrivateKey,
+            });
+            // Replace whatever keys this device held: the account's pair is new.
+            saveKeys(resData.username, { publicKey: pubJWK, privateKey: privJWK });
+            showToast('Password reset successfully', 'success');
+            window.history.replaceState(null, '', '/login');
+            await completeSignIn(resData.username, password, resData);
+            exitPasswordFlow();
+        },
+        onRequestNew: () => {
+            window.history.replaceState(null, '', '/login');
+            void showForgotPassword();
+        },
+    });
+}
+
 async function showEmailVerification(email, username, password, { cooldown = 60 } = {}) {
     const form = document.getElementById('loginForm');
     const host = document.getElementById('uiVerifyEmailMount');
@@ -1997,10 +2100,7 @@ document.getElementById('uiPasswordReveal')?.addEventListener('click', togglePas
     input?.addEventListener('input', syncAuthSubmitReady);
 });
 DOM.btnForgotPassword?.addEventListener('click', () => {
-    showAuthMessage(
-        'Password recovery is not available yet. Your encryption keys are stored only on this device.',
-        false
-    );
+    void showForgotPassword();
 });
 DOM.btnAuthApple?.addEventListener('click', () => {
     showAuthMessage('Sign in with Apple is coming soon.', false);

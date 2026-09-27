@@ -252,6 +252,109 @@ def consume_email_otp_db(email: str, code_hash: str, max_attempts: int) -> tuple
     finally:
         release_connection(conn)
 
+def get_user_for_reset_db(identifier: str) -> Optional[dict]:
+    """The account a "Forgot password?" request names — by email (with "@")
+    or username — with the email the link goes to. None when there's no such
+    account or it has no email (older accounts) to send a link to."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        if "@" in identifier:
+            cursor.execute("SELECT username, email FROM users WHERE LOWER(email) = LOWER(%s)", (identifier,))
+        else:
+            cursor.execute("SELECT username, email FROM users WHERE username = %s", (identifier,))
+        row = cursor.fetchone()
+        if not row or not row[1]:
+            return None
+        return {"username": row[0], "email": row[1]}
+    finally:
+        release_connection(conn)
+
+
+def create_password_reset_token_db(username: str, token_hash: str, ttl_seconds: int, cooldown_seconds: int) -> bool:
+    """Store a new reset link for this account; any earlier unused link dies.
+    False — and nothing changes — when the last link went out under
+    `cooldown_seconds` ago (so the endpoint can't be used to spam a mailbox)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        # Serialize concurrent requests for the same account.
+        cursor.execute("SELECT 1 FROM users WHERE username = %s FOR UPDATE", (username,))
+        cursor.execute(
+            """
+            SELECT 1 FROM password_reset_tokens
+             WHERE username = %s AND created_at > NOW() - make_interval(secs => %s)
+            """,
+            (username, cooldown_seconds),
+        )
+        if cursor.fetchone():
+            conn.rollback()
+            return False
+        cursor.execute("UPDATE password_reset_tokens SET used = TRUE WHERE username = %s AND NOT used", (username,))
+        cursor.execute(
+            """
+            INSERT INTO password_reset_tokens (id, username, token_hash, expires_at)
+            VALUES (%s, %s, %s, NOW() + make_interval(secs => %s))
+            """,
+            (str(uuid.uuid4()), username, token_hash, ttl_seconds),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def reset_password_db(token_hash: str, new_password: str, public_key, encrypted_private_key: str) -> tuple:
+    """Redeem a reset link, atomically: (status, username, ended session ids).
+    status "ok": the password and the key pair are replaced (the client made
+    the new pair; the private key arrives encrypted with the new password),
+    the email counts as verified (the link proved the mailbox), every link of
+    the account is spent, its undelivered queue (encrypted to the old key) is
+    dropped and every auth session ends. "invalid" | "used" | "expired" —
+    nothing changes."""
+    public_key_str = json.dumps(public_key) if isinstance(public_key, dict) else public_key
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT username, used, expires_at > NOW() FROM password_reset_tokens WHERE token_hash = %s FOR UPDATE",
+            (token_hash,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            conn.rollback()
+            return "invalid", None, []
+        username, used, alive = row
+        if used:
+            conn.rollback()
+            return "used", None, []
+        if not alive:
+            conn.rollback()
+            return "expired", None, []
+        cursor.execute(
+            """
+            UPDATE users
+               SET password_hash = %s, public_key = %s, encrypted_private_key = %s, is_verified = TRUE
+             WHERE username = %s
+            """,
+            (hash_password(new_password), public_key_str, encrypted_private_key, username),
+        )
+        cursor.execute("UPDATE password_reset_tokens SET used = TRUE WHERE username = %s", (username,))
+        cursor.execute("DELETE FROM offline_messages WHERE receiver = %s", (username,))
+        cursor.execute("DELETE FROM auth_sessions WHERE username = %s RETURNING id", (username,))
+        revoked = [str(r[0]) for r in cursor.fetchall()]
+        conn.commit()
+        return "ok", username, revoked
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
 def search_users_db(query: str, current_username: str, limit: int = 20) -> list:
     """Search users by username without returning the whole database."""
     conn = get_connection()

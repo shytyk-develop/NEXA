@@ -3,9 +3,12 @@
 Codes live in email_otps (database.py) as a peppered SHA-256, expire after
 15 minutes, allow 5 wrong tries, and can be re-sent once a minute.
 
+Password reset links ("Forgot password?") go out the same way: a random
+token in a link valid for 15 minutes, stored as its SHA-256.
+
 Delivery: Resend (RESEND_API_KEY + MAIL_FROM), else SMTP (SMTP_HOST, SMTP_PORT,
-SMTP_USER, SMTP_PASSWORD, MAIL_FROM), else — local dev — the code is printed
-to the backend log. With a provider configured the code never hits the logs.
+SMTP_USER, SMTP_PASSWORD, MAIL_FROM), else — local dev — the code / link is
+printed to the backend log. With a provider configured it never hits the logs.
 """
 
 from __future__ import annotations
@@ -251,18 +254,10 @@ def local_time(tz_name: Optional[str]) -> datetime:
         return datetime.now(timezone.utc)
 
 
-def send_otp_email(
-    email: str,
-    code: str,
-    *,
-    device: Optional[str] = None,
-    requested_at: Optional[datetime] = None,
-) -> bool:
-    """Deliver a code (blocking — call it in a worker thread). Never raises:
-    a provider failure is logged with the reason and returns False, so the
-    request that triggered it doesn't turn into a 500 (the code stays valid
-    and "Resend code" can retry)."""
-    subject, text, html_body = render_otp_email(code, email=email, device=device, requested_at=requested_at)
+def _deliver(email: str, subject: str, text: str, html_body: str, *, kind: str, dev_note: str) -> bool:
+    """Send one mail: Resend, else SMTP, else (local dev) `dev_note` goes to
+    the log. Blocking — call it in a worker thread. Never raises: a provider
+    failure is logged with the reason and returns False."""
     if RESEND_API_KEY:
         try:
             response = httpx.post(
@@ -272,13 +267,14 @@ def send_otp_email(
                 timeout=10,
             )
         except httpx.HTTPError as exc:
-            logger.error("Resend unreachable, verification email to %s not sent: %s", email, exc)
+            logger.error("Resend unreachable, %s email to %s not sent: %s", kind, email, exc)
             return False
         if response.status_code >= 400:
             detail = _resend_error_detail(response)
             logger.error(
-                "Resend refused the verification email to %s (HTTP %s): %s — on the free plan without a "
+                "Resend refused the %s email to %s (HTTP %s): %s — on the free plan without a "
                 "verified domain Resend only delivers to your own address; verify a domain and set MAIL_FROM.",
+                kind,
                 email,
                 response.status_code,
                 detail,
@@ -300,10 +296,197 @@ def send_otp_email(
                     smtp.login(SMTP_USER, SMTP_PASSWORD)
                 smtp.send_message(message)
         except (smtplib.SMTPException, OSError) as exc:
-            logger.error("SMTP could not send the verification email to %s: %s", email, exc)
+            logger.error("SMTP could not send the %s email to %s: %s", kind, email, exc)
             return False
         return True
-    # Local dev: no mail provider — the code goes to the log instead.
-    logger.warning("[dev] no mail provider configured — verification code for %s: %s", email, code)
-    print(f"[dev] verification code for {email}: {code}", flush=True)
+    # Local dev: no mail provider — what the mail carries goes to the log instead.
+    logger.warning("[dev] no mail provider configured — %s for %s: %s", kind, email, dev_note)
+    print(f"[dev] {kind} for {email}: {dev_note}", flush=True)
     return True
+
+
+def send_otp_email(
+    email: str,
+    code: str,
+    *,
+    device: Optional[str] = None,
+    requested_at: Optional[datetime] = None,
+) -> bool:
+    """Deliver a code (blocking — call it in a worker thread). Never raises:
+    a provider failure is logged with the reason and returns False, so the
+    request that triggered it doesn't turn into a 500 (the code stays valid
+    and "Resend code" can retry)."""
+    subject, text, html_body = render_otp_email(code, email=email, device=device, requested_at=requested_at)
+    return _deliver(email, subject, text, html_body, kind="verification code", dev_note=code)
+
+
+# ─── Password reset ───
+
+PASSWORD_RESET_TTL_SECONDS = 15 * 60
+PASSWORD_RESET_COOLDOWN_SECONDS = 60
+
+
+def new_reset_token() -> str:
+    """The secret in a reset link (only its SHA-256 is stored)."""
+    return secrets.token_urlsafe(32)
+
+
+def hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def reset_link(token: str) -> str:
+    return f"{APP_URL}/reset-password?token={token}"
+
+
+def render_password_reset_email(
+    link: str,
+    *,
+    email: str = "",
+    device: Optional[str] = None,
+    requested_at: Optional[datetime] = None,
+) -> tuple[str, str, str]:
+    """(subject, plain text, HTML) for a reset link — the OTP mail's dark
+    style: a #141414 card, "Reset your NEXA password", a white "Reset
+    Password" button, the 15-minute validity, where / when it was asked for,
+    and what a reset does to the encryption keys."""
+    safe_link = html.escape(link, quote=True)
+    safe_email = html.escape(email)
+    moment = requested_at or datetime.now(timezone.utc)
+    when = _format_time(moment)
+    where = (device or "Unknown device").replace(" / ", " · ")
+    assets = f"{APP_URL}/brand/email"
+    app_host = html.escape(APP_URL.split("://", 1)[-1].rstrip("/"))
+
+    subject = "Reset your NEXA password"
+    text = "\n".join([
+        "Reset your NEXA password",
+        "",
+        "Someone asked to reset the password of the NEXA account for this address.",
+        "Open this link to choose a new one:",
+        "",
+        link,
+        "",
+        "This link is valid for 15 minutes and works once.",
+        "",
+        f"Requested from: {where}",
+        f"Time: {when}",
+        "",
+        "A reset creates new encryption keys: messages from before it can't be read on your devices anymore.",
+        "If you didn't ask for this, ignore this email — your password stays the same.",
+        "",
+        "Private · End-to-end encrypted",
+        APP_URL,
+    ])
+
+    mono = "'SF Mono',SFMono-Regular,ui-monospace,Menlo,Consolas,'Liberation Mono',monospace"
+    sans = "Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+
+    def info_row(label: str, value: str, first: bool) -> str:
+        border = "" if first else "border-top:1px solid #1C1C1E;"
+        return (
+            f'<tr><td class="row" style="{border}padding:18px 22px;font-family:{sans};font-size:15px;color:#7A7A7E;white-space:nowrap;">{label}</td>'
+            f'<td class="row" align="right" style="{border}padding:18px 22px;font-family:{mono};font-size:15px;color:#D6D6D8;white-space:nowrap;">{value}</td></tr>'
+        )
+
+    sent_to = (
+        f'<p style="margin:0 0 14px;font-family:{sans};font-size:13px;line-height:1.6;color:#6B6B70;">'
+        f"Sent to {safe_email} because a password reset was requested for this address.</p>"
+        if email else ""
+    )
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>Reset your NEXA password</title>
+<style>
+  @media (max-width: 520px) {{
+    .card {{ padding: 40px 20px 32px !important; border-radius: 20px !important; }}
+    .title {{ font-size: 28px !important; }}
+    .lead {{ font-size: 15px !important; }}
+    .outer {{ padding: 24px 8px 28px !important; }}
+    .row {{ padding: 16px 16px !important; font-size: 14px !important; }}
+    .note {{ padding: 18px 16px 18px 12px !important; font-size: 14px !important; }}
+    .note-icon {{ padding: 20px 0 20px 16px !important; }}
+  }}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0B0B;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0B0B0B;">Choose a new NEXA password. The link is valid for 15 minutes.</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#0B0B0B;">
+  <tr>
+    <td class="outer" align="center" style="padding:40px 12px 36px;">
+      <table role="presentation" class="card" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background-color:#141414;border:1px solid #242426;border-radius:24px;">
+        <tr>
+          <td class="card" align="center" style="padding:56px 44px 48px;font-family:{sans};">
+            <img src="{assets}/nexa-logo.png" width="160" height="28" alt="NEXA" style="display:block;margin:0 auto 34px;border:0;outline:none;color:#FFFFFF;font-family:{sans};font-size:22px;font-weight:700;letter-spacing:8px;">
+            <h1 class="title" style="margin:0 0 14px;font-family:{sans};font-size:36px;line-height:1.12;font-weight:700;letter-spacing:-1px;color:#FFFFFF;">Reset your NEXA password</h1>
+            <p class="lead" style="margin:0;font-family:{sans};font-size:17px;line-height:1.5;color:#A1A1A6;">Someone asked to reset the password of your account. Choose a new one here.</p>
+
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:34px auto 20px;">
+              <tr>
+                <td align="center" bgcolor="#FFFFFF" style="border-radius:999px;">
+                  <a href="{safe_link}" target="_blank" style="display:inline-block;padding:16px 40px;font-family:{sans};font-size:16px;font-weight:600;color:#0B0B0B;text-decoration:none;border-radius:999px;">Reset Password</a>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto;background-color:#0F0F10;border:1px solid #242426;border-radius:999px;border-collapse:separate;">
+              <tr>
+                <td valign="middle" style="padding:9px 8px 9px 16px;"><img src="{assets}/clock.png" width="16" height="16" alt="" style="display:block;border:0;"></td>
+                <td valign="middle" style="padding:9px 16px 9px 0;font-family:{sans};font-size:14px;color:#9A9A9F;">This link is valid for 15 minutes</td>
+              </tr>
+            </table>
+
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:34px;background-color:#0F0F10;border:1px solid #1F1F21;border-radius:16px;border-collapse:separate;">
+              {info_row("Requested from", html.escape(where), True)}
+              {info_row("Time", html.escape(when), False)}
+            </table>
+
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;background-color:#0F0F10;border:1px solid #1F1F21;border-radius:16px;border-collapse:separate;">
+              <tr>
+                <td class="note-icon" valign="top" width="22" style="padding:22px 0 22px 24px;width:22px;"><img src="{assets}/shield.png" width="22" height="22" alt="" style="display:block;border:0;margin-top:1px;"></td>
+                <td class="note" align="left" style="padding:20px 24px 20px 16px;font-family:{sans};font-size:15px;line-height:1.6;color:#9A9A9F;text-align:left;"><strong style="color:#FFFFFF;font-weight:600;">A reset creates new encryption keys.</strong> Messages from before it can't be read on your devices anymore. If you didn't ask for this, ignore this email &mdash; your password stays the same.</td>
+              </tr>
+            </table>
+
+            <p style="margin:26px 0 0;font-family:{sans};font-size:13px;line-height:1.6;color:#6B6B70;word-break:break-all;">Button not working? Paste this link into your browser:<br><a href="{safe_link}" style="color:#A1A1A6;">{safe_link}</a></p>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:32px auto 14px;">
+        <tr>
+          <td valign="middle" style="padding-right:8px;"><img src="{assets}/lock.png" width="16" height="16" alt="" style="display:block;border:0;"></td>
+          <td valign="middle" style="font-family:{sans};font-size:14px;color:#9A9A9F;">Private &middot; End-to-end encrypted</td>
+        </tr>
+      </table>
+      {sent_to}
+      <p style="margin:0;font-family:{sans};font-size:13px;">
+        <a href="{APP_URL}" style="color:#A1A1A6;text-decoration:underline;">{app_host}</a>
+        &nbsp;&nbsp;&nbsp;
+        <a href="{GITHUB_URL}" style="color:#A1A1A6;text-decoration:underline;">GitHub</a>
+      </p>
+    </td>
+  </tr>
+</table>
+</body>
+</html>"""
+    return subject, text, html_body
+
+
+def send_password_reset_email(
+    email: str,
+    token: str,
+    *,
+    device: Optional[str] = None,
+    requested_at: Optional[datetime] = None,
+) -> bool:
+    """Deliver a reset link (blocking — call it in a worker thread; never raises)."""
+    link = reset_link(token)
+    subject, text, html_body = render_password_reset_email(link, email=email, device=device, requested_at=requested_at)
+    return _deliver(email, subject, text, html_body, kind="password reset link", dev_note=link)

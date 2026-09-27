@@ -82,3 +82,17 @@ class ChangePasswordRequest(BaseModel):
 
 class DeleteAccountRequest(BaseModel):
     password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email_or_username: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+    # A fresh key pair made by the client: the old private key was encrypted
+    # with the forgotten password, so it can't be unlocked anymore. The
+    # server only ever sees the new private key encrypted with the new password.
+    public_key: Any
+    encrypted_private_key: str
