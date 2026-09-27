@@ -243,10 +243,31 @@ export function resetChatChromeBind() {
 bindChatDom(document, { requireChat: false });
 
 const PEER_PANEL_COLLAPSED_KEY = 'nexa_peer_panel_collapsed_v3';
-const PEER_NARROW_MQ = '(max-width: 760px)';
-const PEER_COLLAPSE_MQ = '(max-width: 1120px)';
-const SIDEBAR_NARROW_MQ = '(max-width: 1320px)';
-const PROFILE_STACK_MQ = '(max-width: 760px)';
+// Layouts below the 1024px desktop floor (#page-chat min-width) are touch-only:
+// a zoomed-in desktop (Cmd +) keeps the desktop columns. Phones don't reach
+// the app at all (index.html desktop-only gate).
+const PEER_NARROW_MQ = '(max-width: 760px) and (pointer: coarse)';
+const PEER_COLLAPSE_MAX_WIDTH = 1120;
+const SIDEBAR_NARROW_MAX_WIDTH = 1320;
+const PROFILE_STACK_MQ = '(max-width: 760px) and (pointer: coarse)';
+
+/**
+ * The width the app really lays out in. Past 125% browser zoom index.html
+ * shrinks <html> (CSS zoom, --ui-zoom) so the UI stops growing — the page is
+ * then wider than the browser viewport that media queries measure.
+ */
+function layoutWidth() {
+    const zoom = parseFloat(document.documentElement.style.getPropertyValue('--ui-zoom')) || 1;
+    return window.innerWidth / zoom;
+}
+
+function isPeerCollapseWidth() {
+    return layoutWidth() <= PEER_COLLAPSE_MAX_WIDTH;
+}
+
+function isSidebarNarrowWidth() {
+    return layoutWidth() <= SIDEBAR_NARROW_MAX_WIDTH;
+}
 const APP_STACK_MQ = PROFILE_STACK_MQ;
 
 function isAppStackViewport() {
@@ -258,11 +279,11 @@ function isProfileStackViewport() {
 }
 
 function isPeerCollapseViewport() {
-    return window.matchMedia(PEER_COLLAPSE_MQ).matches;
+    return isPeerCollapseWidth();
 }
 
 function isSidebarNarrowViewport() {
-    return window.matchMedia(SIDEBAR_NARROW_MQ).matches;
+    return isSidebarNarrowWidth();
 }
 
 function readPeerPanelCollapsed() {
@@ -475,7 +496,7 @@ let profileNavUserExpand = false;
 function syncProfileNavScrim() {
     const scrim = DOM.profileNavScrim;
     if (!scrim) return;
-    const narrow = window.matchMedia(SIDEBAR_NARROW_MQ).matches;
+    const narrow = isSidebarNarrowWidth();
     const stack = isProfileStackViewport();
     const open = Boolean(DOM.pageChat?.classList.contains('is-profile-nav-open'));
     const show = narrow && !stack && open && Boolean(DOM.profilePanel && !DOM.profilePanel.classList.contains('hidden'));
@@ -695,7 +716,7 @@ function initProfileNavCollapse() {
     btn?.addEventListener('click', () => {
         if (isProfileStackViewport()) return;
         const next = !DOM.pageChat?.classList.contains('is-profile-nav-open');
-        profileNavUserExpand = window.matchMedia(SIDEBAR_NARROW_MQ).matches && next;
+        profileNavUserExpand = isSidebarNarrowWidth() && next;
         setProfileNavOpen(next);
     });
     scrim?.addEventListener('click', () => {
@@ -710,7 +731,7 @@ function initProfileNavCollapse() {
             setProfileDrillLevel('section');
             return;
         }
-        if (!window.matchMedia(SIDEBAR_NARROW_MQ).matches) return;
+        if (!isSidebarNarrowWidth()) return;
         profileNavUserExpand = false;
         setProfileNavOpen(false);
     });
@@ -728,15 +749,25 @@ const contactsState = {
 
 function initViewportPanels() {
     const peerMq = window.matchMedia(PEER_NARROW_MQ);
-    const peerCollapseMq = window.matchMedia(PEER_COLLAPSE_MQ);
-    const sidebarMq = window.matchMedia(SIDEBAR_NARROW_MQ);
     const stackMq = window.matchMedia(APP_STACK_MQ);
     const run = () => syncViewportPanels();
     run();
-    for (const mq of [peerMq, peerCollapseMq, sidebarMq, stackMq]) {
+    for (const mq of [peerMq, stackMq]) {
         if (mq.addEventListener) mq.addEventListener('change', run);
         else mq.addListener?.(run);
     }
+    // The 1120 / 1320 thresholds follow the layout width (layoutWidth()):
+    // re-check when it crosses one (resize, browser zoom).
+    let wasPeerCollapse = isPeerCollapseWidth();
+    let wasSidebarNarrow = isSidebarNarrowWidth();
+    window.addEventListener('resize', () => {
+        const peerCollapse = isPeerCollapseWidth();
+        const sidebarNarrow = isSidebarNarrowWidth();
+        if (peerCollapse === wasPeerCollapse && sidebarNarrow === wasSidebarNarrow) return;
+        wasPeerCollapse = peerCollapse;
+        wasSidebarNarrow = sidebarNarrow;
+        run();
+    });
 }
 
 const realtimeContext = {
@@ -2316,7 +2347,7 @@ function setAppView(view) {
         } else {
             setProfileDrillLevel('section');
         }
-    } else if (window.matchMedia(SIDEBAR_NARROW_MQ).matches) {
+    } else if (isSidebarNarrowWidth()) {
         profileNavUserExpand = false;
         setProfileNavOpen(isSettings);
         setProfileDrillLevel(null);

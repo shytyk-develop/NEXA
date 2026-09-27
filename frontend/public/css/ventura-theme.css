@@ -472,7 +472,7 @@ body {
     margin: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px) and (pointer: coarse) {
     .message-content-wrap {
         max-width: min(72%, calc(100% - 36px));
     }

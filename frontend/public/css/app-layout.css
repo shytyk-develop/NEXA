@@ -5598,7 +5598,7 @@ html[data-theme^="light"] .contact-unread {
     word-break: break-all;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 760px) and (pointer: coarse) {
     :root {
         --layout-sidebar-w: 200px;
         --layout-gutter-x: 14px;
@@ -5644,7 +5644,7 @@ html[data-theme^="light"] .contact-unread {
     }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 520px) and (pointer: coarse) {
     :root {
         --layout-gutter-x: 12px;
     }

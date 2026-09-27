@@ -987,16 +987,16 @@
     pointer-events: none;
 }
 
-@media (min-width: 640px) {
-    .login-nav__links,
-    .login-nav__actions {
-        display: flex;
-    }
+/* Desktop nav (was @media (min-width: 640px)): only ≥ 1024px layouts reach the
+   login page now — phones get the desktop-only screen (index.html). */
+.login-nav__links,
+.login-nav__actions {
+    display: flex;
+}
 
-    .login-nav__toggle,
-    .login-nav__menu {
-        display: none;
-    }
+.login-nav__toggle,
+.login-nav__menu {
+    display: none;
 }
 
 .login-nav__menu-links .login-nav__link {
@@ -1017,7 +1017,7 @@
     height: 1.5rem;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px) and (pointer: coarse) {
     .login-nav__signup-glow {
         display: none;
     }
@@ -1038,57 +1038,57 @@
 
 /* Short desktop windows (≤ 780px tall): a tighter card so the Register form
    and the legal line still fit without the page scrolling. */
-@media (min-width: 640px) and (max-height: 780px) {
-    .login-main {
-        padding-top: clamp(92px, calc(50vh - 242px), 240px);
-    }
+/* (data-layout-short: the layout is ≤ 780px tall — set by the zoom cap in
+   index.html, which knows the height the page really lays out in.) */
+html[data-layout-short] .login-main {
+    padding-top: clamp(92px, calc(50vh - 242px), 240px);
+}
 
-    .login-panel {
-        padding: 26px 34px 22px;
-    }
+html[data-layout-short] .login-panel {
+    padding: 26px 34px 22px;
+}
 
-    /* Controls keep the larger type but the previous heights. */
-    .login-input,
-    .login-submit {
-        height: 48px;
-    }
+/* Controls keep the larger type but the previous heights. */
+html[data-layout-short] .login-input,
+html[data-layout-short] .login-submit {
+    height: 48px;
+}
 
-    .auth-tabs,
-    .login-oauth__btn {
-        height: 44px;
-    }
+html[data-layout-short] .auth-tabs,
+html[data-layout-short] .login-oauth__btn {
+    height: 44px;
+}
 
-    .login-fields {
-        gap: 12px;
-    }
+html[data-layout-short] .login-fields {
+    gap: 12px;
+}
 
-    .login-field--email {
-        margin-top: -12px;
-    }
+html[data-layout-short] .login-field--email {
+    margin-top: -12px;
+}
 
-    .login-panel__title,
-    .verify-email__title {
-        font-size: 2.35rem;
-    }
+html[data-layout-short] .login-panel__title,
+html[data-layout-short] .verify-email__title {
+    font-size: 2.35rem;
+}
 
-    .login-form {
-        margin-top: 20px;
-    }
+html[data-layout-short] .login-form {
+    margin-top: 20px;
+}
 
-    .login-fields {
-        margin-top: 16px;
-    }
+html[data-layout-short] .login-fields {
+    margin-top: 16px;
+}
 
-    .login-submit {
-        margin-top: 16px;
-    }
+html[data-layout-short] .login-submit {
+    margin-top: 16px;
+}
 
-    .login-divider {
-        margin: 14px 0;
-    }
+html[data-layout-short] .login-divider {
+    margin: 14px 0;
+}
 
-    .login-legal {
-        padding-bottom: 14px;
-    }
+html[data-layout-short] .login-legal {
+    padding-bottom: 14px;
 }
 

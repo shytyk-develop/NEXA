@@ -1312,6 +1312,8 @@ async function handleNavigation(view, param) {
     // Pre-paint dark surface (index.html) — only while the login page is up.
     if (view === 'login' || view === 'reset-password') document.documentElement.dataset.surface = 'auth';
     else delete document.documentElement.dataset.surface;
+    // Desktop-only gate (index.html): everything but the landing page and /about-security.
+    document.documentElement.toggleAttribute('data-app-route', view !== 'start' && view !== 'about-security');
 
     if (view !== 'about-security' && aboutSecurityMounted) {
         teardownAboutSecurity();

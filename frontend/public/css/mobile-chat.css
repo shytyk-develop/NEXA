@@ -539,7 +539,7 @@
 }
 
 /* Bottom sheets for menus on small screens */
-@media (max-width: 760px) {
+@media (max-width: 760px) and (pointer: coarse) {
     .overlay-surface.is-sheet:not(.overlay-surface--drawer) {
         border-radius: 18px 18px 14px 14px;
         bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
