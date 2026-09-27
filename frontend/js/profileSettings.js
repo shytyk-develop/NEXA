@@ -1513,7 +1513,7 @@ function onDeleteAccount() {
 }
 
 function onUsernameEdit() {
-    ctx?.showToast?.('Username is your login and can’t be changed.', 'info');
+    ctx?.showToast?.('Username is your login and can’t be changed.', 'warning');
 }
 
 /** Copy the profile link; the button itself confirms (check + "Copied!" for 2s). */
@@ -1525,7 +1525,7 @@ async function copyProfileLink() {
     }
     // The full deeplink on this deployment's domain: opens a chat with them.
     if (!(await copyField(`${window.location.origin}/chat/@${username}`, { quiet: true }))) return;
-    ctx?.showToast?.('Copied to clipboard!', 'copied');
+    ctx?.showToast?.('Copied to clipboard!', 'success');
     const btn = $p('uiProfileCopyLink');
     if (!btn) return;
     btn.classList.add('is-copied');

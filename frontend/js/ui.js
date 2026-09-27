@@ -23,6 +23,7 @@ import {
 } from './profile.js';
 import { resolveContactProfile } from './profileDirectory.js';
 import { setSavedMessagesPeer } from '../src/chat/savedMessages.ts';
+import { showToast as showUnifiedToast } from '../src/components/toast/Toaster.tsx';
 import {
     clearPasteAttachments,
     getPasteAttachmentsLength,
@@ -42,7 +43,6 @@ const DOM_IDS = {
     btnForgotPassword: 'btnForgotPassword',
     btnAuthApple: 'btnAuthApple',
     btnAuthGoogle: 'btnAuthGoogle',
-    authError: 'authError',
 
     statusSpan: 'status',
     messagesDiv: 'messages',
@@ -109,7 +109,6 @@ const DOM_IDS = {
 
     shortcutsPanel: 'uiShortcutsPanel',
     closeShortcutsBtn: 'uiCloseShortcutsBtn',
-    toastRegion: 'uiToastRegion',
 
     chatWorkspace: 'uiChatWorkspace',
     chatBackBtn: 'uiChatBackBtn',
@@ -2378,29 +2377,19 @@ export function highlightMessageRow(targetId) {
     row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
-export function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast is-${type}`;
-    if (type === 'copied') {
-        // Lime check + text: the profile link / copy confirmations.
-        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        icon.setAttribute('viewBox', '0 0 16 16');
-        icon.setAttribute('aria-hidden', 'true');
-        icon.classList.add('toast__check');
-        icon.innerHTML = '<path d="m3.5 8.4 2.9 2.9 6.1-6.6"/>';
-        const text = document.createElement('span');
-        text.textContent = message;
-        toast.append(icon, text);
-    } else {
-        toast.textContent = message;
-    }
-    DOM.toastRegion.appendChild(toast);
-
-    // Fade out, then leave the DOM (reduced motion: the animation is off, so just go).
-    window.setTimeout(() => toast.classList.add('is-leaving'), 2900);
-    window.setTimeout(() => {
-        toast.remove();
-    }, 3200);
+/**
+ * Legacy call shape (message, type) → the unified toaster
+ * (src/components/toast/Toaster.tsx). Also takes its options object.
+ * 'copied' reads as success; anything unknown (old 'info') as a warning.
+ */
+export function showToast(message, type = 'success', duration) {
+    const options = message && typeof message === 'object' ? message : { message, type, duration };
+    const kind = options.type === 'copied' ? 'success' : options.type;
+    return showUnifiedToast({
+        message: options.message,
+        type: kind === 'success' || kind === 'error' || kind === 'warning' ? kind : 'warning',
+        ...(options.duration ? { duration: options.duration } : {}),
+    });
 }
 
 export function setPreferenceControls(preferences) {

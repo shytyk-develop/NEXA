@@ -158,12 +158,6 @@
     box-shadow: inset 0 0 0 1px var(--accent-muted), var(--shadow-1);
 }
 
-.toast {
-    background: var(--overlay-bg);
-    border-color: var(--overlay-border);
-    box-shadow: var(--overlay-shadow);
-}
-
 /* ─── Status chip ─── */
 #status {
     background: var(--btn-secondary-bg);

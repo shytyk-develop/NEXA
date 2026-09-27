@@ -49,7 +49,7 @@ export function buildLinkBar(body, { href, close, mountRow }) {
             const option = LINK_WARNING_SNOOZES.find((o) => o.id === optionId);
             if (!option) return;
             pauseLinkWarnings(option.durationMs);
-            showToast(snoozeToast(option), 'info');
+            showToast(snoozeToast(option), 'success');
             close();
         },
     });

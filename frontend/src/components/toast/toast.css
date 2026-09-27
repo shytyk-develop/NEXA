@@ -1,0 +1,129 @@
+/* Toaster.tsx: bottom-right stack of glass banners. Colours come from the
+   theme tokens; the accent (lime in Dark Neon) marks success. */
+.nexa-toaster {
+    --toast-bg: color-mix(in srgb, var(--bg-section, #0e0e0e) 78%, transparent);
+    --toast-text: var(--text-primary, #f4f4f5);
+    --toast-muted: var(--text-secondary, #969696);
+    --toast-line: color-mix(in srgb, var(--text-primary, #fff) 9%, transparent);
+    --toast-success: var(--accent-primary, #ccff00);
+    --toast-warning: #f5b83d;
+    --toast-error: #f2545b;
+    bottom: max(20px, env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    position: fixed;
+    right: 20px;
+    width: min(380px, calc(100vw - 32px));
+    z-index: 2000; /* above drawers (1001) and overlays */
+}
+
+.nexa-toast {
+    --tone: var(--toast-success);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    align-items: center;
+    backdrop-filter: blur(18px) saturate(140%);
+    background: var(--toast-bg);
+    border: 1px solid color-mix(in srgb, var(--tone) 28%, var(--toast-line));
+    border-radius: 12px;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, #fff 5%, transparent),
+        0 18px 40px -18px rgba(0, 0, 0, 0.6);
+    box-sizing: border-box;
+    color: var(--toast-text);
+    display: grid;
+    font-family: var(--f-ui, inherit);
+    gap: 12px;
+    grid-template-columns: auto 1fr auto;
+    overflow: hidden;
+    padding: 13px 10px 15px 14px;
+    pointer-events: auto; /* stays clickable while a drawer locks the page */
+    position: relative;
+}
+
+.nexa-toast.is-warning {
+    --tone: var(--toast-warning);
+}
+
+.nexa-toast.is-error {
+    --tone: var(--toast-error);
+}
+
+.nexa-toast__icon {
+    color: var(--tone);
+    display: inline-flex;
+}
+
+.nexa-toast__message {
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.nexa-toast__close {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: 8px;
+    color: var(--toast-muted);
+    cursor: pointer;
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    width: 28px;
+}
+
+.nexa-toast__close:hover {
+    background: color-mix(in srgb, var(--toast-text) 8%, transparent);
+    color: var(--toast-text);
+}
+
+.nexa-toast__close:focus-visible {
+    outline: 1.5px solid color-mix(in srgb, var(--tone) 70%, transparent);
+    outline-offset: 1px;
+}
+
+/* Time left: a hairline that drains right-to-left, paused on hover / focus. */
+.nexa-toast__progress {
+    animation: nexa-toast-drain linear forwards;
+    background: var(--tone);
+    bottom: 0;
+    height: 2px;
+    left: 0;
+    opacity: 0.85;
+    position: absolute;
+    transform-origin: left center;
+    width: 100%;
+}
+
+@keyframes nexa-toast-drain {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+
+/* Light themes: a lighter glass, darker ink for the amber / lime tones. */
+:root[data-theme^="light"] .nexa-toaster {
+    --toast-bg: color-mix(in srgb, #fff 82%, transparent);
+    --toast-success: color-mix(in srgb, var(--accent-primary, #8dc400) 78%, #000);
+    --toast-warning: #b7791f;
+    --toast-error: #d63d44;
+}
+
+:root[data-theme^="light"] .nexa-toast {
+    box-shadow: 0 16px 36px -18px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 520px) {
+    .nexa-toaster {
+        left: 16px;
+        right: 16px;
+        width: auto;
+    }
+}

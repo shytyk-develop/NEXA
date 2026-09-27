@@ -81,6 +81,7 @@ import {
 } from './ui.js';
 import { createChatEngine } from '../src/chat/engine/chatEngine.ts';
 import { showUserNotFound, hideUserNotFound } from '../src/chat/deeplink/UserNotFound.tsx';
+import { dismissToast } from '../src/components/toast/Toaster.tsx';
 import {
     attachReplyToMessage,
     buildPendingReplyFromMessage,
@@ -277,7 +278,7 @@ const engine = createChatEngine(state, {
     onSessionTerminated: () => {
         if (!state.token) return;
         handleLogout();
-        showToast('This device was signed out from another device.', 'info');
+        showToast('This device was signed out from another device.', 'warning');
     },
     onProfileUpdated: (data) => handleProfileUpdated(data),
     onUsersList: () => refreshContactList(),
@@ -741,7 +742,7 @@ function handleSharedMessageSaved(data) {
         savedAt: data.saved_at,
     });
     if (added && data.saved_by && normalizeUsername(data.saved_by) !== me) {
-        showToast(`${describeDeleter(data.saved_by)} saved a message for both of you.`, 'info');
+        showToast(`${describeDeleter(data.saved_by)} saved a message for both of you.`, 'success');
     }
 }
 
@@ -1106,7 +1107,7 @@ registerOverlayActions({
             clientMessageId: payload?.clientMessageId ?? null,
             variant: 'saved',
         });
-        if (!found) showToast('This message is no longer in the loaded chat.', 'info');
+        if (!found) showToast('This message is no longer in the loaded chat.', 'warning');
     },
     'message.highlight': (payload) => {
         highlightMessageRow(payload?.messageId || payload?.clientMessageId);
@@ -1197,7 +1198,7 @@ setMessageActionHandlers({
     getMyUsername: () => state.myUsername,
     resolveMessage: resolveMessageForRow,
     onActionUnavailable: () => {
-        showToast('Message is still syncing. Try again in a moment.', 'info');
+        showToast('Message is still syncing. Try again in a moment.', 'warning');
     },
 });
 
@@ -1601,16 +1602,17 @@ async function handleAuth(isLogin) {
     }
 }
 
+/** Login page feedback goes to the app's toaster (bottom-right), like everywhere else. */
+let authToastId = 0;
 function showAuthMessage(text, isError) {
-    DOM.authError.textContent = text;
-    DOM.authError.classList.toggle('text-red-400', isError);
-    DOM.authError.classList.toggle('text-green-400', !isError);
-    document.getElementById('uiAuthMessageReveal')?.classList.add('is-open');
+    if (!text) return;
+    authToastId = showToast(text, isError ? 'error' : 'warning');
 }
 
-/** Collapse the message (height eases back to 0); the text stays until the next one. */
+/** Drop a stale login message (tab switch, code step). */
 function hideAuthMessage() {
-    document.getElementById('uiAuthMessageReveal')?.classList.remove('is-open');
+    if (authToastId) dismissToast(authToastId);
+    authToastId = 0;
 }
 
 async function loadSidebarChats() {
@@ -2082,7 +2084,7 @@ DOM.dockSettings?.addEventListener('click', (event) => {
         const messageId = state.pendingReply?.messageId;
         if (!messageId) return;
         if (!scrollToMessageById(messageId)) {
-            showToast('The original message is no longer in this chat.', 'info');
+            showToast('The original message is no longer in this chat.', 'warning');
         }
     };
     DOM.replyBar?.addEventListener('click', (event) => {
@@ -2096,7 +2098,7 @@ DOM.dockSettings?.addEventListener('click', (event) => {
     });
     DOM.peerMuteBtn?.addEventListener('click', () => {
         if (!state.currentTargetUser) return;
-        showToast('Mute is coming soon.', 'info');
+        showToast('Mute is coming soon.', 'warning');
     });
     // The peer panel's Delete / Clear pills open an in-panel confirmation
     // (PeerPanel.tsx); its confirm button dispatches this, already confirmed.
@@ -2468,7 +2470,7 @@ setAuthHandlers({
     onAuthLost: () => {
         if (!state.myUsername) return;
         handleLogout();
-        showToast('Your session has ended. Please sign in again.', 'info');
+        showToast('Your session has ended. Please sign in again.', 'warning');
     },
 });
 

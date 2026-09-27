@@ -867,67 +867,6 @@
     width: 12px;
 }
 
-/* Messages under the panel: height 0 → auto, pushing only what's below. */
-.login-reveal {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    transition:
-        grid-template-rows var(--auth-reveal),
-        opacity var(--auth-reveal);
-}
-
-.login-reveal.is-open {
-    grid-template-rows: 1fr;
-    opacity: 1;
-}
-
-.login-reveal__inner {
-    min-height: 0;
-    overflow: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .login-reveal {
-        transition: none;
-    }
-}
-
-#authError {
-    border-radius: 999px;
-    font-family: var(--f-ui);
-    font-size: 13px;
-    font-weight: 500;
-    margin-top: 12px;
-    padding: 10px 14px;
-    text-align: center;
-}
-
-#authError.text-red-400 {
-    background: var(--danger-10);
-    border: 1px solid color-mix(in srgb, var(--color-danger) 28%, transparent);
-    /* Lighter step for small error text on the dark card. */
-    color: var(--danger-hover) !important;
-}
-
-#authError.text-green-400 {
-    background: rgba(34, 197, 94, 0.12);
-    border: 1px solid rgba(34, 197, 94, 0.28);
-    color: #86efac !important;
-}
-
-@keyframes loginErrorIn {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: none;
-    }
-}
-
 .login-page.is-loading .login-panel {
     opacity: 0.72;
     pointer-events: none;
