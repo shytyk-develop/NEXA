@@ -1609,9 +1609,10 @@ async function showForgotPassword() {
     const host = enterPasswordFlow();
     if (!host) return;
     mountForgotPassword(host, {
-        initialValue: DOM.usernameInput?.value.trim() || '',
-        request: async (emailOrUsername) => {
-            await forgotPasswordRequest(emailOrUsername);
+        // Only an address carries over: resets go by email, never by username.
+        initialValue: EMAIL_PATTERN.test(DOM.usernameInput?.value.trim() || '') ? DOM.usernameInput.value.trim() : '',
+        request: async (email) => {
+            await forgotPasswordRequest(email);
         },
         onBack: () => {
             exitPasswordFlow();

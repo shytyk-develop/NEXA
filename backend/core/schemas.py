@@ -85,7 +85,7 @@ class DeleteAccountRequest(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
-    email_or_username: str
+    email: str
 
 
 class ResetPasswordRequest(BaseModel):

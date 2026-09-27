@@ -49,7 +49,6 @@ from core.security import (
     forget_session,
     get_current_session,
     get_current_username,
-    USERNAME_RE,
     normalize_username,
     validate_username,
 )
@@ -299,7 +298,7 @@ async def change_password(req: ChangePasswordRequest, authorization: Optional[st
     return {"message": "Password updated", "revoked_sessions": len(revoked)}
 
 
-_FORGOT_PASSWORD_REPLY = {"message": "If an account matches, a link to reset its password is on its way to its email."}
+_FORGOT_PASSWORD_REPLY = {"message": "If this email is registered, a password reset link has been sent."}
 
 _RESET_ERRORS = {
     "invalid": "This reset link isn't valid. Request a new one.",
@@ -310,21 +309,16 @@ _RESET_ERRORS = {
 
 @router.post("/api/auth/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest, request: Request, background: BackgroundTasks):
-    """Email a reset link (valid 15 minutes, once) to the account named by
-    email or username. Always the same 200, whether or not the account
-    exists (no account probing); the mail goes out after the response, so the
-    timing doesn't tell either. At most one link a minute per account."""
-    identifier = (req.email_or_username or "").strip()
-    if "@" in identifier:
-        identifier = normalize_email(identifier)
-        if not is_valid_email(identifier):
-            return _FORGOT_PASSWORD_REPLY
-    else:
-        identifier = normalize_username(identifier)
-        if not USERNAME_RE.fullmatch(identifier):
-            return _FORGOT_PASSWORD_REPLY
+    """Email a reset link (valid 15 minutes, once) to a verified account's
+    address — by email only, never by username. A malformed address is a 422;
+    otherwise always the same 200, whether or not the email is registered or
+    verified (no address probing), and the mail goes out after the response,
+    so the timing doesn't tell either. At most one link a minute per account."""
+    email = normalize_email(req.email)
+    if not is_valid_email(email):
+        raise HTTPException(status_code=422, detail="Enter a valid email address")
 
-    account = await asyncio.to_thread(database.get_user_for_reset_db, identifier)
+    account = await asyncio.to_thread(database.get_user_for_reset_db, email)
     if account is None:
         return _FORGOT_PASSWORD_REPLY
 

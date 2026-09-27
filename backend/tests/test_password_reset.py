@@ -41,8 +41,8 @@ def alice(sql):
     return "alice"
 
 
-def request_link(client, outbox, identifier="alice@example.com") -> str:
-    response = client.post("/api/auth/forgot-password", json={"email_or_username": identifier})
+def request_link(client, outbox, email="alice@example.com") -> str:
+    response = client.post("/api/auth/forgot-password", json={"email": email})
     assert response.status_code == 200
     assert outbox, "no reset mail was sent"
     return outbox[-1][1]
@@ -63,14 +63,15 @@ def reset(client, token, password=NEW_PASSWORD):
 # ─── forgot-password ───
 
 
-@pytest.mark.parametrize("identifier", ["alice@example.com", "ALICE@Example.com", "alice", " Alice "])
-def test_forgot_password_creates_token_and_sends_email(client, outbox, alice, sql, identifier):
-    response = client.post("/api/auth/forgot-password", json={"email_or_username": identifier})
+@pytest.mark.parametrize("email", ["alice@example.com", "ALICE@Example.com", " alice@example.com "])
+def test_forgot_password_creates_token_and_sends_email(client, outbox, alice, sql, email):
+    response = client.post("/api/auth/forgot-password", json={"email": email})
 
     assert response.status_code == 200
+    assert response.json() == {"message": "If this email is registered, a password reset link has been sent."}
     assert len(outbox) == 1
-    email, token = outbox[0]
-    assert email == "alice@example.com"
+    to, token = outbox[0]
+    assert to == "alice@example.com"
     assert len(token) >= 40  # token_urlsafe(32)
 
     rows = sql(
@@ -86,28 +87,55 @@ def test_forgot_password_creates_token_and_sends_email(client, outbox, alice, sq
     assert 14 * 60 < ttl.total_seconds() <= 15 * 60
 
 
-def test_forgot_password_unknown_account_gives_the_same_reply(client, outbox, alice, sql):
-    known = client.post("/api/auth/forgot-password", json={"email_or_username": "alice@example.com"})
+def test_forgot_password_unknown_email_gives_the_same_reply(client, outbox, alice, sql):
+    known = client.post("/api/auth/forgot-password", json={"email": "alice@example.com"})
     outbox.clear()
-    unknown = client.post("/api/auth/forgot-password", json={"email_or_username": "nobody@example.com"})
-    bad = client.post("/api/auth/forgot-password", json={"email_or_username": "not a name!"})
+    unknown = client.post("/api/auth/forgot-password", json={"email": "nobody@example.com"})
 
-    assert unknown.status_code == bad.status_code == known.status_code == 200
-    assert unknown.json() == bad.json() == known.json()
+    assert unknown.status_code == known.status_code == 200
+    assert unknown.json() == known.json()
     assert outbox == []
     assert sql("SELECT COUNT(*) FROM password_reset_tokens")[0][0] == 1
 
 
-def test_forgot_password_account_without_email_gets_no_mail(client, outbox, sql):
-    database.register_user_db("legacy", OLD_PASSWORD, OLD_KEY, "enc", None)
-    response = client.post("/api/auth/forgot-password", json={"email_or_username": "legacy"})
-    assert response.status_code == 200
+def test_forgot_password_unverified_email_gets_the_same_reply_and_no_mail(client, outbox, alice, sql):
+    database.register_user_db("bob", OLD_PASSWORD, OLD_KEY, "enc", "bob@example.com")  # not verified
+    known = client.post("/api/auth/forgot-password", json={"email": "alice@example.com"})
+    outbox.clear()
+    unverified = client.post("/api/auth/forgot-password", json={"email": "bob@example.com"})
+
+    assert unverified.status_code == 200
+    assert unverified.json() == known.json()
+    assert outbox == []
+    assert sql("SELECT COUNT(*) FROM password_reset_tokens WHERE username = 'bob'")[0][0] == 0
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"email": "alice"},  # a username in the email field
+        {"email": "Alice"},
+        {"email_or_username": "alice"},  # the old request shape
+        {"username": "alice"},
+    ],
+)
+def test_forgot_password_by_username_is_not_possible(client, outbox, alice, sql, payload):
+    response = client.post("/api/auth/forgot-password", json=payload)
+    assert response.status_code == 422
+    assert outbox == []
+    assert sql("SELECT COUNT(*) FROM password_reset_tokens")[0][0] == 0
+
+
+@pytest.mark.parametrize("email", ["", "not an email", "a@b", "@example.com", "alice@"])
+def test_forgot_password_rejects_a_malformed_email(client, outbox, alice, email):
+    response = client.post("/api/auth/forgot-password", json={"email": email})
+    assert response.status_code == 422
     assert outbox == []
 
 
 def test_forgot_password_is_limited_to_one_link_a_minute(client, outbox, alice, sql):
     request_link(client, outbox)
-    client.post("/api/auth/forgot-password", json={"email_or_username": "alice"})
+    client.post("/api/auth/forgot-password", json={"email": "alice@example.com"})
     assert len(outbox) == 1
     assert sql("SELECT COUNT(*) FROM password_reset_tokens")[0][0] == 1
 
@@ -159,13 +187,6 @@ def test_valid_token_changes_password_and_signs_in(client, outbox, alice, sql):
     client.cookies.set(REFRESH_COOKIE, old_refresh_cookie, path="/api")
     assert client.post("/api/auth/refresh").status_code == 401
     assert sql("SELECT COUNT(*) FROM auth_sessions WHERE username = 'alice'")[0][0] == 1
-
-
-def test_reset_verifies_an_unverified_email(client, outbox, sql):
-    database.register_user_db("bob", OLD_PASSWORD, OLD_KEY, "enc", "bob@example.com")
-    token = request_link(client, outbox, "bob@example.com")
-    assert reset(client, token).status_code == 200
-    assert sql("SELECT is_verified FROM users WHERE username = 'bob'")[0][0] is True
 
 
 def test_reused_token_returns_400(client, outbox, alice):
@@ -230,7 +251,7 @@ def reset_links(mail: dict) -> set[str]:
 
 
 def test_reset_email_link_uses_the_nexa_ashytyk_com_domain(client, mailbox, alice):
-    response = client.post("/api/auth/forgot-password", json={"email_or_username": "alice"})
+    response = client.post("/api/auth/forgot-password", json={"email": "alice@example.com"})
     assert response.status_code == 200
     assert len(mailbox) == 1
     mail = mailbox[0]
@@ -249,7 +270,7 @@ def test_reset_email_link_uses_the_nexa_ashytyk_com_domain(client, mailbox, alic
 
 
 def test_following_the_emailed_link_resets_and_signs_in(client, mailbox, alice):
-    client.post("/api/auth/forgot-password", json={"email_or_username": "alice@example.com"})
+    client.post("/api/auth/forgot-password", json={"email": "alice@example.com"})
     link = urlparse(reset_links(mailbox[0]).pop())
     token = parse_qs(link.query)["token"][0]
 

@@ -252,19 +252,19 @@ def consume_email_otp_db(email: str, code_hash: str, max_attempts: int) -> tuple
     finally:
         release_connection(conn)
 
-def get_user_for_reset_db(identifier: str) -> Optional[dict]:
-    """The account a "Forgot password?" request names — by email (with "@")
-    or username — with the email the link goes to. None when there's no such
-    account or it has no email (older accounts) to send a link to."""
+def get_user_for_reset_db(email: str) -> Optional[dict]:
+    """The account a "Forgot password?" request is for: looked up by email
+    only (case-insensitive), and only once that email is verified — a reset
+    link goes to an address the account has proven it owns. None otherwise."""
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        if "@" in identifier:
-            cursor.execute("SELECT username, email FROM users WHERE LOWER(email) = LOWER(%s)", (identifier,))
-        else:
-            cursor.execute("SELECT username, email FROM users WHERE username = %s", (identifier,))
+        cursor.execute(
+            "SELECT username, email FROM users WHERE LOWER(email) = LOWER(%s) AND is_verified",
+            (email,),
+        )
         row = cursor.fetchone()
-        if not row or not row[1]:
+        if not row:
             return None
         return {"username": row[0], "email": row[1]}
     finally:

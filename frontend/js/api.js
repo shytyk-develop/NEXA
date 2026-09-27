@@ -123,9 +123,9 @@ export async function verifyEmailRequest(email, code) {
     return trackServerWake(postJson('/api/auth/verify-email', { email, code }));
 }
 
-/** Emails a reset link to the account (same reply whether or not it exists). */
-export async function forgotPasswordRequest(emailOrUsername) {
-    return trackServerWake(postJson('/api/auth/forgot-password', { email_or_username: emailOrUsername }));
+/** Emails a reset link to a verified account's address (same reply whether or not it's registered). */
+export async function forgotPasswordRequest(email) {
+    return trackServerWake(postJson('/api/auth/forgot-password', { email }));
 }
 
 /**

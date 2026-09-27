@@ -6,19 +6,22 @@ import { mailboxFor } from './VerifyEmail';
 import './verify-email.css';
 import './password-flow.css';
 
-// Login page → "Forgot password?": email or username → the server mails a
-// reset link (POST /api/auth/forgot-password) → "Check your email". The reply
-// is the same whether or not the account exists, so this screen says "if".
+// Login page → "Forgot password?": the account's email address → the server
+// mails a reset link (POST /api/auth/forgot-password) → "Check your email".
+// The reply is the same whether or not the address is registered, so this
+// screen says "if".
 
 export type ForgotPasswordProps = {
-    /** Pre-filled from the login form's "Username or Email". */
+    /** Pre-filled when the login form already holds an email address. */
     initialValue?: string;
     /** POST /api/auth/forgot-password; throws with a message on failure. */
-    request: (emailOrUsername: string) => Promise<void>;
+    request: (email: string) => Promise<void>;
     onBack: () => void;
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+// Same rule as the backend (core/email_verification.py _EMAIL_RE).
+const EMAIL_PATTERN = /^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$/;
 
 function ForgotPassword({ initialValue = '', request, onBack }: ForgotPasswordProps) {
     const reduce = useReducedMotion();
@@ -38,17 +41,17 @@ function ForgotPassword({ initialValue = '', request, onBack }: ForgotPasswordPr
 
     const onSubmit = async (event: FormEvent) => {
         event.preventDefault();
-        const identifier = value.trim();
-        if (!identifier) {
-            setError('Enter your email or username.');
+        const email = value.trim().toLowerCase();
+        if (!EMAIL_PATTERN.test(email) || email.length > 254) {
+            setError('Enter a valid email address.');
             return;
         }
         if (busy) return;
         setBusy(true);
         setError('');
         try {
-            await request(identifier);
-            setSentTo(identifier);
+            await request(email);
+            setSentTo(email);
         } catch (err) {
             setError(err instanceof Error && err.message ? err.message : 'Could not send the link. Try again.');
         } finally {
@@ -57,7 +60,7 @@ function ForgotPassword({ initialValue = '', request, onBack }: ForgotPasswordPr
     };
 
     if (sentTo) {
-        const mailbox = sentTo.includes('@') ? mailboxFor(sentTo) : null;
+        const mailbox = mailboxFor(sentTo);
         return (
             <div className="verify-email password-flow" key="sent">
                 <motion.span className="verify-email__icon" aria-hidden="true" {...rise(0)}>
@@ -67,9 +70,9 @@ function ForgotPassword({ initialValue = '', request, onBack }: ForgotPasswordPr
                     Check your email
                 </motion.h1>
                 <motion.p className="verify-email__sub" {...rise(0.08)}>
-                    If an account matches
+                    If this email is registered, a password reset link has been sent to
                     <strong>{sentTo}</strong>
-                    a link to reset its password is on its way. It works once, for 15 minutes.
+                    It works once, for 15 minutes.
                 </motion.p>
                 <motion.div className="verify-email__actions is-single" {...rise(0.12)}>
                     {mailbox ? (
@@ -97,20 +100,25 @@ function ForgotPassword({ initialValue = '', request, onBack }: ForgotPasswordPr
                 Forgot password?
             </motion.h1>
             <motion.p className="verify-email__sub" {...rise(0.08)}>
-                Enter your email or username. We’ll email you a link to choose a new password.
+                Enter your account’s email address. We’ll send you a link to choose a new password.
             </motion.p>
 
             <motion.div className="password-flow__fields" {...rise(0.12)}>
+                <label className="password-flow__label" htmlFor="uiForgotEmail">
+                    Email address
+                </label>
                 <div className="login-field">
                     <input
-                        type="text"
+                        id="uiForgotEmail"
+                        type="email"
+                        inputMode="email"
                         className="login-input"
-                        placeholder="Email or username"
-                        aria-label="Email or username"
-                        autoComplete="username"
+                        placeholder="name@example.com"
+                        autoComplete="email"
                         spellCheck={false}
                         autoCapitalize="off"
                         maxLength={254}
+                        aria-invalid={error ? true : undefined}
                         autoFocus
                         value={value}
                         onChange={(event) => setValue(event.target.value)}
