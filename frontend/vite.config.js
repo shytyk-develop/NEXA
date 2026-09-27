@@ -46,7 +46,7 @@ export default defineConfig({
         // points it at a local backend.
         proxy: {
             '/api': {
-                target: process.env.VITE_API_PROXY || 'https://originhub.onrender.com',
+                target: process.env.VITE_API_PROXY || 'https://nexa-zw5g.onrender.com',
                 changeOrigin: true,
                 secure: true,
             },
