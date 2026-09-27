@@ -226,7 +226,11 @@ async function apiRequest(path, init = {}, token = null) {
     const send = (bearer) => fetch(`${API_URL}${path}`, {
         ...init,
         credentials: 'include',
-        headers: { ...(init.headers || {}), ...authHeaders(bearer) },
+        headers: {
+            ...(init.headers || {}),
+            ...(CLIENT_TIMEZONE ? { 'X-Client-Timezone': CLIENT_TIMEZONE } : {}),
+            ...authHeaders(bearer),
+        },
     });
     let res = await send(token);
     if (res.status === 401 && token && !path.startsWith('/api/auth/')) {
@@ -269,6 +273,15 @@ async function putJson(path, payload, token) {
 function authHeaders(token) {
     return token ? { Authorization: `Bearer ${token}` } : {};
 }
+
+/** The browser's IANA zone, so server-sent mail (the code email) shows local time. */
+const CLIENT_TIMEZONE = (() => {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    } catch {
+        return '';
+    }
+})();
 
 async function parseJsonResponse(res) {
     const payload = await res.json().catch(() => ({}));

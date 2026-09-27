@@ -24,6 +24,7 @@ from core.email_verification import (
     OTP_TTL_SECONDS,
     hash_otp,
     is_valid_email,
+    local_time,
     new_otp_code,
     normalize_email,
     send_otp_email,
@@ -84,10 +85,16 @@ def _unauthorized(detail: str) -> JSONResponse:
     return response
 
 
-async def _issue_otp(email: str, username: str, cooldown: int = OTP_RESEND_COOLDOWN_SECONDS) -> bool:
+async def _issue_otp(
+    email: str,
+    username: str,
+    cooldown: int = OTP_RESEND_COOLDOWN_SECONDS,
+    request: Optional[Request] = None,
+) -> bool:
     """Store and mail a fresh code. False (nothing sent) inside the resend
     cooldown. A mail provider failure is logged; the code stays valid, so a
-    resend can retry."""
+    resend can retry. `request` fills the mail's "Requested from" (device)
+    and "Time" (the browser's zone, X-Client-Timezone)."""
     code = new_otp_code()
     stored = await asyncio.to_thread(
         database.store_email_otp_db, email, username, hash_otp(email, code), OTP_TTL_SECONDS, cooldown
@@ -96,14 +103,21 @@ async def _issue_otp(email: str, username: str, cooldown: int = OTP_RESEND_COOLD
         return False
     # send_otp_email logs a provider failure itself and never raises; the
     # stored code stays valid, so "Resend code" can try again.
-    sent = await asyncio.to_thread(send_otp_email, email, code)
+    headers = request.headers if request is not None else {}
+    sent = await asyncio.to_thread(
+        send_otp_email,
+        email,
+        code,
+        device=device_label(headers.get("user-agent")),
+        requested_at=local_time(headers.get("x-client-timezone")),
+    )
     if not sent:
         logger.warning("Verification code for %s stored but not delivered", email)
     return True
 
 
 @router.post("/api/register")
-async def register(req: RegisterRequest):
+async def register(req: RegisterRequest, request: Request):
     """Create an unverified account and email it a 6-digit code. The session
     starts once the code is confirmed (/api/auth/verify-email)."""
     username = normalize_username(req.username)
@@ -117,7 +131,7 @@ async def register(req: RegisterRequest):
     success = database.register_user_db(username, req.password, req.public_key, req.encrypted_private_key, email)
     if not success:
         raise HTTPException(status_code=400, detail="Username is already taken")
-    await _issue_otp(email, username, cooldown=0)
+    await _issue_otp(email, username, cooldown=0, request=request)
     return {"message": "Verification code sent to email", "email": email}
 
 
@@ -143,7 +157,7 @@ async def login(req: LoginRequest, request: Request, response: Response):
     # goes out (once a minute at most). Accounts from before emails have none.
     if user_keys.get("email") and not user_keys.get("is_verified"):
         email = normalize_email(user_keys["email"])
-        await _issue_otp(email, username)
+        await _issue_otp(email, username, request=request)
         return JSONResponse(
             status_code=403,
             content={"detail": "Verify your email to sign in", "code": "email_not_verified", "email": email},
@@ -195,7 +209,7 @@ async def verify_email(req: VerifyEmailRequest, request: Request, response: Resp
 
 
 @router.post("/api/auth/resend-otp")
-async def resend_otp(req: ResendOtpRequest):
+async def resend_otp(req: ResendOtpRequest, request: Request):
     """A new code, at most once a minute (429 with retry_after inside the
     cooldown). Doesn't reveal whether an email has an account."""
     email = normalize_email(req.email)
@@ -205,7 +219,7 @@ async def resend_otp(req: ResendOtpRequest):
     account = database.get_user_by_email_db(email)
     if not account or account["is_verified"]:
         return generic
-    if not await _issue_otp(email, account["username"]):
+    if not await _issue_otp(email, account["username"], request=request):
         retry_after = database.email_otp_retry_after_db(email, OTP_RESEND_COOLDOWN_SECONDS)
         return JSONResponse(
             status_code=429,
