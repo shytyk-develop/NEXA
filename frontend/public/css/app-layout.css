@@ -2008,9 +2008,18 @@ html[data-wallpaper-dim] {
     bottom: 8px;
 }
 
+/* Ready: the theme's active-pill pair, which is contrast-matched per theme —
+   white arrow on Emerald's #005218, dark on Lime / Neon. (Was accent mixed
+   with text + a fixed near-black arrow: black on dark green on Emerald.) */
 #page-chat .composer-send-btn.is-ready {
-    background: color-mix(in srgb, var(--accent, #afb9cd) 82%, var(--theme-text, #fff)) !important;
-    color: #0b0c10 !important;
+    background: var(--theme-pill, color-mix(in srgb, var(--accent, #afb9cd) 82%, var(--theme-text, #fff))) !important;
+    color: var(--theme-pill-text, #0b0c10) !important;
+}
+
+/* Empty input on light themes: a clear slate arrow on the faint dark wash. */
+html[data-theme^="light"] #page-chat .composer-send-btn:disabled {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #64748b !important;
 }
 
 #page-chat .composer-send-btn:hover:not(:disabled) {
