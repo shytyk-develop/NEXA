@@ -2,7 +2,13 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://https://nexa-zw5g.onrender.com/api/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { 
+      "source": "/api/:path*", 
+      "destination": "https://nexa-zw5g.onrender.com/api/:path*" 
+    },
+    { 
+      "source": "/(.*)", 
+      "destination": "/index.html" 
+    }
   ]
 }
