@@ -64,13 +64,25 @@ export async function loginRequest(username, password) {
     return postJson('/api/login', { username, password });
 }
 
-export async function registerRequest({ username, password, publicKey, encryptedPrivateKey }) {
+/** Creates an unverified account; the server emails a 6-digit code. */
+export async function registerRequest({ username, password, email, publicKey, encryptedPrivateKey }) {
     return postJson('/api/register', {
         username,
         password,
+        email,
         public_key: publicKey,
         encrypted_private_key: encryptedPrivateKey
     });
+}
+
+/** The emailed code → session cookie + { access_token, username, public_key, encrypted_private_key }. */
+export async function verifyEmailRequest(email, code) {
+    return postJson('/api/auth/verify-email', { email, code });
+}
+
+/** A new code (429 with .retryAfter inside the 60s cooldown). */
+export async function resendOtpRequest(email) {
+    return postJson('/api/auth/resend-otp', { email });
 }
 
 export async function getChats(token, limit = 50) {
@@ -212,7 +224,14 @@ async function parseJsonResponse(res) {
     const payload = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-        throw new Error(payload.detail || payload.message || 'Request failed');
+        const detail = typeof payload.detail === 'string' ? payload.detail : '';
+        const error = new Error(detail || payload.message || 'Request failed');
+        // Callers branch on these (e.g. login's 403 code: 'email_not_verified').
+        error.status = res.status;
+        error.code = payload.code;
+        error.email = payload.email;
+        error.retryAfter = payload.retry_after;
+        throw error;
     }
 
     return payload;

@@ -184,6 +184,8 @@ import {
     setAuthHandlers,
     refreshSession,
     logoutRequest,
+    verifyEmailRequest,
+    resendOtpRequest,
 } from './api.js';
 import {
     detectDeviceInfo,
@@ -1248,6 +1250,107 @@ async function handleNavigation(view, param) {
 }
 
 // 2. AUTHORIZATION AND REGISTRATION (HTTP POST)
+
+/**
+ * Signed in (login, or a verified email code): hold the access token in
+ * memory, make sure this device has the private key (decrypting the synced
+ * copy with the password on a new device), play the reveal and open /chat.
+ */
+async function completeSignIn(username, password, resData) {
+    // Access token in memory only; the session itself is the HttpOnly
+    // refresh cookie the server just set (restored on reload).
+    state.token = resData.access_token;
+    localStorage.removeItem('auth_token');
+    localStorage.setItem('auth_username', username);
+
+    let savedKeysJWK = loadKeys(username);
+
+    if (!savedKeysJWK) {
+        console.log("📱 New device detected! Synchronizing encrypted keys from the secure cloud...");
+        const decryptedPrivJWK = await decryptPrivateKeyWithPassword(resData.encrypted_private_key, password);
+
+        savedKeysJWK = {
+            publicKey: resData.public_key,
+            privateKey: decryptedPrivJWK
+        };
+        saveKeys(username, savedKeysJWK);
+    }
+
+    state.myKeys = {
+        publicKey: await importPublicKey(savedKeysJWK.publicKey),
+        privateKey: await importPrivateKey(savedKeysJWK.privateKey)
+    };
+
+    setAuthPending(true);
+    const { playLoginSuccessReveal } = await import('./loginCanvas.js');
+    await playLoginSuccessReveal(DOM.pageLogin);
+    finishLoginSetup(username, savedKeysJWK.publicKey);
+}
+
+/** Registration asks for an email: the field opens on the first Register press. */
+function isEmailFieldOpen() {
+    return Boolean(document.getElementById('uiEmailField')?.classList.contains('is-open'));
+}
+
+function openEmailField() {
+    const field = document.getElementById('uiEmailField');
+    const input = document.getElementById('emailInput');
+    if (!field || !input) return;
+    field.classList.add('is-open');
+    field.setAttribute('aria-hidden', 'false');
+    input.tabIndex = 0;
+    window.setTimeout(() => input.focus({ preventScroll: true }), 180);
+}
+
+const EMAIL_PATTERN = /^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$/;
+
+/**
+ * The 6-digit email code step (src/auth/VerifyEmail.tsx) in the form's place.
+ * The password stays in this closure only, to decrypt the synced private key
+ * if this device doesn't have it yet.
+ */
+async function showEmailVerification(email, username, password, { cooldown = 60 } = {}) {
+    const form = document.getElementById('loginForm');
+    const host = document.getElementById('uiVerifyEmailMount');
+    const panelTitle = document.querySelector('#page-login .login-panel > .login-panel__title');
+    const panelSub = document.querySelector('#page-login .login-panel > .login-panel__sub');
+    if (!host) return;
+    DOM.authError?.classList.add('hidden');
+
+    const { mountVerifyEmail, unmountVerifyEmail } = await import('../src/auth/VerifyEmail.tsx');
+    const restoreForm = () => {
+        unmountVerifyEmail();
+        host.hidden = true;
+        if (form) form.hidden = false;
+        if (panelTitle) panelTitle.hidden = false;
+        if (panelSub) panelSub.hidden = false;
+    };
+
+    if (form) form.hidden = true;
+    if (panelTitle) panelTitle.hidden = true;
+    if (panelSub) panelSub.hidden = true;
+    host.hidden = false;
+    mountVerifyEmail(host, {
+        email,
+        initialCooldown: cooldown,
+        verify: async (code) => {
+            const resData = await verifyEmailRequest(email, code);
+            // A beat on the green cells before the reveal plays.
+            await new Promise((resolve) => window.setTimeout(resolve, 450));
+            try {
+                await completeSignIn(resData.username || username, password, resData);
+            } finally {
+                restoreForm();
+            }
+        },
+        resend: async () => {
+            const res = await resendOtpRequest(email);
+            return Number(res.retry_after) || 60;
+        },
+        onBack: restoreForm,
+    });
+}
+
 async function handleAuth(isLogin) {
     const username = normalizeUsername(DOM.usernameInput.value.trim());
     const password = DOM.passwordInput.value.trim();
@@ -1263,54 +1366,52 @@ async function handleAuth(isLogin) {
         return;
     }
 
+    // Register: the email field first (a verification code goes to it).
+    if (!isLogin && !isEmailFieldOpen()) {
+        openEmailField();
+        showAuthMessage("Add your email — we'll send a code to verify it.", false);
+        return;
+    }
+    const email = (document.getElementById('emailInput')?.value || '').trim().toLowerCase();
+    if (!isLogin && !EMAIL_PATTERN.test(email)) {
+        showAuthMessage("Enter a valid email address.", true);
+        document.getElementById('emailInput')?.focus();
+        return;
+    }
+
     try {
         if (isLogin) {
-            const resData = await loginRequest(username, password);
-            // Access token in memory only; the session itself is the HttpOnly
-            // refresh cookie the login just set (restored on reload).
-            state.token = resData.access_token;
-            localStorage.removeItem('auth_token');
-            localStorage.setItem('auth_username', username);
-
-            let savedKeysJWK = loadKeys(username);
-            
-            if (!savedKeysJWK) {
-                console.log("📱 New device detected! Synchronizing encrypted keys from the secure cloud...");
-                const decryptedPrivJWK = await decryptPrivateKeyWithPassword(resData.encrypted_private_key, password);
-                
-                savedKeysJWK = {
-                    publicKey: resData.public_key,
-                    privateKey: decryptedPrivJWK
-                };
-                saveKeys(username, savedKeysJWK);
+            let resData;
+            try {
+                resData = await loginRequest(username, password);
+            } catch (err) {
+                // Registered but not verified yet: a fresh code went out — ask for it.
+                if (err?.code === 'email_not_verified' && err.email) {
+                    await showEmailVerification(err.email, username, password);
+                    return;
+                }
+                throw err;
             }
-
-            state.myKeys = {
-                publicKey: await importPublicKey(savedKeysJWK.publicKey),
-                privateKey: await importPrivateKey(savedKeysJWK.privateKey)
-            };
-
-            setAuthPending(true);
-            const { playLoginSuccessReveal } = await import('./loginCanvas.js');
-            await playLoginSuccessReveal(DOM.pageLogin);
-            finishLoginSetup(username, savedKeysJWK.publicKey);
-
+            await completeSignIn(username, password, resData);
         } else {
-            state.myKeys = await generateKeyPair();
-            const pubJWK = await exportPublicKey(state.myKeys.publicKey);
-            const privJWK = await exportPrivateKey(state.myKeys.privateKey);
+            const keyPair = await generateKeyPair();
+            const pubJWK = await exportPublicKey(keyPair.publicKey);
+            const privJWK = await exportPrivateKey(keyPair.privateKey);
 
             const encPrivString = await encryptPrivateKeyWithPassword(privJWK, password);
 
-            await registerRequest({
+            const res = await registerRequest({
                 username,
                 password,
+                email,
                 publicKey: pubJWK,
                 encryptedPrivateKey: encPrivString
             });
 
+            // The key pair stays on this device; the account opens once the
+            // emailed code is confirmed.
             saveKeys(username, { publicKey: pubJWK, privateKey: privJWK });
-            showAuthMessage("Registration successful! You can now log in.", false);
+            await showEmailVerification(res.email || email, username, password);
         }
     } catch (err) {
         setAuthPending(false);

@@ -3,6 +3,7 @@
 import psycopg2
 from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import execute_values
+import hmac
 import json
 import os
 import time
@@ -33,7 +34,7 @@ def _create_pool(retries: int = 4, delay: float = 1.5) -> ThreadedConnectionPool
             if attempt == retries:
                 break
             time.sleep(delay)
-    raise last_error
+    raise last_error or RuntimeError("Could not connect to the database")
 
 
 db_pool = _create_pool()
@@ -63,8 +64,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 # --- USER FUNCTIONS ---
 
-def register_user_db(username: str, password: str, public_key, encrypted_private_key: str) -> bool:
-    """Registers a new user with a hashed password, public key, and synced private key"""
+def register_user_db(username: str, password: str, public_key, encrypted_private_key: str, email: Optional[str] = None) -> bool:
+    """Registers a new user with a hashed password, public key, and synced private key.
+    With an email the account starts unverified (is_verified = FALSE)."""
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -81,10 +83,10 @@ def register_user_db(username: str, password: str, public_key, encrypted_private
         cursor.execute(
             '''
             INSERT INTO users (
-                username, password_hash, public_key, encrypted_private_key, qr_token, qr_png
-            ) VALUES (%s, %s, %s, %s, %s, %s)
+                username, password_hash, public_key, encrypted_private_key, qr_token, qr_png, email, is_verified
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, FALSE)
             ''',
-            (username, hashed_pw, public_key_str, encrypted_private_key, qr_token, psycopg2.Binary(qr_png))
+            (username, hashed_pw, public_key_str, encrypted_private_key, qr_token, psycopg2.Binary(qr_png), email)
         )
         conn.commit()
         return True
@@ -99,7 +101,7 @@ def login_user_db(username: str, password: str):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute('SELECT password_hash, public_key, encrypted_private_key FROM users WHERE username = %s', (username,))
+        cursor.execute('SELECT password_hash, public_key, encrypted_private_key, email, is_verified FROM users WHERE username = %s', (username,))
         row = cursor.fetchone()
         
         if row is None:
@@ -115,9 +117,138 @@ def login_user_db(username: str, password: str):
                 
             return {
                 "public_key": pub_key_obj,
-                "encrypted_private_key": db_enc_priv_key
+                "encrypted_private_key": db_enc_priv_key,
+                "email": row[3],
+                "is_verified": bool(row[4]),
             }
         return None
+    finally:
+        release_connection(conn)
+
+
+# --- EMAIL VERIFICATION (alembic 0011) ---
+
+def email_in_use_db(email: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT 1 FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
+        return cursor.fetchone() is not None
+    finally:
+        release_connection(conn)
+
+
+def get_user_by_email_db(email: str) -> Optional[dict]:
+    """The account behind an email (keys included, as login returns them)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT username, is_verified, public_key, encrypted_private_key, email FROM users WHERE LOWER(email) = LOWER(%s)",
+            (email,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        try:
+            public_key = json.loads(row[2])
+        except (json.JSONDecodeError, TypeError):
+            public_key = row[2]
+        return {
+            "username": row[0],
+            "is_verified": bool(row[1]),
+            "public_key": public_key,
+            "encrypted_private_key": row[3],
+            "email": row[4],
+        }
+    finally:
+        release_connection(conn)
+
+
+def store_email_otp_db(email: str, username: str, code_hash: str, ttl_seconds: int, cooldown_seconds: int) -> bool:
+    """Store a fresh code for this email (resetting attempts). False — and
+    nothing changes — when the last one went out under `cooldown_seconds` ago."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO email_otps (email, username, code_hash, expires_at, attempts, last_sent_at)
+            VALUES (%s, %s, %s, NOW() + make_interval(secs => %s), 0, NOW())
+            ON CONFLICT (email) DO UPDATE
+               SET username = EXCLUDED.username,
+                   code_hash = EXCLUDED.code_hash,
+                   expires_at = EXCLUDED.expires_at,
+                   attempts = 0,
+                   last_sent_at = NOW()
+             WHERE email_otps.last_sent_at <= NOW() - make_interval(secs => %s)
+            RETURNING 1
+            """,
+            (email, username, code_hash, ttl_seconds, cooldown_seconds),
+        )
+        stored = cursor.fetchone() is not None
+        conn.commit()
+        return stored
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def email_otp_retry_after_db(email: str, cooldown_seconds: int) -> int:
+    """Seconds until another code may be sent for this email (0 = now)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT GREATEST(0, CEIL(EXTRACT(EPOCH FROM (last_sent_at + make_interval(secs => %s) - NOW()))))
+            FROM email_otps WHERE email = %s
+            """,
+            (cooldown_seconds, email),
+        )
+        row = cursor.fetchone()
+        return int(row[0]) if row else 0
+    finally:
+        release_connection(conn)
+
+
+def consume_email_otp_db(email: str, code_hash: str, max_attempts: int) -> tuple[str, Optional[str]]:
+    """Check a code for this email, atomically.
+    ("ok", username): it matched — used up, and the account is now verified.
+    ("invalid" | "expired" | "locked" | "missing", None) otherwise; a wrong
+    code counts an attempt, and at `max_attempts` the code is dead."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT username, code_hash, expires_at > NOW(), attempts FROM email_otps WHERE email = %s FOR UPDATE",
+            (email,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            conn.rollback()
+            return "missing", None
+        username, stored_hash, alive, attempts = row
+        if not alive:
+            cursor.execute("DELETE FROM email_otps WHERE email = %s", (email,))
+            conn.commit()
+            return "expired", None
+        if attempts >= max_attempts:
+            conn.rollback()
+            return "locked", None
+        if not hmac.compare_digest(stored_hash, code_hash):
+            cursor.execute("UPDATE email_otps SET attempts = attempts + 1 WHERE email = %s", (email,))
+            conn.commit()
+            return ("locked" if attempts + 1 >= max_attempts else "invalid"), None
+        cursor.execute("DELETE FROM email_otps WHERE email = %s", (email,))
+        cursor.execute("UPDATE users SET is_verified = TRUE WHERE username = %s", (username,))
+        conn.commit()
+        return "ok", username
+    except Exception as e:
+        conn.rollback()
+        raise e
     finally:
         release_connection(conn)
 
@@ -546,6 +677,8 @@ def save_chat_history_message(
             reply_to_message_id,
         ))
         row = cursor.fetchone()
+        if row is None:
+            raise RuntimeError("INSERT … RETURNING returned no row")
         conn.commit()
         return {
             "id": row[0],
@@ -1297,7 +1430,10 @@ def save_shared_message_db(username: str, message_id: int) -> Optional[dict]:
             'SELECT saved_by, saved_at FROM shared_saved_messages WHERE message_id = %s',
             (msg_id,),
         )
-        saved_by, saved_at = cursor.fetchone()
+        saved_row = cursor.fetchone()
+        if saved_row is None:
+            raise RuntimeError("The shared save vanished mid-transaction")
+        saved_by, saved_at = saved_row
         conn.commit()
         partner = receiver if sender == username else sender
         return {

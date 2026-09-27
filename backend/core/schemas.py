@@ -8,6 +8,16 @@ class RegisterRequest(BaseModel):
     password: str
     public_key: Any
     encrypted_private_key: str
+    email: str
+
+
+class VerifyEmailRequest(BaseModel):
+    email: str
+    code: str
+
+
+class ResendOtpRequest(BaseModel):
+    email: str
 
 
 class LoginRequest(BaseModel):

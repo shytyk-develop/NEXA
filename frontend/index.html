@@ -788,6 +788,12 @@
                             <div class="login-field">
                                 <input type="text" id="usernameInput" class="login-input" placeholder="Username" autocomplete="username" spellcheck="false" inputmode="latin" maxlength="32" pattern="[a-z0-9_]{3,32}">
                             </div>
+                            <!-- Registration only: opens on the first Register press (js/app.js). -->
+                            <div id="uiEmailField" class="login-field login-field--email" aria-hidden="true">
+                                <div class="login-field__reveal">
+                                    <input type="email" id="emailInput" class="login-input" placeholder="Email" autocomplete="email" spellcheck="false" maxlength="254" tabindex="-1">
+                                </div>
+                            </div>
 
                             <div class="login-field login-field--password">
                                 <input type="password" id="passwordInput" class="login-input" placeholder="Password" autocomplete="current-password">
@@ -826,6 +832,9 @@
                             </button>
                         </div>
                     </form>
+                    <!-- After Register (or signing in unverified): the 6-digit email code
+                         (src/auth/VerifyEmail.tsx) takes the form's place. -->
+                    <div id="uiVerifyEmailMount" class="login-verify" hidden></div>
 
                     <p class="login-legal">
                         Your keys stay on this device. Messages are end-to-end encrypted and never readable by the server.
