@@ -247,7 +247,11 @@ const PEER_PANEL_COLLAPSED_KEY = 'nexa_peer_panel_collapsed_v3';
 // a zoomed-in desktop (Cmd +) keeps the desktop columns. Phones don't reach
 // the app at all (index.html desktop-only gate).
 const PEER_NARROW_MQ = '(max-width: 760px) and (pointer: coarse)';
-const PEER_COLLAPSE_MAX_WIDTH = 1120;
+// The right (peer) panel is open by default on desktop: it only auto-collapses
+// below the 1024px desktop layout floor, which desktops never reach (index.html
+// scales instead) — so only the user's own toggle (PEER_PANEL_COLLAPSED_KEY)
+// closes it there.
+const PEER_COLLAPSE_MAX_WIDTH = 1023;
 const SIDEBAR_NARROW_MAX_WIDTH = 1320;
 const PROFILE_STACK_MQ = '(max-width: 760px) and (pointer: coarse)';
 
