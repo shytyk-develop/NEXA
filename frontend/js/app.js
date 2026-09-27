@@ -47,6 +47,7 @@ import {
     openAppSettings,
     openProfile,
     showChatsView,
+    currentAppView,
     handleProfileBack,
     handleChatBack,
     onProfileSectionOpened,
@@ -402,7 +403,8 @@ const REDIRECT_AFTER_LOGIN_KEY = 'redirect_after_login';
 
 /** Only an in-app chat path survives the round trip through /login. */
 function isChatRedirectPath(path) {
-    return typeof path === 'string' && /^\/chat(?:\/(?:@|%40)?[a-z0-9_]+)?\/?$/i.test(path);
+    return typeof path === 'string'
+        && /^\/chat(?:\/(?:@|%40)?[a-z0-9_]+|\/settings\/[a-z]+)?\/?$/i.test(path);
 }
 
 function rememberRedirectAfterLogin(path) {
@@ -1367,10 +1369,11 @@ async function handleNavigation(view, param) {
             loginUiMounted = false;
         }
 
-        if (view === 'chat' || view === 'chat-user') {
+        if (view === 'chat' || view === 'chat-user' || view === 'chat-settings' || view === 'chat-profile') {
             if (!state.myUsername) {
                 // Signed out on a deeplink: come back to it after signing in.
                 if (view === 'chat-user' && param) rememberRedirectAfterLogin(`/chat/@${param}`);
+                if (view === 'chat-settings' || view === 'chat-profile') rememberRedirectAfterLogin(window.location.pathname);
                 navigateTo('/login', handleNavigation);
                 return;
             }
@@ -1389,9 +1392,53 @@ async function handleNavigation(view, param) {
                 resetChatPanel();
                 showChatWelcome();
             }
+
+            // A reload on /chat/settings/<section> or /chat/profile lands back there.
+            if (view === 'chat-settings') {
+                openAppSettings(SETTINGS_URL_SECTIONS.has(param) ? param : undefined, { force: true });
+            } else if (view === 'chat-profile') {
+                openProfile();
+            }
         }
     }
 }
+
+/*
+ * The app view lives in the URL, so a reload reopens it: /chat/settings/<section>
+ * for Settings, /chat/profile for Profile. replaceState — switching views or
+ * sections doesn't pile up history entries. Back to chats restores the chat
+ * URL that was open before (/chat or /chat/@someone).
+ */
+const SETTINGS_URL_SECTIONS = new Set(['appearance', 'security', 'privacy', 'data', 'devices']);
+let chatPathBeforeSettings = '/chat';
+
+function isAppViewPath(path) {
+    return /^\/chat\/(?:settings(?:\/|$)|profile\/?$)/i.test(path);
+}
+
+function replaceAppViewPath(target) {
+    const path = window.location.pathname;
+    if (path === target || !path.startsWith('/chat')) return;
+    if (!isAppViewPath(path)) chatPathBeforeSettings = path;
+    window.history.replaceState(null, '', target);
+}
+
+window.addEventListener('nexa:app-view', (event) => {
+    const view = event.detail?.view;
+    if (view === 'identity') {
+        replaceAppViewPath('/chat/profile');
+    } else if (view === 'chats' && isAppViewPath(window.location.pathname)) {
+        window.history.replaceState(null, '', chatPathBeforeSettings);
+    }
+    // 'settings': the section event that follows carries the path.
+});
+
+window.addEventListener('nexa:settings-section', (event) => {
+    const section = event.detail?.section;
+    if (currentAppView() === 'settings' && SETTINGS_URL_SECTIONS.has(section)) {
+        replaceAppViewPath(`/chat/settings/${section}`);
+    }
+});
 
 // 2. AUTHORIZATION AND REGISTRATION (HTTP POST)
 

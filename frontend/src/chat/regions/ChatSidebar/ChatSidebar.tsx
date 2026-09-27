@@ -1505,9 +1505,24 @@ type HeaderTitleKey = 'nexa' | 'settings' | 'profile';
 const HEADER_TITLE_FOR: Record<AppView, HeaderTitleKey> = { chats: 'nexa', settings: 'settings', identity: 'profile' };
 const HEADER_TITLE_TRANSITION = { duration: 0.15, ease: 'easeOut' } as const;
 
+/**
+ * The view the URL asks for (/chat/settings/…, /chat/profile — see js/app.js).
+ * On a reload the sidebar mounts before js/app.js switches the view, so the
+ * header starts from this instead of flashing NEXA first.
+ */
+function appViewFromPath(): AppView {
+    const path = window.location.pathname;
+    if (/^\/chat\/settings(?:\/|$)/i.test(path)) return 'settings';
+    if (/^\/chat\/profile\/?$/i.test(path)) return 'identity';
+    return 'chats';
+}
+
 /** The app view (js/ui.js setAppView announces changes). */
 function useAppView(): AppView {
-    const [view, setView] = useState<AppView>(() => (currentAppView() as AppView) || 'chats');
+    const [view, setView] = useState<AppView>(() => {
+        const current = currentAppView() as AppView;
+        return current && current !== 'chats' ? current : appViewFromPath();
+    });
     useEffect(() => {
         const onView = (event: Event) => {
             const next = (event as CustomEvent<{ view: AppView }>).detail?.view;
@@ -1525,7 +1540,7 @@ function useAppView(): AppView {
  * so when a view switch reveals it, it morphs from what was just on screen
  * (Settings → Profile) instead of popping in with the new title.
  */
-let shownHeaderTitle: HeaderTitleKey = 'nexa';
+let shownHeaderTitle: HeaderTitleKey = HEADER_TITLE_FOR[appViewFromPath()];
 const headerTitleListeners = new Set<() => void>();
 const headerTitleStore = {
     subscribe(listener: () => void) {

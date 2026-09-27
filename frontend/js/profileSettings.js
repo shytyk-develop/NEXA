@@ -370,6 +370,8 @@ function showSection(id) {
     if (titleEl) titleEl.textContent = meta[0];
     if (subEl) subEl.textContent = meta[1];
     rememberSettingsSection(id);
+    // app.js mirrors the open section into the URL (/chat/settings/<id>).
+    window.dispatchEvent(new CustomEvent('nexa:settings-section', { detail: { section: id } }));
     return panel;
 }
 

@@ -6,6 +6,10 @@ const routes = [
     { path: '/login', view: 'login' },
     { path: '/about-security', view: 'about-security' },
     { path: '/chat', view: 'chat' },
+    // Settings / Profile views (kept in the URL so a reload reopens them).
+    // Before the deeplink: it would read "settings" / "profile" as a handle.
+    { path: /^\/chat\/settings(?:\/([a-z]+))?\/?$/i, view: 'chat-settings' },
+    { path: /^\/chat\/profile\/?$/i, view: 'chat-profile' },
     // Deeplink: /chat/@alex, /chat/%40alex or /chat/alex (any case)
     { path: /^\/chat\/(?:@|%40)?([a-zA-Z0-9_]+)\/?$/i, view: 'chat-user' }
 ];
@@ -48,8 +52,8 @@ function handleRouting(onRouteChanged) {
             const match = path.match(route.path);
             if (match) {
                 // If it's a regex match (e.g., /chat/@alina), extract the username
-                const username = match[1].toLowerCase();
-                onRouteChanged(route.view, username);
+                const param = match[1] ? match[1].toLowerCase() : null;
+                onRouteChanged(route.view, param);
                 return;
             }
         } else if (route.path === path) {
