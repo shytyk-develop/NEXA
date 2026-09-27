@@ -843,6 +843,7 @@
                                 <span class="login-submit__label" data-auth-label="register" aria-hidden="true">Create account</span>
                             </span>
                             <svg class="login-submit__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                            <span class="login-submit__spinner" aria-hidden="true"></span>
                         </button>
 
                         <div class="login-divider" aria-hidden="true">or</div>
@@ -868,6 +869,16 @@
                     <!-- After Register (or signing in unverified): the 6-digit email code
                          (src/auth/VerifyEmail.tsx) takes the form's place. -->
                     <div id="uiVerifyEmailMount" class="login-verify" hidden></div>
+
+                    <!-- Cold start: shown while an auth request is still unanswered after 3.5s (js/api.js). -->
+                    <div id="serverWakeBanner" class="server-wake" role="status" aria-live="polite">
+                        <div class="server-wake__inner">
+                            <div class="server-wake__card">
+                                <span class="server-wake__dot" aria-hidden="true"></span>
+                                <span>Waking up secure server... This may take ~30s on cold start.</span>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </main>

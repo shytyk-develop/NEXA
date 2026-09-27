@@ -22,12 +22,48 @@ export function setAccessTokenGetter(getter) {
     accessTokenGetter = typeof getter === 'function' ? getter : () => '';
 }
 
+/*
+ * Cold start: the free Render backend sleeps when idle and takes ~30s to wake.
+ * An auth request still unanswered after SERVER_WAKE_DELAY_MS flips the app
+ * into "server waking up" (window event SERVER_WAKE_EVENT, detail.waking)
+ * until every slow request has settled — ok or error alike.
+ */
+export const SERVER_WAKE_EVENT = 'nexa:server-waking';
+const SERVER_WAKE_DELAY_MS = 3500;
+let slowRequests = 0;
+
+function setSlowRequests(count) {
+    const wasWaking = slowRequests > 0;
+    slowRequests = count;
+    if (wasWaking !== slowRequests > 0) {
+        window.dispatchEvent(new CustomEvent(SERVER_WAKE_EVENT, { detail: { waking: slowRequests > 0 } }));
+    }
+}
+
+export function isServerWakingUp() {
+    return slowRequests > 0;
+}
+
+function trackServerWake(promise) {
+    let slow = false;
+    const timer = window.setTimeout(() => {
+        slow = true;
+        setSlowRequests(slowRequests + 1);
+    }, SERVER_WAKE_DELAY_MS);
+    const settle = () => {
+        window.clearTimeout(timer);
+        if (slow) setSlowRequests(slowRequests - 1);
+    };
+    promise.then(settle, settle);
+    return promise;
+}
+
 let refreshInFlight = null;
 
 /** POST /api/auth/refresh → a new access token (rejects with .status 401 when the session is over). */
 export function refreshSession() {
     if (!refreshInFlight) {
-        refreshInFlight = fetch(`${API_URL}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
+        refreshInFlight = trackServerWake(fetch(`${API_URL}/api/auth/refresh`, { method: 'POST', credentials: 'include' }))
             .then(async (res) => {
                 const payload = await res.json().catch(() => ({}));
                 if (!res.ok || !payload.access_token) {
@@ -68,28 +104,28 @@ export function usernamePolicyText() {
 }
 
 export async function loginRequest(username, password) {
-    return postJson('/api/login', { username, password });
+    return trackServerWake(postJson('/api/login', { username, password }));
 }
 
 /** Creates an unverified account; the server emails a 6-digit code. */
 export async function registerRequest({ username, password, email, publicKey, encryptedPrivateKey }) {
-    return postJson('/api/register', {
+    return trackServerWake(postJson('/api/register', {
         username,
         password,
         email,
         public_key: publicKey,
         encrypted_private_key: encryptedPrivateKey
-    });
+    }));
 }
 
 /** The emailed code → session cookie + { access_token, username, public_key, encrypted_private_key }. */
 export async function verifyEmailRequest(email, code) {
-    return postJson('/api/auth/verify-email', { email, code });
+    return trackServerWake(postJson('/api/auth/verify-email', { email, code }));
 }
 
 /** A new code (429 with .retryAfter inside the 60s cooldown). */
 export async function resendOtpRequest(email) {
-    return postJson('/api/auth/resend-otp', { email });
+    return trackServerWake(postJson('/api/auth/resend-otp', { email }));
 }
 
 export async function getChats(token, limit = 50) {

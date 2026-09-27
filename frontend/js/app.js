@@ -190,6 +190,7 @@ import {
     logoutRequest,
     verifyEmailRequest,
     resendOtpRequest,
+    SERVER_WAKE_EVENT,
     setAccessTokenGetter,
     changePasswordRequest,
     deleteAccountRequest,
@@ -1279,6 +1280,18 @@ async function unmountChatPage() {
 
 function setAuthPending(isPending) {
     DOM.pageLogin?.classList.toggle('is-loading', isPending);
+    if (!isPending) setAuthBusy(false);
+    setAuthControlsDisabled(isPending);
+}
+
+/** A login / register request in flight: controls locked, spinner in the submit button. */
+function setAuthBusy(isBusy) {
+    DOM.btnLogin.classList.toggle('is-busy', isBusy);
+    DOM.btnLogin.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    setAuthControlsDisabled(isBusy);
+}
+
+function setAuthControlsDisabled(isPending) {
     DOM.btnLogin.disabled = isPending;
     DOM.btnRegister.disabled = isPending;
     const loginTab = document.getElementById('uiAuthTabLogin');
@@ -1541,6 +1554,8 @@ async function showEmailVerification(email, username, password, { cooldown = 60 
 }
 
 async function handleAuth(isLogin) {
+    // One request at a time: the button is disabled while one is in flight.
+    if (DOM.btnLogin.disabled) return;
     const rawIdentifier = DOM.usernameInput.value.trim();
     // Log in: "@" means an email address; anything else is a username.
     const byEmail = isLogin && rawIdentifier.includes('@');
@@ -1565,6 +1580,7 @@ async function handleAuth(isLogin) {
         return;
     }
 
+    setAuthBusy(true);
     try {
         if (isLogin) {
             let resData;
@@ -1574,6 +1590,7 @@ async function handleAuth(isLogin) {
                 // Registered but not verified yet: a fresh code went out — ask for it.
                 if (err?.code === 'email_not_verified' && err.email) {
                     await showEmailVerification(err.email, byEmail ? '' : username, password);
+                    setAuthBusy(false);
                     return;
                 }
                 throw err;
@@ -1598,6 +1615,7 @@ async function handleAuth(isLogin) {
             // emailed code is confirmed.
             saveKeys(username, { publicKey: pubJWK, privateKey: privJWK });
             await showEmailVerification(res.email || email, username, password);
+            setAuthBusy(false);
         }
     } catch (err) {
         setAuthPending(false);
@@ -1942,6 +1960,9 @@ DOM.btnAuthApple?.addEventListener('click', () => {
 });
 DOM.btnAuthGoogle?.addEventListener('click', () => {
     showAuthMessage('Sign in with Google is coming soon.', false);
+});
+window.addEventListener(SERVER_WAKE_EVENT, (event) => {
+    document.getElementById('serverWakeBanner')?.classList.toggle('is-visible', event.detail.waking);
 });
 document.getElementById('loginForm')?.addEventListener('submit', (event) => {
     event.preventDefault();

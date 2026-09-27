@@ -788,8 +788,109 @@
 }
 
 .login-submit:disabled {
-    cursor: default;
+    cursor: not-allowed;
     opacity: 0.6;
+}
+
+/* In flight (js/app.js setAuthBusy): the arrow gives way to a spinner. */
+.login-submit__spinner {
+    animation: loginSpin 0.7s linear infinite;
+    border: 1.8px solid currentColor;
+    border-radius: 50%;
+    border-right-color: transparent;
+    display: none;
+    height: 15px;
+    margin-left: 8px;
+    width: 15px;
+}
+
+.login-submit.is-busy .login-submit__arrow {
+    display: none;
+}
+
+.login-submit.is-busy .login-submit__spinner {
+    display: block;
+}
+
+@keyframes loginSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ─── Cold-start banner ─── */
+/* Rows 0fr → 1fr animates the height to auto. */
+.server-wake {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+        grid-template-rows 0.25s ease,
+        opacity 0.25s ease,
+        transform 0.25s ease;
+}
+
+.server-wake.is-visible {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transform: none;
+}
+
+.server-wake__inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.server-wake__card {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #d4d4d4;
+    display: flex;
+    font-size: 12px;
+    gap: 10px;
+    line-height: 1.4;
+    margin-top: 12px;
+    padding: 10px 14px;
+}
+
+.server-wake__dot {
+    background: #ccff00;
+    border-radius: 50%;
+    flex: none;
+    height: 8px;
+    position: relative;
+    width: 8px;
+}
+
+.server-wake__dot::after {
+    animation: serverWakePing 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+    background: #ccff00;
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    opacity: 0.75;
+    position: absolute;
+}
+
+@keyframes serverWakePing {
+    75%,
+    100% {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .server-wake {
+        transition: opacity 0.15s ease;
+    }
+
+    .server-wake__dot::after {
+        animation: none;
+    }
 }
 
 .login-divider {
