@@ -230,6 +230,7 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
     // While picking, every chat is offered (checked if already in the folder).
     const listedChats = picking ? chats : visibleChats;
     const showWelcome = !snap.loading && chats.length === 0;
+    const reduceMotion = useReducedMotion() === true;
 
     return (
         <div className="left-capsule" id="uiLeftCapsule">
@@ -318,23 +319,47 @@ export function ChatSidebar({ onSelectChat, onOpenSpotlight }: ChatSidebarProps)
                                 )}
                             </ScrollBlur>
                         </div>
-                        <div id="uiWelcomeBanner" className={`nexa-welcome-banner${showWelcome ? '' : ' hidden'}`}>
-                            <div className="nexa-welcome-banner__row">
-                                <div className="nexa-welcome-banner__copy">
-                                    <p className="nexa-welcome-banner__title">Welcome to NEXA!</p>
-                                    <p className="nexa-welcome-banner__tagline">
-                                        Private.<br />Encrypted.<br />Yours.
-                                    </p>
-                                </div>
-                                <div className="nexa-welcome-banner__art" aria-hidden="true">
-                                    <img src="/brand/nexa-lock-glass.png" alt="" width={112} height={112} decoding="async" />
-                                </div>
-                            </div>
-                            <a id="uiWelcomeLearnMore" className="nexa-welcome-banner__btn" href="/about-security" data-link>
-                                Learn more
-                                <Icon href="#icon-arrow-right" />
-                            </a>
-                        </div>
+                        {/* Only while there are no chats; folds away once the first one arrives. */}
+                        <AnimatePresence initial={false}>
+                            {showWelcome ? (
+                                <motion.div
+                                    key="welcome"
+                                    className="nexa-welcome-banner-slot"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={reduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                                >
+                                    <div id="uiWelcomeBanner" className="nexa-welcome-banner">
+                                        {/* Reads like a chat row: round avatar, name, status line. */}
+                                        <div className="nexa-welcome-banner__head">
+                                            <span className="nexa-welcome-banner__avatar" aria-hidden="true">
+                                                <Icon href="#icon-lock" />
+                                            </span>
+                                            <div className="nexa-welcome-banner__copy">
+                                                <p className="nexa-welcome-banner__title">Welcome to NEXA</p>
+                                                <p className="nexa-welcome-banner__tagline">
+                                                    <span className="nexa-welcome-banner__dot" aria-hidden="true" />
+                                                    Private. Encrypted. Yours.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="nexa-welcome-banner__btn"
+                                            onClick={() => onOpenSpotlight?.()}
+                                        >
+                                            <Icon href="#icon-message" />
+                                            Start messaging
+                                        </button>
+                                        <a id="uiWelcomeLearnMore" className="nexa-welcome-banner__link" href="/about-security" data-link>
+                                            How encryption works
+                                            <Icon href="#icon-arrow-right" />
+                                        </a>
+                                    </div>
+                                </motion.div>
+                            ) : null}
+                        </AnimatePresence>
                     </section>
 
                     <div className="sidebar-hidden-controls hidden" aria-hidden="true">

@@ -4797,146 +4797,154 @@ html[data-theme^="light"] #page-chat .compose-react-result-highlight {
         );
 }
 
+/* Empty sidebar welcome card (ChatSidebar.tsx). The slot is what motion folds
+   (height/opacity); the card keeps its margins inside it. Colors follow the
+   theme — on the dark themes that's white/5 fill, white/10 hairline, white CTA. */
+#page-chat .nexa-welcome-banner-slot {
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
 #page-chat .nexa-welcome-banner {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    background: var(--control-glass);
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
-    border: 1px solid var(--capsule-stroke);
+    background: var(--theme-card, #121212);
+    border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.08));
     border-radius: 18px;
-    box-shadow: var(--glass-inset-highlight);
-    contain: paint;
+    box-shadow: var(--theme-card-shadow, none);
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
-    gap: 14px;
     margin: 8px 10px 14px;
-    overflow: hidden;
-    padding: 16px 14px 14px;
-    transform: translate3d(0, 0, 0);
+    padding: 14px;
 }
 
 #page-chat .nexa-welcome-banner.hidden {
     display: none;
 }
 
-#page-chat .nexa-welcome-banner__row {
-    align-items: flex-start;
+#page-chat .nexa-welcome-banner__head {
+    align-items: center;
     display: flex;
-    gap: 8px;
-    justify-content: space-between;
-    min-height: 92px;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+/* Same footprint as a chat-list avatar, filled with a wash of the accent. */
+#page-chat .nexa-welcome-banner__avatar {
+    align-items: center;
+    background: color-mix(in srgb, var(--theme-pill, #ccff00) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-pill, #ccff00) 24%, transparent);
+    border-radius: 50%;
+    color: var(--theme-pill, #ccff00);
+    display: flex;
+    flex-shrink: 0;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+}
+
+#page-chat .nexa-welcome-banner__avatar .ui-icon {
+    height: 18px;
+    width: 18px;
 }
 
 #page-chat .nexa-welcome-banner__copy {
-    flex: 1;
     min-width: 0;
-    padding-top: 2px;
 }
 
 #page-chat .nexa-welcome-banner__title {
-    color: var(--theme-text, #f4f4f5);
-    font-family: var(--f-display);
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.25;
-    margin: 0 0 8px;
-}
-
-#page-chat .nexa-welcome-banner__tagline {
-    color: var(--theme-text-muted, #8a8a8a);
+    color: var(--theme-text, #fff);
     font-family: var(--f-ui);
     font-size: 14px;
-    font-weight: 400;
-    line-height: 1.45;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+    margin: 0 0 3px;
+}
+
+/* Status line, like "online" under a contact's name. */
+#page-chat .nexa-welcome-banner__tagline {
+    align-items: center;
+    color: var(--theme-text-muted, #a3a3a3);
+    display: flex;
+    font-family: var(--f-ui);
+    font-size: 12px;
+    gap: 6px;
+    line-height: 1.4;
     margin: 0;
 }
 
-#page-chat .nexa-welcome-banner__art {
+#page-chat .nexa-welcome-banner__dot {
+    background: var(--status-online, var(--theme-pill, #ccff00));
+    border-radius: 50%;
     flex-shrink: 0;
-    height: 96px;
-    margin: -8px -6px 0 0;
-    pointer-events: none;
-    position: relative;
-    width: 96px;
+    height: 6px;
+    width: 6px;
 }
 
-#page-chat .nexa-welcome-banner__art img {
-    display: block;
-    height: 100%;
-    mix-blend-mode: lighten;
-    object-fit: contain;
-    position: relative;
-    width: 100%;
-}
-
+/* Primary action wears the theme's active-pill fill (the tab pill, the send button's accent). */
 #page-chat .nexa-welcome-banner__btn {
     align-items: center;
-    background: var(--theme-text, #f4f4f5);
+    background: var(--theme-pill, #ccff00);
     border: 0;
-    border-radius: 12px;
-    color: var(--theme-bg, #0a0a0a);
+    border-radius: 999px;
+    color: var(--theme-pill-text, #191b13);
     cursor: pointer;
     display: flex;
     font-family: var(--f-ui);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    justify-content: space-between;
-    padding: 10px 14px;
-    text-align: left;
-    text-decoration: none;
+    gap: 8px;
+    height: 38px;
+    justify-content: center;
+    padding: 0 16px;
+    transition: filter 0.15s ease, transform 0.12s ease;
     width: 100%;
 }
 
 #page-chat .nexa-welcome-banner__btn:hover {
-    background: var(--theme-text, #fff);
+    filter: brightness(0.92);
+}
+
+#page-chat .nexa-welcome-banner__btn:active {
+    transform: scale(0.985);
+}
+
+#page-chat .nexa-welcome-banner__btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--theme-pill, #ccff00) 55%, transparent);
+    outline-offset: 2px;
 }
 
 #page-chat .nexa-welcome-banner__btn .ui-icon {
-    height: 16px;
-    width: 16px;
+    height: 15px;
+    width: 15px;
 }
 
-#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__copy,
-#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__art,
-#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__btn {
-    animation: nexa-empty-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+#page-chat .nexa-welcome-banner__link {
+    align-items: center;
+    align-self: center;
+    border-radius: 8px;
+    color: var(--theme-text-muted, #a3a3a3);
+    display: inline-flex;
+    font-family: var(--f-ui);
+    font-size: 12px;
+    gap: 4px;
+    margin-top: 10px;
+    padding: 2px 6px;
+    text-decoration: none;
+    transition: color 0.15s ease;
 }
 
-#page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__copy,
-#page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__art,
-#page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__btn {
-    opacity: 0;
+#page-chat .nexa-welcome-banner__link:hover {
+    color: var(--theme-text, #fff);
 }
 
-#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__copy { animation-delay: 0.08s; }
-#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__art { animation-delay: 0.16s; }
-#page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__btn { animation-delay: 0.28s; }
-
-@keyframes nexa-empty-in {
-    from {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-    }
+#page-chat .nexa-welcome-banner__link .ui-icon {
+    height: 12px;
+    width: 12px;
+    transition: transform 0.2s ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    #page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__copy,
-    #page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__art,
-    #page-chat .nexa-welcome-banner.is-entering .nexa-welcome-banner__btn,
-    #page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__copy,
-    #page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__art,
-    #page-chat .nexa-welcome-banner:not(.is-entering) .nexa-welcome-banner__btn {
-        animation: none;
-        opacity: 1;
-        transform: none;
-    }
+#page-chat .nexa-welcome-banner__link:hover .ui-icon {
+    transform: translateX(2px);
 }
 
 /* Section label rhythm */
