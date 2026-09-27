@@ -448,26 +448,33 @@
     display: none;
 }
 
+/* Pasted text editor — liquid glass card (monochrome). Dark themes use the
+   values below; light themes get the mirrored glass further down. */
 .paste-editor-panel {
-    background: var(--nexa-aside-fill, #161920);
-    border: 1px solid color-mix(in srgb, var(--theme-tint, #fff) 6%, transparent);
-    border-radius: 24px;
+    /* The text well's solid equivalent, for the scroll fades that sit on it. */
+    --paste-well: #0f0f0f;
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb, var(--theme-tint, #ffffff) 5%, transparent),
-        0 28px 80px rgba(0, 0, 0, 0.35);
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 25px 50px -12px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;
+    gap: 14px;
     max-height: min(920px, calc(100vh - 28px));
-    max-width: 640px;
+    max-width: 576px;
     opacity: 0;
     overflow: hidden;
-    padding: 0;
+    padding: 20px;
     position: relative;
     transform: translateY(8px);
     transition:
         opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1),
         transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
-    width: min(640px, 100%);
+    width: 100%;
     z-index: 1;
 }
 
@@ -481,7 +488,6 @@
     display: flex;
     gap: 12px;
     justify-content: space-between;
-    padding: 14px 16px 10px;
 }
 
 .paste-editor-head-copy {
@@ -489,22 +495,22 @@
 }
 
 .paste-editor-kicker {
-    color: var(--theme-text-muted, #8a8a8a);
-    font-family: var(--f-ui);
-    font-size: 11px;
+    color: #a3a3a3;
+    font-family: var(--f-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 10px;
     font-weight: 500;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     margin: 0 0 6px;
     text-transform: uppercase;
 }
 
 .paste-editor-title {
-    color: var(--text);
+    color: #ffffff;
     font-family: var(--f-ui);
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.2;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
     margin: 0;
 }
 
@@ -512,25 +518,58 @@
     align-items: center;
     display: flex;
     flex-shrink: 0;
-    gap: 8px;
-    padding-top: 2px;
+    gap: 6px;
 }
 
+/* Character count as a chip. */
 .paste-editor-count {
-    color: var(--theme-text-muted, #6e6e6e);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #d4d4d4;
     font-family: var(--f-ui);
     font-size: 12px;
     font-variant-numeric: tabular-nums;
+    line-height: 16px;
     margin: 0;
+    padding: 4px 10px;
 }
 
+/* Close: a bare icon that brightens on hover. */
+.paste-editor-head-meta .mini-icon-btn {
+    align-items: center;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 8px;
+    box-shadow: none !important;
+    color: #a3a3a3;
+    cursor: pointer;
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    padding: 0;
+    transition: color 0.15s ease;
+    width: 28px;
+}
+
+.paste-editor-head-meta .mini-icon-btn:hover {
+    color: #ffffff;
+}
+
+.paste-editor-head-meta .mini-icon-btn .ui-icon {
+    height: 16px;
+    width: 16px;
+}
+
+/* The text well. */
 .paste-editor-body {
-    background: transparent;
-    border: 0;
-    border-radius: 0;
+    background: rgba(11, 11, 11, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
     box-shadow: none;
     flex: 1 1 auto;
     min-height: 0;
+    overflow: hidden;
     position: relative;
     width: 100%;
 }
@@ -540,17 +579,17 @@
     border: none;
     box-shadow: none;
     box-sizing: border-box;
-    color: var(--theme-text, #e4e4e7);
+    color: #e5e5e5;
     display: block;
-    font-family: var(--f-ui);
-    font-size: 15px;
+    font-family: var(--f-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 12px;
     font-weight: 400;
-    height: 520px;
-    letter-spacing: -0.011em;
-    line-height: 1.7;
-    max-height: 68vh;
+    height: 240px;
+    line-height: 1.625;
+    max-height: 240px;
     outline: none;
-    padding: 18px 20px 24px;
+    overflow-y: auto;
+    padding: 14px;
     resize: none;
     scrollbar-width: thin;
     width: 100%;
@@ -561,6 +600,12 @@
     border: none;
     box-shadow: none;
     outline: none;
+}
+
+/* Selecting text: the lime highlight, never the default white blocks. */
+.paste-editor-textarea::selection {
+    background: #ccff00;
+    color: #000000;
 }
 
 .paste-editor-fade {
@@ -581,13 +626,13 @@
 }
 
 .paste-editor-fade--top {
-    height: 52px;
+    height: 28px;
     top: 0;
 }
 
 .paste-editor-fade--bottom {
     bottom: 0;
-    height: 64px;
+    height: 32px;
 }
 
 .paste-editor-fade__tint {
@@ -595,25 +640,12 @@
     position: absolute;
 }
 
-/* Seamless ease into solid panel color */
 .paste-editor-fade--top .paste-editor-fade__tint {
-    background: linear-gradient(
-        to bottom,
-        var(--nexa-aside-fill, #161920) 0%,
-        color-mix(in srgb, var(--nexa-aside-fill, #161920) 72%, transparent) 42%,
-        color-mix(in srgb, var(--nexa-aside-fill, #161920) 28%, transparent) 78%,
-        transparent 100%
-    );
+    background: linear-gradient(to bottom, var(--paste-well) 0%, transparent 100%);
 }
 
 .paste-editor-fade--bottom .paste-editor-fade__tint {
-    background: linear-gradient(
-        to top,
-        var(--nexa-aside-fill, #161920) 0%,
-        color-mix(in srgb, var(--nexa-aside-fill, #161920) 72%, transparent) 42%,
-        color-mix(in srgb, var(--nexa-aside-fill, #161920) 28%, transparent) 78%,
-        transparent 100%
-    );
+    background: linear-gradient(to top, var(--paste-well) 0%, transparent 100%);
 }
 
 .paste-editor-overlay.has-overflow-top:not(.is-entering) .paste-editor-fade--top,
@@ -625,53 +657,114 @@
     align-items: center;
     display: flex;
     justify-content: space-between;
-    padding: 12px 16px 14px;
 }
 
 .paste-editor-remove {
     background: transparent;
     border: none;
-    border-radius: 10px;
-    color: var(--theme-text-muted, #8a8a8a);
+    border-radius: 8px;
+    color: #a3a3a3;
     cursor: pointer;
     font-family: var(--f-ui);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
-    margin-left: -8px;
-    padding: 8px 10px;
-    transition: color 0.15s ease, background 0.15s ease;
+    margin-left: -12px;
+    padding: 8px 12px;
+    transition: color 0.15s ease;
 }
 
 .paste-editor-remove:hover {
-    background: color-mix(in srgb, var(--theme-text, #ffffff) 4%, transparent);
-    color: var(--theme-text, #f4f4f5);
+    color: #fb7185;
 }
 
 .paste-editor-save {
-    background: var(--theme-text, #f4f4f5);
+    background: #ffffff;
     border: none;
     border-radius: 12px;
-    color: var(--theme-bg, #0a0a0a);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: #000000;
     cursor: pointer;
     font-family: var(--f-ui);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: -0.015em;
-    padding: 10px 18px;
-    transition: background 0.15s ease;
+    padding: 8px 16px;
+    transition: background 0.15s ease, transform 0.12s ease;
 }
 
 .paste-editor-save:hover {
-    background: var(--theme-text, #fff);
+    background: #e5e5e5;
 }
 
 .paste-editor-save:active {
-    background: var(--theme-text, #e4e4e7);
+    transform: scale(0.97);
 }
 
 .paste-editor-save:disabled {
     cursor: default;
     opacity: 0.4;
+    transform: none;
+}
+
+.paste-editor-remove:focus-visible,
+.paste-editor-save:focus-visible,
+.paste-editor-head-meta .mini-icon-btn:focus-visible {
+    outline: 1.5px solid rgba(255, 255, 255, 0.55);
+    outline-offset: 2px;
+}
+
+/* Light themes: the same card as frosted white glass with dark ink. */
+html[data-theme^="light"] .paste-editor-panel {
+    --paste-well: #f4f4f4;
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        0 25px 50px -12px rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme^="light"] .paste-editor-kicker,
+html[data-theme^="light"] .paste-editor-remove,
+html[data-theme^="light"] .paste-editor-head-meta .mini-icon-btn {
+    color: #737373;
+}
+
+html[data-theme^="light"] .paste-editor-title,
+html[data-theme^="light"] .paste-editor-head-meta .mini-icon-btn:hover {
+    color: #171717;
+}
+
+html[data-theme^="light"] .paste-editor-count {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #404040;
+}
+
+html[data-theme^="light"] .paste-editor-body {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme^="light"] .paste-editor-textarea {
+    color: #262626;
+}
+
+html[data-theme^="light"] .paste-editor-remove:hover {
+    color: #e11d48;
+}
+
+html[data-theme^="light"] .paste-editor-save {
+    background: #171717;
+    color: #ffffff;
+}
+
+html[data-theme^="light"] .paste-editor-save:hover {
+    background: #404040;
+}
+
+html[data-theme^="light"] .paste-editor-remove:focus-visible,
+html[data-theme^="light"] .paste-editor-save:focus-visible,
+html[data-theme^="light"] .paste-editor-head-meta .mini-icon-btn:focus-visible {
+    outline-color: rgba(0, 0, 0, 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -693,7 +786,7 @@
         max-height: none;
         max-width: none;
         min-height: min(780px, calc(100dvh - 32px));
-        padding: 0;
+        padding: 16px;
         width: 100%;
     }
 
