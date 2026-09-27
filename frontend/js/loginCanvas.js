@@ -1,7 +1,11 @@
 import * as THREE from 'three';
 
+// highp, not mediump: on Apple GPUs mediump is a real 16-bit float, and with
+// retina-sized coordinates random() overflows to Inf/NaN. A NaN spreads through
+// every `opacity *=` below — gaps between dots included — and the canvas
+// flashes solid white.
 const FRAGMENT_SHADER = `
-precision mediump float;
+precision highp float;
 in vec2 fragCoord;
 
 uniform float u_time;
@@ -18,7 +22,9 @@ out vec4 fragColor;
 float PHI = 1.61803398874989484820459;
 
 float random(vec2 xy) {
-    return fract(tan(distance(xy * PHI, xy) * 0.5) * xy.x);
+    float r = fract(tan(distance(xy * PHI, xy) * 0.5) * xy.x);
+    // tan() can still blow up on some drivers: never let a NaN/Inf through.
+    return (r >= 0.0 && r < 1.0) ? r : 0.0;
 }
 
 void main() {
@@ -34,11 +40,11 @@ void main() {
     float frequency = 5.0;
     float show_offset = random(st2);
     float rand = random(st2 * floor((u_time / frequency) + show_offset + frequency));
-    opacity *= u_opacities[int(rand * 10.0)];
+    opacity *= u_opacities[clamp(int(rand * 10.0), 0, 9)];
     opacity *= 1.0 - step(u_dot_size / u_total_size, fract(st.x / u_total_size));
     opacity *= 1.0 - step(u_dot_size / u_total_size, fract(st.y / u_total_size));
 
-    vec3 color = u_colors[int(show_offset * 6.0)];
+    vec3 color = u_colors[clamp(int(show_offset * 6.0), 0, 5)];
 
     vec2 center_grid = u_resolution / 2.0 / u_total_size;
     float dist_from_center = distance(center_grid, st2);
@@ -57,13 +63,14 @@ void main() {
         opacity *= clamp((1.0 - step(current_timing_offset + 0.1, u_time * u_animation_speed)) * 1.25, 1.0, 1.25);
     }
 
+    opacity = clamp(opacity, 0.0, 1.25);
     fragColor = vec4(color, opacity);
     fragColor.rgb *= fragColor.a;
 }
 `;
 
 const VERTEX_SHADER = `
-precision mediump float;
+precision highp float;
 uniform vec2 u_resolution;
 out vec2 fragCoord;
 
@@ -101,7 +108,7 @@ export function createLoginCanvas(host, {
         antialias: false,
         powerPreference: 'high-performance',
     });
-    renderer.setClearColor(0x000000, 1);
+    renderer.setClearColor(0x0b0b0b, 1);
     renderer.domElement.className = 'login-canvas';
     host.appendChild(renderer.domElement);
 
@@ -136,6 +143,10 @@ export function createLoginCanvas(host, {
     const clock = new THREE.Clock();
     let rafId = 0;
     let disposed = false;
+    let revealed = false;
+    // Until the host has a real size, u_resolution is (1, 1) and the shader
+    // draws the whole canvas as one giant grey-white dot — never render that.
+    let sized = false;
 
     const resize = () => {
         const width = host.clientWidth;
@@ -143,6 +154,10 @@ export function createLoginCanvas(host, {
         if (!width || !height) return;
         renderer.setSize(width, height, false);
         uniforms.u_resolution.value.set(width * 2, height * 2);
+        if (!sized) {
+            sized = true;
+            clock.start(); // the intro runs from the first frame actually shown
+        }
     };
 
     const resizeObserver = new ResizeObserver(resize);
@@ -151,8 +166,17 @@ export function createLoginCanvas(host, {
 
     const tick = () => {
         if (disposed) return;
+        if (!sized) {
+            rafId = requestAnimationFrame(tick);
+            return;
+        }
         uniforms.u_time.value = clock.getElapsedTime();
         renderer.render(scene, camera);
+        // Fade in only once a real frame is on the canvas (CSS: .login-canvas.is-ready).
+        if (!revealed) {
+            revealed = true;
+            requestAnimationFrame(() => renderer.domElement.classList.add('is-ready'));
+        }
         rafId = requestAnimationFrame(tick);
     };
     tick();

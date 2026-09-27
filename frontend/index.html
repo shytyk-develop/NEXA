@@ -16,6 +16,24 @@
     <link rel="icon" type="image/svg+xml" href="/brand/nexa-brand-icon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/brand/nexa-brand-icon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/nexa-brand-icon-180.png">
+    <!-- Auth surface: the login page is always dark, whatever the saved theme.
+         Mark it before first paint so a hard reload never flashes the theme's
+         (possibly light) body background while app.js boots. -->
+    <script>
+        if (location.pathname === '/login') document.documentElement.dataset.surface = 'auth';
+    </script>
+    <style>
+        html {
+            background-color: #0B0B0B;
+        }
+
+        html[data-surface="auth"],
+        html[data-surface="auth"] body {
+            background-color: #0B0B0B !important;
+            color: #FFFFFF;
+            color-scheme: dark;
+        }
+    </style>
     <!-- Theme engine: classic, render-blocking on purpose — applies the saved theme before first paint. -->
     <script src="/js/themes.js"></script>
     <link rel="stylesheet" href="/css/fonts.css">

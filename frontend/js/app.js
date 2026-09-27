@@ -1292,6 +1292,9 @@ function setAuthPending(isPending) {
 async function handleNavigation(view, param) {
     closeOverlaysForRouteChange();
     document.querySelectorAll('.route-page').forEach(page => page.classList.add('hidden'));
+    // Pre-paint dark surface (index.html) — only while the login page is up.
+    if (view === 'login') document.documentElement.dataset.surface = 'auth';
+    else delete document.documentElement.dataset.surface;
 
     if (view !== 'about-security' && aboutSecurityMounted) {
         teardownAboutSecurity();
