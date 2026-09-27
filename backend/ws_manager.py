@@ -396,6 +396,15 @@ class ConnectionManager:
         target_username = data.get("to")
         content_recipient = data.get("content_recipient")
         content_sender = data.get("content_sender")
+        # Malformed packet (no recipient / ciphertext lists): nothing to deliver
+        # or store — drop it rather than persisting NULLs.
+        if (
+            not isinstance(target_username, str)
+            or not target_username
+            or not isinstance(content_recipient, list)
+            or not isinstance(content_sender, list)
+        ):
+            return
         client_message_id = data.get("client_message_id")
         reply_to_message_id = data.get("reply_to_message_id")
 

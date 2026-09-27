@@ -642,7 +642,7 @@ function escapeHtml(value) {
 }
 
 function authToken() {
-    return ctx?.getToken?.() || localStorage.getItem('auth_token') || '';
+    return ctx?.getToken?.() || '';
 }
 
 /**

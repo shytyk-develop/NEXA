@@ -1,5 +1,51 @@
-export const API_URL = "https://originhub.onrender.com";
-// export const API_URL = "http://localhost:8000";
+// Same-origin: vercel.json rewrites /api/* to the Render backend (vite.config.js
+// proxies it in dev), so the HttpOnly refresh-token cookie is first-party.
+export const API_URL = "";
+
+/*
+ * Session auth. The access token lives in memory only (app.js state); the
+ * refresh token is an HttpOnly cookie the browser sends to /api. A 401 on an
+ * authed call triggers one silent refresh (shared by every call that hits it)
+ * and a single retry; if the refresh fails the app is told the session is gone.
+ */
+let authHandlers = { onToken: null, onAuthLost: null };
+
+/** app.js: onToken(newAccessToken) after a refresh; onAuthLost() when it can't refresh. */
+export function setAuthHandlers(handlers) {
+    authHandlers = { ...authHandlers, ...handlers };
+}
+
+let refreshInFlight = null;
+
+/** POST /api/auth/refresh → a new access token (rejects with .status 401 when the session is over). */
+export function refreshSession() {
+    if (!refreshInFlight) {
+        refreshInFlight = fetch(`${API_URL}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
+            .then(async (res) => {
+                const payload = await res.json().catch(() => ({}));
+                if (!res.ok || !payload.access_token) {
+                    const error = new Error(payload.detail || 'Session expired');
+                    error.status = res.status;
+                    throw error;
+                }
+                authHandlers.onToken?.(payload.access_token);
+                return payload.access_token;
+            })
+            .finally(() => {
+                refreshInFlight = null;
+            });
+    }
+    return refreshInFlight;
+}
+
+/** End this browser's session on the server (drops the cookie). Never throws. */
+export async function logoutRequest() {
+    try {
+        await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+        /* offline: the cookie expires on its own */
+    }
+}
 
 
 export function normalizeUsername(value) {
@@ -110,44 +156,52 @@ export async function syncMuted(token, partners) {
     return putJson('/api/me/muted', { partners: partners || [] }, token);
 }
 
-async function postJson(path, payload, token = null) {
-    const res = await fetch(`${API_URL}${path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? authHeaders(token) : {}) },
-        body: JSON.stringify(payload)
+/**
+ * Every API call: same-origin, cookies included; an authed call that gets 401
+ * refreshes the session once and retries with the new token.
+ */
+async function apiRequest(path, init = {}, token = null) {
+    const send = (bearer) => fetch(`${API_URL}${path}`, {
+        ...init,
+        credentials: 'include',
+        headers: { ...(init.headers || {}), ...authHeaders(bearer) },
     });
-
+    let res = await send(token);
+    if (res.status === 401 && token && !path.startsWith('/api/auth/')) {
+        let fresh = null;
+        try {
+            fresh = await refreshSession();
+        } catch (error) {
+            // Only a refused refresh ends the session — not a network blip.
+            if (error?.status === 401) authHandlers.onAuthLost?.();
+        }
+        if (fresh) res = await send(fresh);
+    }
     return parseJsonResponse(res);
+}
+
+async function postJson(path, payload, token = null) {
+    return apiRequest(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    }, token);
 }
 
 async function getJson(path, token) {
-    const res = await fetch(`${API_URL}${path}`, {
-        headers: authHeaders(token)
-    });
-
-    return parseJsonResponse(res);
+    return apiRequest(path, {}, token);
 }
 
 async function deleteJson(path, token) {
-    const res = await fetch(`${API_URL}${path}`, {
-        method: 'DELETE',
-        headers: authHeaders(token)
-    });
-
-    return parseJsonResponse(res);
+    return apiRequest(path, { method: 'DELETE' }, token);
 }
 
 async function putJson(path, payload, token) {
-    const res = await fetch(`${API_URL}${path}`, {
+    return apiRequest(path, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            ...authHeaders(token),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-    });
-
-    return parseJsonResponse(res);
+    }, token);
 }
 
 function authHeaders(token) {

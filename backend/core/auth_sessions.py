@@ -13,7 +13,7 @@ import hashlib
 import os
 import re
 import secrets
-from typing import Optional
+from typing import Literal, Optional, cast
 
 from fastapi import Request, Response
 
@@ -23,8 +23,11 @@ SESSION_TTL_SECONDS = 7 * 24 * 3600
 # Cookie flags. SameSite "lax" only reaches same-site requests: while the
 # frontend and the API live on different sites, the refresh call needs
 # AUTH_COOKIE_SAMESITE=none (Secure is then mandatory) or a same-site proxy.
-COOKIE_SAMESITE = os.getenv("AUTH_COOKIE_SAMESITE", "lax").lower()
-COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "true").lower() != "false"
+SameSite = Literal["lax", "strict", "none"]
+_samesite_env = os.getenv("AUTH_COOKIE_SAMESITE", "lax").lower()
+COOKIE_SAMESITE: SameSite = cast(SameSite, _samesite_env) if _samesite_env in ("lax", "strict", "none") else "lax"
+# SameSite=None is only accepted on Secure cookies.
+COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "true").lower() != "false" or COOKIE_SAMESITE == "none"
 # The API's own paths only (login / register replace this browser's previous
 # session, so they need to see it too).
 COOKIE_PATH = "/api"
@@ -44,8 +47,8 @@ def set_refresh_cookie(response: Response, token: str) -> None:
         value=token,
         max_age=SESSION_TTL_SECONDS,
         httponly=True,
-        secure=COOKIE_SECURE or COOKIE_SAMESITE == "none",
-        samesite=COOKIE_SAMESITE if COOKIE_SAMESITE in {"lax", "strict", "none"} else "lax",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
         path=COOKIE_PATH,
     )
 
@@ -55,8 +58,8 @@ def clear_refresh_cookie(response: Response) -> None:
         key=REFRESH_COOKIE,
         path=COOKIE_PATH,
         httponly=True,
-        secure=COOKIE_SECURE or COOKIE_SAMESITE == "none",
-        samesite=COOKIE_SAMESITE if COOKIE_SAMESITE in {"lax", "strict", "none"} else "lax",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
     )
 
 

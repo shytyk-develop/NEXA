@@ -41,5 +41,15 @@ export default defineConfig({
         watch: {
             ignored: ['**/dist/**'],
         },
+        // Same-origin /api in dev too (production: vercel.json rewrites), so the
+        // HttpOnly refresh cookie behaves the same. VITE_API_PROXY=http://localhost:8000
+        // points it at a local backend.
+        proxy: {
+            '/api': {
+                target: process.env.VITE_API_PROXY || 'https://originhub.onrender.com',
+                changeOrigin: true,
+                secure: true,
+            },
+        },
     },
 });

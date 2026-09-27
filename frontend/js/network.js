@@ -5,7 +5,11 @@ const WS_BASE_URL = "wss://originhub.onrender.com/ws";
 const RECONNECT_BASE_MS = 800;
 const RECONNECT_MAX_MS = 12000;
 
-/* Establishes a secure WebSocket connection using a JWT token via encrypted query parameters */
+/*
+ * Establishes a secure WebSocket connection using a JWT token via encrypted query parameters.
+ * The socket stays direct to Render (Vercel rewrites don't carry WebSockets). `token` may be
+ * a getter so a reconnect uses the current in-memory access token (it's refreshed silently).
+ */
 export function connectToServer(token, onOpen, onMessage, onClose) {
     let socket = null;
     let reconnectTimer = null;
@@ -13,7 +17,8 @@ export function connectToServer(token, onOpen, onMessage, onClose) {
     let closedByUser = false;
 
     const connect = () => {
-        const WS_URL = `${WS_BASE_URL}?token=${encodeURIComponent(token)}`;
+        const current = typeof token === 'function' ? token() : token;
+        const WS_URL = `${WS_BASE_URL}?token=${encodeURIComponent(current || '')}`;
         socket = new WebSocket(WS_URL);
 
         socket.onopen = () => {

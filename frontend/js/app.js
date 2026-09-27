@@ -181,6 +181,9 @@ import {
     saveMessageForEveryone,
     getSharedSavedMessages,
     removeSharedSavedMessage,
+    setAuthHandlers,
+    refreshSession,
+    logoutRequest,
 } from './api.js';
 import {
     detectDeviceInfo,
@@ -839,7 +842,7 @@ initProfileSettings({
         return null;
     },
     getPreferences: () => state.preferences,
-    getToken: () => state.token || localStorage.getItem('auth_token') || '',
+    getToken: () => state.token || '',
     onPreferenceChange: (key, value, opts = {}) => {
         state.preferences = updatePreference(state.preferences, key, value);
         setPreferenceControls(state.preferences);
@@ -902,7 +905,7 @@ initProfileSettings({
 
 function initComposeSearchRuntime() {
 initComposeSearch({
-    getToken: () => state.token || localStorage.getItem('auth_token') || '',
+    getToken: () => state.token || '',
     getMyUsername: () => state.myUsername || '',
     getConversations: () => state.sidebarChats || [],
     getChatHistory: () => state.chatHistory || {},
@@ -1263,9 +1266,10 @@ async function handleAuth(isLogin) {
     try {
         if (isLogin) {
             const resData = await loginRequest(username, password);
+            // Access token in memory only; the session itself is the HttpOnly
+            // refresh cookie the login just set (restored on reload).
             state.token = resData.access_token;
-
-            localStorage.setItem('auth_token', state.token);
+            localStorage.removeItem('auth_token');
             localStorage.setItem('auth_username', username);
 
             let savedKeysJWK = loadKeys(username);
@@ -1468,12 +1472,19 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
     void ensureDesktopNotifications();
     void syncMutedToServer();
 
+    openSocket(exportedPublicKeyJSON);
+}
+
+/** When the socket last refreshed the session after a token refusal. */
+let lastSocketTokenRefresh = 0;
+
+/** The realtime socket; a reconnect picks up the current (refreshed) access token. */
+function openSocket(exportedPublicKeyJSON) {
     if (socketConnection) {
         socketConnection.close();
     }
-
     socketConnection = connectToServer(
-        state.token,
+        () => state.token,
         (activeSocket) => {
             updateStatus("Online", "text-green-500");
             const device = devicePayload(detectDeviceInfo());
@@ -1504,6 +1515,24 @@ function finishLoginSetup(username, exportedPublicKeyJSON, targetPath = '/chat')
             }
         },
         (event, closedByUser) => {
+            // The server refused the token (expired / revoked): refresh the
+            // session once and reconnect; if that fails, onAuthLost signs out.
+            // At most once per 30s, so a token the socket keeps refusing can't loop.
+            if (
+                !closedByUser
+                && event.code === 1008
+                && /invalid token/i.test(event.reason || '')
+                && Date.now() - lastSocketTokenRefresh > 30000
+            ) {
+                lastSocketTokenRefresh = Date.now();
+                updateStatus("Reconnecting...", "text-yellow-500");
+                refreshSession()
+                    .then(() => {
+                        if (state.myUsername) openSocket(exportedPublicKeyJSON);
+                    })
+                    .catch(() => {});
+                return;
+            }
             if (!closedByUser) {
                 updateStatus("Reconnecting...", "text-yellow-500");
                 return;
@@ -2082,6 +2111,8 @@ async function deleteSingleMessage(messageId, { confirmed = false } = {}) {
 }
 
 function handleLogout() {
+    // End the server session and drop the refresh cookie (fire and forget).
+    void logoutRequest();
     persistCurrentDraft();
     flushChatHistorySave();
     closeOverlaysForRouteChange();
@@ -2126,38 +2157,78 @@ function handleLogout() {
     showToast("Logged out.", "success");
 }
 
-// Asynchronous application rehydration task to process auto-logins on page reloads
-async function initializeApp() {
-    const savedToken = localStorage.getItem('auth_token');
-    const savedUsername = localStorage.getItem('auth_username');
-    const initialPath = window.location.pathname;
+/** Username a JWT was issued to (`sub`), without verifying it — only to pick local keys. */
+function tokenSubject(token) {
+    try {
+        const part = String(token).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        return normalizeUsername(JSON.parse(atob(part)).sub || '');
+    } catch {
+        return '';
+    }
+}
 
-    if (savedToken && savedUsername) {
-        const savedKeysJWK = loadKeys(savedUsername);
-        if (savedKeysJWK) {
-            try {
-                // Restore tokens to active RAM state boundaries
-                state.token = savedToken;
-                state.myUsername = savedUsername;
-                setSavedMessagesOwner(savedUsername);
-                state.myKeys = {
-                    publicKey: await importPublicKey(savedKeysJWK.publicKey),
-                    privateKey: await importPrivateKey(savedKeysJWK.privateKey)
-                };
-                
-                // Fire up setup and bypass login form, preserving the current deep-linked path
-                const routeFallback = (initialPath === '/' || initialPath === '/login') ? '/chat' : initialPath;
-                finishLoginSetup(savedUsername, savedKeysJWK.publicKey, routeFallback);
-                return;
-            } catch (err) {
-                console.error("Session rehydration failed:", err);
-                localStorage.removeItem('auth_token');
-                localStorage.removeItem('auth_username');
-            }
+// The session survives reloads as the HttpOnly refresh cookie: after a silent
+// refresh the in-memory access token is renewed from it.
+setAuthHandlers({
+    onToken: (token) => {
+        state.token = token;
+    },
+    // A call hit 401 and the session couldn't be refreshed: sign out.
+    onAuthLost: () => {
+        if (!state.myUsername) return;
+        handleLogout();
+        showToast('Your session has ended. Please sign in again.', 'info');
+    },
+});
+
+// App boot: restore the session from the refresh cookie (POST /api/auth/refresh).
+async function initializeApp() {
+    const initialPath = window.location.pathname;
+    // Access tokens no longer persist: drop one a previous version stored.
+    const legacyToken = localStorage.getItem('auth_token');
+    localStorage.removeItem('auth_token');
+
+    let token = null;
+    // Never signed in on this browser: no session to restore — show the
+    // landing page at once instead of waiting on the backend.
+    const knownUser = localStorage.getItem('auth_username');
+    try {
+        if (!knownUser && !legacyToken) throw new Error('No session');
+        token = await refreshSession();
+    } catch {
+        // 401 (no / expired session) or offline. A token stored by the previous
+        // version still works until it expires, so this upgrade doesn't sign
+        // anyone out; their next sign-in starts a cookie session.
+        token = legacyToken && tokenSubject(legacyToken) ? legacyToken : null;
+    }
+
+    const username = token ? tokenSubject(token) || localStorage.getItem('auth_username') : null;
+    // The private key never leaves the device: without it here, sign in again
+    // (the password decrypts the synced key).
+    const savedKeysJWK = username ? loadKeys(username) : null;
+    if (token && username && savedKeysJWK) {
+        try {
+            state.token = token;
+            state.myUsername = username;
+            localStorage.setItem('auth_username', username);
+            setSavedMessagesOwner(username);
+            state.myKeys = {
+                publicKey: await importPublicKey(savedKeysJWK.publicKey),
+                privateKey: await importPrivateKey(savedKeysJWK.privateKey)
+            };
+
+            // Bypass the login form, preserving the current deep-linked path
+            const routeFallback = (initialPath === '/' || initialPath === '/login') ? '/chat' : initialPath;
+            finishLoginSetup(username, savedKeysJWK.publicKey, routeFallback);
+            return;
+        } catch (err) {
+            console.error("Session rehydration failed:", err);
+            state.token = null;
+            state.myUsername = null;
         }
     }
 
-    // Default flow: Boot the client-side router normally if no session exists
+    // No session: the router shows the landing / login page.
     ensureRouter();
     if (initialPath.startsWith('/chat')) {
         navigateTo('/login', handleNavigation);
