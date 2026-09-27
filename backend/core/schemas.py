@@ -52,3 +52,20 @@ class SaveMessageRequest(BaseModel):
     # False: a personal save — kept on the user's own device, nothing stored here.
     save_for_everyone: bool = False
 
+
+
+class FolderCreateRequest(BaseModel):
+    name: str
+    root: str  # 'work' | 'personal' — the custom folder's parent
+    icon: Optional[str] = None
+    chat_ids: list[str] = []
+    # Client-chosen id (UUID) so an optimistic UI keeps the same id as the server.
+    id: Optional[str] = None
+    position: Optional[int] = None
+
+
+class FolderUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    position: Optional[int] = None
+    chat_ids: Optional[list[str]] = None

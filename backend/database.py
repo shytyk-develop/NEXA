@@ -1510,3 +1510,215 @@ def dismiss_shared_saved_message_db(username: str, message_id: int) -> bool:
         raise e
     finally:
         release_connection(conn)
+
+
+# --- CHAT FOLDERS (alembic 0012) ---
+
+_ROOT_NAMES = {"work": "Work", "personal": "Personal"}
+
+
+def _folder_row_to_dict(row, chat_ids: list) -> dict:
+    return {
+        "id": str(row[0]),
+        "kind": row[1],
+        "root": row[1] if row[1] != "custom" else None,
+        "parent_id": str(row[2]) if row[2] else None,
+        "name": row[3],
+        "icon": row[4],
+        "position": row[5],
+        "created_at": row[6].isoformat() if row[6] else None,
+        "chat_ids": chat_ids,
+    }
+
+
+def _ensure_folder_roots(cursor, username: str) -> dict:
+    """Work / Personal for this user (made on first use) → {kind: id}."""
+    for position, (kind, name) in enumerate(_ROOT_NAMES.items()):
+        cursor.execute(
+            """
+            INSERT INTO folders (username, kind, name, position)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (username, kind) WHERE kind <> 'custom' DO NOTHING
+            """,
+            (username, kind, name, position),
+        )
+    cursor.execute(
+        "SELECT kind, id FROM folders WHERE username = %s AND kind <> 'custom'",
+        (username,),
+    )
+    return {kind: str(folder_id) for kind, folder_id in cursor.fetchall()}
+
+
+def _set_folder_chats(cursor, username: str, folder_id: str, chat_ids: list) -> None:
+    """Replace a folder's chats. Unknown usernames and the owner are skipped."""
+    wanted = []
+    for chat_id in chat_ids:
+        partner = str(chat_id).strip().lower()
+        if partner and partner != username and partner not in wanted:
+            wanted.append(partner)
+    cursor.execute("DELETE FROM folder_chats WHERE folder_id = %s", (folder_id,))
+    if not wanted:
+        return
+    cursor.execute(
+        """
+        INSERT INTO folder_chats (folder_id, partner)
+        SELECT %s, u.username FROM users u WHERE u.username = ANY(%s)
+        ON CONFLICT DO NOTHING
+        """,
+        (folder_id, wanted),
+    )
+
+
+def _load_folders(cursor, username: str) -> list:
+    cursor.execute(
+        """
+        SELECT f.id, f.kind, f.parent_id, f.name, f.icon, f.position, f.created_at,
+               COALESCE(array_agg(fc.partner ORDER BY fc.added_at, fc.partner)
+                        FILTER (WHERE fc.partner IS NOT NULL), '{}')
+        FROM folders f
+        LEFT JOIN folder_chats fc ON fc.folder_id = f.id
+        WHERE f.username = %s
+        GROUP BY f.id
+        ORDER BY (f.kind = 'custom'), f.position, f.created_at
+        """,
+        (username,),
+    )
+    return [_folder_row_to_dict(row[:7], list(row[7])) for row in cursor.fetchall()]
+
+
+def list_folders_db(username: str) -> list:
+    """This user's folders — Work and Personal first, then custom ones by position — with chat_ids."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        _ensure_folder_roots(cursor, username)
+        folders = _load_folders(cursor, username)
+        conn.commit()
+        return folders
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def get_folder_db(username: str, folder_id: str) -> Optional[dict]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        return next((f for f in _load_folders(cursor, username) if f["id"] == folder_id), None)
+    finally:
+        release_connection(conn)
+
+
+def create_folder_db(
+    username: str,
+    root: str,
+    name: str,
+    icon: Optional[str],
+    chat_ids: list,
+    folder_id: Optional[str] = None,
+    position: Optional[int] = None,
+) -> Optional[dict]:
+    """A custom folder under Work or Personal. `folder_id` lets the client pick
+    the id (optimistic UI); None when that id is already taken."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        roots = _ensure_folder_roots(cursor, username)
+        if position is None:
+            cursor.execute(
+                "SELECT COALESCE(MAX(position) + 1, 0) FROM folders WHERE username = %s AND parent_id = %s",
+                (username, roots[root]),
+            )
+            row = cursor.fetchone()
+            position = int(row[0]) if row else 0
+        cursor.execute(
+            """
+            INSERT INTO folders (id, username, kind, parent_id, name, icon, position)
+            VALUES (COALESCE(%s::uuid, gen_random_uuid()), %s, 'custom', %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING
+            RETURNING id
+            """,
+            (folder_id, username, roots[root], name, icon, position),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            conn.rollback()
+            return None
+        new_id = str(row[0])
+        _set_folder_chats(cursor, username, new_id, chat_ids)
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+    return get_folder_db(username, new_id)
+
+
+def update_folder_db(
+    username: str,
+    folder_id: str,
+    name: Optional[str] = None,
+    icon: Optional[str] = None,
+    position: Optional[int] = None,
+    chat_ids: Optional[list] = None,
+    clear_icon: bool = False,
+) -> Optional[str]:
+    """Patch a folder. Returns None on success, else 'not_found' | 'root_locked'
+    (Work / Personal can only change their chats)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT kind FROM folders WHERE id = %s AND username = %s FOR UPDATE",
+            (folder_id, username),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            conn.rollback()
+            return "not_found"
+        is_root = row[0] != "custom"
+        if is_root and (name is not None or icon is not None or position is not None or clear_icon):
+            conn.rollback()
+            return "root_locked"
+        if name is not None:
+            cursor.execute("UPDATE folders SET name = %s WHERE id = %s", (name, folder_id))
+        if icon is not None or clear_icon:
+            cursor.execute("UPDATE folders SET icon = %s WHERE id = %s", (icon, folder_id))
+        if position is not None:
+            cursor.execute("UPDATE folders SET position = %s WHERE id = %s", (position, folder_id))
+        if chat_ids is not None:
+            _set_folder_chats(cursor, username, folder_id, chat_ids)
+        conn.commit()
+        return None
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
+
+
+def delete_folder_db(username: str, folder_id: str) -> Optional[str]:
+    """Delete a custom folder (its chat links go with it; the chats stay).
+    None on success, else 'not_found' | 'root_locked'."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT kind FROM folders WHERE id = %s AND username = %s", (folder_id, username))
+        row = cursor.fetchone()
+        if row is None:
+            conn.rollback()
+            return "not_found"
+        if row[0] != "custom":
+            conn.rollback()
+            return "root_locked"
+        cursor.execute("DELETE FROM folders WHERE id = %s", (folder_id,))
+        conn.commit()
+        return None
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        release_connection(conn)
