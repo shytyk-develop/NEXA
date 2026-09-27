@@ -69,6 +69,10 @@ class ConnectionManager:
                 return True
         return False
 
+    def is_visibly_online(self, username: str) -> bool:
+        """Online and not hiding presence (Settings → Privacy)."""
+        return username in self.online_usernames and self._user_shares_presence(username)
+
     def _visible_online_usernames(self) -> list:
         return sorted(
             username

@@ -1523,7 +1523,9 @@ async function copyProfileLink() {
         ctx?.showToast?.('Not signed in.', 'error');
         return;
     }
-    if (!(await copyField(profileLinkFor(username), { quiet: true }))) return;
+    // The full deeplink on this deployment's domain: opens a chat with them.
+    if (!(await copyField(`${window.location.origin}/chat/@${username}`, { quiet: true }))) return;
+    ctx?.showToast?.('Copied to clipboard!', 'copied');
     const btn = $p('uiProfileCopyLink');
     if (!btn) return;
     btn.classList.add('is-copied');

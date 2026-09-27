@@ -2381,9 +2381,23 @@ export function highlightMessageRow(targetId) {
 export function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast is-${type}`;
-    toast.textContent = message;
+    if (type === 'copied') {
+        // Lime check + text: the profile link / copy confirmations.
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 16 16');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.classList.add('toast__check');
+        icon.innerHTML = '<path d="m3.5 8.4 2.9 2.9 6.1-6.6"/>';
+        const text = document.createElement('span');
+        text.textContent = message;
+        toast.append(icon, text);
+    } else {
+        toast.textContent = message;
+    }
     DOM.toastRegion.appendChild(toast);
 
+    // Fade out, then leave the DOM (reduced motion: the animation is off, so just go).
+    window.setTimeout(() => toast.classList.add('is-leaving'), 2900);
     window.setTimeout(() => {
         toast.remove();
     }, 3200);

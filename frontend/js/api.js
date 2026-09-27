@@ -105,6 +105,11 @@ export async function getUser(token, username) {
     return getJson(`/api/users/${encodeURIComponent(username)}`, token);
 }
 
+/** Deeplink lookup (`@` optional, any case); throws with `.status` 404 when nobody has the handle. */
+export async function resolveUser(token, username) {
+    return getJson(`/api/users/resolve/${encodeURIComponent(username)}`, token);
+}
+
 export async function getHistory(token, user, partner, limit = 50, offset = 0) {
     return getJson(
         `/api/history?user=${encodeURIComponent(user)}&partner=${encodeURIComponent(partner)}&limit=${limit}&offset=${offset}`,

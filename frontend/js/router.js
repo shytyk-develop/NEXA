@@ -6,7 +6,8 @@ const routes = [
     { path: '/login', view: 'login' },
     { path: '/about-security', view: 'about-security' },
     { path: '/chat', view: 'chat' },
-    { path: /^\/chat\/@([a-zA-Z0-9_]+)$/, view: 'chat-user' } // Regular expression for /chat/@username
+    // Deeplink: /chat/@alex, /chat/%40alex or /chat/alex (any case)
+    { path: /^\/chat\/(?:@|%40)?([a-zA-Z0-9_]+)\/?$/i, view: 'chat-user' }
 ];
 
 export function initRouter(onRouteChanged) {
@@ -47,7 +48,7 @@ function handleRouting(onRouteChanged) {
             const match = path.match(route.path);
             if (match) {
                 // If it's a regex match (e.g., /chat/@alina), extract the username
-                const username = match[1];
+                const username = match[1].toLowerCase();
                 onRouteChanged(route.view, username);
                 return;
             }

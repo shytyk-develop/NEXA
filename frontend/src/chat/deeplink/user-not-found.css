@@ -1,0 +1,104 @@
+/* Deeplink to an unknown handle (UserNotFound.tsx): a quiet card centred on
+   the empty chat stage, the accent reserved for the way back. */
+.user-not-found-host {
+    align-items: center;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    padding: 24px 24px 120px;
+    pointer-events: none;
+    position: absolute;
+    z-index: 40;
+}
+
+.user-not-found-host.is-active ~ #chat-welcome,
+#chat-welcome:has(~ .user-not-found-host.is-active) {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.user-not-found {
+    align-items: center;
+    background: color-mix(in srgb, var(--text-primary, #fff) 3%, var(--bg-section, #0e0e0e));
+    border: 1px solid color-mix(in srgb, var(--text-primary, #fff) 9%, transparent);
+    border-radius: 28px;
+    box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    max-width: 360px;
+    padding: 32px 28px 26px;
+    pointer-events: auto;
+    text-align: center;
+    width: 100%;
+}
+
+.user-not-found__icon {
+    align-items: center;
+    background: color-mix(in srgb, var(--text-primary, #fff) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-primary, #fff) 10%, transparent);
+    border-radius: 18px;
+    color: var(--text-primary, #fff);
+    display: inline-flex;
+    height: 52px;
+    justify-content: center;
+    margin-bottom: 18px;
+    width: 52px;
+}
+
+.user-not-found__title {
+    color: var(--text-primary, #fff);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.user-not-found__handle {
+    color: var(--accent-primary, #c7ff00);
+}
+
+.user-not-found__sub {
+    color: var(--text-secondary, #969696);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 8px 0 0;
+}
+
+.user-not-found__back {
+    align-items: center;
+    background: var(--accent-primary, #c7ff00);
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-on-accent, #0b0b0b);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    gap: 8px;
+    height: 44px;
+    margin-top: 22px;
+    padding: 0 22px;
+    transition: filter 0.2s ease, transform 0.18s ease;
+}
+
+.user-not-found__back:hover {
+    filter: brightness(1.08);
+}
+
+.user-not-found__back:active {
+    transform: scale(0.97);
+}
+
+.user-not-found__back:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary, #c7ff00) 55%, transparent);
+    outline-offset: 3px;
+}
+
+/* Spotlight (new chat) owns the stage while it's open. */
+#page-chat.is-compose-search .user-not-found-host {
+    opacity: 0;
+    visibility: hidden;
+}

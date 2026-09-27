@@ -444,3 +444,63 @@ body.ui-hide-times .message-time {
         padding: 14px;
     }
 }
+
+.toast.is-leaving {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+/* Copied to clipboard: lime check with a soft accent glow. */
+.toast.is-copied {
+    align-items: center;
+    animation: toastCopiedIn 0.42s cubic-bezier(0.22, 1.3, 0.36, 1);
+    border-color: color-mix(in srgb, var(--accent-primary, #c7ff00) 38%, transparent);
+    border-left-color: var(--accent-primary, #c7ff00);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent-primary, #c7ff00) 10%, transparent),
+        0 10px 32px -12px color-mix(in srgb, var(--accent-primary, #c7ff00) 45%, transparent),
+        var(--overlay-shadow);
+    display: flex;
+    gap: 10px;
+}
+
+.toast__check {
+    background: var(--accent-primary, #c7ff00);
+    border-radius: 50%;
+    fill: none;
+    flex: none;
+    height: 20px;
+    padding: 3px;
+    stroke: var(--text-on-accent, #0b0b0b);
+    stroke-dasharray: 16;
+    stroke-dashoffset: 16;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.2;
+    width: 20px;
+    animation: toastCheckDraw 0.36s 0.14s ease-out forwards;
+}
+
+@keyframes toastCopiedIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96);
+    }
+}
+
+@keyframes toastCheckDraw {
+    to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast.is-copied,
+    .toast__check {
+        animation: none;
+        stroke-dashoffset: 0;
+    }
+
+    .toast.is-leaving {
+        transition: none;
+    }
+}

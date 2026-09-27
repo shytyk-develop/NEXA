@@ -9,6 +9,7 @@ import {
     resetChatPanel,
     showPeerEmpty,
     showChatWelcome,
+    hideChatWelcome,
     appendMessage,
     renderMessagesList,
     clearMessageView,
@@ -79,6 +80,7 @@ import {
     setSidebarRenderer,
 } from './ui.js';
 import { createChatEngine } from '../src/chat/engine/chatEngine.ts';
+import { showUserNotFound, hideUserNotFound } from '../src/chat/deeplink/UserNotFound.tsx';
 import {
     attachReplyToMessage,
     buildPendingReplyFromMessage,
@@ -172,6 +174,7 @@ import {
     registerRequest,
     getChats,
     getUser,
+    resolveUser,
     getHistory,
     deleteMessage,
     deleteConversation,
@@ -391,6 +394,78 @@ function consumePendingMessageJump(username) {
         if (tryJump()) return;
         window.setTimeout(tryJump, 80);
     });
+}
+
+const REDIRECT_AFTER_LOGIN_KEY = 'redirect_after_login';
+
+/** Only an in-app chat path survives the round trip through /login. */
+function isChatRedirectPath(path) {
+    return typeof path === 'string' && /^\/chat(?:\/(?:@|%40)?[a-z0-9_]+)?\/?$/i.test(path);
+}
+
+function rememberRedirectAfterLogin(path) {
+    try {
+        if (isChatRedirectPath(path)) sessionStorage.setItem(REDIRECT_AFTER_LOGIN_KEY, path);
+    } catch { /* storage blocked: land on /chat */ }
+}
+
+/** The saved deeplink (cleared on read), or `fallback`. */
+function takeRedirectAfterLogin(fallback = '/chat') {
+    try {
+        const path = sessionStorage.getItem(REDIRECT_AFTER_LOGIN_KEY);
+        sessionStorage.removeItem(REDIRECT_AFTER_LOGIN_KEY);
+        if (isChatRedirectPath(path)) return path;
+    } catch { /* storage blocked */ }
+    return fallback;
+}
+
+/**
+ * /chat/@username: open the conversation if there is one, otherwise look the
+ * handle up and start a new one (composer focused), or say nobody has it.
+ */
+async function openDeeplinkChat(rawHandle) {
+    const handle = normalizeUsername(String(rawHandle || '').replace(/^(?:@|%40)/i, ''));
+    const canonical = `/chat/@${handle}`;
+    if (window.location.pathname !== canonical) window.history.replaceState(null, '', canonical);
+
+    const known =
+        state.sidebarChats.some((chat) => normalizeUsername(chat.username) === handle)
+        || Boolean(state.chatHistory?.[handle]?.length)
+        || Boolean(state.usersDirectory[handle]);
+
+    if (!known) {
+        try {
+            const user = await resolveUser(state.token, handle);
+            state.usersDirectory[user.username] = user.public_key;
+            ingestUserRecords([{
+                username: user.username,
+                display_name: user.display_name,
+                avatar_data: user.avatar_url,
+                public_key: user.public_key,
+            }]);
+        } catch (err) {
+            if (err?.status === 404) {
+                // A newer route took over while the lookup ran.
+                if (window.location.pathname !== canonical) return;
+                pendingMessageJump = null;
+                engine.clearActiveChat();
+                resetChatPanel();
+                hideChatWelcome();
+                showUserNotFound(handle, () => {
+                    hideUserNotFound();
+                    navigateTo('/chat', handleNavigation);
+                });
+                return;
+            }
+            // Offline / server hiccup: switchChat retries the lookup and says why.
+            console.warn('Deeplink lookup failed:', err);
+        }
+    }
+
+    if (window.location.pathname !== canonical) return;
+    hideUserNotFound();
+    await switchChat(handle);
+    if (!known && state.currentTargetUser === handle) focusComposer();
 }
 
 function onContactSelected(username) {
@@ -1275,6 +1350,8 @@ async function handleNavigation(view, param) {
 
         if (view === 'chat' || view === 'chat-user') {
             if (!state.myUsername) {
+                // Signed out on a deeplink: come back to it after signing in.
+                if (view === 'chat-user' && param) rememberRedirectAfterLogin(`/chat/@${param}`);
                 navigateTo('/login', handleNavigation);
                 return;
             }
@@ -1283,10 +1360,10 @@ async function handleNavigation(view, param) {
             await mountChatPage();
 
             if (view === 'chat-user' && param) {
-                const targetUser = param;
                 closeComposeSearch();
-                switchChat(targetUser);
+                await openDeeplinkChat(param);
             } else {
+                hideUserNotFound();
                 closeComposeSearch();
                 pendingMessageJump = null;
                 engine.clearActiveChat();
@@ -1332,7 +1409,7 @@ async function completeSignIn(username, password, resData) {
     setAuthPending(true);
     const { playLoginSuccessReveal } = await import('./loginCanvas.js');
     await playLoginSuccessReveal(DOM.pageLogin);
-    finishLoginSetup(username, savedKeysJWK.publicKey);
+    finishLoginSetup(username, savedKeysJWK.publicKey, takeRedirectAfterLogin('/chat'));
 }
 
 /** Registration asks for an email: the field opens on the first Register press. */
@@ -2368,7 +2445,10 @@ async function initializeApp() {
             };
 
             // Bypass the login form, preserving the current deep-linked path
-            const routeFallback = (initialPath === '/' || initialPath === '/login') ? '/chat' : initialPath;
+            const routeFallback = (initialPath === '/' || initialPath === '/login')
+                ? takeRedirectAfterLogin('/chat')
+                : initialPath;
+            if (routeFallback === initialPath) takeRedirectAfterLogin();
             finishLoginSetup(username, savedKeysJWK.publicKey, routeFallback);
             return;
         } catch (err) {

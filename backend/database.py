@@ -481,6 +481,22 @@ def get_user_db(username: str):
     finally:
         release_connection(conn)
 
+def resolve_user_db(username: str):
+    """Public profile for a deeplink (/chat/@username), matched case-insensitively."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            SELECT username, public_key, display_name, bio, avatar_data
+            FROM users
+            WHERE lower(username) = lower(%s)
+            LIMIT 1
+        ''', (username,))
+        row = cursor.fetchone()
+        return _user_row_to_dict(row) if row else None
+    finally:
+        release_connection(conn)
+
 def update_user_profile_db(
     username: str,
     display_name: str,
