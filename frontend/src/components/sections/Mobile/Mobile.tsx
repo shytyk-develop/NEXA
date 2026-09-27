@@ -78,12 +78,13 @@ export function Mobile() {
                       <source media="(max-width: 1023px)" srcSet="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
                       <img
                           className="start-mobile__phone"
-                          src="/images/nexa-iphone.jpg"
+                          src="/screenshots/nexa-ios_app-mockup.png"
                           alt="NEXA on iPhone — Private by default"
-                          width="895"
-                          height="1024"
+                          width="2328"
+                          height="2702"
                           decoding="async"
                           loading="lazy"
+                          draggable={false}
                        />
                   </picture>
               </div>
