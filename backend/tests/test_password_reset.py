@@ -4,11 +4,14 @@ POST /api/auth/reset-password against a real (throwaway) PostgreSQL."""
 from __future__ import annotations
 
 import hashlib
+import re
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
 import database
 from core.auth_sessions import REFRESH_COOKIE
+from core import email_verification
 from core.email_verification import render_password_reset_email
 from routers import auth as auth_router
 
@@ -206,6 +209,58 @@ def test_reset_drops_the_undelivered_queue(client, outbox, alice, sql):
 
 
 # ─── the mail ───
+
+
+@pytest.fixture
+def mailbox(monkeypatch):
+    """Mails as they'd leave the server — rendered for real, only the last
+    step (Resend / SMTP) stubbed: [{"to", "subject", "text", "html"}]."""
+    sent: list[dict] = []
+
+    def fake_deliver(email, subject, text, html_body, **_kwargs):
+        sent.append({"to": email, "subject": subject, "text": text, "html": html_body})
+        return True
+
+    monkeypatch.setattr(email_verification, "_deliver", fake_deliver)
+    return sent
+
+
+def reset_links(mail: dict) -> set[str]:
+    return set(re.findall(r'href="([^"]*reset-password[^"]*)"', mail["html"]))
+
+
+def test_reset_email_link_uses_the_nexa_ashytyk_com_domain(client, mailbox, alice):
+    response = client.post("/api/auth/forgot-password", json={"email_or_username": "alice"})
+    assert response.status_code == 200
+    assert len(mailbox) == 1
+    mail = mailbox[0]
+    assert mail["to"] == "alice@example.com"
+
+    links = reset_links(mail)
+    assert len(links) == 1  # the button and the paste-this-link fallback are the same URL
+    link = urlparse(links.pop())
+    assert (link.scheme, link.netloc, link.path) == ("https", "nexa.ashytyk.com", "/reset-password")
+    assert parse_qs(link.query)["token"]
+    # Every URL in the mail is on the domain; the old one is gone.
+    for url in re.findall(r'(?:href|src)="([^"]+)"', mail["html"]):
+        assert urlparse(url).netloc in ("nexa.ashytyk.com", "github.com"), url
+    assert "nexatalk" not in mail["html"] and "nexatalk" not in mail["text"]
+    assert f"https://nexa.ashytyk.com/reset-password?token=" in mail["text"]
+
+
+def test_following_the_emailed_link_resets_and_signs_in(client, mailbox, alice):
+    client.post("/api/auth/forgot-password", json={"email_or_username": "alice@example.com"})
+    link = urlparse(reset_links(mailbox[0]).pop())
+    token = parse_qs(link.query)["token"][0]
+
+    response = reset(client, token)
+    assert response.status_code == 200
+    access_token = response.json()["access_token"]
+    # Signed in, as /chat needs it: the access token works and the cookie refreshes.
+    headers = {"Authorization": f"Bearer {access_token}"}
+    assert client.get("/api/chats", headers=headers).status_code == 200
+    assert client.post("/api/auth/refresh").status_code == 200
+    assert database.verify_user_password_db("alice", NEW_PASSWORD)
 
 
 def test_reset_email_carries_the_link():

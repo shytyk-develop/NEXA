@@ -27,7 +27,8 @@ _server = pgserver.get_server(_PGDATA, cleanup_mode="stop")
 
 os.environ["DATABASE_URL"] = _server.get_uri()
 os.environ["JWT_SECRET_KEY"] = "test-secret-key-at-least-32-bytes-long"
-os.environ["APP_URL"] = "https://nexa.test"
+# Mail links use the real default (core/config.py): nexa.ashytyk.com.
+os.environ.pop("FRONTEND_URL", None)
 # No real mail, ever (send functions are stubbed too, see `outbox`).
 os.environ["RESEND_API_KEY"] = ""
 os.environ["SMTP_HOST"] = ""

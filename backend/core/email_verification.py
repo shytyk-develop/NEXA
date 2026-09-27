@@ -27,6 +27,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 
+from core.config import settings
 from core.security import JWT_SECRET
 
 OTP_TTL_SECONDS = 15 * 60
@@ -39,8 +40,6 @@ SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-# Where the mail's images (/brand/email/*.png) and links point: the deployed frontend.
-APP_URL = os.getenv("APP_URL", "https://nexatalk.vercel.app").rstrip("/")
 GITHUB_URL = os.getenv("GITHUB_URL", "https://github.com/shytyk-develop")
 
 logger = logging.getLogger("nexa.email")
@@ -93,8 +92,8 @@ def render_otp_email(
     when = _format_time(moment)
     where = (device or "Unknown device").replace(" / ", " · ")
     safe_where = html.escape(where)
-    assets = f"{APP_URL}/brand/email"
-    app_host = html.escape(APP_URL.split("://", 1)[-1].rstrip("/"))
+    assets = f"{settings.FRONTEND_URL}/brand/email"
+    app_host = html.escape(settings.FRONTEND_URL.split("://", 1)[-1].rstrip("/"))
 
     subject = f"{code} is your NEXA verification code"
     text = "\n".join([
@@ -114,7 +113,7 @@ def render_otp_email(
         "",
         "Private · End-to-end encrypted",
         f"Sent to {email} because this address was used to sign up for Nexa." if email else "",
-        APP_URL,
+        settings.FRONTEND_URL,
     ]).strip()
 
     mono = "'SF Mono',SFMono-Regular,ui-monospace,Menlo,Consolas,'Liberation Mono',monospace"
@@ -225,7 +224,7 @@ def render_otp_email(
       </table>
       {sent_to}
       <p style="margin:0;font-family:{sans};font-size:13px;">
-        <a href="{APP_URL}" style="color:#A1A1A6;text-decoration:underline;">{app_host}</a>
+        <a href="{settings.FRONTEND_URL}" style="color:#A1A1A6;text-decoration:underline;">{app_host}</a>
         &nbsp;&nbsp;&nbsp;
         <a href="{GITHUB_URL}" style="color:#A1A1A6;text-decoration:underline;">GitHub</a>
       </p>
@@ -336,7 +335,7 @@ def hash_reset_token(token: str) -> str:
 
 
 def reset_link(token: str) -> str:
-    return f"{APP_URL}/reset-password?token={token}"
+    return f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
 
 def render_password_reset_email(
@@ -355,8 +354,8 @@ def render_password_reset_email(
     moment = requested_at or datetime.now(timezone.utc)
     when = _format_time(moment)
     where = (device or "Unknown device").replace(" / ", " · ")
-    assets = f"{APP_URL}/brand/email"
-    app_host = html.escape(APP_URL.split("://", 1)[-1].rstrip("/"))
+    assets = f"{settings.FRONTEND_URL}/brand/email"
+    app_host = html.escape(settings.FRONTEND_URL.split("://", 1)[-1].rstrip("/"))
 
     subject = "Reset your NEXA password"
     text = "\n".join([
@@ -376,7 +375,7 @@ def render_password_reset_email(
         "If you didn't ask for this, ignore this email — your password stays the same.",
         "",
         "Private · End-to-end encrypted",
-        APP_URL,
+        settings.FRONTEND_URL,
     ])
 
     mono = "'SF Mono',SFMono-Regular,ui-monospace,Menlo,Consolas,'Liberation Mono',monospace"
@@ -467,7 +466,7 @@ def render_password_reset_email(
       </table>
       {sent_to}
       <p style="margin:0;font-family:{sans};font-size:13px;">
-        <a href="{APP_URL}" style="color:#A1A1A6;text-decoration:underline;">{app_host}</a>
+        <a href="{settings.FRONTEND_URL}" style="color:#A1A1A6;text-decoration:underline;">{app_host}</a>
         &nbsp;&nbsp;&nbsp;
         <a href="{GITHUB_URL}" style="color:#A1A1A6;text-decoration:underline;">GitHub</a>
       </p>
