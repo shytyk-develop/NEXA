@@ -5355,22 +5355,30 @@ html[data-theme^="light"] {
     opacity: 0.4;
 }
 
-/* Unread count badge */
+/* Unread count badge. Fixed high-contrast pairs, not theme text on the theme
+   accent (white on lime / dark on dark green — the digits disappeared):
+   dark themes → lime with black, light themes → deep slate with white. */
 .contact-unread {
     align-items: center;
-    background: var(--accent);
-    border-radius: var(--radius-pill);
-    color: var(--theme-text, #fff);
+    background-color: #CCFF00;
+    border-radius: 9999px;
+    color: #000000 !important;
     display: inline-flex;
     flex-shrink: 0;
-    font-size: var(--text-caption);
-    font-weight: var(--weight-semibold);
+    font-size: 11px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
     height: 20px;
     justify-content: center;
     line-height: 1;
     min-width: 20px;
     padding: 0 6px;
+}
+
+html[data-theme^="light"] .contact-unread {
+    background-color: #0F172A;
+    color: #FFFFFF !important;
+    font-weight: 600;
 }
 
 .contact-search-wrap {
