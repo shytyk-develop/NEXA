@@ -1,567 +1,294 @@
 <div align="center">
 
-  <img src="frontend/public/brand/nexa-logo.svg" alt="OriginHub" width="300" height="300">
+<img src="frontend/public/brand/nexa-logo.svg" alt="Nexa logo" width="160" height="160">
 
-  End-to-end encrypted web messenger with real-time delivery, client-side cryptography, and a single-page web client.
+**A private messenger where only you and the person you're talking to can read your messages.**
+
+[**Open Nexa →**](https://nexa.ashytyk.com)
+
+[![Live](https://img.shields.io/badge/live-nexa.ashytyk.com-111?style=flat-square)](https://nexa.ashytyk.com)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+
+[For users](#-for-users) · [For engineers & recruiters](#-for-engineers--recruiters) · [License](#-license)
+
+<img src="frontend/public/screenshots/themes/Dark%20Neon/neon1.png" alt="Nexa chat window with folders, the message feed, and the contact panel with Saved Messages" width="900">
 
 </div>
 
 ---
 
-[![FastAPI](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Vite](https://img.shields.io/badge/frontend-Vite-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+## 👋 For users
 
-## Overview
+### What is Nexa?
 
-OriginHub is a browser-based messaging application where message plaintext is encrypted and decrypted only in the client. The backend stores ciphertext, routes WebSocket events, and manages authentication and metadata. It does not hold the keys required to read message content.
+Nexa is a web messenger built around one idea: **your conversations belong to you.**
+Every message is locked on your device before it is sent and unlocked only on the device of the person you're writing to. The Nexa server delivers messages but **cannot read them** — not the admin, not the hosting provider, not anyone who gets access to the database.
 
-The project exists to provide a small, inspectable reference for building encrypted chat with:
+No phone number is required. Pick a username, verify your email, and start chatting.
 
-- Hybrid encryption in the browser (Web Crypto API)
-- Double-encrypted message storage (separate ciphertext for sender and recipient)
-- Real-time delivery over WebSockets with offline fallback
-- Incremental UI updates without full chat rerenders
+### Why use it?
 
-OriginHub is still under development. It is suitable for learning, self-hosting experiments, and contribution — not as a drop-in replacement for established messengers without additional hardening and review.
+| | |
+|---|---|
+| 🔒 **Truly private** | Messages are end-to-end encrypted in your browser. The server only ever stores scrambled data. |
+| ⚡ **Instant** | Messages, typing indicators, and read receipts arrive in real time. |
+| 💻 **Works on any computer** | Nothing to install — open the site on your Mac or PC and sign in. |
+| 🎨 **Yours to style** | Light Emerald, Light Lime, and Dark Neon themes, plus compact or comfortable message density. |
+| 🧭 **You decide what others see** | Hide your online status, typing indicator, or read receipts. |
 
----
+### What you can do
 
-## Features
+- 💬 **Chat one-on-one** with replies, emoji reactions, and link previews with safety warnings
+- ✅ **See message status** — sent, delivered, read
+- 🗂️ **Organize chats into folders** and keep important messages in *Saved Messages*
+- 🔍 **Find people** by username, or share your personal **QR code** so friends can add you in a tap
+- 🖥️ **Manage your devices** — see where you're signed in and log out any session remotely
+- 🔑 **Recover your account** with an emailed reset link
+- 📤 **Export a chat** or delete a message or whole conversation for both sides
+- ⌨️ **Work fast** with keyboard shortcuts, drafts that survive a reload, and context menus
 
-### Implemented
+### A look inside
 
-- [x] Basic user registration and login (JWT, bcrypt password hashing)
-- [x] Client-side key generation (RSA-OAEP 2048)
-- [x] Password-encrypted private key backup for multi-device login
-- [x] End-to-end encrypted text messaging (AES-GCM-256 + RSA-OAEP)
-- [x] Double ciphertext storage (`content_recipient` / `content_sender`)
-- [x] Real-time message delivery via WebSocket
-- [x] Offline message queue for disconnected recipients
-- [x] Chat history sync from PostgreSQL (paginated)
-- [x] Reply to messages
-- [x] Message reactions (emoji, one per user per message)
-- [x] Read receipts and delivery acknowledgements
-- [x] Typing indicators and online presence (privacy-controlled)
-- [x] Message and conversation deletion
-- [x] Link detection with safe URL rendering and security notice
-- [x] Profile settings (display name, bio, avatar)
-- [x] Contact mini-profiles (hover cards)
-- [x] Light / dark / system theme and glass intensity controls
-- [x] Local drafts, preferences, and chat history cache
-- [x] Contact search and chat export
-- [x] Keyboard shortcuts and context menus
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="frontend/public/screenshots/themes/Dark%20Neon/neon2.png" alt="Profile settings: display name, handle, bio, status, and identity key"><br>
+      <sub><b>Profile</b> — name, handle, bio, status, and identity key</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="frontend/public/screenshots/themes/Dark%20Neon/neon3.png" alt="Appearance settings with theme picker and live chat preview"><br>
+      <sub><b>Appearance</b> — themes, message density, live preview</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="frontend/public/screenshots/themes/Dark%20Neon/neon4.png" alt="Security settings showing encryption status, keys, fingerprint, and devices"><br>
+      <sub><b>Security</b> — encryption status, safety code, devices, password</sub>
+    </td>
+    <td align="center">
+      <img src="frontend/public/screenshots/themes/Dark%20Neon/neon5.png" alt="Privacy settings with online status, read receipts, typing, and link warnings toggles"><br>
+      <sub><b>Privacy</b> — presence, read receipts, typing, link warnings</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="frontend/public/screenshots/themes/Dark%20Neon/neon6.png" alt="Data and storage settings with storage overview, export, and account deletion"><br>
+      <sub><b>Data</b> — local storage, chat export, account deletion</sub>
+    </td>
+    <td align="center">
+      <img src="frontend/public/screenshots/themes/Light%20Emerald/emerald1.png" alt="Nexa chat window in the Light Emerald theme"><br>
+      <sub><b>Light Emerald</b> — the same chat in a light theme</sub>
+    </td>
+  </tr>
+</table>
 
----
+### Getting started
 
-## Screenshots
+1. Go to **[nexa.ashytyk.com](https://nexa.ashytyk.com)** on a desktop browser.
+2. Create an account and confirm the 6-digit code sent to your email.
+3. Search for a friend's username (or scan their QR code) and say hi.
 
-Screenshots of the OriginHub interface.
+> [!IMPORTANT]
+> Your password also protects your encryption key. **Nexa cannot recover your old messages if you lose access to your key** — that's the price of real privacy.
 
-### Login
-
-<p align="center">
-  <img src="docs/screenshots/originhub-login.png" alt="OriginHub Login Screen" width="750" /><br>
-  <em>Authentication screen with username/password login and registration.</em>
-</p>
-
-### Chat
-
-<p align="center">
-  <img src="docs/screenshots/originhub-light.png" alt="OriginHub Chat Light" width="48%" /> 
-  <img src="docs/screenshots/originhub-dark.png" alt="OriginHub Chat Dark" width="48%" />
-  <br>
-  <em>Active conversation with message list, composer, and sidebar (Light and Dark modes).</em>
-</p>
-
-### Profile
-
-<p align="center">
-  <img src="docs/screenshots/originhub-profile.png" alt="OriginHub Login Screen" width="750" /><br>
-  <em>Profile settings: identity, privacy controls, storage overview.</em>
-</p>
-
-### Settings
-
-<p align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <img src="docs/screenshots/originhub-settings.png" alt="Theme Settings" width="380"/><br>
-        <sub>Theme Configuration</sub>
-      </td>
-      <td align="center">
-        <img src="docs/screenshots/originhub-privacy.png" alt="Glass Intensity" width="380"/><br>
-        <sub>Privacy Controls</sub>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <img src="docs/screenshots/originhub-security.png" alt="Composer Behaviour" width="380"/><br>
-        <sub>Security settings</sub>
-      </td>
-      <td align="center">
-        <img src="docs/screenshots/originhub-data.png" alt="Privacy Settings" width="380"/><br>
-        <sub>Data control</sub>
-      </td>
-    </tr>
-  </table>
-</p>
-
-
+> [!NOTE]
+> Nexa is an independent project in active development and has not had an external security audit. Please don't rely on it for life-critical communication yet.
 
 ---
 
-## Architecture
+## 🛠 For engineers & recruiters
 
-OriginHub is split into a static frontend (Vite) and a FastAPI backend. All message encryption runs in the browser. PostgreSQL stores users, encrypted payloads, reactions, and delivery metadata.
+### TL;DR
 
-```mermaid
-flowchart TB
-    subgraph Client["Browser (Frontend)"]
-        UI["UI Layer<br/>ui.js, overlays, themes"]
-        Crypto["Crypto Layer<br/>Web Crypto API"]
-        State["Local State<br/>localStorage, drafts, cache"]
-        UI --> Crypto
-        UI --> State
-    end
+Nexa is a **full-stack, end-to-end encrypted real-time messenger** that I designed, built, and deployed solo.
 
-    subgraph Server["Backend (FastAPI)"]
-        REST["REST API<br/>auth, history, profile"]
-        WS["WebSocket Manager<br/>routing, presence, events"]
-        REST --> DB
-        WS --> DB
-    end
+- **Client-side cryptography** with the Web Crypto API — hybrid RSA-OAEP + AES-GCM, password-wrapped private keys for multi-device login.
+- **Real-time layer** on WebSockets with delivery/read acknowledgements, presence, typing, and an offline queue.
+- **Production-grade auth** — short-lived JWT access tokens, rotating refresh tokens in `HttpOnly` cookies (stored hashed), per-device session management, email OTP verification, and password reset.
+- **FastAPI + PostgreSQL** backend with Alembic migrations and a pytest suite running against a throwaway real Postgres.
+- **Incremental frontend migration** from vanilla JS to **React 19 + TypeScript** via lazily loaded "islands", without a rewrite freeze.
+- Deployed on **Vercel** (frontend) and **Render** (API + Postgres), with **Apple Push Notifications** for the iOS companion app.
 
-    subgraph Data["PostgreSQL"]
-        DB[("users · chat_history<br/>message_reactions · offline_messages")]
-    end
+### Tech stack
 
-    Client -->|"HTTPS + JWT"| REST
-    Client -->|"WSS + JWT"| WS
-```
+| Layer | Technologies |
+|---|---|
+| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS 4, Motion / Framer Motion, GSAP, Three.js, Base UI, Vaul, Lucide |
+| **Legacy client core** | Vanilla JavaScript (ES modules) — networking, storage, crypto, overlays |
+| **Cryptography** | Web Crypto API — RSA-OAEP-2048 (SHA-256), AES-GCM-256, PBKDF2-SHA256 |
+| **Backend** | Python 3, FastAPI, Uvicorn, native WebSockets |
+| **Database** | PostgreSQL, psycopg2 `ThreadedConnectionPool`, Alembic migrations |
+| **Auth & security** | PyJWT (HS256), bcrypt, SHA-256-hashed refresh tokens & OTPs, `HttpOnly` / `SameSite` cookies, CORS allowlist |
+| **Integrations** | Resend / SMTP (transactional email), APNs over HTTP/2 via `httpx` (push), `qrcode` + Pillow |
+| **Testing** | pytest, `pgserver` (disposable PostgreSQL), FastAPI `TestClient` |
+| **Infrastructure** | Vercel (static hosting + `/api` rewrite proxy), Render (API + managed PostgreSQL) |
 
-| Layer | Role |
-|-------|------|
-| **Frontend** | SPA built with Vite. Vanilla JavaScript modules, no framework. Handles UI, routing, encryption, and local persistence. |
-| **Backend** | FastAPI application. Authenticates requests, persists ciphertext, fans out WebSocket events. |
-| **Database** | PostgreSQL. Stores encrypted blobs, public keys, profile metadata, reactions, read state. |
-| **WebSocket** | Persistent connection per authenticated user. Delivers messages, status updates, presence, and deletions in real time. |
-| **Encryption** | Entirely client-side. Server receives and stores only encrypted bytes and routing metadata. |
-
----
-
-## Message Flow
-
-When User A sends a message to User B:
-
-1. A's browser encrypts plaintext twice — once with B's public key, once with A's own public key.
-2. Ciphertext is sent over WebSocket to the server.
-3. The server forwards ciphertext to B if online, then persists both ciphertext columns to PostgreSQL.
-4. A receives a `message_ack` with the database `id`.
-5. B decrypts with B's private key. A can later decrypt their copy with A's private key from history.
-
-```mermaid
-sequenceDiagram
-    participant A as User A (Browser)
-    participant S as Server (FastAPI)
-    participant DB as PostgreSQL
-    participant B as User B (Browser)
-
-    A->>A: Generate AES key, encrypt plaintext (AES-GCM)
-    A->>A: Wrap AES key with RSA-OAEP (recipient + sender keys)
-    A->>S: WebSocket: message { content_recipient, content_sender }
-    S->>B: WebSocket: message { content (recipient blob) }
-    S->>DB: INSERT chat_history (ciphertext only)
-    S->>A: WebSocket: message_ack { id, client_message_id }
-    S->>A: WebSocket: message_status { status: sent }
-    B->>B: Decrypt with private key
-    B->>S: WebSocket: delivery_ack
-    S->>A: WebSocket: message_status { status: delivered }
-    B->>S: WebSocket: read_receipt
-    S->>A: WebSocket: message_status { status: read }
-```
-
----
-
-## Encryption
-
-### Where encryption happens
-
-All message and key operations run in the browser via the [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API):
-
-| Operation | Algorithm | Location |
-|-----------|-----------|----------|
-| Message encryption | AES-GCM-256 (content) + RSA-OAEP-2048 (key wrap) | Client |
-| Message decryption | Same | Client |
-| Key pair generation | RSA-OAEP-2048 | Client |
-| Private key at rest (server) | PBKDF2-SHA256 (100k iter) + AES-GCM-256 | Client, before upload |
-| Password authentication | bcrypt | Server |
-
-Each message uses a fresh AES key and IV. The envelope is JSON (`v: 2`) containing base64-encoded `iv`, `ek` (encrypted key), and `ct` (ciphertext).
-
-### What the server sees
-
-- Usernames and bcrypt password hashes
-- Public keys (JWK)
-- Password-encrypted private keys (opaque blob)
-- Ciphertext for sender and recipient (`content_sender`, `content_recipient`)
-- Message metadata: timestamps, `client_message_id`, `reply_to_message_id`, delivery/read timestamps
-- Reactions (emoji per user per message)
-- Profile fields: display name, bio, avatar (base64 data URL)
-
-### What the server does not see
-
-- Message plaintext
-- Private keys in decrypted form
-- User passwords in plaintext (only bcrypt hashes)
-
-### Limitations
-
-> **This is not a formal security proof.** The implementation has not undergone an independent audit.
-
-- **Server trust model:** The server could serve a modified client, log ciphertext for traffic analysis, or withhold delivery. Users must trust the deployed frontend bundle.
-- **No forward secrecy:** Messages use long-lived RSA keys. Compromise of a private key exposes historical ciphertext stored on the server.
-- **Metadata is visible:** Who talks to whom, when, and message sizes are observable by the server operator.
-- **Profile data is not E2EE:** Display names, bios, and avatars are stored in plaintext on the server.
-- **JWT secret:** A weak or default `JWT_SECRET_KEY` breaks session security. Always set a strong secret in production.
-- **Hardcoded production URLs:** The frontend points to fixed API/WebSocket hosts; verify you deploy matching backend and frontend builds.
-
----
-
-## Real-Time Synchronization
-
-After login, the client opens a WebSocket to `/ws?token=<JWT>`, sends a `join` packet with username and public key, then handles incoming event types:
-
-| Event | Purpose |
-|-------|---------|
-| `message` | Incoming ciphertext from another user |
-| `message_ack` | Confirms persistence; assigns server `id` to outgoing message |
-| `message_sync` | Updates recipient copy with `id` after save |
-| `message_status` | Sent / delivered / read status for outgoing messages |
-| `reaction_sync` | Reaction added or removed on a message |
-| `message_deleted` | Single message removed for both participants |
-| `conversation_deleted` | Entire thread cleared |
-| `typing` | Partner is typing (if enabled in privacy settings) |
-| `presence` / `presence_sync` | Online/offline state |
-| `profile_updated` | Contact profile metadata changed |
-| `unread_sync` | Unread count for a conversation |
-
-The frontend uses incremental DOM updates (`appendMessage`, targeted patches) rather than rebuilding the full message list on every event. Message actions (reply, react, delete) use event delegation on the messages container so handlers survive DOM changes.
+### Architecture
 
 ```mermaid
 flowchart LR
-    WS[WebSocket Event] --> Handler[app.js handler]
-    Handler --> State[chatHistory state]
-    Handler --> Patch[DOM patch / append]
-    State --> LS[(localStorage cache)]
+    subgraph Browser["🖥️ Browser"]
+        direction TB
+        UI["React islands<br/>(chat, settings, landing)"]
+        Core["JS core<br/>network · storage · state"]
+        Crypto["Web Crypto<br/>RSA-OAEP · AES-GCM"]
+        UI --> Core --> Crypto
+    end
+
+    subgraph Vercel["▲ Vercel"]
+        Static["Static SPA<br/>+ /api rewrite"]
+    end
+
+    subgraph Render["☁️ Render"]
+        direction TB
+        REST["FastAPI REST<br/>auth · history · profile<br/>folders · sessions"]
+        WS["WebSocket manager<br/>routing · presence · acks"]
+        PG[("PostgreSQL<br/>ciphertext only")]
+        REST --> PG
+        WS --> PG
+    end
+
+    Browser -- "HTTPS /api (JWT + HttpOnly cookie)" --> Static --> REST
+    Browser -- "WSS /ws?token=JWT" --> WS
+    REST -. email .-> Mail["Resend / SMTP"]
+    WS -. push .-> APNs["Apple Push"]
 ```
 
----
+The frontend and API are served from **the same origin** (`/api` is proxied by Vercel in production and by Vite in development), so the refresh cookie can stay `SameSite=Lax` instead of relying on third-party cookies.
 
-## Technology Stack
+### How end-to-end encryption works
 
-| Category | Technology |
-|----------|------------|
-| **Languages** | JavaScript (ES modules), Python 3 |
-| **Frontend** | Vite 8, vanilla JS, CSS custom properties |
-| **Backend** | FastAPI, Uvicorn, WebSockets |
-| **Database** | PostgreSQL (`psycopg2` connection pool) |
-| **Auth** | JWT (PyJWT, HS256), bcrypt |
-| **Crypto (client)** | Web Crypto API — RSA-OAEP, AES-GCM, PBKDF2 |
-| **Deployment** | Frontend: Vercel · Backend: Render (current production setup) |
+1. **On sign-up** the browser generates an RSA-OAEP key pair. The public key is uploaded as a JWK; the private key is encrypted with a key derived from the user's password (**PBKDF2-SHA256, 100 000 iterations → AES-GCM-256**) and uploaded as an opaque blob. This is what lets the same account sign in on a new device without the server ever seeing the key.
+2. **On send**, every message gets a fresh AES-256 key and IV. The plaintext is encrypted with AES-GCM, and the AES key is wrapped with RSA-OAEP **twice** — once for the recipient and once for the sender — so both sides can read their history later.
+3. **The server** stores and relays only the two envelopes (`content_recipient`, `content_sender`) plus routing metadata.
 
----
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Alice (browser)
+    participant S as FastAPI server
+    participant DB as PostgreSQL
+    participant B as Bob (browser)
 
-## Project Structure
-
+    A->>A: AES-GCM encrypt plaintext with a fresh key
+    A->>A: Wrap AES key with Bob's and Alice's RSA public keys
+    A->>S: WS "message" {content_recipient, content_sender}
+    S->>DB: INSERT ciphertext + metadata
+    S-->>A: "message_ack" {id} → status: sent
+    S->>B: WS "message" {ciphertext}
+    B->>B: Unwrap key with private RSA key, decrypt
+    B->>S: "delivery_ack" / "read_receipt"
+    S-->>A: "message_status" → delivered / read
 ```
-origin-e2e-chat/
+
+<details>
+<summary><b>What the server can and cannot see</b></summary>
+
+| ✅ Server sees | ❌ Server never sees |
+|---|---|
+| Usernames, email, bcrypt password hash | Message plaintext |
+| Public keys (JWK) | Private keys in decrypted form |
+| Password-encrypted private key blob | Plaintext passwords |
+| Ciphertext + timestamps, reply links, delivery/read times | AES message keys |
+| Profile fields (name, bio, avatar), reactions | |
+
+</details>
+
+<details>
+<summary><b>Known limitations (honest threat model)</b></summary>
+
+- **No forward secrecy** — messages use long-lived RSA keys; a leaked private key exposes stored history. A Double Ratchet / X3DH design is the natural next step.
+- **Trust in the served bundle** — as with any web E2EE app, users trust that the deployed JavaScript is the published one.
+- **Metadata is visible** — who talks to whom and when is known to the server.
+- **Profiles are not encrypted** — display name, bio, and avatar are stored in plaintext.
+- **No independent audit** yet.
+
+</details>
+
+### Engineering highlights
+
+<details open>
+<summary><b>Authentication & sessions</b></summary>
+
+- Short-lived **JWT access tokens** carry a session id (`sid`); **refresh tokens** are 48-byte random secrets delivered only in an `HttpOnly` cookie scoped to `/api`.
+- The database stores **only the SHA-256 of refresh tokens**, so a leaked table can't be replayed. Sessions slide for 7 days from last use.
+- Users can list their sessions/devices and **revoke one or all others**; revoked sessions receive a `session_terminated` event over the WebSocket and are logged out instantly.
+- **Email OTP** verification: 6-digit codes stored as peppered hashes, 15-minute TTL, 5-attempt limit, 60-second resend throttle. Password-reset links follow the same pattern.
+
+</details>
+
+<details>
+<summary><b>Real-time messaging</b></summary>
+
+- One authenticated WebSocket per client; the handshake validates the JWT and rejects a `join` whose username differs from the token subject.
+- Event protocol covers `message`, `message_ack`, `message_sync`, `message_status`, `reaction_sync`, `typing`, `presence` / `presence_sync`, `unread_sync`, `message_deleted`, `conversation_deleted`, `profile_updated`, `new_chat`, and more.
+- Client-generated `client_message_id`s let the **optimistic UI** show a message instantly and reconcile it with the server id on `message_ack`.
+- Messages to offline users are queued and flushed on reconnect; the client reconnects with backoff.
+- The UI patches the DOM incrementally instead of re-rendering the whole message list.
+
+</details>
+
+<details>
+<summary><b>Frontend architecture</b></summary>
+
+- Started as a framework-free SPA; now **migrating to React + TypeScript island by island**. Each island (`mountChat`, `mountStartSite`, auth flows, settings drawers) is code-split and loaded with dynamic `import()`.
+- A typed **`chatEngine`** + event emitter separates chat state and crypto from the view layer, exposed to React via a `useChatEngine` hook.
+- Vite `dedupe` / `optimizeDeps` configuration guarantees a single React instance across lazily loaded chunks.
+- Design system built on CSS custom properties and Tailwind 4, with multiple themes and adjustable glassmorphism.
+
+</details>
+
+<details>
+<summary><b>Backend & data</b></summary>
+
+- FastAPI split into domain routers: `auth`, `sessions`, `devices`, `users`, `profile`, `history`, `folders`, `saved`, `qr`, `websocket`.
+- **13 Alembic migrations** track the schema from baseline through sessions, email verification, folders, and password reset.
+- Tests boot a **disposable PostgreSQL** with `pgserver`, apply the real migrations, and run the app against it — no mocks for the database, and no access to production secrets.
+
+</details>
+
+### Project structure
+
+```text
+.
 ├── backend/
-│   ├── main.py              # FastAPI app, REST routes, WebSocket endpoint
-│   ├── ws_manager.py        # Connection manager, event routing, presence
-│   ├── database.py          # PostgreSQL queries, connection pool
-│   ├── alembic.ini          # Alembic config
-│   ├── alembic/             # Schema migrations
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html           # SPA shell and inline critical styles
-│   ├── vite.config.js
-│   ├── vercel.json          # SPA rewrite rules for deployment
-│   ├── js/
-│   │   ├── app.js           # Application entry, WebSocket handlers, routing
-│   │   ├── crypto.js        # Key generation, encrypt/decrypt, key backup
-│   │   ├── api.js           # REST client
-│   │   ├── network.js       # WebSocket client with reconnect
-│   │   ├── ui.js            # DOM rendering, message list, actions
-│   │   ├── messageSync.js   # Ack, status, read receipt logic
-│   │   ├── messageReactions.js
-│   │   ├── messageReply.js
-│   │   ├── messageDelete.js
-│   │   ├── realtime.js      # Presence, typing, unread state
-│   │   ├── profile.js       # Local profile identity
-│   │   ├── profileSettings.js
-│   │   ├── miniProfile.js   # Contact hover cards
-│   │   └── …
-│   ├── ui/overlays/         # Dropdown, context menu, popover, modal system
-│   └── public/
-│       ├── brand/           # Logo assets (SVG)
-│       └── css/             # Theme, layout, component styles
-└── README.md
+│   ├── main.py               # FastAPI app, CORS, router registration
+│   ├── routers/              # auth, sessions, devices, users, profile, history, folders, saved, qr, websocket
+│   ├── core/                 # config, security (JWT/bcrypt), auth sessions, email verification
+│   ├── ws_manager.py         # WebSocket connections, routing, presence, acks
+│   ├── database.py           # SQL access + connection pool
+│   ├── apns.py               # Apple Push Notification client (HTTP/2)
+│   ├── alembic/versions/     # Schema migrations
+│   └── tests/                # pytest suite on a throwaway PostgreSQL
+└── frontend/
+    ├── index.html            # SPA shell
+    ├── js/                   # Core client: app, api, network, crypto, storage, message logic
+    ├── src/
+    │   ├── chat/             # React chat island: engine, hooks, regions (sidebar, feed, input…)
+    │   ├── auth/             # Verify email, forgot / reset password
+    │   ├── settings/         # Devices, password, danger-zone drawers
+    │   ├── components/       # UI kit + landing page sections
+    │   └── start/            # Landing page island
+    ├── ui/overlays/          # Menus, popovers, modals, reaction picker
+    ├── vite.config.js
+    └── vercel.json           # SPA fallback + /api proxy
 ```
 
-| Path | Description |
-|------|-------------|
-| `backend/main.py` | HTTP API and WebSocket entry point |
-| `backend/ws_manager.py` | Real-time event dispatch and session state |
-| `backend/database.py` | All SQL access and connection pool |
-| `backend/alembic/` | Schema migrations (Alembic) |
-| `frontend/js/crypto.js` | Encryption implementation — start here for security review |
-| `frontend/js/app.js` | Orchestrates login, chat, and WebSocket event handling |
-| `frontend/ui/overlays/` | Shared overlay manager used by menus and modals |
+> [!TIP]
+> Reviewing the security model? Start with [`frontend/js/crypto.js`](frontend/js/crypto.js), [`backend/core/auth_sessions.py`](backend/core/auth_sessions.py), and [`backend/routers/websocket.py`](backend/routers/websocket.py).
 
 ---
 
-## Installation
+## 📄 License
 
-### Prerequisites
-
-- **Node.js** 18+ and npm
-- **Python** 3.10+
-- **PostgreSQL** 14+ (local or hosted)
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/<shytyk-develop>/origin-e2e-chat.git
-cd origin-e2e-chat
-```
-
-### 2. Backend setup
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-Create `backend/.env`:
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/originhub
-JWT_SECRET_KEY=replace_with_a_long_random_secret_at_least_32_bytes
-```
-
-Apply schema migrations (required before first start):
-
-```bash
-alembic upgrade head
-```
-
-Start the API server:
-
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Verify: `http://localhost:8000/docs` (FastAPI OpenAPI UI).
-
-### 3. Frontend setup
-
-```bash
-cd frontend
-npm install
-```
-
-For local development, point the client at your backend by editing:
-
-- `frontend/js/api.js` — set `API_URL` to `http://localhost:8000`
-- `frontend/js/network.js` — set `WS_BASE_URL` to `ws://localhost:8000/ws`
-
-Also add your dev origin to CORS in `backend/main.py` if it is not already listed.
-
-Start the dev server:
-
-```bash
-npm run dev
-```
-
-Open the URL shown by Vite (default `http://localhost:5173`).
-
-### 4. First use
-
-1. Register a new account (a key pair is generated in the browser).
-2. Register a second account in another browser profile or window.
-3. Search for the second user and open a chat.
-4. Send a message — inspect the network tab to confirm only ciphertext is transmitted.
-
----
-
-## Configuration
-
-### Backend environment variables
-
-Create a `.env` file in `backend/` (never commit it):
-
-```env
-# Required — PostgreSQL connection string
-DATABASE_URL=postgresql://user:password@host:5432/dbname
-
-# Required in production — signs JWT access tokens (HS256)
-# Use a cryptographically random string, at least 32 bytes
-JWT_SECRET_KEY=
-```
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL DSN used by the connection pool |
-| `JWT_SECRET_KEY` | Yes (production) | Secret for signing and verifying JWT tokens. A fallback default exists in code for local dev only — **do not use it in production**. |
-
-### Frontend configuration
-
-There is no `.env` layer for the frontend today. Production URLs are constants:
-
-| File | Constant | Default |
-|------|----------|---------|
-| `frontend/js/api.js` | `API_URL` | `https://originhub.onrender.com` |
-| `frontend/js/network.js` | `WS_BASE_URL` | `wss://originhub.onrender.com/ws` |
-
-CORS allowed origins are configured in `backend/main.py`.
-
----
-
-## Development
-
-### Backend
-
-```bash
-cd backend
-source venv/bin/activate   # or ../venv if using repo-root venv
-uvicorn main:app --reload --port 8000
-```
-
-Interactive API docs: `http://localhost:8000/docs`
-
-### Database migrations (Alembic)
-
-Schema changes live under `backend/alembic/versions/`. Always use a PostgreSQL `DATABASE_URL`.
-
-```bash
-cd backend
-# apply pending migrations
-alembic upgrade head
-
-# create a new revision after editing the generated file
-alembic revision -m "add_foo_column"
-
-# existing DB already matches baseline schema
-alembic stamp head
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm run dev       # development server with HMR
-npm run build     # production build → frontend/dist/
-npm run preview   # serve production build locally
-```
-
-### Production deployment
-
-**Backend (example: Render)**
-
-1. Create a Web Service from the `backend/` directory.
-2. Set start command: `alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT`
-3. Add environment variables: `DATABASE_URL`, `JWT_SECRET_KEY`.
-4. Attach a PostgreSQL instance and copy its connection string.
-
-**Frontend (example: Vercel)**
-
-1. Set root directory to `frontend/`.
-2. Build command: `npm run build`
-3. Output directory: `dist`
-4. `vercel.json` rewrites all routes to `index.html` for client-side routing.
-
-After deployment, update `API_URL` and `WS_BASE_URL` in the frontend source and rebuild, then add the frontend origin to backend CORS.
-
----
-
-## Security Notes
-
-### Protected
-
-- Message body content (encrypted before leaving the browser)
-- Private keys (encrypted with user password before server upload; decrypted only client-side after login)
-
-### Not protected
-
-- Usernames, profile text, avatars
-- Message timestamps, IDs, reply references, reaction emoji
-- Traffic metadata (conversation graph, online status if shared)
-- Client-side data in `localStorage` (accessible to anyone with physical access to the unlocked browser)
-
-### Operational recommendations
-
-- Use HTTPS and WSS in production.
-- Set a strong, unique `JWT_SECRET_KEY`.
-- Review CORS origins — allow only your frontend domain.
-- Treat the frontend bundle as part of your trusted computing base; consider subresource integrity or self-hosting.
-- Back up PostgreSQL regularly; ciphertext without keys is useless, but keys without ciphertext loses history.
-
----
-
-## Roadmap
-
-- [ ] Environment-based frontend configuration (no hardcoded API URLs)
-- [ ] Encrypted file attachments
-- [ ] Message forwarding
-- [ ] Automated test suite (crypto round-trip, WebSocket flows)
-- [ ] Independent security review
-- [ ] Mobile-responsive layout improvements
-
----
-
-## Contributing
-
-Contributions are welcome. For substantial changes, open an issue first to discuss scope.
-
-1. Fork the repository and create a feature branch from `main`.
-2. Keep changes focused — separate UI, crypto, and backend concerns when possible.
-3. Do not commit secrets (`.env`, tokens, keys).
-4. Test locally with two user accounts before opening a pull request.
-5. Describe **what** changed and **why** in the PR body.
-
-Bug reports should include steps to reproduce, browser version, and whether the issue occurs on the production or local deployment.
-
----
-
-## License
-
-OriginHub is released under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
-
-You may use, modify, and distribute this software under the terms of that license. If you deploy a modified version as a network service, you must offer corresponding source code to users who interact with it remotely. The full legal text is in the [LICENSE](LICENSE) file.
-
----
-
-## Further reading
-
-| Topic | Starting point |
-|-------|----------------|
-| Encryption implementation | [`frontend/js/crypto.js`](frontend/js/crypto.js) |
-| WebSocket event routing | [`backend/ws_manager.py`](backend/ws_manager.py) |
-| Message UI and incremental render | [`frontend/js/ui.js`](frontend/js/ui.js) |
-| Database schema and queries | [`backend/database.py`](backend/database.py) |
-
----
+Distributed under the **GNU Affero General Public License v3.0**. See [`LICENSE`](LICENSE) for details.
 
 <div align="center">
 
-**OriginHub**
-
-Encrypted in the browser. Routed in real time. Documented for developers.
-
-[Contributing](#contributing) · [License](LICENSE) · [Security](#security-notes)
+Built by **[Jan Shytyk](https://github.com/shytyk-develop)** · [nexa.ashytyk.com](https://nexa.ashytyk.com)
 
 </div>
